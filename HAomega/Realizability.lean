@@ -34,7 +34,7 @@ with no `map tyOf` and no lemma relating the two.
 
 ## The rules
 
-**29 rules**, against the first-order development's 76, and **none carries a
+**36 rules**, against the first-order development's 76, and **none carries a
 side condition** — de Bruijn binders make `SubstOK` and `FreshIn` vacuous.  The
 saving is the equational kit: one Leibniz rule (`eqSubst`) gives every
 congruence, and the function symbols' defining equations are gone because the
@@ -242,6 +242,28 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
           φ.atInner))
         φ)) →
       Deriv Δ (.all .nat φ)
+  -- The Goodstein layer: conversions for `pred`/`good`, and the three
+  -- single-symbol imports of the first-order D5 design (`ordBump`,
+  -- `ordPredLt`, `bumpNeZero`), each discharged in soundness by exactly one
+  -- `OrdinalAssignment` theorem.  No congruence rules: Leibniz covers them.
+  | convPredZero {Γ as} {Δ : Ctx Γ as} : Deriv Δ (.eq (.pred .zero) .zero)
+  | convPredSucc {Γ as} {Δ : Ctx Γ as} (t : Tm Γ .nat) :
+      Deriv Δ (.eq (.pred (.succ t)) t)
+  | convGoodZero {Γ as} {Δ : Ctx Γ as} (s : Tm Γ .nat) :
+      Deriv Δ (.eq (.good s .zero) s)
+  | convGoodSucc {Γ as} {Δ : Ctx Γ as} (s t : Tm Γ .nat) :
+      Deriv Δ (.eq (.good s (.succ t))
+        (.pred (.bump (.succ (.succ t)) (.good s t))))
+  | ordBump {Γ as} {Δ : Ctx Γ as} (b n : Tm Γ .nat) :
+      Deriv Δ (.eq (.ord (.succ (.succ (.succ b))) (.bump (.succ (.succ b)) n))
+        (.ord (.succ (.succ b)) n))
+  | ordPredLt {Γ as} {Δ : Ctx Γ as} (b n : Tm Γ .nat) :
+      Deriv Δ (.imp ((Formula.eq n .zero).neg)
+        (.eq (.prec (.ord (.succ (.succ b)) (.pred n))
+          (.ord (.succ (.succ b)) n)) (.succ .zero)))
+  | bumpNeZero {Γ as} {Δ : Ctx Γ as} (b n : Tm Γ .nat) :
+      Deriv Δ (.imp ((Formula.eq n .zero).neg)
+        ((Formula.eq (.bump (.succ (.succ b)) n) .zero).neg))
   | eqRefl {Γ as} {Δ : Ctx Γ as} {τ : Ty} (t : Tm Γ τ) : Deriv Δ (.eq t t)
   -- **Leibniz, at every type.**  One rule; every congruence follows.
   | eqSubst {Γ as a c} {Δ : Ctx Γ as} {s t : Tm Γ c}

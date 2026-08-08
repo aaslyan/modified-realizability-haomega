@@ -233,6 +233,22 @@ theorem soundness : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {
           refine MR_congrEnv _ _ _ ?_ _ (ihx y hOLt)
           intro σ w; cases w <;> rfl
   | eqRefl t => intro e ε h; rfl
+  | convPredZero => intro e ε h; rfl
+  | convPredSucc t => intro e ε h; rfl
+  | convGoodZero s => intro e ε h; rfl
+  | convGoodSucc s t => intro e ε h; rfl
+  | ordBump b n =>
+      intro e ε h
+      exact Realizability.ordOf_bumpN (k := b.eval e + 2) (by omega) (n.eval e)
+  | ordPredLt b n =>
+      intro e ε h z hz
+      have hn : n.eval e ≠ 0 := fun h0 ↦ hz () h0
+      exact Realizability.oltN_eq_one_iff.mpr
+        (Realizability.olt_ordOf_of_lt (by simp only [Tm.eval]; omega) (Nat.pred_lt hn))
+  | bumpNeZero b n =>
+      intro e ε h z hz y hy
+      exact absurd hy
+        (Realizability.bumpN_ne_zero (by simp only [Tm.eval]; omega) (fun h0 ↦ hz () h0))
   | eqSubst φ D₁ D₂ ih₁ ih₂ =>
       intro e ε h
       have heq := ih₁ e ε h

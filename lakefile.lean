@@ -28,6 +28,17 @@ require mathlib from git
 @[default_target]
 lean_lib «Realizability» where
 
+/-- **The HA^ω development** (the `haomega` branch's reason for existing).
+
+A *parallel* core: Heyting arithmetic in all finite types, with an
+intrinsically-typed System T term language.  It deliberately imports nothing
+from `Realizability` — the first-order development stays in the tree as the
+reference implementation to compare against, not as a dependency.  See
+`HAOMEGA.md`. -/
+@[default_target]
+lean_lib «HAomega» where
+  globs := #[.submodules `HAomega]
+
 /-- The vendored Kleene–Kreisel continuous-functionals code — 12 files
 under `Realizability/Core/ContinuousFunctionals/ContinuousFunctionals/`,
 in the `ContinuousFunctionals` namespace, so

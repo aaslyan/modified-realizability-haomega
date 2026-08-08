@@ -26,6 +26,22 @@ Hercules chops and however many heads grow") is therefore proved in the
 metatheory, in `HydraGeneral.lean`, and `hydraStep_play` shows the
 fragment's battle is one of those plays.
 
+Goodstein and Hydra are the two that need `TI(ε₀)`, which is why they
+carry the narrative — but the map below covers **six** theorems proved
+inside the fragment, and the other four need no ordinals at all: Tower of
+Hanoi (§1.8), Pascal mod 2 (§1.9), greatest common divisor (§1.10), and
+Sperner's lemma in 1D (§1.11).  §1.12 is the Fibonacci **on-ramp** — the
+easy case, written last but meant to be read first — and §1.13 is how to
+*look at* the programs all of them extract to.  Reading §1.12 → §1.8 →
+§1.6 is a gentler route through the same machinery than reading
+straight down.
+
+§1.14 is the odd one out and the place to go if you want to see a
+program *run* rather than be certified: a second, uncertified extraction
+that deletes the ambient-level machinery, under which the gcd
+program — certified since Phase E2 and executable at no input until
+now — returns `gcd 12 18 = 6`.
+
 ---
 
 ## 1. Dependency-ordered theorem map
@@ -62,9 +78,9 @@ noted only where they help.
 
 | # | Declaration | File | What it gives you |
 |---|---|---|---|
-| 15 | `Term`, `Term.eval`, `numeral` | `Syntax.lean` | Terms over `{0, succ, +, ×, pred, exp, bump, good, prec, ord}`, and since H4 also `{hcut, hydra, hord}`. |
+| 15 | `Term`, `Term.eval`, `numeral` | `Syntax.lean` | Terms over the **21-symbol** signature: `{0, succ, +, ×, pred, exp, bump, good, prec, ord}` (through Phase C), `{hcut, hydra, hord}` (H4), `{hcons, happ, mvcount, solves}` (Hanoi E1–E2), `{xor, pas}` (F1–F2), `look` (S1, see §1.11), `fib` (Phase Fib) — plus `var`, giving `Term` 22 constructors. |
 | 16 | `Formula`, `FreeIn`, `subst`, `SubstOK`, `FreshIn` | `Syntax.lean` | Formulas (`∧∨→⊥`, `∀`, and since D0 `∃`) and the substitution bookkeeping. |
-| 17 | **`Deriv`** | `Syntax.lean` | The **70-rule** natural-deduction family (39 before Phase C; then `tiEps0`, `precNum`, `eqCongPrec`, `eqCongOrd`, `exI`, `exE`, D5's three, H4's seven, E2's eight and F2's seven).  Read the constructor list in order; the comments mark which phase added what. |
+| 17 | **`Deriv`** | `Syntax.lean` | The **76-rule** natural-deduction family (39 before Phase C; then `tiEps0`, `precNum`, `eqCongPrec`, `eqCongOrd`, `exI`, `exE`, D5's three, H4's seven, Hanoi's eight, F2's seven, S1's two, and Fibonacci's four `fibZero`/`fibOne`/`fibSucc`/`eqCongFib`).  Read the constructor list in order; the comments mark which phase added what.  Note it is an inductive in `Type`, not `Prop`, so `extract` can recurse on it. |
 
 ### 1.4 Realizability, extraction, soundness
 
@@ -136,7 +152,7 @@ Goodstein's and Hydra's were linear chains.
 | 52 | **`hanoiTheorem`** | `HanoiTheorem.lean` | `⊢ ∀n∀f∀t∀v ∃k. Solves(n,f,t,v,k) ∧ MoveCount k = 2^n − 1`, by ordinary `ind`. |
 | 53 | `hanoiSolution`, **`hanoiSolution_spec`**, `hanoiMoves` | `HanoiExtraction.lean` | The extracted solver, correct and optimal at every input, and its output decoded into readable `(src,dst)` pairs — the classical sequences, `#eval`ed at n=1..4. |
 
-### 1.9 The Pascal layer (F1–F4) — the third theorem, and the one you can *see*
+### 1.9 The Pascal layer (F1–F4) — the fourth theorem, and the one you can *see*
 
 The lightest infrastructure of all: a decidable disjunction, so the
 extract is a decision **function**, not a witness — and the picture it
@@ -150,6 +166,108 @@ draws is the theorem, not an illustration of it.
 | 57 | `pasTag`, **`pasDecide_eq`**, `pasTriangle` | `PascalExtraction.lean` | The disjunction's tag as a decision procedure, proved correct at every `(n,k)` from soundness — and the Sierpiński triangle it prints. **Start here if you want to see a theorem rather than read one.** |
 | 58 | `pasN_even`, `pasN_lucas_step`, **`pasN_eq_one_iff`**, `pasN_eq_one_iff_land` | `Lucas.lean` | **Kummer/Lucas at p=2** (Phase G): `C(n,k)` is odd iff `k`'s bits are a submask of `n`'s. The one theorem in the Pascal work that is *about* the triangle rather than about `pas`'s definition — it is why the picture is the gasket. Metatheory, not fragment; the header and STATUS say precisely why the fragment cannot state it. |
 | 59 | **`binEvenDeriv`**, `binOddDeriv`, `bin_even_via_fragment` | `PascalBinary.lean` | The four binary step identities — Lucas's core — derived **inside** the fragment by `ind`, with the round trip back to the value level. The induction alternates even/odd rows: the gasket's self-similarity as a proof term. |
+
+### 1.10 The order + Euclid layer (Z0, Euclid E1–E2) — the fifth theorem, and the one with *no new symbols*
+
+> **Phase-label warning.**  "E1"–"E5" are Hanoi's sub-phases (§1.8);
+> "E1"/"E2" are *also* the labels of the order foundation and the Euclid
+> work below.  They are different phases that happen to share letters.
+> STATUS.md has both under separate `##` headings; when a label is
+> ambiguous, go by the file.
+
+The interesting constraint here is what this layer *refuses* to add.
+Order (`<`, `≤`) and divisibility (`∣`) are not symbols and not axiom
+schemas — they are **defined**, as existentials over `+` and `×` that the
+fragment already had.  So every order and divisibility fact below is a
+derivation rather than an import, and the layer costs the signature
+nothing.  Contrast Sperner's `look` in §1.11, which is the one place the
+discipline genuinely breaks.
+
+| # | Declaration | File | What it gives you |
+|---|---|---|---|
+| 60 | `ltT`, `leT`, `ltZeroElim`, `ltSuccSelfV`, **`ltStepDown`** | `StrongInduction.lean` | Numeric order as a *defined* notion: `y < t := ∃d. succ y + d = t`. `ltStepDown` (`z<y` and `y<succ v` give `z<v`) is the load-bearing one — it is what discharges the induction hypothesis everywhere below. `plusAssocDeriv` was added to land it. |
+| 61 | `caseNatDeriv`, **`trichotomyDeriv`** | `StrongInduction.lean` | The `0`/`succ` case-split surrogate, and `⊢ ∀a∀b. a≤b ∨ b<a` — the comparison Euclid branches on. Recall the standing device from §1.9: the fragment cannot case-split a variable, so `ind` with the hypothesis discarded *is* the case split. |
+| 62 | `demoAuxDeriv`, **`strongIndDemo`** | `StrongInduction.lean` | **Strong induction derived from `ind`** — the numeric-`<` analogue of `tiEps0`, but *derived*, not primitive, via `Aux(v) := ∀y. y<v → φ(y)`. **Read the header for the device that makes it work:** the fragment has no formula-level Leibniz, so `φ(y)` is never *transported* across an equation — it is *produced at `y`* by applying progressiveness there and discharging its premise from the IH through `ltStepDown`. Same flavour as Goodstein's naming trick and Hanoi's `ihRenamed`: routing around naive substitution. Shipped **concretely** (`φ := x=x`) through the full scaffold; a generic-in-`φ` former is deliberately deferred. |
+| 63 | `distribDeriv`, `dvdT`, `dvdReflDeriv`, `dvdZeroDeriv`, `dvdAddDeriv` | `Euclid.lean` | Divisibility, likewise defined: `d ∣ a := ∃q. a = d·q`. `distribDeriv` (`d·(x+y) = d·x + d·y`) is a genuine `ind` theorem and the algebraic engine of the rest. |
+| 64 | `cancelAddDeriv`, `addEqZeroDeriv`, **`dvdSubDeriv`** | `Euclid.lean` | The subtraction side: `d∣a → d∣(a+c) → d∣c`. This is what makes *subtractive* Euclid go through without a monus symbol. |
+| 65 | **`gcdTheorem`** | `GcdTheorem.lean` | `⊢ ∀a∀b. ∃g. g∣a ∧ g∣b ∧ ∀d.(d∣a→d∣b→d∣g)`. The extracted `g` **is** the gcd — there is no `gcd` symbol. **Measure: strong induction on the sum `a+b`**, since neither argument decreases at every subtractive step but the sum does. Two things to read for: **no positivity precondition** (dropped as unnecessary — `gcd(0,0)=0` realizes the spec), and **both naive-substitution dodges composed** — the sub-sum is *named* by a fresh `∀` (Goodstein's device) *and* φ's inner `∀a∀b` is α-renamed (Hanoi's device). The `b<a` branch recurses on `(b, succ s)` so recombination needs no commutativity. |
+| 66 | `gcdWitness`, `gcdWitness_dvd`, `gcd_derivBound` | `GcdExtraction.lean` | The extract, and a certified-but-**unrunnable** one: `derivBound gcdTheorem = 41` (the repository's deepest derivation, against Goodstein's 12), so pure-type operations nested 40 deep mean even `gcdWitness 0 0` does not return. `gcdWitness_dvd` still proves from soundness that it is a common divisor at *every* `(a,b)`. Read this next to §1.11's Sperner entry: the same wall, and there it is worked around. |
+
+### 1.11 The Sperner layer (S1) — the sixth theorem, and the one that forced a symbol
+
+| # | Declaration | File | What it gives you |
+|---|---|---|---|
+| 67 | `lookN`, `colorCode`, `lookN_colorCode` | `Coloring.lean` | The `k`-th colour of the coloring coded by `w`, over `Hanoi.lean`'s cons-list and Phase C's choice-free pairing. Sits before `Syntax.lean` because `Term.eval` evaluates `look` by it — so, like Hydra's and Hanoi's value layers, it is inside `extract` and must stay choice-free. |
+| 68 | `look` — **the one genuinely new symbol** | `Coloring.lean`, `Syntax.lean` | Worth stopping on, because it is the exception to the discipline §1.10 illustrates. Order and divisibility could be *defined* as existentials; `c k` for a bound `k` cannot. It is **data access** — a decode recursion, not a relation — so no `∃`-encoding reaches it. The fragment has no function variables either, so the arbitrary coloring `c` is a `ℕ` **code**. Added through all ~16 sites; every pre-existing `#print axioms` line is unchanged. |
+| 69 | `invP`, `spernerInduction` | `SpernerTheorem.lean` | The forward scan: `ind` on the invariant `P(m) := (c m = 0) ∨ ∃k<m. c k ≠ c(k+1)`. The step compares `c(m+1)` to `0` by `eqDec` and either stays left or reports the crossing at `m`. |
+| 70 | **`spernerTheorem`** | `SpernerTheorem.lean` | `⊢ ∀n∀c. (c 0=0) → (c n=1) → ∃k. k<n ∧ c k ≠ c(k+1)` — Sperner's lemma in 1D, the discrete intermediate value theorem. **No `TI(ε₀)`**: an ordinary PA-strength theorem by `ind`, reusing §1.10's `ltT`. Note the delivered generality: it is proved for **arbitrary `ℕ`-valued** colorings — the `{0,1}` restriction is never used, so binary Sperner is the special case. 2D Sperner and Brouwer are **explicitly out of scope** (they need a triangulation object). |
+| 71 | `spernerWitness`, `spernerWitness_spec`, **`spernerScan`** | `SpernerExtraction.lean` | The extract is a genuine **linear scan returning the *first* crossing** — forced by the invariant, which carries the minimal crossing once found and never revises it, and `#guard`ed on multiple-crossing colorings (`[0,1,0,1] → 0`). **Read `spernerScan` for the general workaround to §1.10's wall:** the ambient-11 realizer overflows the interpreter, but the witness numeral is **ambient-independent**, so the *same* derivation is read at ambient 5 — checked to agree — and that one evaluates. |
+
+### 1.12 The Fibonacci on-ramp (Phase Fib) — chronologically last, but **read it first**
+
+Deliberately the easy case: the most recognizable recursive function,
+extracted by the pipeline **unchanged**, with no ordinals anywhere.  It
+was written after everything else but is meant to sit *before* Goodstein
+in the narrative — if §1.6 was heavy going, start here and go back.
+
+| # | Declaration | File | What it gives you |
+|---|---|---|---|
+| 72 | `fibPair`, `fibN`, `fibN_succ_succ` | `Signature/Fibonacci.lean` | `fib` as a value symbol, via a *structural* paired recursion `(a,b) ↦ (b, a+b)` — so it reduces in the kernel (`fibN 10 = 55` by `rfl`) and the `fibSucc` schema is `rfl`-sound. |
+| 73 | **`fibPairedTheorem`**, `fibBody`, `fib_lvl` | `FibonacciTheorem.lean` | `⊢ ∀n. (∃y. fib n = y) ∧ (∃z. fib(n+1) = z)`, by **ordinary `ind` on a paired invariant**. Two design points worth the read. *Why paired:* `fib(n+2)` needs two previous values — the course-of-values snag — dodged by carrying the pair, so the step is exactly `(y,z) ↦ (z, y+z)`. *Why `∧`-of-`∃` and not `∃y∃z`:* both are `lvl 0`, but nested existentials let the step's outer `exI` witness capture the inner binder's variable, restarting the renaming dance; written as a conjunction each body is atomic and nothing captures. `fib_lvl := rfl` confirms `lvl 1` on the nose. |
+| 74 | `fibonacci`, `fibonacci_spec`, `fibNext`, **`fib_pair_spec`**, `fibonacci_ten` | `FibonacciExtraction.lean` | `derivBound = 5`, so unlike gcd and Sperner it *runs* — but exponentially (≈ ×4/step, the D4/D6 wall), so `#guard`s stop at `n=3`. **`fib_pair_spec` is the one to look at:** reading *both* witnesses recovers the iterative loop's exact pair-state, `(0,1) → (1,1) → (1,2) → (2,3)` — the `(a,b) ↦ (b,a+b)` iteration falling out of a proof that never mentions a loop. The headline `fibonacci 10 = 55` is `fibonacci_ten`: **certified through `fibonacci_spec`, not evaluated**, exactly as Goodstein's `m = 4` and gcd are. Note `#print axioms fibonacci = [propext, Quot.sound]` — the extracted function itself, traced. |
+
+### 1.13 Looking at the extracted program (Phase P) — read this when you want to *see* the artifact
+
+Everything above proves things.  This layer shows you what was produced.
+None of it is certified content: the two `Meta/` modules are `partial
+def`s and macros with no theorems, and they add no axioms.
+
+Start with the problem, because it is not obvious that there is one.
+**The extracted realizer cannot simply be printed.**  `#reduce (extract
+goodsteinTheorem …)` never returns — it forces `tiRecC`, the same wall
+that stops `goodsteinStopTime 2`.  And where reduction *does* finish it
+over-reduces: the repository's smallest realizer, `extract
+goodThreeExDeriv`, collapses to `fun n z => 30` (that is `Nat.pair 5 0`),
+so the witness `5` the proof supplies is not in the output.
+
+| # | Declaration | File | What it gives you |
+|---|---|---|---|
+| 75 | **`#realizer d`**, `toSkel` | `Meta/RealizerDisplay.lean` | The realizer's *structure*, by walking the **derivation** rather than the extracted value — so it never calls `extract`, never builds a `PureType`, and terminates exactly where `#reduce` cannot. `goodsteinTheorem` and `hydraTheorem` come out as 29-line skeletons. Read the collapse rule in the header: a sub-derivation whose *conclusion* is an equation or `⊥` is contentless, so it becomes one `·` leaf — which is why 29 lines is the whole computational scaffolding and none of the equational chain. |
+| 76 | `toSkel`, again — as **a per-rule site** | `Meta/RealizerDisplay.lean` | It matches every `Deriv` constructor with no wildcard, so a new rule breaks its build, exactly like `extract` / `derivBound` / `soundness` / `extract_tracked` — and, since §1.14, `emit` and `hsEmit`. Seven sites in total. If you are extending the fragment, these are the files people forget. |
+| 77 | **`#realizerCH d`**, `toCH` | `Meta/RealizerDisplay.lean` | The same walk as `program-op — logic-rule ⟦proposition⟧`, one line per node: the Curry–Howard extraction map made legible instead of asserted. `paper/curry-howard.tex` is a standalone figure of it. **Caveat, and STATUS Phase P records it as a gap:** `toCH` *does* use a wildcard, so a newly added content-bearing rule is silently mislabelled `· — axiom (proof-irrelevant)` rather than breaking the build. |
+| 78 | `#program d` | `Meta/RealizerDisplay.lean` | Pseudocode rendering of the same skeleton. Explicitly a generated **display view, not the certified artifact** — the artifact remains `extract D`, correct by `soundness`, continuous by `extract_continuous`. It dispatches on `toSkel`'s display strings, so treat its output as illustrative. |
+| 79 | `witness₁…₄`, `tag₂`, `extractedAt`, `extractedCtQ` | `Meta/ProgramExtraction.lean` | The "apply the realizer to numerals, read the witness or tag" boilerplate, factored. It **re-proves nothing** — and it is *not* a compiler from Lean theorems: a Lean theorem must first be written as a `Formula` and proved as a `Deriv`. `EXTRACTED_PROGRAMS.md` is the index of the resulting programs. |
+| 80 | **`stopBySearch`** vs **`minStop`** vs `goodsteinStopTime` | `Theorems/Goodstein/GoodsteinSearch.lean` | **The clearest single statement of what extraction buys.** The μ-search `stopBySearch` must be `partial`: nothing bounds it, and its totality *is* Goodstein's theorem. `minStop := Nat.find (goodReachesZero m)` is the same search made *total* — and it type-checks only because `goodReachesZero` **is** `goodsteinStopTime_spec`, so the μ-operator literally consumes the theorem as its termination argument. "The search halts iff the theorem holds" becomes the type of `Nat.find`. Two honesty notes in the header: the proof is erased at runtime (so the certificate buys termination, *not* speed — `minStop 4` is as unreachable as the naive loop), and its `Classical.choice` is metatheory, not an extracted-program budget. |
+| 81 | `Deriv.bumpNeZeroNumeral`, `Deriv.neZeroOfEqSucc` | `Theorems/Goodstein/OrdinalDescent.lean` | Every **closed numeral** instance of `bumpNeZero` derived *without* the schema, from `bumpNum` + equality + `succNeZero`. The first dent in the import ledger, aimed at the smallest remaining Goodstein import. The uniform open-term schema is still imported — nothing was removed. |
+
+### 1.14 The level-free emitter (Phase X) — where the certified programs finally *run*
+
+The uncomfortable fact this section answers: the repository contains a
+**certified program that has never been executed.**  `derivBound
+gcdTheorem = 41`, so `gcdWitness 0 0` does not return at any input at all.
+
+The fix is a second extraction rather than an optimization, and it turns
+on one observation: the realizers' cost is not their computational
+content.  It is the `PureType` tower and the transports — scaffolding
+that exists so `MR` can be stated at a flexible ambient and
+`extract_continuous` can quantify over all derivations at once, and that
+computes nothing.  Delete it and what remains is System T plus one
+well-founded recursor.
+
+**Read the scope note first.**  Nothing here is certified: there is no
+theorem relating `emit` to `extract`, and no soundness theorem for
+`emit`.  These are generated views, exactly like `#program`'s pseudocode.
+What *is* checked, every build, is agreement with the certified extracts
+wherever those terminate.
+
+| # | Declaration | File | What it gives you |
+|---|---|---|---|
+| 82 | **`tyOf`**, `defaultOf`, `tyOf_subst` | `Meta/EmitLean.lean` | The type translation, and the whole of the design: `⟦∀x φ⟧ = ℕ → ⟦φ⟧`, `⟦∃x φ⟧ = ℕ × ⟦φ⟧`, equations `Unit`. Note what is **absent** — no level index and no dependence on `ρ`, which is exactly why a realizer's type only ever depended on `lvl`. `tyOf_subst` is the one lemma the module needs, and every `cast` in `emit` is it. |
+| 83 | **`emit`** | `Meta/EmitLean.lean` | `Deriv Γ φ → Ctx Γ → tyOf φ` — a total Lean function, not a string generator, so Lean type-checks it. Choice-free (`[propext, Quot.sound]`). **Read the `tiEps0` case:** the premise `y ≺ x` is an equation, so its realizer is contentless and carries no evidence of descent; `emit` re-*decides* `OLt` at the recursive call and falls back to a default, which is exactly what `tiRecC` does and for the same reason. |
+| 84 | **`emGcd`**, and the `#guard`s | `Meta/EmitDemo.lean` | **Start here.** `emGcd 12 18 = 6`, from the derivation whose certified realizer evaluates at no input whatsoever. The module runs two kinds of check at every build: *agreement* with the certified extract wherever it terminates (Fibonacci `n≤3`, Goodstein `m≤1`, Hydra code ≤1, Hanoi's decoded move lists, all of Pascal row 6), then *reach* past that point. The agreement checks are evidence in `spernerScan`'s sense — read the same derivation a cheaper way and verify the readings match — not proof. |
+| 85 | the reach table | `Meta/EmitDemo.lean` header | Goodstein `m=1 → 3`, Fibonacci `n=3 → 25`, gcd nothing → hundreds. And **Hanoi `n=4 → n=4`, unchanged** — which is a result, not a disappointment: STATUS has claimed since E4 that Hanoi's wall is the *encoding*, not the extraction, and deleting the entire ambient tower moved it not at all. |
+| 86 | `hsTy`, `hsEmit`, **`#haskell`** | `Meta/EmitHaskell.lean` | The same walk emitted as Haskell, mirroring `tyOf`/`emit` clause for clause. Verified end to end — the generated modules compile under GHC and run, including `gcd 1071 462 = 21`, which the *Lean* emitter times out on. Output is small (gcd is 6 KB from a 531-line derivation) because the collapse rule prints equational sub-derivations as `()`. |
+| 87 | `hsPrelude` | `Meta/EmitHaskell.lean` | The second trusted boundary, split explicitly rather than papered over: arithmetic/`fibN`/`pasN`/`xorN` are **implemented**; everything decoding Phase C's pairing is a **stub** naming its Lean source, deliberately an `error` rather than a re-implementation that might silently diverge. So gcd, Fibonacci and Pascal emit to runnable Haskell; the rest emit structurally complete programs awaiting the prelude. **Also read the `tiRec` warning:** Haskell cannot express well-founded recursion along `≺`, so an emitted Goodstein program is one Haskell cannot certify halts — epistemically back beside `stopBySearch` (§1.13, row 80), which is exactly the distinction Phase P4 draws. |
 
 ---
 
@@ -276,8 +394,18 @@ cd modified-realizability-lean
 #    lakefile.lean) is downloaded on first build.
 lake build
 
-# 3. Zero placeholders.
-grep -rn "sorry\|admit" Realizability/*.lean            # expect: no matches
+# 3. Zero placeholders.  Note the scoping: since the layered reorg the
+#    sources live in subdirectories, so a `Realizability/*.lean` glob
+#    matches nothing and would "pass" vacuously.  Recursive, word-boundary,
+#    and excluding the vendored read-only mirror:
+grep -rnw "sorry\|admit" Realizability/ --include="*.lean" \
+     --exclude-dir=ContinuousFunctionals                # expect: no matches
+
+# 4. The authoritative check, since Lean reports `sorry` as a *warning*
+#    rather than an error: no extracted or certified declaration may
+#    depend on `sorryAx`.  It would appear in the `#print axioms` lines
+#    the build already prints.
+lake build 2>&1 | grep sorryAx                          # expect: no matches
 ```
 
 `lake build` already prints every `#print axioms` result and every
@@ -285,7 +413,7 @@ grep -rn "sorry\|admit" Realizability/*.lean            # expect: no matches
 
 ```bash
 cat > /tmp/check.lean <<'EOF'
-import Realizability.GoodsteinExtraction
+import Realizability.Theorems.Goodstein.GoodsteinExtraction
 namespace Realizability
 
 -- D2: the theorem, at exactly the claimed type
@@ -319,7 +447,7 @@ And the Hydra claims (H1–H6):
 
 ```bash
 cat > /tmp/hcheck.lean <<'EOF'
-import Realizability.HydraExtraction
+import Realizability.Theorems.Hydra.HydraExtraction
 namespace Realizability
 
 -- H5: the theorem, at exactly the claimed type
@@ -389,3 +517,83 @@ checked is the unfolded type;
 The build itself is the strongest check: it fails if any `#print axioms`
 line disagrees only in the sense that a reviewer reading the log will see
 it, so read the log rather than trusting this file.
+
+And the Phase-P claims — the display commands, the search/descent
+contrast, and the first internalized piece of `bumpNeZero`:
+
+```bash
+cat > /tmp/pcheck.lean <<'EOF'
+import Realizability.Meta.RealizerDisplay
+import Realizability.Theorems.Goodstein.GoodsteinSearch
+namespace Realizability
+
+-- P1: the realizer you cannot print, printed.  The witness `5` is visible
+-- here and is exactly what `#reduce` loses to `fun n z => 30`.
+#realizer goodThreeExDeriv
+
+-- P2: the same derivation as the Curry-Howard map.
+#realizerCH goodThreeExDeriv
+
+-- P1 again, on a realizer `#reduce` cannot evaluate at all.
+#eval (Realizability.RealizerDisplay.realizerSkeleton goodsteinTheorem).splitOn "\n" |>.length
+
+-- P4: search versus descent.  Same column, two termination guarantees.
+#eval [stopBySearch 0, stopBySearch 1, stopBySearch 2, stopBySearch 3]
+#eval [minStop 0, minStop 1, minStop 2, minStop 3]
+#print axioms minStop
+
+-- P5: the extraction helpers are choice-free.
+#print axioms witness₁
+#print axioms tag₂
+
+-- P6: closed numeral instances of `bumpNeZero`, without the schema.
+#print axioms Deriv.bumpNeZeroNumeral
+end Realizability
+EOF
+lake env lean /tmp/pcheck.lean
+```
+
+Expected output, measured and quoted verbatim:
+
+```
+exI  ⟨witness = 5, ·⟩
+   · ⟨contentless⟩  good(3,5) = 0
+
+PROGRAM  —  LOGIC RULE  ⟦ PROPOSITION ⟧
+return ⟨5, ·⟩  — ∃-intro  ⟦∃x1.good(3,x1) = 0⟧
+   ·  — equation (proof-irrelevant)  ⟦good(3,5) = 0⟧
+
+30
+[0, 1, 3, 5]
+[0, 1, 3, 5]
+'Realizability.minStop' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Realizability.witness₁' depends on axioms: [propext, Quot.sound]
+'Realizability.tag₂' depends on axioms: [propext, Quot.sound]
+'Realizability.Deriv.bumpNeZeroNumeral' depends on axioms: [propext, Quot.sound]
+```
+
+Four lines are worth pausing on.
+
+The `30` is the Goodstein skeleton's line count (29 rendered lines plus
+the trailing newline's empty segment).  It is the point of P1: that
+derivation's extracted realizer is one `#reduce` never returns from, and
+this prints its whole computational scaffolding in 29 lines because every
+equational sub-proof collapses to a `·` leaf.
+
+The two `[0, 1, 3, 5]` columns are the *same* stopping times computed by
+the naive `partial` μ-loop and by `Nat.find`.  The second is total only
+because it consumes `goodsteinStopTime_spec` as its termination
+argument — that is the whole content of P4, and it is a typing fact, not
+a comment.
+
+`minStop`'s `Classical.choice` is **not** a regression in the extracted
+program budget.  It is metatheory: `minStop` reasons *about* an extract
+and inherits choice through `soundness`.  Every extracted program in the
+repository is still `[propext, Quot.sound]` — which the two helper lines
+below it show for the reading API itself.
+
+`Deriv.bumpNeZeroNumeral` is a derivation *of the fragment*, so its
+budget is the ordinary one; what matters is what is absent from its
+proof, namely the `bumpNeZero` schema.  It is built from `bumpNum`,
+equality reasoning, and `succNeZero` alone.  The uniform open-term schema
+is still imported — see STATUS.md Phase P6 and `RESEARCH_PLAN.md` §2.

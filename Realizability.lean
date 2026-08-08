@@ -48,3 +48,6 @@ import Realizability.Theorems.Fibonacci.FibonacciTheorem
 import Realizability.Theorems.Fibonacci.FibonacciExtraction
 import Realizability.Meta.ProgramExtraction
 import Realizability.Meta.RealizerDisplay
+import Realizability.Meta.EmitLean
+import Realizability.Meta.EmitHaskell
+import Realizability.Meta.EmitDemo

@@ -3371,6 +3371,400 @@ in scope for this phase — this leaves `fib` in the state its brief needs.
 
 Regression: 711 jobs green, zero `sorry`.
 
+## Phase P (presentation — the extracted program made visible): COMPLETE
+
+The first refinement block that produced Lean code rather than moves and
+renames.  Nothing here changes a certified declaration: the two new
+`Meta/` modules add no axioms, and every pre-existing `#print axioms`
+line is unchanged.  What it adds is the ability to *see* the artifact the
+pipeline produces, one genuinely new mathematical step, and the paper.
+
+Regression: **713 jobs green, zero `sorry`**, 17 linter warnings (unused
+variables / unused `simp` arguments, all pre-existing — see the
+refinement agenda below).
+
+### P1 — `#realizer`: the realizer's structure, since its value is unreadable
+
+`Realizability/Meta/RealizerDisplay.lean`.  The problem it solves is real
+and was previously undocumented: **the certified artifact could not be
+looked at.**  Two independent failures —
+
+- `#reduce (extract goodsteinTheorem …)` never returns.  It forces
+  `tiRecC`, the same wall that stops `gcdWitness 0 0` (Phase E2) and
+  `goodsteinStopTime 2` (D4).
+- Where reduction *does* terminate it **over-reduces**: the smallest
+  realizer in the repository, `extract goodThreeExDeriv`, collapses under
+  `#reduce` to `fun n z => 30` — that is `Nat.pair 5 0` — so the witness
+  `5` that the proof supplies is gone from the output.
+
+`#realizer d` sidesteps both by walking the **derivation** (a finite
+constructor tree) instead of the extracted value: it never calls
+`extract`, never builds a `PureType`, and never runs a recursion
+combinator.  So it terminates exactly where evaluation cannot.  Measured:
+`goodsteinTheorem` and `hydraTheorem` each render as a **29-line
+skeleton**, `fibPairedTheorem` as 20.
+
+**The collapse rule, and why it keys on the conclusion.**  A realizer of
+an equation (or `⊥`) is contentless — its value is junk and the `MR`
+clause ignores it — so any sub-derivation *whose conclusion* is an
+equation or `⊥` renders as a single `·` leaf, however it was proved.
+This is what folds `goodComputeDeriv`'s long equational chain into one
+node, and it is what makes 29 lines the right size for Goodstein: what
+survives is exactly the computational scaffolding (the `∀`-binders, the
+`eqDec` case split, the `exI` witness read-off, the `tiEps0` node, and
+the descent discharged against the induction hypothesis through three
+`wk`s).
+
+**`toSkel` is the fifth per-rule site.**  It matches every `Deriv`
+constructor with **no wildcard**, so a new rule breaks its build until
+given a case — exactly like `extract`, `derivBound`, `soundness`, and
+`extract_tracked`.  `CLAUDE.md`'s per-rule discipline section is updated
+to say five places, not four.  A new *function symbol* additionally needs
+a `termStr` case here.
+
+Pinned regression `#guard`: `realizerSkeleton goodThreeExDeriv` is fixed
+verbatim to the two-line `exI ⟨witness = 5, ·⟩` / `· ⟨contentless⟩
+good(3,5) = 0`, so the witness that `#reduce` loses is the thing the
+build now checks is displayed.
+
+### P2 — `#realizerCH`: the extraction map, rule by rule
+
+The same walk rendered as three columns per node — **program operation**,
+**logic rule**, **proposition** — so that extraction being
+structure-preserving is legible line by line rather than asserted.
+`λk. — ∀-intro`, `return ⟨5,·⟩ — ∃-intro`, `rec (well-founded on ≺) —
+TI(ε₀)`, and so on.  `paper/curry-howard.tex` (+`.pdf`) is a standalone
+figure of the same map.  Pinned `#guard`: line 1 of the correspondence
+view of `goodThreeExDeriv` is `return ⟨5, ·⟩  — ∃-intro
+⟦∃x1.good(3,x1) = 0⟧`.
+
+**Flagged deviation — `toCH` uses a wildcard, and its stated safety
+argument does not hold.**  The module header justifies the wildcard by
+"a new content-bearing rule would break `toSkel`'s build first."  That is
+true but does not give the property wanted: once the required `toSkel`
+case is added, `toCH` compiles again and renders the new rule as
+`· — axiom (proof-irrelevant)`, i.e. it produces a **wrong label rather
+than a missing case** — the one failure mode the per-rule discipline
+exists to prevent.  Recorded as a known gap, not a design decision; the
+fix is ~60 one-line cases routed through a shared contentless helper.
+`toSkel` itself is unaffected and remains wildcard-free.
+
+### P3 — `#program`: pseudocode, explicitly not the artifact
+
+A readability layer over the same skeleton, rendering the combinators as
+pseudocode (`allI ↦ fun k =>`, `exI ↦ return witness … with
+certificate`, `tiEps0 ↦ wellFoundedRecOnPrec`).  The module header states
+the scope correctly and it is restated here because it is the kind of
+claim that drifts: **the pseudocode is a generated reader-facing view,
+not the certified artifact.**  The certified artifact is still
+`extract D`, correct by `soundness` and continuous by
+`extract_continuous`.
+
+**Flagged compromise — the renderer dispatches on `toSkel`'s display
+strings.**  `pseudoHeader`/`leafPseudo` match string *prefixes* of the
+labels `toSkel` produces, so renaming a label (say `"ind / indRecC
+(recurse on succ)"`) silently degrades the pseudocode to echoing the raw
+label — no error, and only the three-line `goodThreeExDeriv` output is
+`#guard`ed.  The clean fix is to carry a rule tag as structured data in
+`Skel` and derive both renderings from it.  Left as-is deliberately (this
+is display-only code), but recorded so it is not mistaken for robustness.
+
+### P4 — search versus descent: the theorem as a totality certificate
+
+`Realizability/Theorems/Goodstein/GoodsteinSearch.lean`.  One function,
+the Goodstein stopping time `m ↦ s`, computed two ways, to exhibit what
+the extraction actually buys:
+
+- **`stopBySearch`** — the μ-operator, `μ s. goodN m s = 0`.  Lean
+  requires `partial`: nothing in the definition bounds the search, and
+  its totality *is* Goodstein's theorem.  The `partial` keyword is that
+  missing certificate, sitting in the source.
+- **`goodsteinStopTime`** (D3) — extracted from the proof, recursing
+  along `≺`.  A *total* `def`: termination is carried intrinsically by
+  well-foundedness, however large the intermediate values get.
+
+**The contribution is that the dependency is machine-checked, not
+narrated.**  `Nat.find` is total only when handed an existence proof, and
+the only one available is `goodReachesZero`, which *is*
+`goodsteinStopTime_spec`.  So `minStop := Nat.find (goodReachesZero m)`
+is the same μ-search as `stopBySearch` but total — **because it literally
+consumes Goodstein's theorem as its termination argument**.  "The search
+halts iff the theorem holds" stops being prose and becomes the type of
+`Nat.find`.
+
+Two honesty points, both recorded in the module and repeated here:
+
+- **The certificate buys termination, not speed.**  At runtime the
+  existence proof is erased, so `minStop` *evaluates* by the cheap
+  `goodN` search, not by the ambient-12 realizer.  `minStop 4` is
+  therefore as unreachable as the naive loop.
+- **Its budget is not an extracted-program budget.**  `#print axioms
+  minStop` reports `[propext, Classical.choice, Quot.sound]` — it is
+  metatheory inheriting choice through `soundness`, reasoning *about* an
+  extract.  The extracts themselves are unchanged at
+  `[propext, Quot.sound]`.
+
+Build-checked: `[minStop 0..3] == [0,1,3,5] == [stopBySearch 0..3]`, the
+published stopping times, and both agree with the ordinal-descent extract
+where it evaluates (`m = 0, 1`).  Independence from PA is **not** used
+and **not** claimed — the contrast needs only "an unbounded search halts
+iff a zero exists," which is elementary.
+
+### P5 — `ProgramExtraction`: the witness-reading boilerplate, factored
+
+`Realizability/Meta/ProgramExtraction.lean` packages the repeated "apply
+the realizer to numerals and read the witness/tag" pattern as
+`extractedFamily` / `extractedAt` / `extractedCtQ`, `apply₁…₄`,
+`witness₁…₄`, `tag₂` (with ASCII aliases for the paper).  It **re-proves
+nothing**; the module header is explicit that this is not a compiler from
+arbitrary Lean theorems, since a Lean theorem must first be represented
+as a `Formula` and proved as a `Deriv`.  Budget checked in-file: all
+computable helpers report `[propext, Quot.sound]`.
+`EXTRACTED_PROGRAMS.md` is the new quick index of the concrete programs.
+
+Three flagged points:
+
+1. **`Meta/` is no longer purely non-certified.**  `CLAUDE.md` describes
+   the layer as "display tooling, not part of the certified pipeline",
+   but `GoodsteinExtraction`, `HanoiExtraction`, and `PascalExtraction`
+   now import `Meta.ProgramExtraction` and define their headline extracts
+   through it.  The layer is currently half display, half load-bearing
+   API.  **Resolution pending** (refinement agenda): move
+   `ProgramExtraction` to `Core/`, where an API over `extract` belongs,
+   and keep `Meta/` at zero certified impact.
+2. **The call-site number changed meaning.**  `goodsteinStopTime` was
+   `extract … 12` with `12 = derivBound` matching the recorded
+   `goodstein_derivBound`; it is now `witness₁ goodsteinTheorem 11 m`,
+   where `11` is *bound minus arity* (the ambient level after the
+   applications).  Semantics are identical — a wrong number breaks the
+   `_spec` proof, so the build catches it — but the literal in the source
+   no longer matches the theorem that documents it.  Same at Hanoi
+   (26 → 22) and Pascal (8 → 6).
+3. **Adoption is 3 of 7.**  Migrated: Goodstein, Hanoi, Pascal.  Still
+   hand-rolling `fstPT (app₁ …)`: Sperner, gcd, Fibonacci, Hydra — and
+   `GoodsteinExtraction` itself retains two raw occurrences in its
+   `#eval` demonstrations.  Fibonacci needs a reader for the *first
+   conjunct's* existential (`fstPT (fstPT …)`), a shape the current API
+   does not cover, which is why it was not migrated.
+
+### P6 — the first dent in the import ledger: `bumpNeZeroNumeral`
+
+`Deriv.bumpNeZeroNumeral` (`Theorems/Goodstein/OrdinalDescent.lean`) —
+the only forward *mathematical* step in this phase.  For every concrete
+numeral `n`, the fragment now derives
+
+    n ≠ 0 → bump(b+2, n) ≠ 0
+
+**without the `bumpNeZero` schema**, from the numeral graph `bumpNum`,
+equality reasoning, and `succNeZero` (via the new helper
+`Deriv.neZeroOfEqSucc`, which turns "`t` is a successor" into "`t ≠ 0`").
+The supporting `bumpN_ne_zero` was reproved directly from
+`bumpN_pos_eq` rather than through `bumpN_lt_bumpN`.
+
+This is the first internalization step against `RESEARCH_PLAN.md`'s
+ledger, and it targets the schema that plan picks first, for the reason
+it gives: `bumpNeZero` is the smallest remaining Goodstein import.
+**What remains imported is the uniform open-term schema** — the closed
+instances are now derivable, the general one is not.  The open-term case
+needs case analysis on `bump` inside the fragment, which the signature
+does not currently support.  No schema was removed; the object theory
+still imports `ordBump`, `ordPredLt`, `bumpNeZero` exactly as before.
+
+New `#print axioms` lines, quoted verbatim:
+
+    'Realizability.bumpN_ne_zero'            … [propext, Quot.sound]
+    'Realizability.Deriv.neZeroOfEqSucc'   does not depend on any axioms
+    'Realizability.Deriv.bumpNeZeroNumeral'  … [propext, Quot.sound]
+
+`neZeroOfEqSucc` being *axiom-free* is the expected reading and worth
+keeping: it is a pure derivation-builder, assembling `succNeZero` with
+symmetry/transitivity and `impI`/`impE`, so it touches no quotient or
+propositional-extensionality reasoning at all.
+
+### P7 — the paper, and the planning ledger
+
+`paper/how-a-proof-becomes-a-program.{tex,pdf}` (LaTeX, numbered
+bibliography in `refs.bib`, TikZ figures including `sierpinski.tikz`),
+plus `paper/curry-howard.tex` (P2's figure) and the `#realizer` X-ray
+appendix built from `xray-goodstein.tex`/`xray-small.tex` — the appendix
+is what closes the loop, since it prints the artifact the rest of the
+paper describes.  LaTeX build products are `.gitignore`d, not tracked.
+
+`RESEARCH_PLAN.md` is a **planning ledger, not an implementation
+commitment** (its own words).  Its durable contribution is §2, the
+**internalization gap ledger**: every remaining imported schema
+(`ordBump`, `ordPredLt`, `bumpNeZero`; Hydra's `hordCutLt`) with its
+semantic theorem, why it is not internal, the missing object-language
+infrastructure, and a cost estimate.  That is the honest statement of
+where the object theory stops, and it belongs in the record.
+
+**Scope discipline in the paper — one item to fix.**  The paper is
+careful in the places that matter: Gentzen is cited for TI(ε₀) lying
+beyond PA, and the Hydra boundary is framed correctly as *inexpressible*
+("does not parse") rather than merely unprovable.  But two sentences
+(≈ lines 1315 and 1521) assert that Goodstein and Kirby–Paris "genuinely
+need" more than PA — a **necessity** claim, i.e. the independence result
+this repository's standing rule says is neither formalized nor claimed.
+Both are true statements of the literature; both need the citation and a
+"not formalized here" clause at that spot.  Not yet applied.
+
+### Budget
+
+Unchanged from the previous phase.  The two `Meta/` modules are
+`partial def`s and macros with no theorems; `GoodsteinSearch` is
+metatheory whose budget is explicitly labelled as such.  New lines only:
+
+    'Realizability.extractedFamily'         … [propext, Quot.sound]
+    'Realizability.extractedAt'             … [propext, Quot.sound]
+    'Realizability.witness₁'                … [propext, Quot.sound]
+    'Realizability.witness₄'                … [propext, Quot.sound]
+    'Realizability.tag₂'                    … [propext, Quot.sound]
+    'Realizability.witness1'                … [propext, Quot.sound]
+    'Realizability.tag2'                    … [propext, Quot.sound]
+    'Realizability.minStop'  … [propext, Classical.choice, Quot.sound]
+
+`minStop`'s classical dependency is metatheory (via `soundness`), not an
+extracted-program budget — see P4.
+
+### Out of scope, as stated
+
+- No independence claim, in the code or the paper's technical content
+  (the two prose sentences above are flagged for correction, not
+  defended).
+- `#program`'s pseudocode is a display view and is not certified to
+  correspond to the extract beyond `toSkel`'s own per-rule structure.
+- `bumpNeZero` is **not** internalized: closed numeral instances only.
+
+## Phase X (the level-free emitter): COMPLETE — the certified programs, executed
+
+A **second extraction** of the same derivations, into native Lean types
+(`Meta/EmitLean.lean`), plus a Haskell backend for the same walk
+(`Meta/EmitHaskell.lean`) and the evidence module that runs both on every
+case study (`Meta/EmitDemo.lean`).
+
+Regression: **716 jobs green**, zero `sorry`.
+
+### Why it exists
+
+The repository has always contained a **certified program it could not
+execute.**  `derivBound gcdTheorem = 41`, so the realizer is functionals
+nested 40 deep and `gcdWitness 0 0` does not return — at *any* input.
+Sperner overflows the interpreter at ambient 11; Goodstein stops at
+`m = 1`; Fibonacci at `n = 3`.
+
+### The observation the phase rests on
+
+**The realizers' cost is not their computational content.**  It is the
+`PureType` tower and the `liftR`/`dropR` transports, which exist so `MR`
+can be stated at a flexible ambient and so `extract_continuous` can
+quantify over every derivation at once.  None of that computes.
+
+The type translation makes this precise and is the whole of the design:
+
+    ⟦s = t⟧, ⟦⊥⟧ = Unit        ⟦φ→ψ⟧ = ⟦φ⟧ → ⟦ψ⟧
+    ⟦φ∧ψ⟧  = ⟦φ⟧ × ⟦ψ⟧         ⟦∀x φ⟧ = ℕ → ⟦φ⟧
+    ⟦φ∨ψ⟧  = ℕ × (⟦φ⟧ × ⟦ψ⟧)   ⟦∃x φ⟧ = ℕ × ⟦φ⟧
+
+It reads the connective skeleton only — **no level index, and no
+dependence on `ρ`**, which is exactly why a realizer's *type* only ever
+depended on `lvl`.  What is left is System T plus one well-founded
+recursor.  `emit` is choice-free: `[propext, Quot.sound]`.
+
+### Measured reach
+
+| theorem | certified extract | emitted | remaining wall |
+|---|---|---|---|
+| gcd | **no input at all** | hundreds (`700,525` in 8 s) | cost grows with `a+b` — subtractive Euclid through the strong-induction scaffold |
+| Fibonacci | `n = 3` | `n = 25` | none hit; linear |
+| Goodstein | `m = 1` | `m = 3` | `m = 4` is astronomical — the *mathematics* |
+| Hydra | code 1 | code 3 | as Goodstein |
+| Pascal | row 7 | row 7+ | none hit |
+| Hanoi | `n = 4` | `n = 4` | **unchanged — and that is a result** |
+
+The Hanoi row is worth keeping.  STATUS has claimed since E4 that Hanoi's
+wall is the *encoding* (code bit-length squares per move), not the
+extraction.  Deleting the entire ambient tower moved it not at all, which
+is independent confirmation of that diagnosis.
+
+### The evidence, and its exact strength
+
+`EmitDemo.lean` runs two kinds of build-time check.  **Agreement**: the
+emitted answer equals the *certified* extract's wherever the certified one
+terminates — Fibonacci `n≤3`, Goodstein `m≤1`, Hydra code ≤1, the decoded
+Hanoi move lists at `n≤3`, all of Pascal row 6.  **Reach**: the emitted
+program then runs past that point, with gcd cross-checked against
+`Nat.gcd`.
+
+**This is not a proof that `emit` and `extract` agree.**  No such theorem
+exists here, and none is claimed.  The agreement checks are evidence of
+the same species as `SpernerExtraction.lean`'s ambient-5-vs-ambient-11
+check — read the same derivation a cheaper way, verify the readings match
+— and they are run by the kernel every build rather than asserted.  A
+soundness theorem for `emit` is the obvious next step and is **not** done.
+
+Both emitters are therefore scoped exactly as `#program`'s pseudocode is:
+generated views, useful and unproved.  The certified artifact remains
+`extract`, with `soundness` and `extract_continuous`.
+
+### The one place a proof has to be recovered
+
+`tiEps0`'s premise `y ≺ x` is an equation, so its realizer is contentless
+and carries no evidence of descent.  `tiRecC` handles this by
+*re-deciding* `OLt` at the recursive call, falling back to a default;
+`emit` does the same.  `OLt` is decidable and `oLt_wf` is `Classical`-free,
+so nothing is smuggled in.
+
+### The Haskell backend, and what it costs
+
+`hsTy`/`hsDefault`/`hsEmit` mirror `tyOf`/`defaultOf`/`emit` clause for
+clause.  Verified end to end: the generated modules **compile under GHC and
+run**, giving `gcd → [6,1,0,12,21]` (including `gcd 1071 462 = 21`, which
+the *Lean* emitter times out on), `fib 0..15`, and Pascal rows 6 and 7
+matching the certified `pasTag`.  Emitted source is small — gcd is 6 KB
+from a 531-line derivation — because the collapse rule prints every
+equational sub-derivation as `()`.
+
+Three costs, all recorded rather than worked around:
+
+1. **Nothing checks the output.**  Lean type-checks `emit`; only GHC
+   checks `hsEmit`'s product.  This is the standard arrangement — Coq's
+   extraction to OCaml/Haskell sits in the trusted base rather than being
+   verified, which is what motivates verified-extraction work such as
+   CertiCoq.
+2. **`tiEps0` loses its termination guarantee.**  Haskell cannot express
+   well-founded recursion along `≺`, so `tiRec` is an ordinary recursive
+   function.  An emitted Goodstein program is one Haskell cannot certify
+   halts — epistemically back beside `GoodsteinSearch.lean`'s `partial def
+   stopBySearch`, which is precisely the distinction P4 exists to draw.
+   Agda, Idris, or Rocq would preserve it.
+3. **The prelude is a second trusted boundary.**  The value symbols need
+   Haskell copies whose fidelity is an assumption.  `hsPrelude` therefore
+   splits them explicitly: the arithmetic, `fibN`, `pasN`, `xorN` are
+   **implemented**; everything decoding Phase C's pairing (`bumpN`,
+   `goodN`, `ordOf`, `oltN`, the Hydra/Hanoi coders, `lookN`) is a
+   **stub** naming the Lean source to port from — deliberately an `error`
+   rather than a plausible re-implementation that might silently diverge.
+   So gcd, Fibonacci and Pascal emit to complete runnable Haskell;
+   Goodstein, Hydra, Hanoi and Sperner emit structurally complete programs
+   whose prelude must be finished first.
+
+### Per-rule discipline: now seven sites
+
+`emit` and `hsEmit` both match every constructor with **no wildcard**,
+bringing the count to seven (`extract`, `derivBound`, `soundness`,
+`extract_tracked`, `toSkel`, `emit`, `hsEmit`).  The ban matters more here
+than anywhere else: a new content-bearing rule falling through to a
+contentless realizer would still compile and still return answers, just
+wrong ones.  A new function symbol also needs an `hsTerm` case.
+
+### Out of scope, as stated
+
+- No soundness theorem for `emit`, and no theorem relating it to `extract`.
+- The Haskell prelude's pairing-dependent symbols are stubs, not
+  implementations; the theorems needing them do not run in Haskell yet.
+- No claim that the emitted programs are continuous, in `CtQ 2`, or
+  otherwise inherit any property proved of `extract`.
+
 ## Refinement targets (the consolidation phase's agenda)
 
 New-content work pauses after Sperner (the last *headline* theorem); the
@@ -3379,6 +3773,18 @@ consolidation period — a pedagogical easy case, and the `fib` prerequisite
 Zeckendorf needs.  The next phase is refinement.
 
 **Done in refinement so far:**
+- **The level-free emitter (Phase X)** — a second extraction into native
+  Lean types plus a Haskell backend, which finally *executes* the
+  certified-but-unrunnable programs (gcd above all).  Full account in
+  **Phase X** above, including what the agreement `#guard`s do and do not
+  establish.
+- **Presentation phase (P1–P7)** — the `#realizer` / `#realizerCH` /
+  `#program` display commands, the `ProgramExtraction` witness-reading
+  API, `GoodsteinSearch` (search versus descent), the first internalized
+  fragment of `bumpNeZero`, and the paper.  Full account in **Phase P**
+  above, including its four flagged items (`toCH`'s wildcard,
+  `#program`'s string dispatch, `Meta/`'s changed status, and the paper's
+  two necessity sentences).
 - **Layered directory reorg** — the flat `Realizability/*.lean` (38 files) is
   now `Ordinals/` · `Signature/` (value layers) · `Core/` (the engine) ·
   `Common/` (shared lemmas) · `Theorems/<name>/`; imports follow the path.
@@ -3443,3 +3849,48 @@ uses rather than speculation:
 - Documentation: keep HYDRA.md-style maps and the `#print axioms` quotes
   in step; the signature is now 21 symbols / 76 rules (Fibonacci's `fib`
   and its four schemas `fibZero`/`fibOne`/`fibSucc`/`eqCongFib`).
+
+**Added by Phase X** (the emitter's own gaps, in priority order):
+
+- **A soundness theorem for `emit`** — the phase's obvious sequel and the
+  thing that would move the emitted programs from "checked at points" to
+  "certified".  Two routes: prove `emit D` realizes `φ` directly in a
+  `tyOf`-valued relation (a second, much simpler `MR`), or relate `emit D`
+  to `extract D` through the transports.  The first looks far easier and
+  would not need the pure-type layer at all.
+- **Finish the Haskell prelude** — port the pairing-dependent symbols from
+  `Epsilon0`/`Hydra`/`Hanoi`/`Coloring`, so Goodstein, Hydra, Hanoi and
+  Sperner run in Haskell as gcd, Fibonacci and Pascal already do.  Worth
+  doing only with a differential check against the Lean values, since the
+  whole risk is silent divergence.
+- **An OCaml backend** — strict evaluation gives a predictable cost model
+  (the Haskell numbers above are muddied by laziness), and it is Coq
+  extraction's default target, so the comparison to prior work is direct.
+  `hsEmit` is the template; only the printer changes.
+
+**Added by Phase P** (each is a flagged item from the section above, with
+the fix already identified — these are the shortest items on the list):
+
+- **Move `ProgramExtraction` from `Meta/` to `Core/`.**  Three certified
+  extraction modules now depend on it, so `Meta/` no longer satisfies its
+  own "zero certified impact" description.  Moving it restores the
+  invariant; amending `CLAUDE.md` instead would weaken it.
+- **Remove `toCH`'s wildcard** (~60 one-line cases through a shared
+  contentless helper).  Its current safety argument is wrong: after a new
+  rule is added to `toSkel`, `toCH` silently mislabels rather than
+  failing to build.
+- **Give `Skel` a structured rule tag** so `#program` stops dispatching on
+  display-string prefixes, where a label rename degrades the output with
+  no error.
+- **Finish the `ProgramExtraction` migration** (4 of 7 call sites remain),
+  which needs one new shape: a reader for a witness under `∧` — Fibonacci's
+  `fstPT (fstPT …)`.
+- **Fix the paper's two necessity sentences** (≈ lines 1315, 1521): cite
+  Kirby–Paris and add "not formalized here", matching how the same file
+  already handles Gentzen.
+- **CI for `lake build`** — `RESEARCH_PLAN.md` Phase 1 lists it for
+  Aug–Sep 2026 and there is no `.github/`.  For a project whose test
+  suite *is* the build, this is the largest gap between the plan and the
+  repository.
+- **The 17 linter warnings** (unused variables, unused `simp` arguments),
+  also a `RESEARCH_PLAN.md` Phase 1 item: fix or intentionally silence.

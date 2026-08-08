@@ -95,27 +95,21 @@ def fibExtracted (n : Nat) : Nat := (fibRealizer.eval Env.nil n).1
 #guard fibExtracted 1000 % 1000000007 == 517691607
 #guard (fibExtracted 1000).repr.length == 209
 
-/-! ### The evaluation wall, diagnosed
+/-! ### The evaluation wall — historical note
 
-`fibExtracted` runs to `n = 26` and overflows the stack at about `n = 28`.
-That limit is **not** the extractor, and not the ambient-level problem this
-whole branch exists to remove.  It is arithmetic:
+An earlier version of `fibStep` used `Tm.addT` — addition *defined* by
+primitive recursion on the second argument, costing `y` steps per `x + y` —
+and `fibExtracted` then genuinely overflowed the stack near `n = 28`, since
+`fib n` cost `Θ(fib n)` recursor frames.  That diagnosis motivated making `+`
+a **primitive** term former (interpreted by `Nat.add`, defining equations as
+the conversion rules `convAddZero`/`convAddSucc`), which is how HA^ω is
+usually presented and what the first-order development also does.  `Tm.addT`
+remains as the proof that addition is definable.
 
-`Tm.addT` is `λx y. rec x (λk. λih. succ ih) y` — addition by primitive
-recursion on the second argument, so `x + y` costs **`y` steps**.  In
-Fibonacci the second argument *is* a Fibonacci number, so `fib n` costs
-`Θ(fib n)` recursor steps and the same depth of `Nat.rec` frames.  fib(26)
-already needs ~121 393 of them.
-
-So the object language's addition is unary, and that is a genuine property of
-System T terms, not an artefact of this implementation.  The fix is a design
-decision rather than a patch: add `+` as a **primitive** term former
-interpreted by Lean's `Nat.add`, with its two defining equations as conversion
-rules — which is how HA^ω is usually presented anyway, and which the
-first-order development also does (`zeroPlus`/`succPlus`).  `addT` then stays
-as the *proof* that addition is definable, while the primitive is what runs.
-
-Recorded rather than silently fixed, because it changes the term language. -/
+**Current behavior, verified by direct evaluation** (2026-08-08):
+`fibExtracted` at `26 / 27 / 28` returns `121393 / 196418 / 317811`
+instantly, and the `n = 100` and `n = 1000` guards above pass at every
+build.  There is no wall in this range. -/
 
 /-! ## It is readable
 

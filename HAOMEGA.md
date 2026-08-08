@@ -31,9 +31,9 @@ number:
 
 | compromise | where it is recorded | what HA^ω does to it |
 |---|---|---|
-| `hercules_wins` proved in the metatheory, because a strategy is a function and the fragment has no function variables | `HydraGeneral.lean` (H7), README scope note | dissolves — quantify over strategies directly |
+| `hercules_wins` proved in the metatheory, because a strategy is a function and the fragment has no function variables | `HydraGeneral.lean` (H7), README scope note | the *statement* becomes expressible (function variables); **not derived here** — `Hydra.lean` proves the one-battle theorem only, and no declaration states the all-strategies theorem |
 | `look` added as a symbol, the one place "no new symbols" was forced | `Coloring.lean` (S1), STATUS | dissolves — a coloring *is* a function |
-| `bump`/`prec`/`hcut`/`xor`/`look` enter by **numeral graph** rather than open-term schemas | CLAUDE.md "documented compromise" | dissolves — course-of-values recursion is definable in System T |
+| `bump`/`prec`/`hcut`/`xor`/`look` enter by **numeral graph** rather than open-term schemas | CLAUDE.md "documented compromise" | the numeral-graph *schemas* are gone; the symbols themselves were kept **primitive** (evaluated by the proven first-order value layer) rather than defined in System T — definable in principle, primitive in practice |
 
 And two costs measured during the emitter work (Phase X of the original):
 
@@ -45,72 +45,40 @@ And two costs measured during the emitter work (Phase X of the original):
   not move Hanoi's wall at all (`n = 4` before and after), which is what
   proved the encoding is a *separate* cost. HA^ω removes it at the root.
 
-## Status
+## Status (re-verified 2026-08-08 — see `HAOMEGA_DOSSIER.md` for evidence)
 
-**724 jobs green**, zero `sorry`, 1639 lines of new Lean. **The machinery is
-complete**: modified realizability, extraction, soundness, and continuity.
+**741 jobs green**, zero `sorry`/`admit`, 5,067 lines in `HAomega/`.
+Machinery complete and **all seven case studies done**, each with a running
+extracted program; `EXTRACTED_HAOMEGA.md` renders every realizer in three
+views (raw object / collapsed program / Haskell).
 
-| part | file | state |
-|---|---|---|
-| 1. Finite types + System T | `Syntax.lean` | ✅ `Tm.eval` axiom-free |
-| 2. Formulas, indexed by realizer type | `Formulas.lean` | ✅ equality at type 0, `eqAt` + `interp_eqAt` |
-| 3. `MR` + 28 rules | `Realizability.lean` | ✅ `MR_subst`/`MR_subst1` cast-free |
-| 4. `extract` | `Extraction.lean` | ✅ zero casts, **axiom-free** |
-| 5. **`soundness`** | `Soundness.lean` | ✅ **28/28 cases** |
-| 6. **continuity** | `Continuity.lean` | ✅ **`[propext]` — choice-free** |
-| demo | `Fib.lean` | ✅ extracts, prints, `fib 1000` runs |
+Axiom footprints, run fresh (the earlier "`[propext]`-only continuity" claim
+is stale — `tiRec`'s tracking case brought in `Quot.sound`; and `soundness`
+carries `Classical.choice` since the Goodstein/Hydra rules, inherited from
+the value-layer *theorem proofs*, exactly as in the first-order repo):
 
-### The headline theorems
+    Tm.eval, eval_tracked, extract_tracked, extract_continuous2,
+    goodsteinD, goodsteinX, hydraD, hydraX      [propext, Quot.sound]
+    extract, fibRealizer                        (no axioms)
+    soundness                                   [propext, Classical.choice, Quot.sound]
 
-```lean
-soundness  : (D : Deriv Δ φ) → Realizes Δ e ε → MR φ e ((extract D).eval ε)
-extract_tracked     : (D : Deriv Ctx.nil φ) → Tracked a (fun _ ↦ (extract D).eval Env.nil)
-extract_continuous2 : (D : Deriv Ctx.nil φ) → Continuous2 ((extract D).eval Env.nil)
-```
-
-### How the continuity bridge was solved
-
-The obstruction was that `Ct` is indexed by *pure-type level* (`ℕ`, `ℕ→ℕ`,
-`(ℕ→ℕ)→ℕ`, …) with no products and no general arrows, while HA^ω realizers live
-at arbitrary `Ty`. Indexing `Ct` by `Ty` would have meant generalising `Assoc`
-upstream.
-
-It was avoided entirely, using the device the first-order development already
-relies on: an **oracle-parameterized logical relation**, `Tracked τ X`, whose
-base case is the vendored `Continuous2` and whose finite-type structure is
-carried by the relation rather than by `Ct`'s index. No associate is ever
-constructed, so the pure tower's shape never has to be matched. Products and
-general arrows get their own clauses.
-
-Two consequences worth recording:
-
-* **The induction is small.** The first-order `GenericContinuity.lean` is 1304
-  lines because it needs a preservation lemma per extraction combinator (~40).
-  Here the realizer is a System T *term*, so the induction runs over the **11
-  constructors of `Tm`**, and `extract_continuous2` is a corollary of
-  `eval_tracked`. `Continuity.lean` is 195 lines.
-* **It is choice-free** — `[propext]`, tighter than the first-order
-  development's `[propext, Quot.sound]`. Getting there required using
-  `Nat.le_max_left` / `Nat.lt_of_lt_of_le` rather than the order-class lemmas,
-  which drag in `Classical.choice`.
-
-### Two constraints on "just feed proofs to the machinery"
-
-1. **Statements can go trivial.** `∀n ∃y. y = fib n` is a one-line proof once
-   `fib` is a definable term, and its extract is just the witness handed to
-   `exI`. Specifications must be written so the algorithm is not already
-   supplied.
-2. **Goodstein's realizer cannot be a System T term.** System T defines exactly
-   the provably-total functions of PA; Goodstein's stopping time is not one of
-   them (Kirby–Paris — literature, not formalized here). So `tiEps0` needs a
-   matching *term former*, a recursor along `≺`, added to `Tm`. Proof rule and
-   program construct come in a matched pair.
+| part | state |
+|---|---|
+| System T + primitives (`add`,`prec`,`tiRec`,`pred`,`bump`,`good`,`ord`,`hcut`,`hydra`,`hord`) | ✅ |
+| Formulas indexed by realizer type; equality+conversion at every type | ✅ |
+| `MR`, **39 rules**, extraction (axiom-free), soundness (all cases) | ✅ |
+| Continuity (`Tracked`, `extract_continuous2`) | ✅ choice-free |
+| `tiEps0` + `tiRec` | ✅ used by Goodstein and Hydra |
+| Case studies: Fib, Fib-type-2, Pascal, Hanoi, gcd (full spec), Goodstein, Hydra | ✅ all extracted and running |
+| Proof engineering: `deriv_norm`, `deriv_assumption`, term-form kit | ✅ |
 
 ### What is next
 
-The machinery is done, so the remaining work is extensions, not foundations:
-`tiEps0` + its recursor (for Goodstein/Hydra), and non-trivial specifications
-whose extracted algorithm the proof actually synthesises.
+* the strategy-quantified `hercules_wins` as an object-level theorem (now
+  statable; legal plays as object data are the work);
+* Sperner 1D (colorings are functions — no `look` symbol needed);
+* an `MR`-soundness bridge for the emitted Haskell;
+* upstreaming the deriv-authoring kit into reusable tactics.
 
 ## What this branch will *not* deliver
 

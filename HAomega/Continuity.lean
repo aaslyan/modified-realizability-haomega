@@ -179,6 +179,18 @@ theorem eval_tracked {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | prec a b iha ihb =>
       intro E hE
       exact continuous2_binop Realizability.oltN (iha E hE) (ihb E hE)
+  | pred a ih =>
+      intro E hE
+      exact continuous2_binop (fun x _ ↦ Nat.pred x) (ih E hE) (continuous2_const 0)
+  | bump a b iha ihb =>
+      intro E hE
+      exact continuous2_binop Realizability.bumpN (iha E hE) (ihb E hE)
+  | good a b iha ihb =>
+      intro E hE
+      exact continuous2_binop Realizability.goodN (iha E hE) (ihb E hE)
+  | ord a b iha ihb =>
+      intro E hE
+      exact continuous2_binop Realizability.ordOf (iha E hE) (ihb E hE)
   | tiRec s n ihs ihn =>
       intro E hE
       refine tracked_apply_nat _ (ihn E hE) fun j ↦ ?_

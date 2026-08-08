@@ -54,6 +54,10 @@ partial def hsTm : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → Nat → String
   | _, _, .add a b, d => "(" ++ hsTm a d ++ " + " ++ hsTm b d ++ ")"
   | _, _, .recNat z s n, d => "(natRec " ++ hsTm z d ++ " " ++ hsTm s d ++ " " ++ hsTm n d ++ ")"
   | _, _, .prec a b, d => "(oltN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
+  | _, _, .pred a, d => "(predN " ++ hsTm a d ++ ")"
+  | _, _, .bump a b, d => "(bumpN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
+  | _, _, .good a b, d => "(goodN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
+  | _, _, .ord a b, d => "(ordOfN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
   | _, _, .tiRec s n, d => "(tiRec " ++ hsTm s d ++ " " ++ hsTm n d ++ ")"
 
 /-- Runtime support for emitted System T terms.

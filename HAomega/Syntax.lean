@@ -3,7 +3,7 @@ Copyright (c) 2026 Ara Aslyan. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ara Aslyan
 -/
-import Realizability.Ordinals.Epsilon0
+import Realizability.Signature.OrdinalAssignment
 
 /-!
 # HA^ω, part 1: the finite types and System T
@@ -128,6 +128,14 @@ inductive Tm : List Ty → Ty → Type where
   -- `oltN` is course-of-values through the CNF encoding, so defining it in
   -- System T would be a project of its own.
   | prec {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .nat
+  -- The Goodstein layer's primitives, following `prec`'s precedent: their
+  -- recursions are course-of-values through the hereditary base encoding, so
+  -- they enter as primitives evaluated by the proven first-order value layer
+  -- (`Realizability.Signature.OrdinalAssignment`, choice-free).
+  | pred {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat
+  | bump {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .nat
+  | good {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .nat
+  | ord  {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .nat
   -- **Recursion along `≺`** — the program construct matching the `tiEps0`
   -- rule.  Its step type is the rule's nested `∀→` pair read off exactly: at
   -- `x`, given the recursive values at every `y` together with the (`unit`)
@@ -166,6 +174,10 @@ def Tm.rename {Γ Δ : List Ty} (ρ : Ren Γ Δ) : {τ : Ty} → Tm Γ τ → Tm
   | _, .add a b => .add (a.rename ρ) (b.rename ρ)
   | _, .recNat z s n => .recNat (z.rename ρ) (s.rename ρ) (n.rename ρ)
   | _, .prec a b => .prec (a.rename ρ) (b.rename ρ)
+  | _, .pred a => .pred (a.rename ρ)
+  | _, .bump a b => .bump (a.rename ρ) (b.rename ρ)
+  | _, .good a b => .good (a.rename ρ) (b.rename ρ)
+  | _, .ord a b => .ord (a.rename ρ) (b.rename ρ)
   | _, .tiRec s n => .tiRec (s.rename ρ) (n.rename ρ)
 
 /-! ## Substitution -/
@@ -194,6 +206,10 @@ def Tm.subst {Γ Δ : List Ty} (s : Sub Γ Δ) : {τ : Ty} → Tm Γ τ → Tm �
   | _, .add a b => .add (a.subst s) (b.subst s)
   | _, .recNat z sc n => .recNat (z.subst s) (sc.subst s) (n.subst s)
   | _, .prec a b => .prec (a.subst s) (b.subst s)
+  | _, .pred a => .pred (a.subst s)
+  | _, .bump a b => .bump (a.subst s) (b.subst s)
+  | _, .good a b => .good (a.subst s) (b.subst s)
+  | _, .ord a b => .ord (a.subst s) (b.subst s)
   | _, .tiRec sc n => .tiRec (sc.subst s) (n.subst s)
 
 /-- Weakening a term into a context with one more variable.  Named because
@@ -275,6 +291,10 @@ def Tm.eval {Γ : List Ty} : {τ : Ty} → Tm Γ τ → Env Γ → τ.interp
       Nat.rec (motive := fun _ ↦ _) (z.eval e) (fun k ih ↦ s.eval e k ih)
         (n.eval e)
   | _, .prec a b, e => Realizability.oltN (a.eval e) (b.eval e)
+  | _, .pred a, e => Nat.pred (a.eval e)
+  | _, .bump a b, e => Realizability.bumpN (a.eval e) (b.eval e)
+  | _, .good a b, e => Realizability.goodN (a.eval e) (b.eval e)
+  | _, .ord a b, e => Realizability.ordOf (a.eval e) (b.eval e)
   | _, .tiRec s n, e => tiRecVal (s.eval e) (n.eval e)
 
 /-! ## The substitution lemmas
@@ -310,6 +330,10 @@ theorem Tm.eval_rename {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | recNat z sc n ihz ihs ihn =>
       intro Δ ρ e; simp only [Tm.rename, Tm.eval, ihz, ihs, ihn]
   | prec a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | pred a ih => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ih]
+  | bump a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | good a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | ord a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
   | tiRec sc n ihs ihn => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ihs, ihn]
 
 /-- Weakening a term and then evaluating in an extended environment is the
@@ -348,6 +372,10 @@ theorem Tm.eval_subst {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | recNat z sc n ihz ihs ihn =>
       intro Δ s e; simp only [Tm.subst, Tm.eval, ihz, ihs, ihn]
   | prec a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | pred a ih => intro Δ s e; simp only [Tm.subst, Tm.eval, ih]
+  | bump a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | good a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | ord a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
   | tiRec sc n ihs ihn => intro Δ s e; simp only [Tm.subst, Tm.eval, ihs, ihn]
 
 /-- **Single substitution commutes with evaluation.**  This is the exact shape

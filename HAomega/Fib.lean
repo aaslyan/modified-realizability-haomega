@@ -148,6 +148,10 @@ def Tm.pretty : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → (d : Nat) → Stri
   | _, _, .succ t, d => "S " ++ t.pretty d
   | _, _, .add a b, d => "(" ++ a.pretty d ++ " + " ++ b.pretty d ++ ")"
   | _, _, .prec a b, d => "(" ++ a.pretty d ++ " ≺ " ++ b.pretty d ++ ")"
+  | _, _, .pred a, d => "pred " ++ a.pretty d
+  | _, _, .bump a b, d => "bump(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
+  | _, _, .good a b, d => "good(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
+  | _, _, .ord a b, d => "ord(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
   | _, _, .tiRec s n, d =>
       "tiRec[" ++ s.pretty d ++ " | " ++ n.pretty d ++ "]"
   | _, _, .recNat z s n, d =>
@@ -172,6 +176,10 @@ def Tm.pretty' : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → (d : Nat) → Str
   | _, _, .succ t, d => "S " ++ t.pretty' d
   | _, _, .add a b, d => "(" ++ a.pretty' d ++ " + " ++ b.pretty' d ++ ")"
   | _, _, .prec a b, d => "(" ++ a.pretty' d ++ " ≺ " ++ b.pretty' d ++ ")"
+  | _, _, .pred a, d => "pred " ++ a.pretty' d
+  | _, _, .bump a b, d => "bump(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
+  | _, _, .good a b, d => "good(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
+  | _, _, .ord a b, d => "ord(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
   | _, _, .tiRec s n, d =>
       "tiRec[" ++ s.pretty' d ++ " | " ++ n.pretty' d ++ "]"
   | _, _, .recNat z s n, d =>

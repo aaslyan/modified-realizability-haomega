@@ -1,0 +1,185 @@
+%======================================================================
+\section{Act VIII --- The same machine, given types}
+\label{sec:haomega}
+
+Everything so far happened inside a deliberately minimal system: one sort,
+$\Nat$, and nothing else. That minimality was the point --- it kept the audit
+short --- but Act~VI recorded its price as three separate ``documented
+compromises,'' and they turn out to be one compromise wearing three coats:
+the general Hydra theorem lived outside the fragment because a strategy is a
+\emph{function}; Sperner's coloring needed a special symbol because a
+coloring is a \emph{function}; and five symbols entered by numeral graph
+because their recursions run through an \emph{encoding} of trees into
+numbers. All three say: the object language cannot mention $\Nat\to\Nat$.
+
+So we built the same machine again, over \emph{Heyting arithmetic in all
+finite types} --- the system modified realizability was invented for
+\citep{kreisel1959,troelstra1973}. This act reports what changed, what it
+cost, and what the extracted programs look like now. (The repository is
+\texttt{modified-realizability-haomega}; the first-order development stays
+in-tree as the reference implementation.)
+
+\subsection*{The system, in four displays}
+
+\emph{Types} are the finite types over $\Nat$, with a unit for erased
+certificates:
+\[
+  \tau \;::=\; \Nat \;\mid\; \mathbf{1} \;\mid\; \tau\to\tau
+  \;\mid\; \tau\times\tau .
+\]
+
+\emph{Terms} are G\"odel's System~T --- $\lambda$, application, pairing, the
+numerals, and a recursor $\mathsf{rec}$ \emph{at every type} --- plus a small
+stock of primitives ($+$, the $\epsz$-order $\prec$, and the case-study
+symbols $\good$, $\hydra$, $\mathrm{ord}$, \dots, each evaluated by the
+first-order development's proven, choice-free value layer), plus one genuinely
+new construct:
+\[
+  \mathsf{tiRec} : \bigl(\Nat \to (\Nat \to \mathbf{1} \to \tau) \to
+  \tau\bigr) \to \Nat \to \tau ,
+\]
+recursion along $\prec$ --- the program-side twin of the proof rule
+$\mathrm{TI}(\epsz)$. Rule and recursor arrive as a pair, because System~T
+alone defines exactly the provably-total functions of \textsc{pa}, and
+Goodstein's stopping time is not among them: adding the rule without the
+recursor would leave extraction with nothing to emit.
+
+\emph{Formulas} carry their realizer type as an \emph{index},
+$\varphi : \mathrm{Formula}\;\Gamma\;\tau$, with the modified-realizability
+assignment built into the constructors:
+\[
+\begin{array}{llcl}
+  & s = t,\ \bot &:& \mathbf{1}\\
+  & \varphi \land \psi &:& \tau_\varphi \times \tau_\psi\\
+  & \varphi \lor \psi &:& \Nat \times (\tau_\varphi \times \tau_\psi)\\
+  & \varphi \to \psi &:& \tau_\varphi \to \tau_\psi\\
+  & \forall x^{\sigma}.\,\varphi &:& \sigma \to \tau_\varphi\\
+  & \exists x^{\sigma}.\,\varphi &:& \sigma \times \tau_\varphi
+\end{array}
+\]
+There is no ambient level, no transport machinery, and --- because
+substitution preserves the index \emph{by construction} --- not a single
+type-cast anywhere in the extractor. Equality is primitive at every type
+(revised from a type-$0$-only first design when Pascal's row-level equations
+proved unstatable without it), and \emph{one} Leibniz rule replaces the
+fragment's twenty per-symbol congruence schemas.
+
+\emph{Extraction} now lands \emph{in the object language}:
+\[
+  \extract : \mathrm{Deriv}\;\Delta\;\varphi \;\longrightarrow\;
+  \mathrm{Tm}\;(\Delta{+}\Gamma)\;\tau_\varphi .
+\]
+This is the structural upgrade over Act~III, where the realizer was an
+opaque element of the pure-type hierarchy, printable only by walking the
+derivation instead. A realizer that is a \emph{term} can be printed,
+normalized, emitted as Haskell, and reasoned about --- the three-view
+artifact below is just three renderings of this one certified object.
+
+\subsection*{Nine theorems, each extracted and run}
+
+\begin{center}\small
+\begin{tabular}{ll}
+\toprule
+theorem & statement (derived in the object theory)\\
+\midrule
+Goodstein & $\forall m\,\exists t.\ \good(m,t)=0$\\
+Kirby--Paris & $\forall h\,\exists t.\ \hydra(h,t)=0$\\
+Hercules, $\forall$-strategy & $\forall h\,\forall f^{\Nat\to\Nat}\,\exists t.\ \mathrm{play}(f,h,t)=0$\\
+gcd, full specification & $\forall a\,\forall b\,\exists g.\ g\mid a \land g\mid b \land \forall d.(d\mid a\to d\mid b\to d\mid g)$\\
+Pascal mod 2 & $\forall n\,\forall k.\ \mathrm{pas}(n,k)=1 \lor \mathrm{pas}(n,k)=0$\\
+Sperner 1D & $\forall n\,\forall c^{\Nat\to\Nat}.\ c\,0=0 \to c\,n=1 \to \exists k.\ k<n \land c\,k\neq c(k{+}1)$\\
+Tower of Hanoi & $\forall n\,\exists \mathit{len}\,\exists \mathit{moves}^{\Nat\to\Nat}.\ \dots$\\
+Fibonacci & $\forall n\,\exists y.\ y=\fib(n)$\\
+Fibonacci at type 2 & $\forall f^{\Nat\to\Nat}\,\exists y.\ y=\fib(f(f\,0))$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Three of these the fragment could not even \emph{state}: Hercules and
+Sperner quantify over functions, and the type-2 Fibonacci is where the
+continuity theorem finally has content ($\mathsf{Continuous2}$ of the
+extracted functional, with an explicit computable modulus
+$\max(f\,0, f(f\,0))+1$). Two scope statements, verbatim from the audit:
+independence from \textsc{pa} is formalized nowhere; and
+$\mathrm{play}(f,h,t)$ quantifies the \emph{replication} strategy --- the
+head choice stays the value layer's, and the fully general any-head theorem
+is not derived.
+
+\subsection*{Reading an extracted program, three ways}
+
+Fibonacci first, because it fits on a line. The raw extracted object ---
+the realizer itself, with its erased certificate visible as $\star$:
+\begin{quote}\ttfamily\small
+($\lambda$x0.\ (($\lambda$x1.\ fst (($\lambda$x2.\ rec[$\langle$0, S 0$\rangle$
+$\mid$ ($\lambda$x3.\ ($\lambda$x4.\ (($\lambda$x5.\ $\langle$snd x5, (fst x5 + snd
+x5)$\rangle$) x4))) $\mid$ x2]) x1)) x0), $\star$)
+\end{quote}
+Collapsed --- contentless parts elided, what remains is exactly the
+computational content --- it is the same term minus the trailing
+$\star$-component: iterate $\langle a,b\rangle \mapsto \langle b,
+a{+}b\rangle$ from $\langle 0,1\rangle$, take the first projection. And as
+generated Haskell (an \emph{uncertified translation}; the certified artifact
+is always the term):
+\begin{quote}\ttfamily\small
+(\char`\\ x0 -> (((\char`\\ x1 -> (fst ((\char`\\ x2 -> (natRec (0, 1)\\
+\hspace*{1.2em}(\char`\\ x3 -> (\char`\\ x4 -> ((\char`\\ x5 -> ((snd x5), ((fst x5) + (snd x5)))) x4)))\\
+\hspace*{1.2em}x2)) x1))) x0), ())
+\end{quote}
+
+Now the one worth the whole apparatus: Goodstein's collapsed program,
+abridged to its skeleton with the bureaucracy elided ($\ldots$), because the
+mathematics is \emph{visible in it}:
+\begin{quote}\ttfamily\small
+($\lambda$m.\ (\dots tiRec[\,($\lambda$x.\ ($\lambda$ih.\ (\dots\\
+\hspace*{1.2em}rec[\,$\langle$s,\ \dots$\rangle$
+  \hfill\normalfont\itshape --- eqDec hits $0$: return the stop time $s$\\
+\hspace*{1.2em}$\mid$ \dots (ih\ ord(S S S s,\ good(m, S s))) \dots]
+  \hfill\normalfont\itshape --- else recurse at the descended ordinal\\
+\dots))\,] \ ord(S S 0,\ m)\,)
+  \hfill\normalfont\itshape --- start at $\mathrm{ord}(2,m)$
+\end{quote}
+The transfinite recursor, the zero test on $\good(m,s)$, and the $\epsz$
+descent $\mathrm{ord}(s{+}3, \good(m,s{+}1)) \prec \mathrm{ord}(s{+}2,
+\good(m,s))$ --- the entire proof structure, readable in the program it
+became. The extracted stopping-time function returns the published values
+$[0,1,3,5]$ for $m=0..3$, checked at every build together with the
+certificate $\good(m, \mathrm{stop}(m))=0$; the first-order extract, walled
+behind its ambient tower, could not evaluate past $m=1$.
+
+\subsection*{A finding: the program is the proof's fingerprint}
+
+Sperner 1D was proved here by the same forward-scan invariant as in Act~IV:
+$P(m) := c\,m = 0 \lor \exists k{<}m.\ c\,k \neq c(k{+}1)$. Same theorem,
+same invariant --- yet the extracted searches \emph{differ measurably}. The
+first-order proof consults the invariant first and decides $c(m{+}1)$
+second; its program returns the \emph{first} crossing. The \haomega{} proof
+decides $c(m{+}1) = 0$ first, so a fresh zero re-enters the left disjunct
+and discards any crossing already found; its program returns the
+\emph{last}: on $[0,1,0,1]$ the first-order extract answers $0$, this one
+answers $2$ --- both certified crossings, at every input, by soundness.
+Nothing in Acts~I--VII showed this cleanly: two proofs of one theorem,
+distinguishable by running their extracts. The extraction map is faithful
+to proof structure --- which is the thesis of Act~VII, here caught in the
+act.
+
+\subsection*{The audit, rerun}
+
+The footprints, from the machine, for the \haomega{} library:
+\begin{center}\small
+\begin{tabular}{ll}
+\toprule
+$\extract$, the Fibonacci realizer & \emph{no axioms}\\
+continuity; every derivation; every running extract & \texttt{[propext, Quot.sound]}\\
+$\mathsf{soundness}$ & \texttt{[propext, Classical.choice, Quot.sound]}\\
+\bottomrule
+\end{tabular}
+\end{center}
+Choice enters $\mathsf{soundness}$ exactly where it did in Act~V: through
+the value-layer \emph{theorem proofs} discharging the ordinal-descent
+schemas, while the value-layer definitions --- everything that runs ---
+stay choice-free. And one honest cost survives the upgrade: the coded
+hydra trees still grow doubly exponentially, so battle extracts overflow
+the interpreter on some codes (4 and 7, measured) whatever the type
+discipline --- the encoding was the fragment's cost, and where the
+\haomega{} theorems still \emph{use} the coded value layer, it is theirs
+too.

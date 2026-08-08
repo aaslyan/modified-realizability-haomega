@@ -1,102 +1,91 @@
-# Modified realizability for a minimal fragment of arithmetic
+# Modified realizability for Heyting arithmetic in all finite types
 
-A Lean 4 formalization of modified realizability: a small first-order
-fragment, an extraction function turning each of its derivations into a
-pure-type realizer, a soundness theorem, and a **generic continuity
-theorem** covering every extracted realizer at once.
+A Lean 4 formalization of Tait/Kreisel-style modified realizability over
+**HA^ω**: an intrinsically-typed System T term language, formulas indexed by
+their realizer type, an extraction function whose output is a **term of the
+object language**, a soundness theorem, and a continuity theorem placing
+every extracted type-2 realizer among the Kleene–Kreisel continuous
+functionals.  The rule set includes **transfinite induction to `ε₀`**
+(`tiEps0`), with its recursor `tiRec` as a matching term former.
 
-Then four theorems proved *inside* that fragment, each with its realizer
-extracted, certified, and run:
+Nine theorems are derived in the object theory, each with its realizer
+extracted, certified, and **run** at every build:
 
-| | statement | phase |
+| | statement | notes |
 |---|---|---|
-| **Goodstein** | `⊢ ∀m ∃t. good(m,t) = 0` | D2 |
-| **Kirby–Paris (Hydra)** | `⊢ ∀h ∃t. hydra(h,t) = 0` | H5 |
-| **Tower of Hanoi** | `⊢ ∀n∀f∀t∀v ∃k. Solves(n,f,t,v,k) ∧ MoveCount k = 2ⁿ − 1` | E3 |
-| **Pascal mod 2** | `⊢ ∀n∀k. pas(n,k) = 1 ∨ pas(n,k) = 0` | F3 |
+| **Goodstein** | `∀m ∃t. good(m,t) = 0` | by `tiEps0`; extract returns the published stop times `[0,1,3,5]` |
+| **Kirby–Paris (Hydra)** | `∀h ∃t. hydra(h,t) = 0` | by `tiEps0`; extract returns the published battle lengths `[0,1,3]` |
+| **Hercules, ∀-strategy** | `∀h ∀f^(ℕ→ℕ) ∃t. play(f,h,t) = 0` | replication-strategy quantified — *unstatable* first-order |
+| **gcd, full spec** | `∀a∀b ∃g. g∣a ∧ g∣b ∧ ∀d.(d∣a→d∣b→d∣g)` | fueled induction; proof-computed program |
+| **Pascal mod 2** | `∀n∀k. pas(n,k)=1 ∨ pas(n,k)=0` | proof-computed decider; draws the Sierpiński gasket |
+| **Sperner 1D** | `∀n ∀c^(ℕ→ℕ). c 0=0 → c n=1 → ∃k<n. c k≠c(k+1)` | colorings are function variables — no coding |
+| **Tower of Hanoi** | `∀n ∃len ∃moves^(ℕ→ℕ). …` | function-valued move sequences; runs at `n = 10` |
+| **Fibonacci** | `∀n ∃y. y = fib n` | the on-ramp; extract runs to `n = 1000` |
+| **Fibonacci, type 2** | `∀f^(ℕ→ℕ) ∃y. y = fib(f(f 0))` | proved continuous, with associate and explicit modulus |
 
-Zero `sorry`/`admit`.  `lake build` is the whole test suite: every
-correctness claim is a theorem, and every axiom-budget and evaluation
-claim is an embedded `#print axioms`, `#eval` or `#guard` that runs on
-each build.
+Zero `sorry`/`admit`.  `lake build` is the test suite: every correctness
+claim is a theorem and every evaluation claim an embedded `#guard`.
 
-## What is actually delivered
+## Why all finite types
 
-**The pipeline.**  `MR` (the realizability relation, flexible in the
-ambient level), `extract` (one named combinator per derivation rule),
-`soundness`, and `extract_continuous` — the last saying that *every*
-closed derivation's extracted type-2 realizer is continuous, with no
-per-derivation certificate.  The realizers live in the pure-type
-hierarchy of a companion Kleene–Kreisel development, so each has a class
-in `CtQ 2`.
+This repository grew out of
+[`modified-realizability-lean`](https://github.com/aaslyan/modified-realizability-lean),
+which does the same programme over a **minimal first-order fragment** — one
+sort, everything coded into ℕ.  That development is kept in-tree
+(`Realizability/`) as the reference implementation; the HA^ω library
+(`HAomega/`, ~5,500 lines) imports nothing from it except the proven
+choice-free value layers (ε₀ notations, Goodstein and Hydra arithmetic).
+What the types buy, each verified here rather than asserted:
 
-**Programs, not just proofs.**  Because a realizer of `∃` carries its
-witness, each theorem above yields a runnable function, certified at
-*every* input by soundness rather than by testing:
+* **statements the fragment cannot write** — quantification over strategies
+  (`herculesD`) and over colorings (`spernerD`), and higher-type theorems
+  where the continuity apparatus has actual content;
+* **no ambient-level tower** — the first-order gcd extract was certified but
+  evaluable at *no* input; here it runs;
+* **capture-free binders** — the fragment's naive-substitution workarounds
+  (`namedIHDeriv`, `ihRenamed`) do not exist here;
+* **one Leibniz rule** replaces ~20 per-symbol congruence schemas.
 
-* `goodsteinStopTime` — Goodstein's stopping time;
-* `hydraBattleLength` — the Kirby–Paris battle length;
-* `hanoiSolution` / `hanoiMoves` — the actual move sequence, decoded to
-  `(from, to)` pairs: `[(0,1), (0,2), (1,2)]` for two disks, the classical
-  optimum;
-* `pasDecide` — a decision procedure whose output, drawn as a triangle,
-  is the Sierpiński gasket.
+## The three-view artifact
 
-## Two things this repository is careful about
-
-**The axiom budget is a checked invariant, not a claim.**  Realization
-theorems report exactly `[propext, Classical.choice, Quot.sound]`;
-continuity theorems report only `[propext, Quot.sound]`.  That forced
-real design decisions — Mathlib's `Nat.pair` is unusable here because its
-lemma set is choice-dependent, so the pairing is hand-rolled, and
-`Epsilon0.lean` must stay `Classical`-free because its well-foundedness
-proof sits inside `extract`.
-
-**What is imported is stated exactly.**  Each headline theorem rests on a
-small number of axiom schemas about single function symbols, each
-discharged by exactly one Lean theorem, and each phase's section in
-`STATUS.md` says which.  Where a result is proved *about* the fragment
-rather than *inside* it — `hercules_wins`, Kummer/Lucas — that is said
-plainly, with the obstruction named.
+`EXTRACTED_HAOMEGA.md` (regenerated at every build) renders each realizer
+three ways: the raw high-level object with its erased certificates visible,
+the collapsed functional program, and generated Haskell.  Goodstein's
+collapsed program is worth reading — the `ε₀` descent is visible in it.
 
 ## Where to start
 
-* **`READERS_GUIDE.md`** — a dependency-ordered map of every declaration
-  worth reading, with §4 reproducing every claim from a clean build.
-* **`HYDRA.md`** — the Hydra project (H1–H9) as one self-contained
-  document.
-* **`STATUS.md`** — the authoritative record: per-phase deliverables,
-  design decisions *with rationale*, flagged deviations, measured
-  numbers, and quoted `#print axioms` output.
-* **`QUESTIONS.md`** — decision points raised and how they were settled.
+* **`HAOMEGA.md`** — the roadmap and current status.
+* **`HAOMEGA_DOSSIER.md`** — the evidence-tagged audit: exact axiom
+  footprints, measured evaluation limits, and the honest scopes (what is
+  proved, what is only statable, what is stale-and-fixed).
+* **`HAOMEGA_PROGRAMS.md`** — the program ledger, case study by case study.
 
-If you would rather see a theorem than read one, build the project and
-look at the tail of the log: `PascalExtraction.lean` prints the
-Sierpiński triangle its extracted decider computes, and
-`HydraDisplay.lean` prints a Kirby–Paris battle with each state's ordinal
-beside it — the tree growing while the ordinal falls.
+## Axiom footprints (audited)
+
+    extract, fibRealizer                         no axioms
+    continuity, all derivations and extracts     [propext, Quot.sound]
+    soundness                                    [propext, Classical.choice, Quot.sound]
+
+`soundness`'s choice enters through the value-layer theorem proofs (as in
+the first-order development); every derivation and every running extract is
+choice-free.
 
 ## Building
 
 ```bash
-git clone <this repo>
-cd modified-realizability-lean && lake build
+git clone https://github.com/aaslyan/modified-realizability-haomega
+cd modified-realizability-haomega && lake build
 ```
 
-The toolchain is pinned in `lean-toolchain` (elan fetches it) and Mathlib
-in `lakefile.lean` (`lake build` downloads it).  The build is
-**standalone** — no sibling checkout is required.  The subset of the
-Kleene–Kreisel continuous-functionals development this project uses
-(`PureType`, `Assoc`, `CtQ` and the capstone equivalence) is **vendored**
-under `Realizability/Core/ContinuousFunctionals/`, copied verbatim from
-`kleene-kreisel-lean`.
+Toolchain pinned in `lean-toolchain`; Mathlib pinned in `lakefile.lean`.
+The build is standalone.
 
 ## Scope, stated once
 
-Independence results are **not** formalized.  Goodstein's theorem and
-Kirby–Paris are proved here in the sense of "the sequence terminates";
-that Peano arithmetic cannot prove them is a different theorem, needing
-machinery this development does not have, and it is claimed nowhere.
-Likewise the Hanoi result is optimality *for the recursive solution
-relation it defines*, not classical minimality over arbitrary legal move
-sequences.  Each phase's section says what it does and does not establish.
+Independence results are **not** formalized: Goodstein and Kirby–Paris are
+proved as termination theorems; that PA cannot prove them is claimed
+nowhere.  `herculesD` quantifies the *replication* strategy — the fully
+general any-head theorem needs a tree-surgery move the value layer does not
+provide, and it is not derived.  The Haskell renderings are uncertified
+translations; the certified artifact is always the System T term.

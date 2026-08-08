@@ -1,8 +1,15 @@
 # Reader's guide
 
-For a full manual read-through of the proof, start to finish.  This is a
-map, not a substitute: every claim below is checkable against the Lean
-source, and §4 reproduces every "done means" claim from scratch.
+For a full manual read-through, start to finish.  This is a map, not a
+substitute: every claim below is checkable against the Lean source.
+
+**This repository contains two developments.**  Part I (§1–§4, inherited
+from `modified-realizability-lean`) maps the first-order fragment kept
+in-tree under `Realizability/` as the reference implementation.  **Part II
+(§5–§7) maps the HA^ω library under `HAomega/`** — the current development,
+whose README, `HAOMEGA.md`, and `HAOMEGA_DOSSIER.md` are its companion
+documents.  If you are here for HA^ω, start at §5 and treat Part I as the
+baseline the types are measured against.
 
 The one-sentence version of what is proved: **the fragment derives
 `∀m ∃t. good(m,t) = 0`, and modified realizability turns that derivation
@@ -597,3 +604,99 @@ budget is the ordinary one; what matters is what is absent from its
 proof, namely the `bumpNeZero` schema.  It is built from `bumpNum`,
 equality reasoning, and `succNeZero` alone.  The uniform open-term schema
 is still imported — see STATUS.md Phase P6 and `RESEARCH_PLAN.md` §2.
+
+---
+
+# Part II — The HA^ω library (`HAomega/`)
+
+The one-sentence version: **the same modified-realizability pipeline,
+rebuilt over Heyting arithmetic in all finite types, where the realizer is a
+term of the object language — nine theorems derived, extracted, and run,
+three of them unstatable in the fragment.**  Every fact below is
+evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
+
+## 5. Dependency-ordered map
+
+### 5.1 The machinery (read in this order)
+
+| # | Declaration | File | What it gives you |
+|---|---|---|---|
+| H1 | `Ty`, `Ty.interp` | `Syntax.lean` | Finite types over ℕ with a `unit` for erased certificates. Note it is *not* the vendored pure-type tower — continuity later bridges by a logical relation instead of matching it. |
+| H2 | `Tm`, `Tm.eval` | `Syntax.lean` | Intrinsically-typed de Bruijn System T — recursor **at every type** — plus the primitives (`add`, `prec`, `pred`, `bump`, `good`, `ord`, `hcut`, `hydra`, `hord`) evaluated by the first-order repo's proven choice-free value layers, and **`tiRec`**, recursion along `≺`. `Tm.eval` depends on **no axioms** and stays computable (read the `OrdCode`/`termination_by` note: a bare `WellFounded.fix` would not compile). |
+| H3 | `Ren`/`Sub` kit, `eval_rename`, `eval_subst1` | `Syntax.lean` | The two-stage substitution treatment. Capture is impossible by construction — the fragment's `namedIHDeriv`/`ihRenamed` dodges have no analogue here. |
+| H4 | **`Formula`** | `Formulas.lean` | Formulas **indexed by their realizer type** — `tyOf` as an index, not a function. This is the load-bearing redesign: substitution preserves the index by construction, so `MR_subst` states without a cast and `extract` contains none. Read the header's account of why the unindexed first design stalled soundness. |
+| H5 | `eqAt`, **`interp_eqAt`** | `Formulas.lean` | Equality primitive at every type; extensional equality *definable* from it, proved correct. One Leibniz rule (`eqSubst`) replaces the fragment's ~20 congruence schemas. |
+| H6 | **`MR`**, `MR_subst`, `MR_subst1` | `Realizability.lean` | Modified realizability with **no ambient level and no transports** — `Transport.lean`'s 330 first-order lines have no counterpart. Note the recorded non-theorem: `MR φ e x → φ.interp e` fails at `→`, deliberately. |
+| H7 | **`Deriv`** — 39 rules | `Realizability.lean` | No rule carries a side condition. `tiEps0`'s order premise is an *equation* (contentless), which is why `tiRec` re-decides `≺` at each call. The Goodstein/Hydra schemas (`ordBump`, `ordPredLt`, `bumpNeZero`, `hordCutLt`) are single-symbol imports, D5-style, each discharged in soundness by exactly one value-layer theorem. |
+| H8 | **`extract`** | `Extraction.lean` | `Deriv Δ φ → Tm (as ++ Γ) a` — the realizer is an object-language term: printable, runnable, emittable. **Zero casts, no axioms.** `eqDec` is the one content-bearing axiom; its emitted decision procedure (`eqTest`) is verified in Soundness. |
+| H9 | `Realizes`, **`soundness`** | `Soundness.lean` | Every extracted term realizes its conclusion; one case per rule, no wildcard. Footprint `[propext, Classical.choice, Quot.sound]` — the choice enters through the value-layer *theorem proofs* for the ordinal schemas, exactly as first-order; every derivation and running extract stays choice-free. |
+| H10 | `Tracked`, `eval_tracked`, **`extract_continuous2`** | `Continuity.lean` | The continuity bridge: an oracle-parameterized logical relation over `Ty`, base case the vendored `Continuous2` — no associates constructed, so the pure-tower shape never has to be matched. 11-constructor induction where the first-order proof needed ~40 combinator lemmas. Read the `tracked_dflt` docstring: "constant families are tracked" is *false* at arrow types. |
+
+### 5.2 Proof engineering (what makes derivations writable)
+
+| # | Declaration | File | What it gives you |
+|---|---|---|---|
+| H11 | **`deriv_norm`** | `GcdDvd.lean` | The normalization tactic: reduces every `Ctx.wk`/`Formula.wk`/substitution in a `Deriv` goal — context index included — to ground form. The fix for whnf-vs-metavariable unification failures in nested eliminations. |
+| H12 | **`deriv_assumption`** | `GcdDvd.lean` | Context search over normalized goals; retired the pinned `ax1`–`ax7` accessors in goal positions. |
+| H13 | the term-form kit (`plusAssocT`, …, `trichotomyT`) | `GcdFull.lean` | ∀-lemmas cannot be `allE`-instantiated at use sites (the unifier cannot invert `Formula.subst1`); each lemma gets a term-parameterized form via one KIT-`simp`. |
+| H14 | the explicit-chain discipline | `PascalTheorem.lean` header | Conversion chains written with holes make the elaborator symbolically execute substitution (20+ min/declaration); every intermediate named + every reduction its own `rfl`/`simp` link elaborates in milliseconds. |
+
+### 5.3 The nine case studies
+
+| # | Theorem | File | Read it for |
+|---|---|---|---|
+| H15 | `fibDeriv`, `fibRealizer` | `Fib.lean` | The on-ramp; the three-view printers (`pretty`, `pretty'`); realizer **axiom-free**; extract runs to `n = 1000`. The header's historical note on the unary-addition wall is the record of why `+` is primitive. |
+| H16 | `hiDeriv`, `hiProgram_continuous` | `HigherType.lean` | The type-2 theorem the fragment cannot state — where continuity has content. |
+| H17 | `notAllZero_not_extractable`, `hiProgram_has_associate`, `hiModulus` | `Collapse.lean` | The evidence continuity is not vacuous: a discontinuous type-2 functional **no derivation extracts to**, and the collapse of a continuous one to its type-1 associate with an explicit computable modulus. |
+| H18 | `pasT`, **`pasTotal`**, `pasTag` | `Pascal.lean`, `PascalTheorem.lean` | The first proof-computed extract: the decision tag comes from `eqDec` through two inductions. Row recursion **at type ℕ→ℕ** — what forced first-order `pas`/`xor` to be axiomatized symbols. Gasket `#guard`ed. |
+| H19 | `hanoiT`, `hanoiSpec` | `Hanoi.lean` | Sequences as **functions** `(len, moves)` — the encoding-wall experiment concluded: `n = 10` where the fragment died at 5. First `∃` over a function. |
+| H20 | `gcdT` … **`gcdTheoremD`**, `gcdFull` | `Gcd.lean` → `GcdStage2/Full/Dvd/Cases/Main/Theorem.lean` | The full specification by **fueled induction with slack** (`(a+b)+c = m` — plain `ind`, no strong-induction scaffold). Six landed layers; the first-order extract ran at *no* input, this one runs. |
+| H21 | **`goodsteinD`**, `goodsteinX` | `Goodstein.lean` | `tiEps0` used in anger; the first-order derivation line for line **minus the naming dodge**. Extract returns the published `[0,1,3,5]`; certificate `good(m, stop m) = 0` guarded. |
+| H22 | **`hydraD`**, `hydraX` | `Hydra.lean` | Goodstein's mirror with a shorter descent; one import (`hordCutLt`). Published lengths `[0,1,3]`. |
+| H23 | `playT`, **`herculesD`** | `Hercules.lean` | `∀h ∀f^(ℕ→ℕ) ∃t. play(f,h,t) = 0` — strategy-quantified, unstatable first-order; `play` is a *term*, the descent needs *no new import*. **Honest scope in the header**: replication strategy only; any-head `hercules_wins` not derived. |
+| H24 | **`spernerD`**, `spernerX` | `Sperner.lean` | Colorings as function variables — no `look`. **The fingerprint finding**: this proof extracts the *last* crossing where first-order S1 extracts the first (`[0,1,0,1] ↦ 2` vs `0`) — same theorem, different proof, measurably different program. |
+| H25 | `R1`–`R7`, `showAll` | `ShowAll.lean` | Renders every realizer in three views and **writes `EXTRACTED_HAOMEGA.md` at each build**. |
+
+## 6. The four design decisions to scrutinize
+
+1. **Realizer-type indexing of `Formula`** (H4) — bought cast-free
+   `MR_subst`, hence soundness; cost: `tyOf`'s clauses live in constructors.
+2. **Equality and conversion at every type** — a *revision* of the
+   type-0-only first design; Pascal's row equations forced it.  `eqAt`
+   remains as the proof the narrow design was semantically sufficient.
+3. **Primitives over definability** for the case-study symbols — definable
+   in principle (System T is closed under their recursions), primitive in
+   practice, evaluated by proven choice-free layers.  The numeral-graph
+   *schemas* of the fragment are gone; the trade is recorded in
+   `HAOMEGA.md`'s compromise table.
+4. **`tiRec` re-decides `≺`** — the order premise's realizer is
+   contentless, so the recursor cannot receive descent evidence; the
+   `dite` fallback mirrors the first-order `tiRecC` exactly.
+
+## 7. Reproducing the Part II claims
+
+```bash
+lake build          # 743 jobs; every #print axioms / #guard runs here
+```
+
+Spot checks (each was run for the dossier; expected outputs quoted there):
+
+```bash
+cat > /tmp/check.lean <<'EOF'
+import HAomega.Sperner
+open HAomega
+#print axioms extract          -- (no axioms)
+#print axioms soundness        -- [propext, Classical.choice, Quot.sound]
+#print axioms extract_continuous2  -- [propext, Quot.sound]
+#eval (goodsteinX 0, goodsteinX 1, goodsteinX 2, goodsteinX 3)  -- (0,1,3,5)
+#eval (hydraX 0, hydraX 1, hydraX 2)                            -- (0,1,3)
+#eval herculesX (· + 1) 2                                       -- 3
+#eval spernerX 3 (fun k => [0,1,0,1].getD k 0)                  -- 2 (last crossing)
+EOF
+lake env lean /tmp/check.lean
+```
+
+Known evaluation boundaries (measured, `HAOMEGA_DOSSIER.md` §5):
+`goodsteinX 4` is cost-bound (astronomical value, no crash); `hydraX` covers
+codes 0–3, 5, 6 and stack-overflows on 4 and 7 (the doubly-exponential tree
+coding); `fibExtracted` has no wall through `n = 1000`.

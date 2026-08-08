@@ -177,6 +177,9 @@ theorem Tm.rename_rename {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | bump a b iha ihb => intro Δ Θ ρ ρ'; simp only [Tm.rename, iha, ihb]
   | good a b iha ihb => intro Δ Θ ρ ρ'; simp only [Tm.rename, iha, ihb]
   | ord a b iha ihb => intro Δ Θ ρ ρ'; simp only [Tm.rename, iha, ihb]
+  | hcut a b iha ihb => intro Δ Θ ρ ρ'; simp only [Tm.rename, iha, ihb]
+  | hydra a b iha ihb => intro Δ Θ ρ ρ'; simp only [Tm.rename, iha, ihb]
+  | hord a ih => intro Δ Θ ρ ρ'; simp only [Tm.rename, ih]
   | tiRec sc n ihs ihn => intro Δ Θ ρ ρ'; simp only [Tm.rename, ihs, ihn]
   | recNat z sc n ihz ihs ihn =>
       intro Δ Θ ρ ρ'; simp only [Tm.rename, ihz, ihs, ihn]
@@ -216,6 +219,9 @@ theorem Tm.rename_subst {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | bump a b iha ihb => intro Δ Θ s ρ; simp only [Tm.subst, Tm.rename, iha, ihb]
   | good a b iha ihb => intro Δ Θ s ρ; simp only [Tm.subst, Tm.rename, iha, ihb]
   | ord a b iha ihb => intro Δ Θ s ρ; simp only [Tm.subst, Tm.rename, iha, ihb]
+  | hcut a b iha ihb => intro Δ Θ s ρ; simp only [Tm.subst, Tm.rename, iha, ihb]
+  | hydra a b iha ihb => intro Δ Θ s ρ; simp only [Tm.subst, Tm.rename, iha, ihb]
+  | hord a ih => intro Δ Θ s ρ; simp only [Tm.subst, Tm.rename, ih]
   | tiRec sc n ihs ihn => intro Δ Θ s ρ; simp only [Tm.subst, Tm.rename, ihs, ihn]
   | recNat z sc n ihz ihs ihn =>
       intro Δ Θ s ρ; simp only [Tm.subst, Tm.rename, ihz, ihs, ihn]

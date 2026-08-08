@@ -7,8 +7,7 @@ what is not here yet.
 **Read this first: the machinery is complete, the case studies are not.**
 Extraction, soundness and continuity all hold for every derivation. What exists
 as an actual extracted program is **six** things — and Pascal is the first
-whose algorithm the proof computes rather than receives. Sperner,
-Goodstein and Hydra are *not* ported; gcd is stage 1 of 2 — nothing blocks them, but nobody has
+whose algorithm the proof computes rather than receives. only Sperner remains unported — nothing blocks them, but nobody has
 written the derivations.
 
 ## The uniform core
@@ -222,7 +221,7 @@ not done. `gcdSpec` names the algorithm, so this extract is the solver
 | **gcd** | ✅ certified, **never ran** | ✅ **COMPLETE**: stage 1 runs; stage 2 all 7 layers — `gcdTheoremD : ∀a∀b. ∃g. g∣a ∧ g∣b ∧ ∀d.(d∣a→d∣b→d∣g)` proved by the fueled induction, `gcdFull` = the proof-computed gcd (`GcdTheorem.lean`) | — |
 | **Sperner 1D** | ✅ | ⬜ | A coloring is a **function** here, so the `look` symbol is not needed at all — the one place the first-order "no new symbols" discipline was forced. |
 | **Goodstein** | ✅ `goodsteinStopTime` (walls at `m=2`) | ✅ **`goodsteinD` by `tiEps0`**; extracted `goodsteinX` returns the published stop times `[0,1,3,5]` and runs to `m=3` (`Goodstein.lean`) | — |
-| **Hydra** | ✅ `hydraBattleLength` | ⬜ | As Goodstein, plus hydras as an inductive type instead of codes. The general Kirby–Paris theorem (`hercules_wins`) becomes **statable inside** the object theory, since strategies are functions. |
+| **Hydra** | ✅ `hydraBattleLength` (walls at code 1) | ✅ **`hydraD` by `tiEps0`** — Goodstein's mirror with a shorter descent; extracted `hydraX` returns the published battle lengths `[0,1,3]` and its witness is verified to end each battle (`Hydra.lean`) | — |
 
 ## Honest summary
 

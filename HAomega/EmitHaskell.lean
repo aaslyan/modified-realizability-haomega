@@ -58,6 +58,9 @@ partial def hsTm : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → Nat → String
   | _, _, .bump a b, d => "(bumpN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
   | _, _, .good a b, d => "(goodN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
   | _, _, .ord a b, d => "(ordOfN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
+  | _, _, .hcut a b, d => "(hydraStepN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
+  | _, _, .hydra a b, d => "(hydraSeqN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
+  | _, _, .hord a, d => "(ordOfHydraN " ++ hsTm a d ++ ")"
   | _, _, .tiRec s n, d => "(tiRec " ++ hsTm s d ++ " " ++ hsTm n d ++ ")"
 
 /-- Runtime support for emitted System T terms.

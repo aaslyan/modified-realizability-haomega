@@ -233,6 +233,13 @@ theorem soundness : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {
           refine MR_congrEnv _ _ _ ?_ _ (ihx y hOLt)
           intro σ w; cases w <;> rfl
   | eqRefl t => intro e ε h; rfl
+  | convHydraZero s => intro e ε h; rfl
+  | convHydraSucc s t => intro e ε h; rfl
+  | hordCutLt n c =>
+      intro e ε h z hz
+      exact Realizability.oltN_eq_one_iff.mpr
+        (Realizability.olt_ordOfHydraN_step (n.eval e) (c.eval e)
+          (fun h0 ↦ hz () h0))
   | convPredZero => intro e ε h; rfl
   | convPredSucc t => intro e ε h; rfl
   | convGoodZero s => intro e ε h; rfl

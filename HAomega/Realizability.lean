@@ -34,7 +34,7 @@ with no `map tyOf` and no lemma relating the two.
 
 ## The rules
 
-**36 rules**, against the first-order development's 76, and **none carries a
+**39 rules**, against the first-order development's 76, and **none carries a
 side condition** — de Bruijn binders make `SubstOK` and `FreshIn` vacuous.  The
 saving is the equational kit: one Leibniz rule (`eqSubst`) gives every
 congruence, and the function symbols' defining equations are gone because the
@@ -264,6 +264,15 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
   | bumpNeZero {Γ as} {Δ : Ctx Γ as} (b n : Tm Γ .nat) :
       Deriv Δ (.imp ((Formula.eq n .zero).neg)
         ((Formula.eq (.bump (.succ (.succ b)) n) .zero).neg))
+  -- The Hydra layer: the battle's two recursion equations and the single
+  -- imported descent (`hordCutLt`), H4's design verbatim.
+  | convHydraZero {Γ as} {Δ : Ctx Γ as} (s : Tm Γ .nat) :
+      Deriv Δ (.eq (.hydra s .zero) s)
+  | convHydraSucc {Γ as} {Δ : Ctx Γ as} (s t : Tm Γ .nat) :
+      Deriv Δ (.eq (.hydra s (.succ t)) (.hcut (.succ t) (.hydra s t)))
+  | hordCutLt {Γ as} {Δ : Ctx Γ as} (n c : Tm Γ .nat) :
+      Deriv Δ (.imp ((Formula.eq c .zero).neg)
+        (.eq (.prec (.hord (.hcut n c)) (.hord c)) (.succ .zero)))
   | eqRefl {Γ as} {Δ : Ctx Γ as} {τ : Ty} (t : Tm Γ τ) : Deriv Δ (.eq t t)
   -- **Leibniz, at every type.**  One rule; every congruence follows.
   | eqSubst {Γ as a c} {Δ : Ctx Γ as} {s t : Tm Γ c}

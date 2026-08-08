@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ara Aslyan
 -/
 import Realizability.Signature.OrdinalAssignment
+import Realizability.Signature.Hydra
 
 /-!
 # HA^ω, part 1: the finite types and System T
@@ -136,6 +137,12 @@ inductive Tm : List Ty → Ty → Type where
   | bump {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .nat
   | good {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .nat
   | ord  {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .nat
+  -- The Hydra layer, same precedent: tree surgery through the coding is
+  -- course-of-values, so the symbols are primitive, evaluated by the proven
+  -- choice-free `Realizability.Signature.Hydra` layer.
+  | hcut  {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .nat
+  | hydra {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .nat
+  | hord  {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat
   -- **Recursion along `≺`** — the program construct matching the `tiEps0`
   -- rule.  Its step type is the rule's nested `∀→` pair read off exactly: at
   -- `x`, given the recursive values at every `y` together with the (`unit`)
@@ -178,6 +185,9 @@ def Tm.rename {Γ Δ : List Ty} (ρ : Ren Γ Δ) : {τ : Ty} → Tm Γ τ → Tm
   | _, .bump a b => .bump (a.rename ρ) (b.rename ρ)
   | _, .good a b => .good (a.rename ρ) (b.rename ρ)
   | _, .ord a b => .ord (a.rename ρ) (b.rename ρ)
+  | _, .hcut a b => .hcut (a.rename ρ) (b.rename ρ)
+  | _, .hydra a b => .hydra (a.rename ρ) (b.rename ρ)
+  | _, .hord a => .hord (a.rename ρ)
   | _, .tiRec s n => .tiRec (s.rename ρ) (n.rename ρ)
 
 /-! ## Substitution -/
@@ -210,6 +220,9 @@ def Tm.subst {Γ Δ : List Ty} (s : Sub Γ Δ) : {τ : Ty} → Tm Γ τ → Tm �
   | _, .bump a b => .bump (a.subst s) (b.subst s)
   | _, .good a b => .good (a.subst s) (b.subst s)
   | _, .ord a b => .ord (a.subst s) (b.subst s)
+  | _, .hcut a b => .hcut (a.subst s) (b.subst s)
+  | _, .hydra a b => .hydra (a.subst s) (b.subst s)
+  | _, .hord a => .hord (a.subst s)
   | _, .tiRec sc n => .tiRec (sc.subst s) (n.subst s)
 
 /-- Weakening a term into a context with one more variable.  Named because
@@ -295,6 +308,9 @@ def Tm.eval {Γ : List Ty} : {τ : Ty} → Tm Γ τ → Env Γ → τ.interp
   | _, .bump a b, e => Realizability.bumpN (a.eval e) (b.eval e)
   | _, .good a b, e => Realizability.goodN (a.eval e) (b.eval e)
   | _, .ord a b, e => Realizability.ordOf (a.eval e) (b.eval e)
+  | _, .hcut a b, e => Realizability.hydraStepN (a.eval e) (b.eval e)
+  | _, .hydra a b, e => Realizability.hydraSeqN (a.eval e) (b.eval e)
+  | _, .hord a, e => Realizability.ordOfHydraN (a.eval e)
   | _, .tiRec s n, e => tiRecVal (s.eval e) (n.eval e)
 
 /-! ## The substitution lemmas
@@ -334,6 +350,9 @@ theorem Tm.eval_rename {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | bump a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
   | good a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
   | ord a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | hcut a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | hydra a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | hord a ih => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ih]
   | tiRec sc n ihs ihn => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ihs, ihn]
 
 /-- Weakening a term and then evaluating in an extended environment is the
@@ -376,6 +395,9 @@ theorem Tm.eval_subst {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | bump a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
   | good a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
   | ord a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | hcut a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | hydra a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | hord a ih => intro Δ s e; simp only [Tm.subst, Tm.eval, ih]
   | tiRec sc n ihs ihn => intro Δ s e; simp only [Tm.subst, Tm.eval, ihs, ihn]
 
 /-- **Single substitution commutes with evaluation.**  This is the exact shape

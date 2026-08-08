@@ -7,7 +7,7 @@ what is not here yet.
 **Read this first: the machinery is complete, the case studies are not.**
 Extraction, soundness and continuity all hold for every derivation. What exists
 as an actual extracted program is **six** things — and Pascal is the first
-whose algorithm the proof computes rather than receives. only Sperner remains unported — nothing blocks them, but nobody has
+whose algorithm the proof computes rather than receives. **all seven ported**, plus two theorems the first-order fragment cannot state: `herculesD` (strategy-quantified Hydra) and the higher-type Fibonacci — nothing blocks them, but nobody has
 written the derivations.
 
 ## The uniform core
@@ -219,7 +219,7 @@ not done. `gcdSpec` names the algorithm, so this extract is the solver
 | **Pascal mod 2** | ✅ `pasDecide` | ✅ `pasTag`/`pasDecide` | — |
 | **Tower of Hanoi** | ✅ `hanoiSolution` (wall at `n=5`) | ✅ `hanoiExtracted` (`n=10` guarded) | — |
 | **gcd** | ✅ certified, **never ran** | ✅ **COMPLETE**: stage 1 runs; stage 2 all 7 layers — `gcdTheoremD : ∀a∀b. ∃g. g∣a ∧ g∣b ∧ ∀d.(d∣a→d∣b→d∣g)` proved by the fueled induction, `gcdFull` = the proof-computed gcd (`GcdTheorem.lean`) | — |
-| **Sperner 1D** | ✅ | ⬜ | A coloring is a **function** here, so the `look` symbol is not needed at all — the one place the first-order "no new symbols" discipline was forced. |
+| **Sperner 1D** | ✅ (via the `look` symbol) | ✅ **`spernerD`** — colorings are function variables, no symbol, no coding; extracted `spernerX` returns a certified crossing (`Sperner.lean` — this proof extracts the *last* crossing where first-order S1 extracts the first: same theorem, different proof, different program) | — |
 | **Goodstein** | ✅ `goodsteinStopTime` (walls at `m=2`) | ✅ **`goodsteinD` by `tiEps0`**; extracted `goodsteinX` returns the published stop times `[0,1,3,5]` and runs to `m=3` (`Goodstein.lean`) | — |
 | **Hydra** | ✅ `hydraBattleLength` (walls at code 1) | ✅ **`hydraD` by `tiEps0`** — Goodstein's mirror with a shorter descent; extracted `hydraX` returns the published battle lengths `[0,1,3]` and its witness is verified to end each battle (`Hydra.lean`) | — |
 

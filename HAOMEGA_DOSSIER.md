@@ -30,15 +30,33 @@ predates the primitive-`+` change within that session and was left behind.
 **Fix applied:** the comment is now a historical note stating current
 verified behavior.
 
-## 2. The Hydra fragment/metatheorem boundary — NOT DISSOLVED
+## 2. The Hydra fragment/metatheorem boundary — PARTIALLY closed since the
+first audit pass
 
-`[src]` grep over `HAomega/*.lean` for `hercules`/`strategy`/`Play`: the
-only hits are prose in `Hydra.lean`'s header, which says the general theorem
-"is not derived here."  **No declaration states or proves the
-all-strategies theorem.**  What HA^ω changed is *expressibility*: the
-statement is now writable (function variables exist).  `HAOMEGA.md`'s
-"dissolves — quantify over strategies directly" overclaimed; **fix
-applied** — the row now says "statement expressible; not derived."
+At the first pass (commit `3f2b422`): no declaration stated any
+strategy-quantified theorem; `HAOMEGA.md`'s "dissolves" row was corrected to
+"expressible, not derived."
+
+**Since then** (`63d9e95`, same audit day): `HAomega/Hercules.lean` derives
+
+    herculesD : ∀h. ∀f^(ℕ→ℕ). ∃t. play(f, h, t) = 0        [src, run]
+
+where `play f h t` iterates `hcut` with **replication factor `f s` at step
+`s`** — a genuine ∀ over strategies, unstatable first-order.  `[src]` two
+design facts: `play` is a *term* (`recNat h (λs ih. hcut (f s) ih) t` — no
+new primitive, no new eval/soundness/tracking cases), and the descent needs
+*no new import* (`hordCutLt` was already term-general in its replication
+argument).
+
+**Precise remaining gap:** the head choice stays the value layer's
+(leftmost).  The fully general Kirby–Paris `hercules_wins` — any head, any
+replication — needs a general tree-surgery move and its descent, which the
+value layer does not provide; **it remains underived**, and `Hercules.lean`'s
+header says so.  `[run]` extract checks: `herculesX (·+1)` on codes 0–2 =
+`[0,1,3]` (agrees with `hydraX` at the fragment's own strategy);
+`herculesX (fun _ ↦ 1)/(fun _ ↦ 9)` on codes 0–1 = `[0,1,1]` with `playRef`
+terminal certificates; `herculesX (fun _ ↦ 1) 2` **stack-overflows** — the
+doubly-exponential tree coding, the same mechanism as `hydraX 4`/`7` in §5.
 (The neighboring `bump`-row also overclaimed "definable in System T": the
 numeral-graph *schemas* are gone, but the symbols were kept **primitive**
 over the proven first-order value layer; fixed likewise.)
@@ -113,8 +131,10 @@ Two corrections to earlier claims, both now fixed in `HAOMEGA.md`:
 
 ## 6. Hygiene `[run]`
 
-* `lake build`: **741 jobs, success** (after the fixes below: re-verified).
-* `wc -l HAomega/*.lean`: **5,067 lines** (21 files).
+* `lake build`: **743 jobs, success** (re-verified after
+  `Hercules.lean`/`Sperner.lean` landed).
+* `wc -l HAomega/*.lean`: **5,454 lines** (23 files, after
+  `Hercules.lean`/`Sperner.lean`; first-pass figure was 5,067/21).
 * `grep -rnw sorry HAomega/ --include=*.lean` → no matches (exit 1);
   same for `admit`.
 
@@ -129,7 +149,33 @@ fib 109, fib-hi 118, pascal 792, hanoi 1,881, **gcd 13,936**, goodstein
 1,088, hydra 1,059 chars.  Nothing in either file contradicts the facts
 above; the Haskell views are labeled as uncertified translations in both.
 
-## 8. Fixes applied by this audit
+## 8. Sperner 1D — added after the first pass `[src, run]`
+
+    spernerD : ∀n ∀c^(ℕ→ℕ). c 0 = 0 → c n = 1 → ∃k. k < n ∧ c k ≠ c (k+1)
+
+Colorings are function variables — no `look` symbol, no coding (`[src]`
+`Sperner.lean`; the first-order S1 needed `look`, its one forced symbol).
+Axioms `[run]`: `spernerD`, `spernerX` both `[propext, Quot.sound]`.
+
+**Finding — the extract returns the *last* crossing** where first-order S1
+returns the first: `[run]` measured witnesses on the five test colorings are
+`[2, 1, 3, 2, 4]` (e.g. `[0,1,0,1] ↦ 2`, not `0`), each a certified
+crossing.  Cause `[src]`: this proof's step decides `eqDec (c (m+1)) 0`
+*before* consulting the invariant, so a fresh zero re-enters the left
+disjunct and discards the crossing found; the first-order proof consults the
+invariant first.  Same theorem, different proof, measurably different
+program — recorded in `Sperner.lean`'s header as a demonstration that
+extraction is faithful to proof structure.
+
+## 9. Axiom footprints for the additions, run fresh `[run]`
+
+    'HAomega.hercAuxD'   [propext, Quot.sound]
+    'HAomega.herculesD'  [propext, Quot.sound]
+    'HAomega.herculesX'  [propext, Quot.sound]
+    'HAomega.spernerD'   [propext, Quot.sound]
+    'HAomega.spernerX'   [propext, Quot.sound]
+
+## 10. Fixes applied by this audit
 
 1. `Fib.lean`: stale wall-diagnosis comment → historical note with the
    verified current behavior.

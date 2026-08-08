@@ -69,14 +69,14 @@ the value-layer *theorem proofs*, exactly as in the first-order repo):
 | `MR`, **39 rules**, extraction (axiom-free), soundness (all cases) | ✅ |
 | Continuity (`Tracked`, `extract_continuous2`) | ✅ choice-free |
 | `tiEps0` + `tiRec` | ✅ used by Goodstein and Hydra |
-| Case studies: Fib, Fib-type-2, Pascal, Hanoi, gcd (full spec), Goodstein, Hydra | ✅ all extracted and running |
+| Case studies: Fib, Fib-type-2, Pascal, Hanoi, gcd (full spec), Goodstein, Hydra, **Sperner**, **Hercules (∀-strategy)** | ✅ all extracted and running |
 | Proof engineering: `deriv_norm`, `deriv_assumption`, term-form kit | ✅ |
 
 ### What is next
 
-* the strategy-quantified `hercules_wins` as an object-level theorem (now
-  statable; legal plays as object data are the work);
-* Sperner 1D (colorings are functions — no `look` symbol needed);
+* the **any-head** `hercules_wins` (the replication-strategy quantification
+  is done — `herculesD`, `Hercules.lean`; the general head choice needs a
+  tree-surgery move + descent the value layer does not provide);
 * an `MR`-soundness bridge for the emitted Haskell;
 * upstreaming the deriv-authoring kit into reusable tactics.
 

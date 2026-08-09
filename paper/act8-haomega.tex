@@ -32,6 +32,16 @@ certificates:
   \;\mid\; \tau\times\tau .
 \]
 
+\emph{Types} gained one more base since: $\mathsf{ord}$, the ordinal
+notations below $\epsz$ as an \emph{inductive} type rather than a code. In
+the first-order development a notation is a natural number built by iterated
+pairing, and every proof about it carries decode and normal-form side
+conditions; here it is a tree, comparison is pattern matching, and
+well-foundedness is \emph{inherited} from the certified coded order by
+pulling back along the evident encoding --- so the coding survives only
+inside one well-foundedness proof and appears in no computation at all.
+Section~\ref{sec:haomega} closes with what that buys.
+
 \emph{Terms} are G\"odel's System~T --- $\lambda$, application, pairing, the
 numerals, and a recursor $\mathsf{rec}$ \emph{at every type} --- plus a small
 stock of primitives ($+$, the $\epsz$-order $\prec$, and the case-study
@@ -82,7 +92,7 @@ three-view artifact (\texttt{EXTRACTED\_HAOMEGA.md}, rewritten at every
 build) renders all ten realizers this way, and the displays below are its
 three renderings of one certified object each.
 
-\subsection*{Ten theorems, each extracted and run}
+\subsection*{Eleven extracted programs}
 
 \begin{center}\small
 \begin{tabular}{ll}
@@ -99,6 +109,7 @@ Sperner 1D & $\forall n\,\forall c^{\Nat\to\Nat}.\ c\,0=0 \to c\,n=1 \to \exists
 Tower of Hanoi & $\forall n\,\exists \mathit{len}\,\exists \mathit{moves}^{\Nat\to\Nat}.\ \dots$\\
 Fibonacci & $\forall n\,\exists y.\ y=\fib(n)$\\
 Fibonacci at type 2 & $\forall f^{\Nat\to\Nat}\,\exists y.\ y=\fib(f(f\,0))$\\
+Goodstein, typed ordinals & $\forall m\,\exists t.\ \good(m,t)=0$ \ (again, on $\mathsf{ord}$)\\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -172,6 +183,39 @@ distinguishable by running their extracts. The extraction map is faithful
 to proof structure --- which is the thesis of Act~VII, here caught in the
 act.
 
+\subsection*{A second finding: the representation is a variable too}
+
+Sperner showed two \emph{proofs} of one theorem giving measurably different
+programs. The typed ordinal layer runs the same experiment with the
+\emph{representation} as the variable. \texttt{GoodsteinTyped.lean} proves
+$\forall m\,\exists t.\ \good(m,t)=0$ a second time, by transfinite induction
+on structural notations instead of codes --- the same derivation line for
+line, with three symbols swapped ($\mathrm{ord}\mapsto\mathrm{ord^o}$,
+$\prec\mapsto\prec^o$, $\mathsf{tiRec}\mapsto\mathsf{tiRec^o}$). The
+extracted program contains \emph{no coded ordinal}: zero occurrences of the
+coded $\mathrm{ord}$, $\prec$ and $\mathsf{tiRec}$, and the two programs are
+guarded equal at every input the build evaluates.
+
+What that buys is measured, and it is a claim about \emph{size}, not speed:
+
+\begin{center}\small
+\begin{tabular}{rrr}
+\toprule
+$n$ & code (decimal digits) & tree (nodes)\\
+\midrule
+$10$ & $3$ & $13$\\
+$1{,}000$ & $1{,}412$ & $67$\\
+$100{,}000$ & $1{,}782$ & $83$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+No reproducible running-time difference between the two extracted programs
+was found, and none is claimed --- Lean's naturals are \textsc{gmp}-backed,
+so arithmetic on a $1{,}782$-digit code is cheap. What the typed layer
+removes is the encoding itself, and with it the decode and normal-form side
+conditions that the first-order ordinal proofs carry throughout.
+
 \subsection*{The audit, rerun}
 
 The footprints, from the machine, for the \haomega{} library:
@@ -192,4 +236,5 @@ hydra trees still grow doubly exponentially, so battle extracts overflow
 the interpreter on some codes (4 and 7, measured) whatever the type
 discipline --- the encoding was the fragment's cost, and where the
 \haomega{} theorems still \emph{use} the coded value layer, it is theirs
-too.
+too. The ordinals are out (above); the hydra trees are not, and porting them
+is the obvious next move.

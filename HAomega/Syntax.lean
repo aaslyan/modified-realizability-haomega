@@ -6,6 +6,7 @@ Authors: Ara Aslyan
 import Realizability.Signature.OrdinalAssignment
 import Realizability.Signature.Hydra
 import HAomega.HydraSurgery
+import HAomega.OrdCnf
 
 /-!
 # HA^ω, part 1: the finite types and System T
@@ -71,6 +72,10 @@ is the open problem of this branch. -/
 inductive Ty where
   | unit : Ty
   | nat : Ty
+  -- Ordinal notations below ε₀, as their own base type — the typed ordinal
+  -- layer (`OrdCnf.lean`).  The first-order development had to code these
+  -- into ℕ; here they are structural values.
+  | ord : Ty
   | arrow : Ty → Ty → Ty
   | prod : Ty → Ty → Ty
   deriving DecidableEq, Repr
@@ -81,6 +86,7 @@ model is a later concern. -/
 @[reducible] def Ty.interp : Ty → Type
   | .unit => Unit
   | .nat => Nat
+  | .ord => Eps0
   | .arrow a b => a.interp → b.interp
   | .prod a b => a.interp × b.interp
 
@@ -91,6 +97,7 @@ what the first-order `tiRecC` does, and for the same reason. -/
 def Ty.dfltVal : (τ : Ty) → τ.interp
   | .unit => ()
   | .nat => 0
+  | .ord => .zero
   | .arrow _ b => fun _ ↦ b.dfltVal
   | .prod a b => (a.dfltVal, b.dfltVal)
 
@@ -148,6 +155,12 @@ inductive Tm : List Ty → Ty → Type where
   -- surgery layer's `playAtN` — what lets the general Hercules theorem
   -- quantify the head choice, not just the replication.
   | hcutAt {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .nat → Tm Γ .nat
+  -- **The typed ordinal layer** (`OrdCnf.lean`): the zero notation, the
+  -- Goodstein assignment `ord(k, n)` landing in `.ord`, and the structural
+  -- order test — no coding anywhere.
+  | ezero {Γ : List Ty} : Tm Γ .ord
+  | orde {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .ord
+  | olte {Γ : List Ty} : Tm Γ .ord → Tm Γ .ord → Tm Γ .nat
   -- **Recursion along `≺`** — the program construct matching the `tiEps0`
   -- rule.  Its step type is the rule's nested `∀→` pair read off exactly: at
   -- `x`, given the recursive values at every `y` together with the (`unit`)
@@ -155,6 +168,11 @@ inductive Tm : List Ty → Ty → Type where
   | tiRec {Γ : List Ty} {τ : Ty} :
       Tm Γ (.arrow .nat (.arrow (.arrow .nat (.arrow .unit τ)) τ)) →
       Tm Γ .nat → Tm Γ τ
+  -- Recursion along `≺` **on the typed notations** — `tiRec`'s twin with the
+  -- measure at `.ord` instead of coded ℕ, matching the `tiEps0O` rule.
+  | tiRecE {Γ : List Ty} {τ : Ty} :
+      Tm Γ (.arrow .ord (.arrow (.arrow .ord (.arrow .unit τ)) τ)) →
+      Tm Γ .ord → Tm Γ τ
 
 /-! ## Renaming
 
@@ -192,6 +210,10 @@ def Tm.rename {Γ Δ : List Ty} (ρ : Ren Γ Δ) : {τ : Ty} → Tm Γ τ → Tm
   | _, .ord a b => .ord (a.rename ρ) (b.rename ρ)
   | _, .hcut a b => .hcut (a.rename ρ) (b.rename ρ)
   | _, .hcutAt p a b => .hcutAt (p.rename ρ) (a.rename ρ) (b.rename ρ)
+  | _, .ezero => .ezero
+  | _, .orde a b => .orde (a.rename ρ) (b.rename ρ)
+  | _, .olte a b => .olte (a.rename ρ) (b.rename ρ)
+  | _, .tiRecE s n => .tiRecE (s.rename ρ) (n.rename ρ)
   | _, .hydra a b => .hydra (a.rename ρ) (b.rename ρ)
   | _, .hord a => .hord (a.rename ρ)
   | _, .tiRec s n => .tiRec (s.rename ρ) (n.rename ρ)
@@ -228,6 +250,10 @@ def Tm.subst {Γ Δ : List Ty} (s : Sub Γ Δ) : {τ : Ty} → Tm Γ τ → Tm �
   | _, .ord a b => .ord (a.subst s) (b.subst s)
   | _, .hcut a b => .hcut (a.subst s) (b.subst s)
   | _, .hcutAt p a b => .hcutAt (p.subst s) (a.subst s) (b.subst s)
+  | _, .ezero => .ezero
+  | _, .orde a b => .orde (a.subst s) (b.subst s)
+  | _, .olte a b => .olte (a.subst s) (b.subst s)
+  | _, .tiRecE sc n => .tiRecE (sc.subst s) (n.subst s)
   | _, .hydra a b => .hydra (a.subst s) (b.subst s)
   | _, .hord a => .hord (a.subst s)
   | _, .tiRec sc n => .tiRec (sc.subst s) (n.subst s)
@@ -279,6 +305,24 @@ def tiRecVal {τ : Ty} (step : ℕ → (ℕ → Unit → τ.interp) → τ.inter
 termination_by OrdCode.mk x
 decreasing_by exact _h
 
+/-- Wrapper for the typed notations, same device as `OrdCode`: makes `OLtE`
+the well-founded relation the termination checker uses. -/
+structure EpsW where
+  o : Eps0
+
+instance : WellFoundedRelation EpsW :=
+  ⟨InvImage Eps0.OLtE EpsW.o, InvImage.wf EpsW.o Eps0.oLtE_wf⟩
+
+/-- Recursion along `≺` on the **typed** notations — `tiRecVal`'s twin, with
+the re-decision structural (`oltE`: pattern matching, no decoding).  The
+`dite` is load-bearing for the same reason as there. -/
+def tiRecEVal {τ : Ty} (step : Eps0 → (Eps0 → Unit → τ.interp) → τ.interp)
+    (x : Eps0) : τ.interp :=
+  step x fun y _ ↦
+    if _h : Eps0.OLtE y x then tiRecEVal step y else τ.dfltVal
+termination_by EpsW.mk x
+decreasing_by exact _h
+
 /-! ## Evaluation -/
 
 /-- An environment: a value for every variable in scope. -/
@@ -317,9 +361,13 @@ def Tm.eval {Γ : List Ty} : {τ : Ty} → Tm Γ τ → Env Γ → τ.interp
   | _, .ord a b, e => Realizability.ordOf (a.eval e) (b.eval e)
   | _, .hcut a b, e => Realizability.hydraStepN (a.eval e) (b.eval e)
   | _, .hcutAt p a b, e => playAtN (p.eval e) (a.eval e) (b.eval e)
+  | _, .ezero, _ => .zero
+  | _, .orde a b, e => ordE (a.eval e) (b.eval e)
+  | _, .olte a b, e => Eps0.oltNE (a.eval e) (b.eval e)
   | _, .hydra a b, e => Realizability.hydraSeqN (a.eval e) (b.eval e)
   | _, .hord a, e => Realizability.ordOfHydraN (a.eval e)
   | _, .tiRec s n, e => tiRecVal (s.eval e) (n.eval e)
+  | _, .tiRecE s n, e => tiRecEVal (s.eval e) (n.eval e)
 
 /-! ## The substitution lemmas
 
@@ -361,6 +409,10 @@ theorem Tm.eval_rename {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | hcut a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
   | hcutAt p a b ihp iha ihb =>
       intro Δ ρ e; simp only [Tm.rename, Tm.eval, ihp, iha, ihb]
+  | ezero => intros; rfl
+  | orde a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | olte a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | tiRecE s n ihs ihn => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ihs, ihn]
   | hydra a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
   | hord a ih => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ih]
   | tiRec sc n ihs ihn => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ihs, ihn]
@@ -408,6 +460,10 @@ theorem Tm.eval_subst {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | hcut a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
   | hcutAt p a b ihp iha ihb =>
       intro Δ s e; simp only [Tm.subst, Tm.eval, ihp, iha, ihb]
+  | ezero => intros; rfl
+  | orde a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | olte a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | tiRecE sc n ihs ihn => intro Δ s e; simp only [Tm.subst, Tm.eval, ihs, ihn]
   | hydra a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
   | hord a ih => intro Δ s e; simp only [Tm.subst, Tm.eval, ih]
   | tiRec sc n ihs ihn => intro Δ s e; simp only [Tm.subst, Tm.eval, ihs, ihn]

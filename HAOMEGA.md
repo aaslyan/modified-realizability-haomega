@@ -36,6 +36,7 @@ number:
 | `hercules_wins` proved in the metatheory, because a strategy is a function and the fragment has no function variables | `HydraGeneral.lean` (H7), README scope note | **fully derived**: `Hercules.lean`'s `herculesD` quantifies the replication strategy, and `HerculesAny.lean`'s `herculesAnyD` quantifies the head choice too — `∀h ∀f ∀g. ∃t. playAt(g,f,h,t) = 0`, on the computable surgery move `hcutAt` (`HydraSurgery.lean`) whose descent is H7's `play_descends` on codes. Both extracts run |
 | `look` added as a symbol, the one place "no new symbols" was forced | `Coloring.lean` (S1), STATUS | dissolves — a coloring *is* a function |
 | `bump`/`prec`/`hcut`/`xor`/`look` enter by **numeral graph** rather than open-term schemas | CLAUDE.md "documented compromise" | the numeral-graph *schemas* are gone; the symbols themselves were kept **primitive** (evaluated by the proven first-order value layer) rather than defined in System T — definable in principle, primitive in practice |
+| ordinal notations **coded into `ℕ`** by triangular pairing, with decode/normal-form side conditions everywhere | `Epsilon0.lean` (C) | **dissolved for the ordinals**: `OrdCnf.lean` gives them the base type `.ord` with structural comparison and normal form; `GoodsteinTyped.lean` re-proves Goodstein on it, and the extract contains no coded ordinal at all |
 
 And two costs measured during the emitter work (Phase X of the original):
 
@@ -49,13 +50,13 @@ And two costs measured during the emitter work (Phase X of the original):
 
 ## Status (re-verified 2026-08-09 — see `HAOMEGA_DOSSIER.md` for evidence)
 
-**745 jobs green**, zero `sorry`/`admit`, 6,008 lines in `HAomega/` (28
-files). Machinery complete and **all ten case studies done** — the
+**747 jobs green**, zero `sorry`/`admit`, 6,664 lines in `HAomega/` (30
+files). Machinery complete and **eleven extracted programs run** — the
 first-order repo's seven, plus three theorems that repo cannot state (the
 higher-type Fibonacci, the strategy-quantified Hercules, and the fully
-general any-head Hercules) — each with a running extracted program;
-`EXTRACTED_HAOMEGA.md` renders every realizer in three views (raw object /
-collapsed program / Haskell).
+general any-head Hercules), plus Goodstein a second time over the **typed
+ordinal layer**; `EXTRACTED_HAOMEGA.md` renders every realizer in three views
+(raw object / collapsed program / Haskell).
 
 Axiom footprints, run fresh (the earlier "`[propext]`-only continuity" claim
 is stale — `tiRec`'s tracking case brought in `Quot.sound`; and `soundness`
@@ -69,18 +70,23 @@ the value-layer *theorem proofs*, exactly as in the first-order repo):
 
 | part | state |
 |---|---|
-| System T + primitives (`add`,`prec`,`tiRec`,`pred`,`bump`,`good`,`ord`,`hcut`,`hydra`,`hord`) | ✅ |
+| System T + primitives (`add`,`prec`,`tiRec`,`pred`,`bump`,`good`,`ord`,`hcut`,`hcutAt`,`hydra`,`hord`) | ✅ |
+| **Typed ordinal layer**: base type `.ord`, `Eps0` notations, `ordᵒ`/`≺ᵒ`/`tiRecᵒ`, rule `tiEps0O` (`OrdCnf.lean`) | ✅ no coding in any computation |
 | Formulas indexed by realizer type; equality+conversion at every type | ✅ |
-| `MR`, **39 rules**, extraction (axiom-free), soundness (all cases) | ✅ |
+| `MR`, **43 rules**, extraction (axiom-free), soundness (all cases) | ✅ |
 | Continuity (`Tracked`, `extract_continuous2`) | ✅ choice-free |
 | `tiEps0` + `tiRec` | ✅ used by Goodstein and Hydra |
-| Case studies: Fib, Fib-type-2, Pascal, Hanoi, gcd (full spec), Goodstein, Hydra, **Sperner**, **Hercules (∀-strategy)**, **Hercules (any head)** | ✅ all extracted and running |
+| Case studies: Fib, Fib-type-2, Pascal, Hanoi, gcd (full spec), Goodstein, Hydra, **Sperner**, **Hercules (∀-strategy)**, **Hercules (any head)**, **Goodstein on typed ordinals** | ✅ all extracted and running |
 | Proof engineering: `deriv_norm`, `deriv_assumption`, term-form kit | ✅ |
 
 ### What is next
 
 * an `MR`-soundness bridge for the emitted Haskell;
-* upstreaming the deriv-authoring kit into reusable tactics.
+* automatic associates / moduli for extracted type-2 programs;
+* upstreaming the deriv-authoring kit into reusable tactics;
+* porting the remaining coded layers (Hydra trees) to structural types, the
+  way `OrdCnf.lean` did for the ordinals — the Hydra codes are what still
+  overflows the interpreter on some battle inputs.
 
 ## What this branch will *not* deliver
 

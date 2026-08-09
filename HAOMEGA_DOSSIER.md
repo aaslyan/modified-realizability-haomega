@@ -184,6 +184,48 @@ extraction is faithful to proof structure.
     'HAomega.spernerD'   [propext, Quot.sound]
     'HAomega.spernerX'   [propext, Quot.sound]
 
+## 11. The typed ordinal layer (addendum, 2026-08-09)
+
+`[src]` `HAomega/OrdCnf.lean` replaces the coded ε₀-notations with an
+inductive type for the object language's new base type `.ord`:
+
+    inductive Eps0 | zero | node : Eps0 → ℕ → Eps0 → Eps0     -- ω^e·(c+1) + r
+
+Comparison `olt` and normal form `nf` are structural (pattern matching, no
+decoding).  `toCode : Eps0 → ℕ` exists **only in proofs**: `toCode_olt` /
+`toCode_nf` show the structural operations compute `precB` / `nfB`, and
+`oLtE_wf` is the certified `oLt_wf` pulled back along it — so no new descent
+argument, and no coding in any computation.  `ordE` mirrors `ordOf`
+constructor for constructor (`toCode_ordE`), and the two new schemas
+`ordEBump` / `ordEPredLt` are discharged by `ordE_bumpN` /
+`oltE_ordE_of_lt`, themselves the first-order theorems read through
+`toCode`. **No new mathematical import.**
+
+`[run]` footprints: `ordE`, `Eps0.oltNE` — *no axioms*; `Eps0.oLtE_wf`,
+`goodAuxOD`, `goodsteinOD`, `goodsteinOX` — `[propext, Quot.sound]`.
+
+`[run]` `GoodsteinTyped.lean` re-proves Goodstein by `tiEps0O`:
+`goodsteinOX 0..3 = [0,1,3,5]`, each certified terminal
+(`goodN m (goodsteinOX m) = 0`), and **build-guarded equal to `goodsteinX`**
+at every input evaluated. Inspection of the extract `[run]`: **0** occurrences
+of coded `ord(`, coded `≺`, coded `tiRec[`; 2 × `ordᵒ(` and 1 × `tiRecᵒ[`.
+
+`[run]` Representation size — the payoff, measured:
+
+    n         code (decimal digits)   tree (nodes)
+    10                3                   13
+    1000          1,412                   67
+    100000        1,782                   83
+
+`[run]` **Not** a speed claim: 20 runs of `goodsteinX 3` took 9 ms against 7
+ms for `goodsteinOX 3` (noise), and 50 structural comparisons at `n ≈ 10⁴`
+and 50 coded ones both completed instantly when timed individually. An
+earlier `foldl` benchmark that appeared to show a coded-side timeout **did
+not reproduce** and is not claimed.
+
+`[run]` Hygiene after the layer: `lake build` **747 jobs**, 6,664 lines,
+30 files, zero `HAomega/` warnings.
+
 ## 10. Fixes applied by this audit
 
 1. `Fib.lean`: stale wall-diagnosis comment → historical note with the

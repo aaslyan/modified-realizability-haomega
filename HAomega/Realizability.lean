@@ -34,7 +34,7 @@ with no `map tyOf` and no lemma relating the two.
 
 ## The rules
 
-**39 rules**, against the first-order development's 76, and **none carries a
+**43 rules**, against the first-order development's 76, and **none carries a
 side condition** — de Bruijn binders make `SubstOK` and `FreshIn` vacuous.  The
 saving is the equational kit: one Leibniz rule (`eqSubst`) gives every
 congruence, and the function symbols' defining equations are gone because the
@@ -187,12 +187,13 @@ branch and for `⊥`-elimination. -/
 def Tm.dflt : {Γ : List Ty} → (τ : Ty) → Tm Γ τ
   | _, .unit => .star
   | _, .nat => .zero
+  | _, .ord => .ezero
   | _, .arrow _ b => .lam (Tm.dflt b)
   | _, .prod a b => .pair (Tm.dflt a) (Tm.dflt b)
 
 /-! ## The rules -/
 
-/-- **Natural deduction for HA^ω.**  39 rules, no side conditions. -/
+/-- **Natural deduction for HA^ω.**  43 rules, no side conditions. -/
 inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
     {a : Ty} → Formula Γ a → Type where
   | ax {Γ as a} {φ : Formula Γ a} {Δ : Ctx Γ as} : Deriv (.cons φ Δ) φ
@@ -242,6 +243,15 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
           φ.atInner))
         φ)) →
       Deriv Δ (.all .nat φ)
+  -- Transfinite induction **on the typed notations** — `tiEps0`'s twin with
+  -- the measure at `.ord`; its recursor is `tiRecE`.
+  | tiEps0O {Γ as a} {φ : Formula (.ord :: Γ) a} {Δ : Ctx Γ as} :
+      Deriv Δ (.all .ord (.imp
+        (.all .ord (.imp
+          (.eq (.olte (.var .here) (.var (.there .here))) (.succ .zero))
+          φ.atInnerO))
+        φ)) →
+      Deriv Δ (.all .ord φ)
   -- The Goodstein layer: conversions for `pred`/`good`, and the three
   -- single-symbol imports of the first-order D5 design (`ordBump`,
   -- `ordPredLt`, `bumpNeZero`), each discharged in soundness by exactly one
@@ -261,6 +271,16 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
       Deriv Δ (.imp ((Formula.eq n .zero).neg)
         (.eq (.prec (.ord (.succ (.succ b)) (.pred n))
           (.ord (.succ (.succ b)) n)) (.succ .zero)))
+  -- The **typed** ordinal schemas: `ordBump`/`ordPredLt` with the assignment
+  -- landing in `.ord`, each discharged in soundness by exactly one `OrdCnf`
+  -- theorem (itself the first-order theorem read through `toCode`).
+  | ordEBump {Γ as} {Δ : Ctx Γ as} (b n : Tm Γ .nat) :
+      Deriv Δ (.eq (.orde (.succ (.succ (.succ b))) (.bump (.succ (.succ b)) n))
+        (.orde (.succ (.succ b)) n))
+  | ordEPredLt {Γ as} {Δ : Ctx Γ as} (b n : Tm Γ .nat) :
+      Deriv Δ (.imp ((Formula.eq n .zero).neg)
+        (.eq (.olte (.orde (.succ (.succ b)) (.pred n))
+          (.orde (.succ (.succ b)) n)) (.succ .zero)))
   | bumpNeZero {Γ as} {Δ : Ctx Γ as} (b n : Tm Γ .nat) :
       Deriv Δ (.imp ((Formula.eq n .zero).neg)
         ((Formula.eq (.bump (.succ (.succ b)) n) .zero).neg))

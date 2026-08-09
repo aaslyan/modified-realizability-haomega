@@ -8,7 +8,7 @@ every extracted type-2 realizer among the Kleene–Kreisel continuous
 functionals.  The rule set includes **transfinite induction to `ε₀`**
 (`tiEps0`), with its recursor `tiRec` as a matching term former.
 
-Ten theorems are derived in the object theory, each with its realizer
+Eleven extracted programs come out of the object theory, each with its realizer
 extracted, certified, and **run** at every build:
 
 | | statement | notes |
@@ -23,6 +23,7 @@ extracted, certified, and **run** at every build:
 | **Tower of Hanoi** | `∀n ∃len ∃moves^(ℕ→ℕ). …` | function-valued move sequences; runs at `n = 10` |
 | **Fibonacci** | `∀n ∃y. y = fib n` | the on-ramp; extract runs to `n = 1000` |
 | **Fibonacci, type 2** | `∀f^(ℕ→ℕ) ∃y. y = fib(f(f 0))` | proved continuous, with associate and explicit modulus |
+| **Goodstein, typed ordinals** | `∀m ∃t. good(m,t) = 0` | the same statement again, by `tiEps0O` on **structural** ε₀-notations — the extract contains no coded ordinal |
 
 Zero `sorry`/`admit`.  `lake build` is the test suite: every correctness
 claim is a theorem and every evaluation claim an embedded `#guard`.

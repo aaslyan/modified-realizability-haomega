@@ -22,6 +22,7 @@ namespace HAomega.EmitHaskell
 /-- Haskell type corresponding to an HA^ω finite type. -/
 def hsTy : Ty → String
   | .unit => "()"
+  | .ord => "Eps0"
   | .nat => "Integer"
   | .arrow a b => "(" ++ hsTy a ++ " -> " ++ hsTy b ++ ")"
   | .prod a b => "(" ++ hsTy a ++ ", " ++ hsTy b ++ ")"
@@ -61,6 +62,10 @@ partial def hsTm : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → Nat → String
   | _, _, .hcut a b, d => "(hydraStepN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
   | _, _, .hcutAt p a b, d =>
       "(playAtN " ++ hsTm p d ++ " " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
+  | _, _, .ezero, _ => "EZero"
+  | _, _, .orde a b, d => "(ordE " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
+  | _, _, .olte a b, d => "(oltNE " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
+  | _, _, .tiRecE s n, d => "(tiRecE " ++ hsTm s d ++ " " ++ hsTm n d ++ ")"
   | _, _, .hydra a b, d => "(hydraSeqN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
   | _, _, .hord a, d => "(ordOfHydraN " ++ hsTm a d ++ ")"
   | _, _, .tiRec s n, d => "(tiRec " ++ hsTm s d ++ " " ++ hsTm n d ++ ")"

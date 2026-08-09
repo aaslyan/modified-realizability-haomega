@@ -7,11 +7,12 @@ import HAomega.Hydra
 import HAomega.GcdTheorem
 import HAomega.Sperner
 import HAomega.HerculesAny
+import HAomega.GoodsteinTyped
 
 /-!
 # Every extracted program, in three views
 
-For each of the ten case studies this module renders the realizer three
+For each of the eleven case studies this module renders the realizer three
 ways and writes `EXTRACTED_HAOMEGA.md`:
 
 1. **the high-level object** — the raw extracted realizer, the element of the
@@ -38,6 +39,7 @@ def R7 := extractClosed (hydraD (Γ := []) (Δ := Ctx.nil))
 def R8 := extractClosed (spernerD (Γ := []) (Δ := Ctx.nil))
 def R9 := extractClosed (herculesD (Γ := []) (Δ := Ctx.nil))
 def R10 := extractClosed (herculesAnyD (Γ := []) (Δ := Ctx.nil))
+def R11 := extractClosed (goodsteinOD (Γ := []) (Δ := Ctx.nil))
 
 private def section' (title thm ty : String)
     {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) : String :=
@@ -52,7 +54,7 @@ private def section' (title thm ty : String)
   "```haskell\n" ++ EmitHaskell.hsTm t 0 ++ "\n```\n\n"
 
 def showAll : String :=
-  "# The ten extracted programs of the HA^ω development\n\n" ++
+  "# The eleven extracted programs of the HA^ω development\n\n" ++
   "Each section shows one certified realizer in three renderings.  The\n" ++
   "certified object is the System T term; soundness certifies it realizes\n" ++
   "its theorem, continuity that it denotes a continuous functional.\n\n" ++
@@ -76,7 +78,10 @@ def showAll : String :=
     "N → ((N → N) → (N × 1))" R9 ++
   section' "10. Hercules, any head (the fully general game)"
     "∀h ∀f^(ℕ→ℕ) ∀g^(ℕ→ℕ). ∃t. playAt(g, f, h, t) = 0"
-    "N → ((N → N) → ((N → N) → (N × 1)))" R10
+    "N → ((N → N) → ((N → N) → (N × 1)))" R10 ++
+  section' "11. Goodstein over the typed ordinals (TI(ε₀) on notations)"
+    "∀m. ∃t. good(m, t) = 0   — §6's statement, proved on structural ordinals"
+    "N → (N × 1)" R11
 
 #eval IO.FS.writeFile "EXTRACTED_HAOMEGA.md" showAll
 #eval IO.println ("written: " ++ toString showAll.length ++ " chars")

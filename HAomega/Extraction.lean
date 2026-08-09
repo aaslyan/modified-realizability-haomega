@@ -127,10 +127,13 @@ def extract : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {a : Ty
   | _, _, _, _, _, .ind D₁ D₂ =>
       .lam (.recNat (extract D₁).wk (extract D₂).wk (.var .here))
   | _, _, _, _, _, .tiEps0 D => .lam (.tiRec (extract D).wk (.var .here))
+  | _, _, _, _, _, .tiEps0O D => .lam (.tiRecE (extract D).wk (.var .here))
   | _, _, _, _, _, .convPredZero => .star
   | _, _, _, _, _, .convPredSucc _ => .star
   | _, _, _, _, _, .convGoodZero _ => .star
   | _, _, _, _, _, .convGoodSucc _ _ => .star
+  | _, _, _, _, _, .ordEBump _ _ => .star
+  | _, _, _, _, _, .ordEPredLt _ _ => Tm.dflt _
   | _, _, _, _, _, .ordBump _ _ => .star
   | _, _, _, _, _, .ordPredLt _ _ => Tm.dflt _
   | _, _, _, _, _, .bumpNeZero _ _ => Tm.dflt _

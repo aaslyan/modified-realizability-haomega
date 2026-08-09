@@ -232,6 +232,23 @@ theorem soundness : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {
           refine (MR_rename _ _ _ _).mpr ?_
           refine MR_congrEnv _ _ _ ?_ _ (ihx y hOLt)
           intro σ w; cases w <;> rfl
+  | tiEps0O D ih =>
+      intro e ε h
+      have hstep := ih e ε h
+      show ∀ n : Eps0, MR _ _
+        (tiRecEVal (((extract D).wk).eval (Env.cons (σ := .ord) n ε)) n)
+      simp only [Tm.wk, Tm.eval_wk]
+      intro n
+      induction n using Eps0.oLtE_wf.induction with
+      | _ x ihx =>
+          rw [tiRecEVal]
+          refine hstep x _ ?_
+          intro y u hy
+          have hOLt : Eps0.OLtE y x := Eps0.oltNE_eq_one_iff.mp hy
+          simp only [dif_pos hOLt]
+          refine (MR_rename _ _ _ _).mpr ?_
+          refine MR_congrEnv _ _ _ ?_ _ (ihx y hOLt)
+          intro σ w; cases w <;> rfl
   | eqRefl t => intro e ε h; rfl
   | convHydraZero s => intro e ε h; rfl
   | convHydraSucc s t => intro e ε h; rfl
@@ -252,6 +269,14 @@ theorem soundness : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {
   | ordBump b n =>
       intro e ε h
       exact Realizability.ordOf_bumpN (k := b.eval e + 2) (by omega) (n.eval e)
+  | ordEBump b n =>
+      intro e ε h
+      exact ordE_bumpN (k := b.eval e + 2) (by omega) (n.eval e)
+  | ordEPredLt b n =>
+      intro e ε h z hz
+      have hn : n.eval e ≠ 0 := fun h0 ↦ hz () h0
+      exact Eps0.oltNE_eq_one_iff.mpr
+        (oltE_ordE_of_lt (by simp only [Tm.eval]; omega) (Nat.pred_lt hn))
   | ordPredLt b n =>
       intro e ε h z hz
       have hn : n.eval e ≠ 0 := fun h0 ↦ hz () h0

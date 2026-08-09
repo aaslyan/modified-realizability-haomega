@@ -124,6 +124,7 @@ def Var.lvl : {Γ : List Ty} → {τ : Ty} → Var Γ τ → Nat
 /-- A type, as a string. -/
 def Ty.str : Ty → String
   | .unit => "1"
+  | .ord => "O"
   | .nat => "N"
   | .arrow a b => "(" ++ a.str ++ "→" ++ b.str ++ ")"
   | .prod a b => "(" ++ a.str ++ "×" ++ b.str ++ ")"
@@ -149,6 +150,11 @@ def Tm.pretty : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → (d : Nat) → Stri
   | _, _, .hcut a b, d => "hcut(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
   | _, _, .hcutAt p a b, d =>
       "hcutAt(" ++ p.pretty d ++ ", " ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
+  | _, _, .ezero, _ => "0ᵒ"
+  | _, _, .orde a b, d => "ordᵒ(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
+  | _, _, .olte a b, d => "(" ++ a.pretty d ++ " ≺ᵒ " ++ b.pretty d ++ ")"
+  | _, _, .tiRecE s n, d =>
+      "tiRecᵒ[" ++ s.pretty d ++ " | " ++ n.pretty d ++ "]"
   | _, _, .hydra a b, d => "hydra(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
   | _, _, .hord a, d => "hord " ++ a.pretty d
   | _, _, .tiRec s n, d =>
@@ -182,6 +188,11 @@ def Tm.pretty' : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → (d : Nat) → Str
   | _, _, .hcut a b, d => "hcut(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
   | _, _, .hcutAt p a b, d =>
       "hcutAt(" ++ p.pretty' d ++ ", " ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
+  | _, _, .ezero, _ => "0ᵒ"
+  | _, _, .orde a b, d => "ordᵒ(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
+  | _, _, .olte a b, d => "(" ++ a.pretty' d ++ " ≺ᵒ " ++ b.pretty' d ++ ")"
+  | _, _, .tiRecE s n, d =>
+      "tiRecᵒ[" ++ s.pretty' d ++ " | " ++ n.pretty' d ++ "]"
   | _, _, .hydra a b, d => "hydra(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
   | _, _, .hord a, d => "hord " ++ a.pretty' d
   | _, _, .tiRec s n, d =>

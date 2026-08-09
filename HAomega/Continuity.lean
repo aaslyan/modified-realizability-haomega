@@ -103,6 +103,47 @@ theorem continuous2_apply_nat {k : (ℕ → ℕ) → ℕ} {G : (ℕ → ℕ) →
     hn β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi (Nat.le_max_right _ _))
   rw [hGβ, hkβ]
 
+/-! ## Continuity into an arbitrary value type
+
+`Continuous2` lands in `ℕ`; the typed ordinal layer needs the same notion for
+families landing in `Eps0`.  `ContAt σ` is that notion, and `ContAt ℕ` is
+`Continuous2` **definitionally** — so the vendored base case is untouched and
+the ordinal clauses reuse these lemmas verbatim. -/
+
+/-- Continuity of a family landing in an arbitrary type. -/
+def ContAt (σ : Type) (F : (ℕ → ℕ) → σ) : Prop :=
+  ∀ α : ℕ → ℕ, ∃ n : ℕ, ∀ β : ℕ → ℕ, (∀ i < n, α i = β i) → F α = F β
+
+theorem contAt_const {σ : Type} (c : σ) : ContAt σ (fun _ ↦ c) :=
+  fun _ ↦ ⟨0, fun _ _ ↦ rfl⟩
+
+theorem contAt_binop {σ τ ρ : Type} {F : (ℕ → ℕ) → σ} {G : (ℕ → ℕ) → τ}
+    (op : σ → τ → ρ) (hF : ContAt σ F) (hG : ContAt τ G) :
+    ContAt ρ (fun α ↦ op (F α) (G α)) := by
+  intro α
+  obtain ⟨m, hm⟩ := hF α
+  obtain ⟨n, hn⟩ := hG α
+  refine ⟨Nat.max m n, fun β hβ ↦ ?_⟩
+  show op (F α) (G α) = op (F β) (G β)
+  rw [hm β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi (Nat.le_max_left _ _)),
+    hn β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi (Nat.le_max_right _ _))]
+
+/-- Applying a continuously-computed index, at arbitrary index and value
+types.  Generalises `continuous2_apply_nat`. -/
+theorem contAt_apply {ι σ : Type} {k : (ℕ → ℕ) → ι} {G : (ℕ → ℕ) → ι → σ}
+    (hk : ContAt ι k) (hG : ∀ j, ContAt σ fun α ↦ G α j) :
+    ContAt σ fun α ↦ G α (k α) := by
+  intro α
+  obtain ⟨m, hm⟩ := hk α
+  obtain ⟨n, hn⟩ := hG (k α) α
+  refine ⟨Nat.max m n, fun β hβ ↦ ?_⟩
+  show G α (k α) = G β (k β)
+  have hkβ : k α = k β :=
+    hm β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi (Nat.le_max_left _ _))
+  have hGβ : G α (k α) = G β (k α) :=
+    hn β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi (Nat.le_max_right _ _))
+  rw [hGβ, hkβ]
+
 /-! ## The logical relation -/
 
 /-- **`Tracked τ X`** — the oracle-parameterized logical relation.
@@ -114,6 +155,7 @@ the proof avoid constructing associates. -/
 def Tracked : (τ : Ty) → ((ℕ → ℕ) → τ.interp) → Prop
   | .unit, _ => True
   | .nat, X => Continuous2 X
+  | .ord, X => ContAt Eps0 X
   | .prod a b, X => Tracked a (fun α ↦ (X α).1) ∧ Tracked b (fun α ↦ (X α).2)
   | .arrow a b, X => ∀ Y, Tracked a Y → Tracked b (fun α ↦ X α (Y α))
 
@@ -134,16 +176,31 @@ theorem continuous2_eval {Z : (ℕ → ℕ) → ℕ} (hZ : Continuous2 Z) :
 
 /-- **Applying a continuously-computed numeral index, at every finite type.**
 The level-free analogue of the first-order `tracked_apply_nat`. -/
-theorem tracked_apply_nat : (τ : Ty) → {k : (ℕ → ℕ) → ℕ} →
-    {G : (ℕ → ℕ) → ℕ → τ.interp} → Continuous2 k →
+theorem tracked_apply {ι : Type} : (τ : Ty) → {k : (ℕ → ℕ) → ι} →
+    {G : (ℕ → ℕ) → ι → τ.interp} → ContAt ι k →
     (∀ j, Tracked τ fun α ↦ G α j) → Tracked τ fun α ↦ G α (k α)
   | .unit, _, _, _, _ => trivial
-  | .nat, _, _, hk, hG => continuous2_apply_nat hk hG
+  | .nat, _, _, hk, hG => contAt_apply hk hG
+  | .ord, _, _, hk, hG => contAt_apply hk hG
   | .prod a b, _, _, hk, hG =>
-      ⟨tracked_apply_nat a hk fun j ↦ (hG j).1,
-       tracked_apply_nat b hk fun j ↦ (hG j).2⟩
+      ⟨tracked_apply (ι := ι) a hk fun j ↦ (hG j).1,
+       tracked_apply (ι := ι) b hk fun j ↦ (hG j).2⟩
   | .arrow _ b, _, _, hk, hG =>
-      fun Y hY ↦ tracked_apply_nat b hk fun j ↦ hG j Y hY
+      fun Y hY ↦ tracked_apply (ι := ι) b hk fun j ↦ hG j Y hY
+
+/-- The numeral-index instance, the one every `recNat`/`tiRec` case uses.
+Fixing `ι` matters: with it a metavariable the higher-order unifier can solve
+`k` against the *environment* family instead of the intended index. -/
+theorem tracked_apply_nat (τ : Ty) {k : (ℕ → ℕ) → ℕ}
+    {G : (ℕ → ℕ) → ℕ → τ.interp} (hk : Continuous2 k)
+    (hG : ∀ j, Tracked τ fun α ↦ G α j) : Tracked τ fun α ↦ G α (k α) :=
+  tracked_apply τ hk hG
+
+/-- The ordinal-index instance, for `tiRecE`. -/
+theorem tracked_apply_ord (τ : Ty) {k : (ℕ → ℕ) → Eps0}
+    {G : (ℕ → ℕ) → Eps0 → τ.interp} (hk : ContAt Eps0 k)
+    (hG : ∀ j, Tracked τ fun α ↦ G α j) : Tracked τ fun α ↦ G α (k α) :=
+  tracked_apply τ hk hG
 
 /-- **The canonical values are tracked.**  Needed by `tiRec`: when the
 re-decided order test fails, the recursor returns `Ty.dfltVal`, and that branch
@@ -156,6 +213,7 @@ the constantly-`dfltVal` function. -/
 theorem tracked_dflt : (τ : Ty) → Tracked τ (fun _ ↦ τ.dfltVal)
   | .unit => trivial
   | .nat => continuous2_const 0
+  | .ord => contAt_const Eps0.zero
   | .prod a b => ⟨tracked_dflt a, tracked_dflt b⟩
   | .arrow _ b => fun _ _ ↦ tracked_dflt b
 
@@ -215,6 +273,37 @@ theorem eval_tracked {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | hcutAt p a b ihp iha ihb =>
       intro E hE
       exact continuous2_ternop playAtN (ihp E hE) (iha E hE) (ihb E hE)
+  | ezero => intro E hE; exact contAt_const _
+  | orde a b iha ihb =>
+      intro E hE
+      exact contAt_binop ordE (iha E hE) (ihb E hE)
+  | olte a b iha ihb =>
+      intro E hE
+      exact contAt_binop Eps0.oltNE (iha E hE) (ihb E hE)
+  | tiRecE s n ihs ihn =>
+      intro E hE
+      refine tracked_apply_ord _ (ihn E hE) fun j ↦ ?_
+      induction j using Eps0.oLtE_wf.induction with
+      | _ x ihx =>
+          have hEq : (fun α ↦ tiRecEVal (s.eval (E α)) x)
+              = fun α ↦ s.eval (E α) x (fun y _ ↦
+                  if h : Eps0.OLtE y x then tiRecEVal (s.eval (E α)) y
+                  else Ty.dfltVal _) := by
+            funext α; rw [tiRecEVal]
+          rw [hEq]
+          refine ihs E hE (fun _ ↦ x) (contAt_const x) _ ?_
+          intro Y hY U _
+          show Tracked _ fun α ↦
+            dite (Eps0.OLtE (Y α) x)
+              (fun _ ↦ tiRecEVal (s.eval (E α)) (Y α))
+              (fun _ ↦ Ty.dfltVal _)
+          refine tracked_apply_ord _ (k := Y)
+            (G := fun α y ↦ dite (Eps0.OLtE y x)
+              (fun _ ↦ tiRecEVal (s.eval (E α)) y) (fun _ ↦ Ty.dfltVal _))
+            hY fun y ↦ ?_
+          by_cases hyx : Eps0.OLtE y x
+          · simp only [dif_pos hyx]; exact ihx y hyx
+          · simp only [dif_neg hyx]; exact tracked_dflt _
   | hydra a b iha ihb =>
       intro E hE
       exact continuous2_binop Realizability.hydraSeqN (iha E hE) (ihb E hE)

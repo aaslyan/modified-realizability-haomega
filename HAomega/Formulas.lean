@@ -129,6 +129,12 @@ def Formula.atInner {Γ : List Ty} {a : Ty} (φ : Formula (.nat :: Γ) a) :
     Formula (.nat :: .nat :: Γ) a :=
   φ.rename (Ren.wk .nat).ext
 
+/-- `atInner` at the ordinal type — the accumulated hypothesis of the typed
+transfinite induction `tiEps0O`. -/
+def Formula.atInnerO {Γ : List Ty} {a : Ty} (φ : Formula (.ord :: Γ) a) :
+    Formula (.ord :: .ord :: Γ) a :=
+  φ.rename (Ren.wk .ord).ext
+
 /-- The substitution `x ↦ succ x` on the outermost variable, used by induction. -/
 def Sub.succHere {Γ : List Ty} : Sub (.nat :: Γ) (.nat :: Γ)
   | _, .here => .succ (.var .here)
@@ -153,6 +159,7 @@ def Formula.interp : {Γ : List Ty} → {a : Ty} → Formula Γ a → Env Γ →
 def eqIdx : Ty → Ty
   | .unit => .unit
   | .nat => .unit
+  | .ord => .unit
   | .arrow a b => .arrow a (eqIdx b)
   | .prod a b => .prod (eqIdx a) (eqIdx b)
 
@@ -161,6 +168,7 @@ def eqIdx : Ty → Ty
 def eqAt : {Γ : List Ty} → (τ : Ty) → Tm Γ τ → Tm Γ τ → Formula Γ (eqIdx τ)
   | _, .unit, _, _ => .top
   | _, .nat, s, t => .eq s t
+  | _, .ord, s, t => .eq s t
   | _, .arrow a b, s, t =>
       .all a (eqAt b (.app s.wk (.var .here)) (.app t.wk (.var .here)))
   | _, .prod a b, s, t =>
@@ -173,6 +181,7 @@ theorem interp_eqAt : ∀ (τ : Ty) {Γ : List Ty} (s t : Tm Γ τ) (e : Env Γ)
   induction τ with
   | unit => intro Γ s t e; exact ⟨fun _ ↦ Subsingleton.elim _ _, fun _ ↦ rfl⟩
   | nat => intro Γ s t e; exact Iff.rfl
+  | ord => intro Γ s t e; exact Iff.rfl
   | arrow a b _ ihb =>
       intro Γ s t e
       constructor

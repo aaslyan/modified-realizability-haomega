@@ -2,15 +2,44 @@
 \input{preamble}
 
 \title{\bfseries How a Proof Becomes a Program\\[6pt]
-  \normalfont\large\itshape A visual tour of a small formal system in which
-  theorems, once proved, hand you a working program\\ --- and of what that
-  turns out to cost.}
+  \normalfont\large\itshape A tour of two formal systems in which theorems,
+  once proved, hand you a working program\\ --- and of how the proof, its
+  logical strength, and its choice of representation\\ each leave a mark on
+  the program you get.}
 \author{Ara Aslyan}
 \date{}
 
 \begin{document}
 \maketitle
 \thispagestyle{empty}
+
+\begin{abstract}
+\noindent
+We present a mechanized framework for modified realizability over finite-type
+intuitionistic arithmetic, formalized in Lean~4, in which the extracted
+realizer is a term of the object language rather than an opaque function. The
+framework proves extraction sound and extracted realizers continuous, and
+extends the object theory by a \emph{matched} proof/program pair --- transfinite
+induction up to $\epsz$ together with a recursor along the induced ordinal
+order --- so that theorems beyond arithmetical induction still yield running
+programs; case-study symbols enter as primitives evaluated by separately
+verified value layers.
+
+Thirteen theorems are derived and extracted, among them Goodstein's theorem and
+the Kirby--Paris hydra theorem in a strategy-quantified form the one-sorted
+setting cannot state. The system makes proof structure, logical strength, and
+representation observable in the extracted programs: two proofs of one theorem
+extract to programs that return different witnesses; replacing a numerical
+encoding of hydra trees by a structural type turns a battle whose coded extract
+exhausts the evaluator into one that computes the published length, while an
+analogous change for ordinals reduces representation size without any measured
+change in running time; and type-$2$ realizers are continuous, with a
+discontinuous functional exhibited that no derivation extracts to. A
+translation into a functional target language is proved correct against a
+formal semantics of that target for the non-transfinite fragment. Every
+extracted program that runs is machine-checked to depend on no choice
+principle.
+\end{abstract}
 
 %======================================================================
 \section*{Prologue}
@@ -53,7 +82,21 @@ tour is meant to be read start to finish by someone who has never seen any
 of this before. Everything is built up on the page, and each idea arrives at
 the moment an earlier paragraph has made you ask for it.
 
+That is Part~I, and it answers the question it sets. But it answers it about a
+system deliberately built to be as poor as possible: one sort of object, a
+short list of symbols, and everything else --- ordinals, trees, sequences of
+moves --- \emph{coded} into a natural number. Poverty keeps the audit short,
+which is why we start there. It also has a price, and until you have a second
+system to compare against, that price is invisible. Part~II builds the machine
+again over a language with types, runs the same theorems through it, and
+measures what changed. The comparison turns out to be the more interesting
+half: it makes proof structure, logical strength, and representation into
+things one can vary one at a time and watch the consequences in the extracted
+program.
+
 %======================================================================
+\part{A minimal system, end to end}
+
 \section{Act I --- The hook}
 
 Pick a natural number --- say $3$. Write it down. Now play the following
@@ -141,7 +184,7 @@ one example forces us to name. No hierarchies, no levels, no collapses ---
 those are Act~III, and they will make far more sense once you have a real
 realizer in hand to point at.
 
-Everything in this tour happens inside a fixed, small formal system --- we
+Everything in Part~I happens inside a fixed, small formal system --- we
 will call it \emph{the fragment}. Think of the fragment as a self-contained
 little world of mathematics with a rigid rulebook: a fixed vocabulary of
 things it can talk about (zero, successor, addition, multiplication, and a
@@ -1238,7 +1281,7 @@ into a thing that merely type-checks. So the question has one precise form: does
 \code{Classical.choice} appear in the list?
 
 Now the finding, stated exactly as the machine reports it. Every extracted
-program in the whole development --- the Goodstein stopping-step function, the
+program in the fragment --- the Goodstein stopping-step function, the
 Hydra battle-length function, the gcd calculator, the Sperner search, the Pascal
 classifier, the Fibonacci iterator, and the extraction machinery itself ---
 reports its axiom dependency as exactly
@@ -1433,7 +1476,7 @@ ledger honest. What you assume is visible; reducing it is progress you can point
 to, not a matter of narrative.
 
 %======================================================================
-\section{Act VII --- The thesis}
+\section{Act VII --- What the small system shows}
 
 Set the examples back-to-back --- Hanoi, Pascal, Fibonacci, Euclid, Sperner,
 Goodstein, the Hydra --- and the natural summary is ``look, one pipeline turns
@@ -1526,16 +1569,27 @@ And the whole way down, the machine kept the accounting honest --- not as a
 formality but as the thing that made the strongest claim sayable at all. The
 constructivity verdict of Act~V is not an aspiration one hopes holds up under
 scrutiny; it is a fact the kernel will reprint on demand, for every program in
-the development: everything that runs rests on two inert axioms and nothing
+the fragment: everything that runs rests on two inert axioms and nothing
 classical. A proof that needs more than Peano arithmetic became a program that
 needs less than a whiff of choice --- and we know it needs less because the
 machine, asked directly, said so.
 
-That is how a proof becomes a program: not by a grand mechanism, but by a small
-one applied with discipline, and checked by something that cannot be talked past.
+So the small system delivers what Act~I promised. But notice what the last two
+acts have been quietly reporting. The level bookkeeping was extorted rather
+than designed; the pairing had to be hand-built or the audit would have failed;
+the Hydra's general theorem could not be \emph{stated} inside the fragment at
+all. Three complaints, three coats on one body: the object language has a
+single sort, so every structured thing --- a strategy, a colouring, an ordinal,
+a tree --- has to be coded into a number before the fragment can mention it.
+
+That the machine still works under those conditions is the achievement of
+Part~I. What the coding \emph{cost} is a question Part~I has no way to answer,
+because it has nothing to compare against. Part~II builds the comparison.
 
 %======================================================================
-\input{act8-haomega}
+\part{The same proof theory, native types}
+
+\input{part2-haomega}
 
 \appendix
 \section{Appendix A --- Looking inside: the extracted program as a tree}

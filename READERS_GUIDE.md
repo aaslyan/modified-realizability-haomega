@@ -34,11 +34,11 @@ metatheory, in `HydraGeneral.lean`, and `hydraStep_play` shows the
 fragment's battle is one of those plays.
 
 Goodstein and Hydra are the two that need `TI(ε₀)`, which is why they
-carry the narrative — but the map below covers **six** theorems proved
-inside the fragment, and the other four need no ordinals at all: Tower of
-Hanoi (§1.8), Pascal mod 2 (§1.9), greatest common divisor (§1.10), and
-Sperner's lemma in 1D (§1.11).  §1.12 is the Fibonacci **on-ramp** — the
-easy case, written last but meant to be read first — and §1.13 is how to
+carry the narrative — but the map below covers **seven** theorems proved
+inside the fragment, and the other five need no ordinals at all: Tower of
+Hanoi (§1.8), Pascal mod 2 (§1.9), greatest common divisor (§1.10),
+Sperner's lemma in 1D (§1.11), and the Fibonacci **on-ramp** (§1.12) —
+the easy case, written last but meant to be read first.  §1.13 is how to
 *look at* the programs all of them extract to.  Reading §1.12 → §1.8 →
 §1.6 is a gentler route through the same machinery than reading
 straight down.

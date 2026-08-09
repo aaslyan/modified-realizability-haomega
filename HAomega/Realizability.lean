@@ -192,7 +192,7 @@ def Tm.dflt : {Γ : List Ty} → (τ : Ty) → Tm Γ τ
 
 /-! ## The rules -/
 
-/-- **Natural deduction for HA^ω.**  28 rules, no side conditions. -/
+/-- **Natural deduction for HA^ω.**  39 rules, no side conditions. -/
 inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
     {a : Ty} → Formula Γ a → Type where
   | ax {Γ as a} {φ : Formula Γ a} {Δ : Ctx Γ as} : Deriv (.cons φ Δ) φ

@@ -21,7 +21,9 @@ Nothing here is expected to flow back into it.
   untouched** — as the reference implementation to compare against, not as a
   dependency. `lake build` builds both libraries.
 * The new work is a separate library, `HAomega/`, declared in `lakefile.lean`.
-  It imports nothing from `Realizability`.
+  It imports nothing from `Realizability` except the proven choice-free value
+  layers its primitives evaluate by (`Signature.OrdinalAssignment`,
+  `Signature.Hydra`, and through them `Ordinals.Epsilon0`).
 
 ## Why
 
@@ -31,7 +33,7 @@ number:
 
 | compromise | where it is recorded | what HA^ω does to it |
 |---|---|---|
-| `hercules_wins` proved in the metatheory, because a strategy is a function and the fragment has no function variables | `HydraGeneral.lean` (H7), README scope note | the *statement* becomes expressible (function variables); **not derived here** — `Hydra.lean` proves the one-battle theorem only, and no declaration states the all-strategies theorem |
+| `hercules_wins` proved in the metatheory, because a strategy is a function and the fragment has no function variables | `HydraGeneral.lean` (H7), README scope note | **partially derived**: `Hercules.lean`'s `herculesD` states and proves `∀h ∀f^(ℕ→ℕ). ∃t. play(f,h,t) = 0` — quantified over every *replication* strategy, with the extracted battle length running. The **any-head** theorem (arbitrary head choice) is still open |
 | `look` added as a symbol, the one place "no new symbols" was forced | `Coloring.lean` (S1), STATUS | dissolves — a coloring *is* a function |
 | `bump`/`prec`/`hcut`/`xor`/`look` enter by **numeral graph** rather than open-term schemas | CLAUDE.md "documented compromise" | the numeral-graph *schemas* are gone; the symbols themselves were kept **primitive** (evaluated by the proven first-order value layer) rather than defined in System T — definable in principle, primitive in practice |
 
@@ -45,12 +47,14 @@ And two costs measured during the emitter work (Phase X of the original):
   not move Hanoi's wall at all (`n = 4` before and after), which is what
   proved the encoding is a *separate* cost. HA^ω removes it at the root.
 
-## Status (re-verified 2026-08-08 — see `HAOMEGA_DOSSIER.md` for evidence)
+## Status (re-verified 2026-08-09 — see `HAOMEGA_DOSSIER.md` for evidence)
 
-**741 jobs green**, zero `sorry`/`admit`, 5,067 lines in `HAomega/`.
-Machinery complete and **all seven case studies done**, each with a running
-extracted program; `EXTRACTED_HAOMEGA.md` renders every realizer in three
-views (raw object / collapsed program / Haskell).
+**743 jobs green**, zero `sorry`/`admit`, 5,454 lines in `HAomega/` (23
+files). Machinery complete and **all nine case studies done** — the
+first-order repo's seven, plus two theorems that repo cannot state (the
+higher-type Fibonacci and the strategy-quantified Hercules) — each with a
+running extracted program; `EXTRACTED_HAOMEGA.md` renders every realizer in
+three views (raw object / collapsed program / Haskell).
 
 Axiom footprints, run fresh (the earlier "`[propext]`-only continuity" claim
 is stale — `tiRec`'s tracking case brought in `Quot.sound`; and `soundness`

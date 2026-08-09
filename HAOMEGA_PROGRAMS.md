@@ -2,13 +2,17 @@
 
 The counterpart of `EXTRACTED_PROGRAMS.md`, which indexes the **first-order**
 development's seven programs. This file indexes this branch's, and says plainly
-what is not here yet.
+what is and is not claimed.
 
-**Read this first: the machinery is complete, the case studies are not.**
-Extraction, soundness and continuity all hold for every derivation. What exists
-as an actual extracted program is **six** things — and Pascal is the first
-whose algorithm the proof computes rather than receives. **all seven ported**, plus two theorems the first-order fragment cannot state: `herculesD` (strategy-quantified Hydra) and the higher-type Fibonacci — nothing blocks them, but nobody has
-written the derivations.
+**Read this first: machinery and case studies are both complete.**
+Extraction, soundness and continuity hold for every derivation, and **nine
+extracted programs run**: the first-order repo's seven, plus two theorems that
+repo cannot state — `herculesD` (strategy-quantified Hydra) and the
+higher-type Fibonacci. Pascal was the first whose algorithm the proof computes
+rather than receives. The three-view rendering of every realizer (raw object /
+collapsed program / Haskell) is `EXTRACTED_HAOMEGA.md`, regenerated at each
+build; the detailed sections below cover the first six, and the coverage
+table covers all nine.
 
 ## The uniform core
 
@@ -203,14 +207,16 @@ agrees with `Nat.gcd` on all 900 pairs below 30); the divisibility former
 the five-link `mulOne` conversion chain). `gcdSpecDeriv` depends on **no
 axioms**.
 
-**Not claimed (stage 2):** the full specification — common divisor +
-maximality by strong induction on `a+b` — is real ported work, not blocked but
-not done. `gcdSpec` names the algorithm, so this extract is the solver
-(Fibonacci-style, not Pascal-style).
+**Stage 2 (complete):** the full specification — common divisor + maximality
+— is `gcdTheoremD` (`GcdTheorem.lean`), proved by fueled induction with slack
+(`(a+b)+c = m`, plain `ind`, no strong-induction scaffold); `gcdFull` is the
+proof-computed gcd read off it. Stage 1's `gcdSpec` names the algorithm, so
+*that* extract is the solver (Fibonacci-style); stage 2's maximality realizer
+is assembled by the induction (Pascal-style).
 
 ---
 
-## What is **not** here
+## Coverage against the first-order repo
 
 | program | first-order repo | this branch | what it needs |
 |---|---|---|---|
@@ -222,12 +228,17 @@ not done. `gcdSpec` names the algorithm, so this extract is the solver
 | **Sperner 1D** | ✅ (via the `look` symbol) | ✅ **`spernerD`** — colorings are function variables, no symbol, no coding; extracted `spernerX` returns a certified crossing (`Sperner.lean` — this proof extracts the *last* crossing where first-order S1 extracts the first: same theorem, different proof, different program) | — |
 | **Goodstein** | ✅ `goodsteinStopTime` (walls at `m=2`) | ✅ **`goodsteinD` by `tiEps0`**; extracted `goodsteinX` returns the published stop times `[0,1,3,5]` and runs to `m=3` (`Goodstein.lean`) | — |
 | **Hydra** | ✅ `hydraBattleLength` (walls at code 1) | ✅ **`hydraD` by `tiEps0`** — Goodstein's mirror with a shorter descent; extracted `hydraX` returns the published battle lengths `[0,1,3]` and its witness is verified to end each battle (`Hydra.lean`) | — |
+| **Hercules (strategy-quantified)** | ✗ (unstatable — a strategy is a function) | ✅ **`herculesD`**: `∀h ∀f^(ℕ→ℕ). ∃t. play(f,h,t) = 0`, quantified over every replication strategy; extracted `herculesX` agrees with `hydraX` at the fragment's own strategy (`Hercules.lean`) | any-head version: a general tree-surgery move + its descent |
 
 ## Honest summary
 
-- **Machinery: complete.** 29 rules, `extract` (axiom-free), `soundness` (28/28
-  cases + `tiEps0`), continuity (`[propext, Quot.sound]`, choice-free).
-- **Case studies: 5 of 7 ported** (gcd at stage 1) (plus the higher-type Fibonacci, unstatable first-order).
-- **Pascal is the one whose algorithm the proof computes** — the decision tag
-  comes from `eqDec` through two inductions, not from a witness handed to
-  `exI`. The two Fibonacci programs remain witness-style.
+- **Machinery: complete.** 39 rules, `extract` (axiom-free, cast-free),
+  `soundness` (one case per rule), continuity (`[propext, Quot.sound]`,
+  choice-free).
+- **Case studies: 9 of 9** — the seven first-order programs ported, plus the
+  higher-type Fibonacci and the strategy-quantified Hercules, both unstatable
+  first-order. The one open theorem is any-head Hercules.
+- **Proof-computed vs. witness-style.** Pascal's decision tag, gcd's stage-2
+  maximality realizer, and Sperner's last-crossing scan come out of the
+  proofs; the two Fibonacci programs and Hanoi remain witness-style — their
+  statements name the algorithm.

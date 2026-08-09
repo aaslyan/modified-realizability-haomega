@@ -117,13 +117,12 @@ def spernerD {Γ as : List Ty} {Δ : Ctx Γ as} :
     exact Deriv.transE Deriv.ax (Deriv.eqRefl _)
   · exact Deriv.ax
 
-/-- **The extracted first-crossing search.** -/
+/-- **The extracted last-crossing search.** -/
 def spernerX (n : Nat) (c : Nat → Nat) : Nat :=
   ((((((extractClosed (spernerD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
     n) c) ()) ()).1
 
 -- Concrete colorings, as plain Lean functions — no coding, no `look`.
--- The extract returns the *first* crossing, as the invariant forces.
 -- Valid crossings at every coloring (soundness), and specifically the *last*
 -- 0→nonzero edge, per the proof-structure note above.
 #guard [spernerX 3 (fun k ↦ [0,1,0,1].getD k 0),

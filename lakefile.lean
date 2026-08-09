@@ -31,10 +31,11 @@ lean_lib «Realizability» where
 /-- **The HA^ω development** (the `haomega` branch's reason for existing).
 
 A *parallel* core: Heyting arithmetic in all finite types, with an
-intrinsically-typed System T term language.  It deliberately imports nothing
-from `Realizability` — the first-order development stays in the tree as the
-reference implementation to compare against, not as a dependency.  See
-`HAOMEGA.md`. -/
+intrinsically-typed System T term language.  It imports nothing from
+`Realizability` except the proven choice-free value layers its primitives
+evaluate by (`Signature.*`, `Ordinals.Epsilon0`) — the first-order development
+otherwise stays in the tree as the reference implementation to compare
+against, not as a dependency.  See `HAOMEGA.md`. -/
 @[default_target]
 lean_lib «HAomega» where
   globs := #[.submodules `HAomega]

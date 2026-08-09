@@ -181,5 +181,6 @@ extraction is faithful to proof structure.
    verified current behavior.
 2. `HAOMEGA.md`: Hydra "dissolves" row → "expressible, not derived";
    `bump`-row "definable" → "schemas gone, symbols primitive"; the Status
-   section rewritten to current, evidence-backed state (741 jobs, footprints
-   above, all seven case studies); "What is next" refreshed.
+   section rewritten to the then-current, evidence-backed state (741 jobs and
+   seven case studies at the time of that audit; 743 and nine after
+   Sperner/Hercules landed — §8/§9); "What is next" refreshed.

@@ -5,11 +5,13 @@ Authors: Ara Aslyan
 -/
 import HAomega.Hydra
 import HAomega.GcdTheorem
+import HAomega.Sperner
+import HAomega.Hercules
 
 /-!
 # Every extracted program, in three views
 
-For each of the seven case studies this module renders the realizer three
+For each of the nine case studies this module renders the realizer three
 ways and writes `EXTRACTED_HAOMEGA.md`:
 
 1. **the high-level object** — the raw extracted realizer, the element of the
@@ -33,6 +35,8 @@ def R4 := extractClosed hanoiDeriv
 def R5 := extractClosed (gcdTheoremD (Γ := []) (Δ := Ctx.nil))
 def R6 := extractClosed (goodsteinD (Γ := []) (Δ := Ctx.nil))
 def R7 := extractClosed (hydraD (Γ := []) (Δ := Ctx.nil))
+def R8 := extractClosed (spernerD (Γ := []) (Δ := Ctx.nil))
+def R9 := extractClosed (herculesD (Γ := []) (Δ := Ctx.nil))
 
 private def section' (title thm ty : String)
     {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) : String :=
@@ -47,7 +51,7 @@ private def section' (title thm ty : String)
   "```haskell\n" ++ EmitHaskell.hsTm t 0 ++ "\n```\n\n"
 
 def showAll : String :=
-  "# The seven extracted programs of the HA^ω development\n\n" ++
+  "# The nine extracted programs of the HA^ω development\n\n" ++
   "Each section shows one certified realizer in three renderings.  The\n" ++
   "certified object is the System T term; soundness certifies it realizes\n" ++
   "its theorem, continuity that it denotes a continuous functional.\n\n" ++
@@ -62,7 +66,13 @@ def showAll : String :=
     "∀a ∀b. ∃g. g∣a ∧ g∣b ∧ ∀d. d∣a → d∣b → d∣g"
     "N → (N → (N × ((N × 1) × ((N × 1) × (N → ((N × 1) → ((N × 1) → (N × 1))))))))" R5 ++
   section' "6. Goodstein (TI(ε₀))" "∀m. ∃t. good(m, t) = 0" "N → (N × 1)" R6 ++
-  section' "7. Kirby–Paris Hydra (TI(ε₀))" "∀h. ∃t. hydra(h, t) = 0" "N → (N × 1)" R7
+  section' "7. Kirby–Paris Hydra (TI(ε₀))" "∀h. ∃t. hydra(h, t) = 0" "N → (N × 1)" R7 ++
+  section' "8. Sperner 1D (last-crossing scan)"
+    "∀n ∀c^(ℕ→ℕ). c 0 = 0 → c n = 1 → ∃k. k < n ∧ c k ≠ c (k+1)"
+    "N → ((N → N) → (1 → (1 → (N × ((N × 1) × (1 → 1))))))" R8 ++
+  section' "9. Hercules (strategy-quantified Hydra)"
+    "∀h ∀f^(ℕ→ℕ). ∃t. play(f, h, t) = 0"
+    "N → ((N → N) → (N × 1))" R9
 
 #eval IO.FS.writeFile "EXTRACTED_HAOMEGA.md" showAll
 #eval IO.println ("written: " ++ toString showAll.length ++ " chars")

@@ -40,7 +40,8 @@ index.
 
 The first-order `GenericContinuity.lean` is 1304 lines, because it must prove a
 preservation lemma for each of ~40 extraction combinators.  Here the realizer is
-a **System T term**, so the induction runs over the 11 constructors of `Tm` —
+a **System T term**, so the induction runs over the constructors of `Tm`, one
+case per constructor —
 and `extract_continuous` is then a corollary of `eval_tracked` applied to the
 extracted term.  The rules never appear.
 -/

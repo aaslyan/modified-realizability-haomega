@@ -17,7 +17,11 @@ finite types} --- the system modified realizability was invented for
 \citep{kreisel1959,troelstra1973}. This act reports what changed, what it
 cost, and what the extracted programs look like now. (The repository is
 \texttt{modified-realizability-haomega}; the first-order development stays
-in-tree as the reference implementation.)
+in-tree as the reference implementation.) One word on the name: throughout
+this act, \haomega{} denotes the object theory actually formalized ---
+finite-type Heyting arithmetic \emph{extended by} $\mathrm{TI}(\epsz)$ with
+its matching recursor, and by the imported case-study primitives below ---
+an extension of \haomega{}, not the bare textbook system.
 
 \subsection*{The system, in four displays}
 
@@ -32,8 +36,9 @@ certificates:
 numerals, and a recursor $\mathsf{rec}$ \emph{at every type} --- plus a small
 stock of primitives ($+$, the $\epsz$-order $\prec$, and the case-study
 symbols $\good$, $\hydra$, $\mathrm{ord}$, \dots, each evaluated by the
-first-order development's proven, choice-free value layer), plus one genuinely
-new construct:
+first-order development's proven, choice-free value layer --- definable in
+System~T in principle, imported as primitives in practice), plus one
+genuinely new construct:
 \[
   \mathsf{tiRec} : \bigl(\Nat \to (\Nat \to \mathbf{1} \to \tau) \to
   \tau\bigr) \to \Nat \to \tau ,
@@ -72,8 +77,10 @@ fragment's twenty per-symbol congruence schemas.
 This is the structural upgrade over Act~III, where the realizer was an
 opaque element of the pure-type hierarchy, printable only by walking the
 derivation instead. A realizer that is a \emph{term} can be printed,
-normalized, emitted as Haskell, and reasoned about --- the three-view
-artifact below is just three renderings of this one certified object.
+normalized, emitted as Haskell, and reasoned about --- the repository's
+three-view artifact (\texttt{EXTRACTED\_HAOMEGA.md}, rewritten at every
+build) renders all nine realizers this way, and the displays below are its
+three renderings of one certified object each.
 
 \subsection*{Nine theorems, each extracted and run}
 

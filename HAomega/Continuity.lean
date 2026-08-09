@@ -156,6 +156,7 @@ def Tracked : (τ : Ty) → ((ℕ → ℕ) → τ.interp) → Prop
   | .unit, _ => True
   | .nat, X => Continuous2 X
   | .ord, X => ContAt Eps0 X
+  | .hyd, X => ContAt Realizability.Hydra X
   | .prod a b, X => Tracked a (fun α ↦ (X α).1) ∧ Tracked b (fun α ↦ (X α).2)
   | .arrow a b, X => ∀ Y, Tracked a Y → Tracked b (fun α ↦ X α (Y α))
 
@@ -182,6 +183,7 @@ theorem tracked_apply {ι : Type} : (τ : Ty) → {k : (ℕ → ℕ) → ι} →
   | .unit, _, _, _, _ => trivial
   | .nat, _, _, hk, hG => contAt_apply hk hG
   | .ord, _, _, hk, hG => contAt_apply hk hG
+  | .hyd, _, _, hk, hG => contAt_apply hk hG
   | .prod a b, _, _, hk, hG =>
       ⟨tracked_apply (ι := ι) a hk fun j ↦ (hG j).1,
        tracked_apply (ι := ι) b hk fun j ↦ (hG j).2⟩
@@ -214,6 +216,7 @@ theorem tracked_dflt : (τ : Ty) → Tracked τ (fun _ ↦ τ.dfltVal)
   | .unit => trivial
   | .nat => continuous2_const 0
   | .ord => contAt_const Eps0.zero
+  | .hyd => contAt_const Realizability.Hydra.leaf
   | .prod a b => ⟨tracked_dflt a, tracked_dflt b⟩
   | .arrow _ b => fun _ _ ↦ tracked_dflt b
 
@@ -274,6 +277,18 @@ theorem eval_tracked {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
       intro E hE
       exact continuous2_ternop playAtN (ihp E hE) (iha E hE) (ihb E hE)
   | ezero => intro E hE; exact contAt_const _
+  | hleaf => intro E hE; exact contAt_const _
+  | hcutH a b iha ihb =>
+      intro E hE
+      exact contAt_binop Realizability.hydraStep (iha E hE) (ihb E hE)
+  | hleafQ a ih =>
+      intro E hE
+      exact contAt_binop (fun h (_ : Unit) ↦ isLeafN h) (ih E hE)
+        (contAt_const ())
+  | hordH a ih =>
+      intro E hE
+      exact contAt_binop (fun h (_ : Unit) ↦ ordEOfHydra h) (ih E hE)
+        (contAt_const ())
   | orde a b iha ihb =>
       intro E hE
       exact contAt_binop ordE (iha E hE) (ihb E hE)

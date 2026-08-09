@@ -611,8 +611,9 @@ is still imported — see STATUS.md Phase P6 and `RESEARCH_PLAN.md` §2.
 
 The one-sentence version: **the same modified-realizability pipeline,
 rebuilt over Heyting arithmetic in all finite types, where the realizer is a
-term of the object language — eleven extracted programs, four of them from
-theorems the fragment cannot even state.**  Every fact below is
+term of the object language — twelve extracted programs, four of them from
+theorems the fragment cannot even state, and (since the typed layers) with
+neither ordinals nor hydra trees encoded into `ℕ` anywhere.**  Every fact below is
 evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 
 ## 5. Dependency-ordered map
@@ -623,6 +624,7 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 |---|---|---|---|
 | H1 | `Ty`, `Ty.interp` | `Syntax.lean` | Finite types over ℕ with a `unit` for erased certificates. Note it is *not* the vendored pure-type tower — continuity later bridges by a logical relation instead of matching it. |
 | H1b | `Eps0`, `olt`/`nf`, `oLtE_wf`, `ordE` | `OrdCnf.lean` | **The typed ordinal layer**: ε₀-notations as an inductive type, structural comparison and normal form, well-foundedness *inherited* from the coded order through `toCode` (proofs only — no coding in any computation), and the Goodstein assignment mirrored constructor for constructor. Read the size table in the header: a notation whose code is a 1,412-digit integer is a 67-node tree. |
+| H1c | `ordEOfHydra`, `Eps0.insert`, `isLeafN`, `oltE_ordEOfHydra_step` | `HydraTyped.lean` | **The typed hydra layer**: trees as the base type `.hyd`, with the ordinal assignment landing in `.ord` rather than a code. `Eps0.insert` is `insertExp` with the fuel deleted; the descent is H7's `play_descends` on trees with no coding round trip. This is what moves the battle wall. |
 | H2 | `Tm`, `Tm.eval` | `Syntax.lean` | Intrinsically-typed de Bruijn System T — recursor **at every type** — plus the primitives (`add`, `prec`, `pred`, `bump`, `good`, `ord`, `hcut`, `hydra`, `hord`) evaluated by the first-order repo's proven choice-free value layers, and **`tiRec`**, recursion along `≺`. `Tm.eval` depends on **no axioms** and stays computable (read the `OrdCode`/`termination_by` note: a bare `WellFounded.fix` would not compile). |
 | H3 | `Ren`/`Sub` kit, `eval_rename`, `eval_subst1` | `Syntax.lean` | The two-stage substitution treatment. Capture is impossible by construction — the fragment's `namedIHDeriv`/`ihRenamed` dodges have no analogue here. |
 | H4 | **`Formula`** | `Formulas.lean` | Formulas **indexed by their realizer type** — `tyOf` as an index, not a function. This is the load-bearing redesign: substitution preserves the index by construction, so `MR_subst` states without a cast and `extract` contains none. Read the header's account of why the unindexed first design stalled soundness. |
@@ -642,7 +644,7 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 | H13 | the term-form kit (`plusAssocT`, …, `trichotomyT`) | `GcdFull.lean` | ∀-lemmas cannot be `allE`-instantiated at use sites (the unifier cannot invert `Formula.subst1`); each lemma gets a term-parameterized form via one KIT-`simp`. |
 | H14 | the explicit-chain discipline | `PascalTheorem.lean` header | Conversion chains written with holes make the elaborator symbolically execute substitution (20+ min/declaration); every intermediate named + every reduction its own `rfl`/`simp` link elaborates in milliseconds. |
 
-### 5.3 The eleven extracted programs
+### 5.3 The twelve extracted programs
 
 | # | Theorem | File | Read it for |
 |---|---|---|---|
@@ -654,6 +656,7 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 | H20 | `gcdT` … **`gcdTheoremD`**, `gcdFull` | `Gcd.lean` → `GcdStage2/Full/Dvd/Cases/Main/Theorem.lean` | The full specification by **fueled induction with slack** (`(a+b)+c = m` — plain `ind`, no strong-induction scaffold). Six landed layers; the first-order extract ran at *no* input, this one runs. |
 | H21b | **`goodsteinOD`**, `goodsteinOX` | `GoodsteinTyped.lean` | H21's statement *verbatim*, proved by `tiEps0O` on structural notations — same derivation shape, three symbol replacements. The two extracts are build-guarded to agree; the typed one mentions no coded ordinal. Two proofs of one theorem with the **representation** as the variable, the way Sperner (H24) varies the proof. |
 | H21 | **`goodsteinD`**, `goodsteinX` | `Goodstein.lean` | `tiEps0` used in anger; the first-order derivation line for line **minus the naming dodge**. Extract returns the published `[0,1,3,5]`; certificate `good(m, stop m) = 0` guarded. |
+| H22b | **`hydraHD`**, `hydraHX` | `HydraTree.lean` | H22's theorem with **nothing encoded**: tree states, notation measures, one new rule instead of three (the battle is a term, so the recursor's conversions suffice). The payoff is measurable — it computes the published Kirby–Paris length **37** at a hydra where the coded extract overflows the interpreter without taking a step. |
 | H22 | **`hydraD`**, `hydraX` | `Hydra.lean` | Goodstein's mirror with a shorter descent; one import (`hordCutLt`). Published lengths `[0,1,3]`. |
 | H23 | `playT`, **`herculesD`** | `Hercules.lean` | `∀h ∀f^(ℕ→ℕ) ∃t. play(f,h,t) = 0` — strategy-quantified, unstatable first-order; `play` is a *term*, the descent needs *no new import*. Replication only; the head choice is quantified in H23b. |
 | H23b | `moveF`/`playAtN`, **`herculesAnyD`** | `HydraSurgery.lean`, `HerculesAny.lean` | **The fully general game**: `∀h ∀f ∀g ∃t. playAt(g,f,h,t) = 0`. The surgery layer is `cutH` with a position argument — every in-range move a legal H7 `Play`, descent = `play_descends` on codes; one new primitive (`hcutAt`) + one new schema (`hordCutAtLt`); the derivation transcribes H23 with the head strategy threaded through. Extract agrees with H23's at the leftmost strategy. |
@@ -667,12 +670,12 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 2. **Equality and conversion at every type** — a *revision* of the
    type-0-only first design; Pascal's row equations forced it.  `eqAt`
    remains as the proof the narrow design was semantically sufficient.
-3. **The ordinals moved out of `ℕ`, the hydras did not.**  `OrdCnf.lean`
-   gives ε₀-notations a base type and re-proves Goodstein on it; the hydra
-   trees are still coded, and that coding is what still overflows the
-   interpreter on some battle inputs.  The asymmetry is deliberate — the
-   ordinal port was cheap because well-foundedness could be *inherited*
-   through `toCode`; a hydra port must re-do the surgery lemmas.
+3. **De-coding by inheritance.**  Both `OrdCnf.lean` (ordinals) and
+   `HydraTyped.lean` (trees) give a coded object its own base type and then
+   *inherit* every certified fact through an encoding used only in proofs
+   (`toCode`).  No new descent argument, no new mathematics — and the coding
+   disappears from every computation.  Hanoi's move sequences are the one
+   coded object left.
 4. **Primitives over definability** for the case-study symbols — definable
    in principle (System T is closed under their recursions), primitive in
    practice, evaluated by proven choice-free layers.  The numeral-graph
@@ -685,7 +688,7 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 ## 7. Reproducing the Part II claims
 
 ```bash
-lake build          # 747 jobs; every #print axioms / #guard runs here
+lake build          # 749 jobs; every #print axioms / #guard runs here
 ```
 
 Spot checks (each was run for the dossier; expected outputs quoted there):
@@ -700,6 +703,7 @@ open HAomega
 #eval (goodsteinX 0, goodsteinX 1, goodsteinX 2, goodsteinX 3)  -- (0,1,3,5)
 #eval (goodsteinOX 0, goodsteinOX 1, goodsteinOX 2, goodsteinOX 3) -- same, typed ordinals
 #eval (hydraX 0, hydraX 1, hydraX 2)                            -- (0,1,3)
+#eval hydraHX (Realizability.hydraOf 4)   -- 37: the published length, on trees
 #eval herculesX (· + 1) 2                                       -- 3
 #eval herculesAnyX 2 (· + 1) (fun _ => 0)                       -- 3 (leftmost head = hydraX)
 #eval spernerX 3 (fun k => [0,1,0,1].getD k 0)                  -- 2 (last crossing)
@@ -708,6 +712,7 @@ lake env lean /tmp/check.lean
 ```
 
 Known evaluation boundaries (measured, `HAOMEGA_DOSSIER.md` §5):
-`goodsteinX 4` is cost-bound (astronomical value, no crash); `hydraX` covers
-codes 0–3, 5, 6 and stack-overflows on 4 and 7 (the doubly-exponential tree
-coding); `fibExtracted` has no wall through `n = 1000`.
+`goodsteinX 4` is cost-bound (astronomical value, no crash); the **coded**
+`hydraX` covers codes 0–3, 5, 6 and stack-overflows on 4 and 7 — but the
+**tree** `hydraHX` runs all of them, so that wall was the coding, now gone;
+`fibExtracted` has no wall through `n = 1000`.

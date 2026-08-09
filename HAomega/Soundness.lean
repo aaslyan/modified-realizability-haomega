@@ -257,6 +257,11 @@ theorem soundness : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {
       exact Realizability.oltN_eq_one_iff.mpr
         (Realizability.olt_ordOfHydraN_step (n.eval e) (c.eval e)
           (fun h0 ↦ hz () h0))
+  | hordCutLtH n c =>
+      intro e ε h z hz
+      exact Eps0.oltNE_eq_one_iff.mpr
+        (oltE_ordEOfHydra_step (n.eval e) (c.eval e)
+          (fun h0 ↦ hz () (isLeafN_eq_zero_iff.mpr h0)))
   | hordCutAtLt p n c =>
       intro e ε h z hz
       exact Realizability.oltN_eq_one_iff.mpr

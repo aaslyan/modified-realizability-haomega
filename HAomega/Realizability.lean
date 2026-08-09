@@ -34,7 +34,7 @@ with no `map tyOf` and no lemma relating the two.
 
 ## The rules
 
-**43 rules**, against the first-order development's 76, and **none carries a
+**44 rules**, against the first-order development's 76, and **none carries a
 side condition** — de Bruijn binders make `SubstOK` and `FreshIn` vacuous.  The
 saving is the equational kit: one Leibniz rule (`eqSubst`) gives every
 congruence, and the function symbols' defining equations are gone because the
@@ -188,12 +188,13 @@ def Tm.dflt : {Γ : List Ty} → (τ : Ty) → Tm Γ τ
   | _, .unit => .star
   | _, .nat => .zero
   | _, .ord => .ezero
+  | _, .hyd => .hleaf
   | _, .arrow _ b => .lam (Tm.dflt b)
   | _, .prod a b => .pair (Tm.dflt a) (Tm.dflt b)
 
 /-! ## The rules -/
 
-/-- **Natural deduction for HA^ω.**  43 rules, no side conditions. -/
+/-- **Natural deduction for HA^ω.**  44 rules, no side conditions. -/
 inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
     {a : Ty} → Formula Γ a → Type where
   | ax {Γ as a} {φ : Formula Γ a} {Δ : Ctx Γ as} : Deriv (.cons φ Δ) φ
@@ -297,6 +298,13 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
   -- head position a term argument.  Discharged in soundness by exactly one
   -- theorem (`olt_ordOfHydraN_playAt` = H7's `play_descends` on codes), the
   -- D5 discipline verbatim.
+  -- **The typed hydra descent** — the same schema on trees, with the death
+  -- test in the premise.  Discharged in soundness by exactly one theorem
+  -- (`oltE_ordEOfHydra_step` = H7's `play_descends` on trees, with no coding
+  -- round trip), and it is the *only* rule the typed hydra layer adds.
+  | hordCutLtH {Γ as} {Δ : Ctx Γ as} (n : Tm Γ .nat) (c : Tm Γ .hyd) :
+      Deriv Δ (.imp ((Formula.eq (.hleafQ c) .zero).neg)
+        (.eq (.olte (.hordH (.hcutH n c)) (.hordH c)) (.succ .zero)))
   | hordCutAtLt {Γ as} {Δ : Ctx Γ as} (p n c : Tm Γ .nat) :
       Deriv Δ (.imp ((Formula.eq c .zero).neg)
         (.eq (.prec (.hord (.hcutAt p n c)) (.hord c)) (.succ .zero)))

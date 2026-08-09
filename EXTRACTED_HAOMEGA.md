@@ -1,4 +1,4 @@
-# The eleven extracted programs of the HA^ω development
+# The twelve extracted programs of the HA^ω development
 
 Each section shows one certified realizer in three renderings.  The
 certified object is the System T term; soundness certifies it realizes
@@ -255,5 +255,28 @@ Realizer type: `N → (N × 1)`
 
 ```haskell
 (\x0 -> (((((\x1 -> (tiRecE (\x2 -> (\x3 -> (\x4 -> (\x5 -> (\x6 -> (natRec (x5, (fst (snd (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (goodN x4 x5)) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (goodN x4 x5)))), ((), (\x7 -> ())))))) (\x7 -> (\x8 -> (((((x3 (ordE (1 + (1 + (1 + x5))) (goodN x4 (1 + x5)))) ((\x9 -> ()) ((\x9 -> (\x10 -> ())) (snd (snd (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (goodN x4 x5)) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (goodN x4 x5)))), ((), (\x9 -> ())))))))) x4) (1 + x5)) ()))) (fst (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (goodN x4 x5)) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (goodN x4 x5)))), ((), (\x7 -> ())))))))))) x1)) (ordE 2 x0)) x0) 0) ()))
+```
+
+## 12. Kirby–Paris on trees (nothing encoded)
+
+Theorem: `∀h^hyd. ∃t. deadᴴ?(play(h, t)) = 0   — §7's theorem with tree states and notation measures`  
+Realizer type: `H → (N × 1)`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. (((((λx1. tiRecᵒ[(λx2. (λx3. (λx4. (λx5. (λx6. rec[⟨x5, fst snd ⟨((λx7. rec[0 | (λx8. (λx9. S 0)) | x7]) ((((λx7. (λx8. rec[x7 | (λx9. (λx10. ((λx11. rec[0 | (λx12. (λx13. x12)) | x11]) x10))) | x8])) deadᴴ?rec[x4 | (λx7. (λx8. cutᴴ(S x7, x8))) | x5]) 0) + (((λx7. (λx8. rec[x7 | (λx9. (λx10. ((λx11. rec[0 | (λx12. (λx13. x12)) | x11]) x10))) | x8])) 0) deadᴴ?rec[x4 | (λx7. (λx8. cutᴴ(S x7, x8))) | x5]))), ⟨★, (λx7. ★)⟩⟩⟩ | (λx7. (λx8. (((((x3 hordᴴ rec[x4 | (λx9. (λx10. cutᴴ(S x9, x10))) | S x5]) ((λx9. ★) snd snd ⟨((λx9. rec[0 | (λx10. (λx11. S 0)) | x9]) ((((λx9. (λx10. rec[x9 | (λx11. (λx12. ((λx13. rec[0 | (λx14. (λx15. x14)) | x13]) x12))) | x10])) deadᴴ?rec[x4 | (λx9. (λx10. cutᴴ(S x9, x10))) | x5]) 0) + (((λx9. (λx10. rec[x9 | (λx11. (λx12. ((λx13. rec[0 | (λx14. (λx15. x14)) | x13]) x12))) | x10])) 0) deadᴴ?rec[x4 | (λx9. (λx10. cutᴴ(S x9, x10))) | x5]))), ⟨★, (λx9. ★)⟩⟩)) x4) S x5) ★))) | fst ⟨((λx7. rec[0 | (λx8. (λx9. S 0)) | x7]) ((((λx7. (λx8. rec[x7 | (λx9. (λx10. ((λx11. rec[0 | (λx12. (λx13. x12)) | x11]) x10))) | x8])) deadᴴ?rec[x4 | (λx7. (λx8. cutᴴ(S x7, x8))) | x5]) 0) + (((λx7. (λx8. rec[x7 | (λx9. (λx10. ((λx11. rec[0 | (λx12. (λx13. x12)) | x11]) x10))) | x8])) 0) deadᴴ?rec[x4 | (λx7. (λx8. cutᴴ(S x7, x8))) | x5]))), ⟨★, (λx7. ★)⟩⟩]))))) | x1]) hordᴴ x0) x0) 0) ★))
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. (((((λx1. tiRecᵒ[(λx2. (λx3. (λx4. (λx5. (λx6. rec[⟨x5, fst snd ⟨((λx7. rec[0 | (λx8. (λx9. S 0)) | x7]) ((((λx7. (λx8. rec[x7 | (λx9. (λx10. ((λx11. rec[0 | (λx12. (λx13. x12)) | x11]) x10))) | x8])) deadᴴ?rec[x4 | (λx7. (λx8. cutᴴ(S x7, x8))) | x5]) 0) + (((λx7. (λx8. rec[x7 | (λx9. (λx10. ((λx11. rec[0 | (λx12. (λx13. x12)) | x11]) x10))) | x8])) 0) deadᴴ?rec[x4 | (λx7. (λx8. cutᴴ(S x7, x8))) | x5]))), ⟨·, (λx7. ·)⟩⟩⟩ | (λx7. (λx8. (((((x3 hordᴴ rec[x4 | (λx9. (λx10. cutᴴ(S x9, x10))) | S x5]) ((λx9. ·) snd snd ⟨((λx9. rec[0 | (λx10. (λx11. S 0)) | x9]) ((((λx9. (λx10. rec[x9 | (λx11. (λx12. ((λx13. rec[0 | (λx14. (λx15. x14)) | x13]) x12))) | x10])) deadᴴ?rec[x4 | (λx9. (λx10. cutᴴ(S x9, x10))) | x5]) 0) + (((λx9. (λx10. rec[x9 | (λx11. (λx12. ((λx13. rec[0 | (λx14. (λx15. x14)) | x13]) x12))) | x10])) 0) deadᴴ?rec[x4 | (λx9. (λx10. cutᴴ(S x9, x10))) | x5]))), ⟨·, (λx9. ·)⟩⟩)) x4) S x5) ·))) | fst ⟨((λx7. rec[0 | (λx8. (λx9. S 0)) | x7]) ((((λx7. (λx8. rec[x7 | (λx9. (λx10. ((λx11. rec[0 | (λx12. (λx13. x12)) | x11]) x10))) | x8])) deadᴴ?rec[x4 | (λx7. (λx8. cutᴴ(S x7, x8))) | x5]) 0) + (((λx7. (λx8. rec[x7 | (λx9. (λx10. ((λx11. rec[0 | (λx12. (λx13. x12)) | x11]) x10))) | x8])) 0) deadᴴ?rec[x4 | (λx7. (λx8. cutᴴ(S x7, x8))) | x5]))), ⟨·, (λx7. ·)⟩⟩]))))) | x1]) hordᴴ x0) x0) 0) ·))
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (((((\x1 -> (tiRecE (\x2 -> (\x3 -> (\x4 -> (\x5 -> (\x6 -> (natRec (x5, (fst (snd (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (isLeafN (natRec x4 (\x7 -> (\x8 -> (hydraStep (1 + x7) x8))) x5))) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (isLeafN (natRec x4 (\x7 -> (\x8 -> (hydraStep (1 + x7) x8))) x5))))), ((), (\x7 -> ())))))) (\x7 -> (\x8 -> (((((x3 (ordEOfHydra (natRec x4 (\x9 -> (\x10 -> (hydraStep (1 + x9) x10))) (1 + x5)))) ((\x9 -> ()) (snd (snd (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (isLeafN (natRec x4 (\x9 -> (\x10 -> (hydraStep (1 + x9) x10))) x5))) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (isLeafN (natRec x4 (\x9 -> (\x10 -> (hydraStep (1 + x9) x10))) x5))))), ((), (\x9 -> ()))))))) x4) (1 + x5)) ()))) (fst (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (isLeafN (natRec x4 (\x7 -> (\x8 -> (hydraStep (1 + x7) x8))) x5))) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (isLeafN (natRec x4 (\x7 -> (\x8 -> (hydraStep (1 + x7) x8))) x5))))), ((), (\x7 -> ())))))))))) x1)) (ordEOfHydra x0)) x0) 0) ()))
 ```
 

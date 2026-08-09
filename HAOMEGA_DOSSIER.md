@@ -226,6 +226,51 @@ not reproduce** and is not claimed.
 `[run]` Hygiene after the layer: `lake build` **747 jobs**, 6,664 lines,
 30 files, zero `HAomega/` warnings.
 
+## 12. The typed hydra layer (addendum, 2026-08-09)
+
+`[src]` `HAomega/HydraTyped.lean` + `HAomega/HydraTree.lean` remove the last
+coding from the Hydra pipeline.  `Realizability.Signature.Hydra` already had
+hydras as an inductive `Hydra`/`Forest` pair and H7 already proved the descent
+*about trees*; what was coded was only the `Tm.eval` interface.  Now:
+
+* base type `.hyd` with `Ty.interp .hyd = Hydra`; symbols `cutᴴ` (`hydraStep`),
+  `deadᴴ?` (`isLeafN`, ℕ-valued so the case split reuses the numeric `eqDec`),
+  and `hordᴴ` — whose result type is **`.ord`**, so state and measure are both
+  structural;
+* `ordEOfHydra : Hydra → Eps0` mirrors `ordOfHydra` constructor for
+  constructor; `Eps0.insert` is `insertExp` **with the fuel gone** (the coded
+  version is fueled on `oR c < c`, an arithmetic fact about the decoding;
+  structurally it is plain recursion);
+* `toCode_insert` / `toCode_ordEOfHydra` align the two, and the descent
+  `oltE_ordEOfHydra_step` is H7's `play_descends ∘ hydraStep_play` with **no
+  coding round trip** (the coded `olt_ordOfHydraN_step` needs
+  `hydraOf_encodeH`);
+* **one** new rule, `hordCutLtH`, against the coded version's three — the
+  battle is a *term* (`hplayT`, `recNat`-based, as in `Hercules.lean`), so the
+  recursor's own conversion rules replace `convHydraZero`/`convHydraSucc`.
+
+`[run]` footprints: `ordEOfHydra`, `Eps0.insert`, `isLeafN` — *no axioms*;
+`hydAuxHD`, `hydraHD`, `hydraHX` — `[propext, Quot.sound]`.
+
+`[run]` **The wall moves — the headline.**  Extract inspection: **0**
+occurrences of coded `hcut(`, `hydra(`, `hord `, `≺`, `tiRec[`; 7 × `cutᴴ(`,
+2 × `hordᴴ `, 1 × `tiRecᵒ[`.  Battle lengths from trees:
+
+    hydra code   0   1   2   3    4    5   6    7
+    hydraHX      0   1   3   2   37    4   5   13
+    hydraX       0   1   3   2   ✗overflow  ✗overflow   (codes 4, 7)
+
+Code 4 is the hydra whose **published Kirby–Paris length is 37** — the
+extracted program computes it where the coded extract cannot take a step.
+Both witnesses are guarded terminal (`isLeafN (hplayRef …) = 0`), and a
+guard runs the program on a tree written out directly, with no code involved.
+
+`[run]` Hygiene after the layer: `lake build` **749 jobs**, 7,130 lines,
+32 files, 44 rules, zero `HAomega/` warnings; `EXTRACTED_HAOMEGA.md` renders
+twelve realizers.
+
+`[src]` **Still coded:** Hanoi's move sequences (`hcons` lists). Nothing else.
+
 ## 10. Fixes applied by this audit
 
 1. `Fib.lean`: stale wall-diagnosis comment → historical note with the

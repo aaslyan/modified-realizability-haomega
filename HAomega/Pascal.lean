@@ -91,6 +91,10 @@ theorem Tm.subst_rename {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | olte a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
   | tiRecE sc n ihs ihn =>
       intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ihs, ihn]
+  | hleaf => intros; rfl
+  | hcutH a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
+  | hleafQ a ih => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ih]
+  | hordH a ih => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ih]
   | hydra a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
   | hord a ih => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ih]
   | tiRec sc n ihs ihn => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ihs, ihn]
@@ -124,6 +128,10 @@ theorem Tm.subst_id {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | orde a b iha ihb => simp only [Tm.subst, iha, ihb]
   | olte a b iha ihb => simp only [Tm.subst, iha, ihb]
   | tiRecE sc n ihs ihn => simp only [Tm.subst, ihs, ihn]
+  | hleaf => rfl
+  | hcutH a b iha ihb => simp only [Tm.subst, iha, ihb]
+  | hleafQ a ih => simp only [Tm.subst, ih]
+  | hordH a ih => simp only [Tm.subst, ih]
   | hydra a b iha ihb => simp only [Tm.subst, iha, ihb]
   | hord a ih => simp only [Tm.subst, ih]
   | tiRec sc n ihs ihn => simp only [Tm.subst, ihs, ihn]

@@ -140,6 +140,7 @@ def extract : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {a : Ty
   | _, _, _, _, _, .convHydraZero _ => .star
   | _, _, _, _, _, .convHydraSucc _ _ => .star
   | _, _, _, _, _, .hordCutLt _ _ => Tm.dflt _
+  | _, _, _, _, _, .hordCutLtH _ _ => Tm.dflt _
   | _, _, _, _, _, .hordCutAtLt _ _ _ => Tm.dflt _
   | _, _, _, _, _, .eqRefl _ => .star
   | _, _, _, _, _, .eqSubst _ _ D₂ => extract D₂

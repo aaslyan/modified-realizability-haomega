@@ -23,6 +23,7 @@ namespace HAomega.EmitHaskell
 def hsTy : Ty → String
   | .unit => "()"
   | .ord => "Eps0"
+  | .hyd => "Hydra"
   | .nat => "Integer"
   | .arrow a b => "(" ++ hsTy a ++ " -> " ++ hsTy b ++ ")"
   | .prod a b => "(" ++ hsTy a ++ ", " ++ hsTy b ++ ")"
@@ -66,6 +67,10 @@ partial def hsTm : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → Nat → String
   | _, _, .orde a b, d => "(ordE " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
   | _, _, .olte a b, d => "(oltNE " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
   | _, _, .tiRecE s n, d => "(tiRecE " ++ hsTm s d ++ " " ++ hsTm n d ++ ")"
+  | _, _, .hleaf, _ => "hLeaf"
+  | _, _, .hcutH a b, d => "(hydraStep " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
+  | _, _, .hleafQ a, d => "(isLeafN " ++ hsTm a d ++ ")"
+  | _, _, .hordH a, d => "(ordEOfHydra " ++ hsTm a d ++ ")"
   | _, _, .hydra a b, d => "(hydraSeqN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
   | _, _, .hord a, d => "(ordOfHydraN " ++ hsTm a d ++ ")"
   | _, _, .tiRec s n, d => "(tiRec " ++ hsTm s d ++ " " ++ hsTm n d ++ ")"

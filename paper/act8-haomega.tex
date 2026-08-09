@@ -91,7 +91,7 @@ three-view artifact (\texttt{EXTRACTED\_HAOMEGA.md}, rewritten at every
 build) renders all ten realizers this way, and the displays below are its
 three renderings of one certified object each.
 
-\subsection*{Eleven extracted programs}
+\subsection*{Thirteen extracted programs}
 
 \begin{center}\small
 \begin{tabular}{ll}
@@ -110,6 +110,7 @@ Fibonacci & $\forall n\,\exists y.\ y=\fib(n)$\\
 Fibonacci at type 2 & $\forall f^{\Nat\to\Nat}\,\exists y.\ y=\fib(f(f\,0))$\\
 Goodstein, typed ordinals & $\forall m\,\exists t.\ \good(m,t)=0$ \ (again, on $\mathsf{ord}$)\\
 Kirby--Paris, typed trees & $\forall h^{\mathsf{hyd}}\,\exists t.\ \mathrm{dead}(\mathrm{play}(h,t))=0$\\
+Hercules any head, typed trees & $\forall h^{\mathsf{hyd}}\forall f\forall g\,\exists t.\ \mathrm{dead}(\mathrm{playAt}(g,f,h,t))=0$\\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -230,6 +231,16 @@ single step, and the tree extract returns $37$. The wall was never the
 mathematics, the proof, or the type discipline --- it was the pairing
 function.
 
+With the general Hercules game re-proved on trees as well
+(\texttt{HerculesTree.lean}), the de-coding programme is complete: every
+case study that once coded an object into $\Nat$ has a typed twin, and the
+coded modules survive only as the baselines their twins are measured
+against. That last port is also the cheapest, and instructively so --- at
+the value level it cost \emph{nothing}, because the any-head move and its
+descent were already functions and theorems about trees. What had been
+coded was never the mathematics; it was only the interface the one-sorted
+object language forced on it.
+
 \subsection*{The audit, rerun}
 
 The footprints, from the machine, for the \haomega{} library:
@@ -250,6 +261,6 @@ hydra trees still grow doubly exponentially, so battle extracts overflow
 the interpreter on some codes (4 and 7, measured) whatever the type
 discipline --- the encoding was the fragment's cost, and where the
 \haomega{} theorems still \emph{use} the coded value layer, it is theirs
-too --- and the ordinals and hydra trees are now both out of $\Nat$
-(above), which leaves the Tower of Hanoi's move sequences as the last coded
-object in the development.
+too --- and the ordinals and hydra trees are now both out of $\Nat$ (above).
+Hanoi never needed the treatment: its move sequences were functions from the
+first version, which is what its encoding-wall experiment established.

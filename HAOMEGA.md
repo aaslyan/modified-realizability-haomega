@@ -51,16 +51,19 @@ And two costs measured during the emitter work (Phase X of the original):
 
 ## Status (re-verified 2026-08-09 — see `HAOMEGA_DOSSIER.md` for evidence)
 
-**749 jobs green**, zero `sorry`/`admit`, 7,130 lines in `HAomega/` (32
-files). Machinery complete and **twelve extracted programs run** — the
+**750 jobs green**, zero `sorry`/`admit`, 7,448 lines in `HAomega/` (33
+files). Machinery complete and **thirteen extracted programs run** — the
 first-order repo's seven, plus three theorems that repo cannot state (the
 higher-type Fibonacci, the strategy-quantified Hercules, and the fully
-general any-head Hercules), plus Goodstein and Kirby–Paris a second time
-each over the **typed** ordinal and hydra layers; `EXTRACTED_HAOMEGA.md`
-renders every realizer in three views (raw object / collapsed program /
-Haskell).
+general any-head Hercules), plus Goodstein, Kirby–Paris and the general
+Hercules game a second time each over the **typed** ordinal and hydra layers;
+`EXTRACTED_HAOMEGA.md` renders every realizer in three views (raw object /
+collapsed program / Haskell).
 
-**Nothing is encoded any more.**  With `OrdCnf.lean` (ordinals) and
+**Nothing is encoded any more.**  Every case study that ever coded an
+object into `ℕ` now has a typed twin — Goodstein, Kirby–Paris, and the
+fully general Hercules game — and Hanoi's move sequences were functions
+from the start.  With `OrdCnf.lean` (ordinals) and
 `HydraTyped.lean` (trees), both objects the first-order development had to
 code into `ℕ` have their own base types, and the coding survives only inside
 alignment *proofs*.  The measurable consequence: `hydraHX` computes the
@@ -83,10 +86,10 @@ the value-layer *theorem proofs*, exactly as in the first-order repo):
 | **Typed ordinal layer**: base type `.ord`, `Eps0` notations, `ordᵒ`/`≺ᵒ`/`tiRecᵒ`, rule `tiEps0O` (`OrdCnf.lean`) | ✅ no coding in any computation |
 | **Typed hydra layer**: base type `.hyd`, trees as values, `cutᴴ`/`deadᴴ?`/`hordᴴ` (measure lands in `.ord`), rule `hordCutLtH` (`HydraTyped.lean`) | ✅ battle at the published length 37, where the coded extract overflows |
 | Formulas indexed by realizer type; equality+conversion at every type | ✅ |
-| `MR`, **44 rules**, extraction (axiom-free), soundness (all cases) | ✅ |
+| `MR`, **45 rules**, extraction (axiom-free), soundness (all cases) | ✅ |
 | Continuity (`Tracked`, `extract_continuous2`) | ✅ choice-free |
 | `tiEps0` + `tiRec` | ✅ used by Goodstein and Hydra |
-| Case studies: Fib, Fib-type-2, Pascal, Hanoi, gcd (full spec), Goodstein, Hydra, **Sperner**, **Hercules (∀-strategy)**, **Hercules (any head)**, **Goodstein on typed ordinals**, **Kirby–Paris on trees** | ✅ all extracted and running |
+| Case studies: Fib, Fib-type-2, Pascal, Hanoi, gcd (full spec), Goodstein, Hydra, **Sperner**, **Hercules (∀-strategy)**, **Hercules (any head)**, **Goodstein on typed ordinals**, **Kirby–Paris on trees**, **Hercules on trees** | ✅ all extracted and running |
 | Proof engineering: `deriv_norm`, `deriv_assumption`, term-form kit | ✅ |
 
 ### What is next
@@ -94,8 +97,11 @@ the value-layer *theorem proofs*, exactly as in the first-order repo):
 * an `MR`-soundness bridge for the emitted Haskell;
 * automatic associates / moduli for extracted type-2 programs;
 * upstreaming the deriv-authoring kit into reusable tactics;
-* the Hanoi move sequences are the last coded objects left (`hcons` lists);
-  the ordinal and hydra ports are the template.
+* an `MR`-soundness bridge for the emitted Haskell, automatic
+  associates/moduli for type-2 extracts, and upstreaming the deriv-authoring
+  kit are what remain.  The de-coding programme is **finished**: the coded
+  `Goodstein`/`Hydra`/`Hercules` modules are kept only as the baselines their
+  typed twins are measured against.
 
 ## What this branch will *not* deliver
 

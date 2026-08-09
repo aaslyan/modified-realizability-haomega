@@ -265,11 +265,25 @@ extracted program computes it where the coded extract cannot take a step.
 Both witnesses are guarded terminal (`isLeafN (hplayRef …) = 0`), and a
 guard runs the program on a tree written out directly, with no code involved.
 
-`[run]` Hygiene after the layer: `lake build` **749 jobs**, 7,130 lines,
-32 files, 44 rules, zero `HAomega/` warnings; `EXTRACTED_HAOMEGA.md` renders
-twelve realizers.
+`[run]` Hygiene after both layers: `lake build` **750 jobs**, 7,448 lines,
+33 files, 45 rules, zero `HAomega/` warnings; `EXTRACTED_HAOMEGA.md` renders
+thirteen realizers.
 
-`[src]` **Still coded:** Hanoi's move sequences (`hcons` lists). Nothing else.
+`[src]` **Nothing is coded any more (addendum, same day).**
+`HerculesTree.lean` derives `herculesTD : ∀h^hyd ∀f ∀g. ∃t.
+deadᴴ?(playAt(g,f,h,t)) = 0` — the fully general game on trees — at
+`[propext, Quot.sound]`, with `[run]` **0** coded operations in the extract
+(7 × `cutAtᴴ(`, 1 × `tiRecᵒ[`) and a guard that it returns the published
+**37** at hydra code 4.  It cost nothing at the value level: `playAt` and its
+descent `oltE_ordEOfHydra_playAt` were already tree-level.  The coded
+`Goodstein`/`Hydra`/`Hercules` modules are kept deliberately, as the
+baselines their typed twins are measured against.  `Goodstein.lean` and `Hydra.lean` are
+also coded but are kept deliberately, as the baselines their typed twins are
+measured against.  **Correction:** an earlier draft of this section named
+Hanoi's move sequences as the last coded object; that is wrong — `[src]`
+`HAomega/Hanoi.lean` contains no reference to the coding machinery at all
+(its sequences are `(len, moves^(ℕ→ℕ))` pairs, which is precisely the
+encoding-wall experiment's result).
 
 ## 10. Fixes applied by this audit
 

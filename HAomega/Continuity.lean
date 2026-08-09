@@ -128,6 +128,24 @@ theorem contAt_binop {σ τ ρ : Type} {F : (ℕ → ℕ) → σ} {G : (ℕ → 
   rw [hm β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi (Nat.le_max_left _ _)),
     hn β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi (Nat.le_max_right _ _))]
 
+/-- The ternary analogue of `contAt_binop`, for the three-argument surgery
+primitives. -/
+theorem contAt_ternop {σ τ ρ ν : Type} {F : (ℕ → ℕ) → σ} {G : (ℕ → ℕ) → τ}
+    {H : (ℕ → ℕ) → ρ} (op : σ → τ → ρ → ν)
+    (hF : ContAt σ F) (hG : ContAt τ G) (hH : ContAt ρ H) :
+    ContAt ν (fun α ↦ op (F α) (G α) (H α)) := by
+  intro α
+  obtain ⟨m, hm⟩ := hF α
+  obtain ⟨n, hn⟩ := hG α
+  obtain ⟨k, hk⟩ := hH α
+  refine ⟨Nat.max m (Nat.max n k), fun β hβ ↦ ?_⟩
+  show op (F α) (G α) (H α) = op (F β) (G β) (H β)
+  rw [hm β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi (Nat.le_max_left _ _)),
+    hn β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi
+      (Nat.le_trans (Nat.le_max_left _ _) (Nat.le_max_right _ _))),
+    hk β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi
+      (Nat.le_trans (Nat.le_max_right _ _) (Nat.le_max_right _ _)))]
+
 /-- Applying a continuously-computed index, at arbitrary index and value
 types.  Generalises `continuous2_apply_nat`. -/
 theorem contAt_apply {ι σ : Type} {k : (ℕ → ℕ) → ι} {G : (ℕ → ℕ) → ι → σ}
@@ -289,6 +307,9 @@ theorem eval_tracked {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
       intro E hE
       exact contAt_binop (fun h (_ : Unit) ↦ ordEOfHydra h) (ih E hE)
         (contAt_const ())
+  | hcutAtH p a b ihp iha ihb =>
+      intro E hE
+      exact contAt_ternop playAt (ihp E hE) (iha E hE) (ihb E hE)
   | orde a b iha ihb =>
       intro E hE
       exact contAt_binop ordE (iha E hE) (ihb E hE)

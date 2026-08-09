@@ -8,7 +8,7 @@ every extracted type-2 realizer among the Kleene–Kreisel continuous
 functionals.  The rule set includes **transfinite induction to `ε₀`**
 (`tiEps0`), with its recursor `tiRec` as a matching term former.
 
-Twelve extracted programs come out of the object theory, each with its realizer
+Thirteen extracted programs come out of the object theory, each with its realizer
 extracted, certified, and **run** at every build:
 
 | | statement | notes |
@@ -25,6 +25,7 @@ extracted, certified, and **run** at every build:
 | **Fibonacci, type 2** | `∀f^(ℕ→ℕ) ∃y. y = fib(f(f 0))` | proved continuous, with associate and explicit modulus |
 | **Goodstein, typed ordinals** | `∀m ∃t. good(m,t) = 0` | the same statement again, by `tiEps0O` on **structural** ε₀-notations — the extract contains no coded ordinal |
 | **Kirby–Paris, typed trees** | `∀h^hyd ∃t. deadᴴ?(play(h,t)) = 0` | hydras as a base type; computes the published battle length **37** where the coded extract overflows |
+| **Hercules any-head, typed trees** | `∀h^hyd ∀f ∀g ∃t. deadᴴ?(playAt(g,f,h,t)) = 0` | the fully general game with nothing encoded anywhere |
 
 Zero `sorry`/`admit`.  `lake build` is the test suite: every correctness
 claim is a theorem and every evaluation claim an embedded `#guard`.

@@ -34,7 +34,7 @@ with no `map tyOf` and no lemma relating the two.
 
 ## The rules
 
-**44 rules**, against the first-order development's 76, and **none carries a
+**45 rules**, against the first-order development's 76, and **none carries a
 side condition** — de Bruijn binders make `SubstOK` and `FreshIn` vacuous.  The
 saving is the equational kit: one Leibniz rule (`eqSubst`) gives every
 congruence, and the function symbols' defining equations are gone because the
@@ -194,7 +194,7 @@ def Tm.dflt : {Γ : List Ty} → (τ : Ty) → Tm Γ τ
 
 /-! ## The rules -/
 
-/-- **Natural deduction for HA^ω.**  44 rules, no side conditions. -/
+/-- **Natural deduction for HA^ω.**  45 rules, no side conditions. -/
 inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
     {a : Ty} → Formula Γ a → Type where
   | ax {Γ as a} {φ : Formula Γ a} {Δ : Ctx Γ as} : Deriv (.cons φ Δ) φ
@@ -305,6 +305,12 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
   | hordCutLtH {Γ as} {Δ : Ctx Γ as} (n : Tm Γ .nat) (c : Tm Γ .hyd) :
       Deriv Δ (.imp ((Formula.eq (.hleafQ c) .zero).neg)
         (.eq (.olte (.hordH (.hcutH n c)) (.hordH c)) (.succ .zero)))
+  -- The any-head descent **on trees** — discharged by
+  -- `oltE_ordEOfHydra_playAt`, i.e. H7's `play_descends` for an arbitrary
+  -- head, with no coding anywhere.
+  | hordCutAtLtH {Γ as} {Δ : Ctx Γ as} (p n : Tm Γ .nat) (c : Tm Γ .hyd) :
+      Deriv Δ (.imp ((Formula.eq (.hleafQ c) .zero).neg)
+        (.eq (.olte (.hordH (.hcutAtH p n c)) (.hordH c)) (.succ .zero)))
   | hordCutAtLt {Γ as} {Δ : Ctx Γ as} (p n c : Tm Γ .nat) :
       Deriv Δ (.imp ((Formula.eq c .zero).neg)
         (.eq (.prec (.hord (.hcutAt p n c)) (.hord c)) (.succ .zero)))

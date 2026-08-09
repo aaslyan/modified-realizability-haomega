@@ -175,6 +175,10 @@ inductive Tm : List Ty → Ty → Type where
   | hcutH {Γ : List Ty} : Tm Γ .nat → Tm Γ .hyd → Tm Γ .hyd
   | hleafQ {Γ : List Ty} : Tm Γ .hyd → Tm Γ .nat
   | hordH {Γ : List Ty} : Tm Γ .hyd → Tm Γ .ord
+  -- The **any-head** move on trees (position, replication, hydra), evaluated
+  -- by the surgery layer's `playAt` — already a tree function, so the typed
+  -- general game needs no new value-level mathematics.
+  | hcutAtH {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .hyd → Tm Γ .hyd
   -- **Recursion along `≺`** — the program construct matching the `tiEps0`
   -- rule.  Its step type is the rule's nested `∀→` pair read off exactly: at
   -- `x`, given the recursive values at every `y` together with the (`unit`)
@@ -232,6 +236,7 @@ def Tm.rename {Γ Δ : List Ty} (ρ : Ren Γ Δ) : {τ : Ty} → Tm Γ τ → Tm
   | _, .hcutH a b => .hcutH (a.rename ρ) (b.rename ρ)
   | _, .hleafQ a => .hleafQ (a.rename ρ)
   | _, .hordH a => .hordH (a.rename ρ)
+  | _, .hcutAtH p a b => .hcutAtH (p.rename ρ) (a.rename ρ) (b.rename ρ)
   | _, .hydra a b => .hydra (a.rename ρ) (b.rename ρ)
   | _, .hord a => .hord (a.rename ρ)
   | _, .tiRec s n => .tiRec (s.rename ρ) (n.rename ρ)
@@ -276,6 +281,7 @@ def Tm.subst {Γ Δ : List Ty} (s : Sub Γ Δ) : {τ : Ty} → Tm Γ τ → Tm �
   | _, .hcutH a b => .hcutH (a.subst s) (b.subst s)
   | _, .hleafQ a => .hleafQ (a.subst s)
   | _, .hordH a => .hordH (a.subst s)
+  | _, .hcutAtH p a b => .hcutAtH (p.subst s) (a.subst s) (b.subst s)
   | _, .hydra a b => .hydra (a.subst s) (b.subst s)
   | _, .hord a => .hord (a.subst s)
   | _, .tiRec sc n => .tiRec (sc.subst s) (n.subst s)
@@ -390,6 +396,7 @@ def Tm.eval {Γ : List Ty} : {τ : Ty} → Tm Γ τ → Env Γ → τ.interp
   | _, .hcutH a b, e => Realizability.hydraStep (a.eval e) (b.eval e)
   | _, .hleafQ a, e => isLeafN (a.eval e)
   | _, .hordH a, e => ordEOfHydra (a.eval e)
+  | _, .hcutAtH p a b, e => playAt (p.eval e) (a.eval e) (b.eval e)
   | _, .hydra a b, e => Realizability.hydraSeqN (a.eval e) (b.eval e)
   | _, .hord a, e => Realizability.ordOfHydraN (a.eval e)
   | _, .tiRec s n, e => tiRecVal (s.eval e) (n.eval e)
@@ -443,6 +450,8 @@ theorem Tm.eval_rename {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | hcutH a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
   | hleafQ a ih => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ih]
   | hordH a ih => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ih]
+  | hcutAtH p a b ihp iha ihb =>
+      intro Δ ρ e; simp only [Tm.rename, Tm.eval, ihp, iha, ihb]
   | hydra a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
   | hord a ih => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ih]
   | tiRec sc n ihs ihn => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ihs, ihn]
@@ -498,6 +507,8 @@ theorem Tm.eval_subst {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | hcutH a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
   | hleafQ a ih => intro Δ s e; simp only [Tm.subst, Tm.eval, ih]
   | hordH a ih => intro Δ s e; simp only [Tm.subst, Tm.eval, ih]
+  | hcutAtH p a b ihp iha ihb =>
+      intro Δ s e; simp only [Tm.subst, Tm.eval, ihp, iha, ihb]
   | hydra a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
   | hord a ih => intro Δ s e; simp only [Tm.subst, Tm.eval, ih]
   | tiRec sc n ihs ihn => intro Δ s e; simp only [Tm.subst, Tm.eval, ihs, ihn]

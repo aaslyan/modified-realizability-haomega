@@ -160,6 +160,8 @@ def Tm.pretty : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → (d : Nat) → Stri
   | _, _, .hcutH a b, d => "cutᴴ(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
   | _, _, .hleafQ a, d => "deadᴴ?" ++ a.pretty d
   | _, _, .hordH a, d => "hordᴴ " ++ a.pretty d
+  | _, _, .hcutAtH p a b, d =>
+      "cutAtᴴ(" ++ p.pretty d ++ ", " ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
   | _, _, .hydra a b, d => "hydra(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
   | _, _, .hord a, d => "hord " ++ a.pretty d
   | _, _, .tiRec s n, d =>
@@ -202,6 +204,8 @@ def Tm.pretty' : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → (d : Nat) → Str
   | _, _, .hcutH a b, d => "cutᴴ(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
   | _, _, .hleafQ a, d => "deadᴴ?" ++ a.pretty' d
   | _, _, .hordH a, d => "hordᴴ " ++ a.pretty' d
+  | _, _, .hcutAtH p a b, d =>
+      "cutAtᴴ(" ++ p.pretty' d ++ ", " ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
   | _, _, .hydra a b, d => "hydra(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
   | _, _, .hord a, d => "hord " ++ a.pretty' d
   | _, _, .tiRec s n, d =>

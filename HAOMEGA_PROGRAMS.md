@@ -9,12 +9,13 @@ Extraction, soundness and continuity hold for every derivation, and **eleven
 extracted programs run**: the first-order repo's seven, plus three theorems
 that repo cannot state — `herculesD` (strategy-quantified Hydra),
 `herculesAnyD` (the fully general any-head game), and the higher-type
-Fibonacci — plus `goodsteinOD` and `hydraHD`, Goodstein and Kirby–Paris
-re-proved over the typed ordinal and hydra layers, with nothing encoded. Pascal was the first whose algorithm the proof computes
+Fibonacci — plus `goodsteinOD`, `hydraHD` and `herculesTD`: Goodstein,
+Kirby–Paris and the fully general Hercules game re-proved over the typed
+ordinal and hydra layers, with nothing encoded anywhere. Pascal was the first whose algorithm the proof computes
 rather than receives. The three-view rendering of every realizer (raw object /
 collapsed program / Haskell) is `EXTRACTED_HAOMEGA.md`, regenerated at each
 build; the detailed sections below cover the first six, and the coverage
-table covers all twelve.
+table covers all thirteen.
 
 ## The uniform core
 
@@ -231,20 +232,21 @@ is assembled by the induction (Pascal-style).
 | **Goodstein** | ✅ `goodsteinStopTime` (walls at `m=2`) | ✅ **`goodsteinD` by `tiEps0`**; extracted `goodsteinX` returns the published stop times `[0,1,3,5]` and runs to `m=3` (`Goodstein.lean`) | — |
 | **Hydra** | ✅ `hydraBattleLength` (walls at code 1) | ✅ **`hydraD` by `tiEps0`** — Goodstein's mirror with a shorter descent; extracted `hydraX` returns the published battle lengths `[0,1,3]` and its witness is verified to end each battle (`Hydra.lean`) | — |
 | **Hercules (strategy-quantified)** | ✗ (unstatable — a strategy is a function) | ✅ **`herculesD`**: `∀h ∀f^(ℕ→ℕ). ∃t. play(f,h,t) = 0`, quantified over every replication strategy; extracted `herculesX` agrees with `hydraX` at the fragment's own strategy (`Hercules.lean`) | — |
+| **Hercules any-head, typed trees** | ✗ (unstatable) | ✅ **`herculesTD`**: `∀h^hyd ∀f ∀g. ∃t. deadᴴ?(playAt(g,f,h,t)) = 0` — the fully general game with tree states and notation measures. Cost at the value level: **nothing** (`playAt` and its descent were already tree-level); one term former, one schema (`HerculesTree.lean`) | — |
 | **Kirby–Paris, typed trees** | ✗ (one sort — trees must be coded) | ✅ **`hydraHD`**: `∀h^hyd ∃t. deadᴴ?(play(h,t)) = 0`, state a tree and measure an `Eps0`. The extract has **zero** coded operations and computes the published length **37** at the hydra where the coded `hydraX` overflows the interpreter (`HydraTyped.lean`, `HydraTree.lean`) | — |
 | **Goodstein, typed ordinals** | ✗ (one sort — ordinals must be coded) | ✅ **`goodsteinOD`**: the same `∀m ∃t. good(m,t) = 0`, proved by `tiEps0O` on the structural notations of `OrdCnf.lean`; the extract contains **no coded ordinal** (`ordᵒ`/`tiRecᵒ` only) and returns the same stopping times, build-guarded against `goodsteinX` | — |
 | **Hercules, any head (fully general)** | ✗ (unstatable) | ✅ **`herculesAnyD`**: `∀h ∀f ∀g. ∃t. playAt(g,f,h,t) = 0` — head choice *and* replication quantified, on the computable surgery `hcutAt` whose descent is H7's `play_descends` on codes (`HydraSurgery.lean`, `HerculesAny.lean`); extracted `herculesAnyX` agrees with `herculesX` at the leftmost strategy | — |
 
 ## Honest summary
 
-- **Machinery: complete.** 44 rules, `extract` (axiom-free, cast-free),
+- **Machinery: complete.** 45 rules, `extract` (axiom-free, cast-free),
   `soundness` (one case per rule), continuity (`[propext, Quot.sound]`,
   choice-free).
 - **Case studies: eleven extracted programs** — the seven first-order
   programs ported, plus the higher-type Fibonacci and both Hercules theorems
   (replication-only and fully general), all unstatable first-order, plus
-  Goodstein and Kirby–Paris a second time each over the typed ordinal and
-  hydra layers.
+  Goodstein, Kirby–Paris and the general Hercules game a second time each
+  over the typed ordinal and hydra layers.
 - **The typed ordinal layer** (`OrdCnf.lean`) gives ε₀-notations their own
   base type: structural comparison and normal form, well-foundedness
   *inherited* from the certified coded order through `toCode`. Measured

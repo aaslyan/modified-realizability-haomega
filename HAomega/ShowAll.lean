@@ -9,11 +9,12 @@ import HAomega.Sperner
 import HAomega.HerculesAny
 import HAomega.GoodsteinTyped
 import HAomega.HydraTree
+import HAomega.HerculesTree
 
 /-!
 # Every extracted program, in three views
 
-For each of the twelve case studies this module renders the realizer three
+For each of the thirteen case studies this module renders the realizer three
 ways and writes `EXTRACTED_HAOMEGA.md`:
 
 1. **the high-level object** — the raw extracted realizer, the element of the
@@ -42,6 +43,7 @@ def R9 := extractClosed (herculesD (Γ := []) (Δ := Ctx.nil))
 def R10 := extractClosed (herculesAnyD (Γ := []) (Δ := Ctx.nil))
 def R11 := extractClosed (goodsteinOD (Γ := []) (Δ := Ctx.nil))
 def R12 := extractClosed (hydraHD (Γ := []) (Δ := Ctx.nil))
+def R13 := extractClosed (herculesTD (Γ := []) (Δ := Ctx.nil))
 
 private def section' (title thm ty : String)
     {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) : String :=
@@ -56,7 +58,7 @@ private def section' (title thm ty : String)
   "```haskell\n" ++ EmitHaskell.hsTm t 0 ++ "\n```\n\n"
 
 def showAll : String :=
-  "# The twelve extracted programs of the HA^ω development\n\n" ++
+  "# The thirteen extracted programs of the HA^ω development\n\n" ++
   "Each section shows one certified realizer in three renderings.  The\n" ++
   "certified object is the System T term; soundness certifies it realizes\n" ++
   "its theorem, continuity that it denotes a continuous functional.\n\n" ++
@@ -86,7 +88,10 @@ def showAll : String :=
     "N → (N × 1)" R11 ++
   section' "12. Kirby–Paris on trees (nothing encoded)"
     "∀h^hyd. ∃t. deadᴴ?(play(h, t)) = 0   — §7's theorem with tree states and notation measures"
-    "H → (N × 1)" R12
+    "H → (N × 1)" R12 ++
+  section' "13. Hercules, any head, on trees (nothing encoded anywhere)"
+    "∀h^hyd ∀f^(ℕ→ℕ) ∀g^(ℕ→ℕ). ∃t. deadᴴ?(playAt(g, f, h, t)) = 0"
+    "H → ((N → N) → ((N → N) → (N × 1)))" R13
 
 #eval IO.FS.writeFile "EXTRACTED_HAOMEGA.md" showAll
 #eval IO.println ("written: " ++ toString showAll.length ++ " chars")

@@ -611,9 +611,9 @@ is still imported — see STATUS.md Phase P6 and `RESEARCH_PLAN.md` §2.
 
 The one-sentence version: **the same modified-realizability pipeline,
 rebuilt over Heyting arithmetic in all finite types, where the realizer is a
-term of the object language — twelve extracted programs, four of them from
+term of the object language — thirteen extracted programs, four of them from
 theorems the fragment cannot even state, and (since the typed layers) with
-neither ordinals nor hydra trees encoded into `ℕ` anywhere.**  Every fact below is
+nothing encoded into `ℕ` anywhere.**  Every fact below is
 evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 
 ## 5. Dependency-ordered map
@@ -644,7 +644,7 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 | H13 | the term-form kit (`plusAssocT`, …, `trichotomyT`) | `GcdFull.lean` | ∀-lemmas cannot be `allE`-instantiated at use sites (the unifier cannot invert `Formula.subst1`); each lemma gets a term-parameterized form via one KIT-`simp`. |
 | H14 | the explicit-chain discipline | `PascalTheorem.lean` header | Conversion chains written with holes make the elaborator symbolically execute substitution (20+ min/declaration); every intermediate named + every reduction its own `rfl`/`simp` link elaborates in milliseconds. |
 
-### 5.3 The twelve extracted programs
+### 5.3 The thirteen extracted programs
 
 | # | Theorem | File | Read it for |
 |---|---|---|---|
@@ -659,6 +659,7 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 | H22b | **`hydraHD`**, `hydraHX` | `HydraTree.lean` | H22's theorem with **nothing encoded**: tree states, notation measures, one new rule instead of three (the battle is a term, so the recursor's conversions suffice). The payoff is measurable — it computes the published Kirby–Paris length **37** at a hydra where the coded extract overflows the interpreter without taking a step. |
 | H22 | **`hydraD`**, `hydraX` | `Hydra.lean` | Goodstein's mirror with a shorter descent; one import (`hordCutLt`). Published lengths `[0,1,3]`. |
 | H23 | `playT`, **`herculesD`** | `Hercules.lean` | `∀h ∀f^(ℕ→ℕ) ∃t. play(f,h,t) = 0` — strategy-quantified, unstatable first-order; `play` is a *term*, the descent needs *no new import*. Replication only; the head choice is quantified in H23b. |
+| H23c | **`herculesTD`**, `herculesTX` | `HerculesTree.lean` | H23b's theorem on trees — the fully general game with **nothing encoded**. Notable for what it cost: at the value level, nothing. `playAt` was already a tree function and its descent was already proved by the typed hydra layer, so this is one term former, one schema, and the derivation. |
 | H23b | `moveF`/`playAtN`, **`herculesAnyD`** | `HydraSurgery.lean`, `HerculesAny.lean` | **The fully general game**: `∀h ∀f ∀g ∃t. playAt(g,f,h,t) = 0`. The surgery layer is `cutH` with a position argument — every in-range move a legal H7 `Play`, descent = `play_descends` on codes; one new primitive (`hcutAt`) + one new schema (`hordCutAtLt`); the derivation transcribes H23 with the head strategy threaded through. Extract agrees with H23's at the leftmost strategy. |
 | H24 | **`spernerD`**, `spernerX` | `Sperner.lean` | Colorings as function variables — no `look`. **The fingerprint finding**: this proof extracts the *last* crossing where first-order S1 extracts the first (`[0,1,0,1] ↦ 2` vs `0`) — same theorem, different proof, measurably different program. |
 | H25 | `R1`–`R7`, `showAll` | `ShowAll.lean` | Renders every realizer in three views and **writes `EXTRACTED_HAOMEGA.md` at each build**. |
@@ -674,8 +675,8 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
    `HydraTyped.lean` (trees) give a coded object its own base type and then
    *inherit* every certified fact through an encoding used only in proofs
    (`toCode`).  No new descent argument, no new mathematics — and the coding
-   disappears from every computation.  Hanoi's move sequences are the one
-   coded object left.
+   disappears from every computation.  Hanoi never needed this: its move
+   sequences were functions from the start.
 4. **Primitives over definability** for the case-study symbols — definable
    in principle (System T is closed under their recursions), primitive in
    practice, evaluated by proven choice-free layers.  The numeral-graph
@@ -688,7 +689,7 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 ## 7. Reproducing the Part II claims
 
 ```bash
-lake build          # 749 jobs; every #print axioms / #guard runs here
+lake build          # 750 jobs; every #print axioms / #guard runs here
 ```
 
 Spot checks (each was run for the dossier; expected outputs quoted there):

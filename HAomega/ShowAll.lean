@@ -6,12 +6,12 @@ Authors: Ara Aslyan
 import HAomega.Hydra
 import HAomega.GcdTheorem
 import HAomega.Sperner
-import HAomega.Hercules
+import HAomega.HerculesAny
 
 /-!
 # Every extracted program, in three views
 
-For each of the nine case studies this module renders the realizer three
+For each of the ten case studies this module renders the realizer three
 ways and writes `EXTRACTED_HAOMEGA.md`:
 
 1. **the high-level object** — the raw extracted realizer, the element of the
@@ -37,6 +37,7 @@ def R6 := extractClosed (goodsteinD (Γ := []) (Δ := Ctx.nil))
 def R7 := extractClosed (hydraD (Γ := []) (Δ := Ctx.nil))
 def R8 := extractClosed (spernerD (Γ := []) (Δ := Ctx.nil))
 def R9 := extractClosed (herculesD (Γ := []) (Δ := Ctx.nil))
+def R10 := extractClosed (herculesAnyD (Γ := []) (Δ := Ctx.nil))
 
 private def section' (title thm ty : String)
     {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) : String :=
@@ -51,7 +52,7 @@ private def section' (title thm ty : String)
   "```haskell\n" ++ EmitHaskell.hsTm t 0 ++ "\n```\n\n"
 
 def showAll : String :=
-  "# The nine extracted programs of the HA^ω development\n\n" ++
+  "# The ten extracted programs of the HA^ω development\n\n" ++
   "Each section shows one certified realizer in three renderings.  The\n" ++
   "certified object is the System T term; soundness certifies it realizes\n" ++
   "its theorem, continuity that it denotes a continuous functional.\n\n" ++
@@ -72,7 +73,10 @@ def showAll : String :=
     "N → ((N → N) → (1 → (1 → (N × ((N × 1) × (1 → 1))))))" R8 ++
   section' "9. Hercules (strategy-quantified Hydra)"
     "∀h ∀f^(ℕ→ℕ). ∃t. play(f, h, t) = 0"
-    "N → ((N → N) → (N × 1))" R9
+    "N → ((N → N) → (N × 1))" R9 ++
+  section' "10. Hercules, any head (the fully general game)"
+    "∀h ∀f^(ℕ→ℕ) ∀g^(ℕ→ℕ). ∃t. playAt(g, f, h, t) = 0"
+    "N → ((N → N) → ((N → N) → (N × 1)))" R10
 
 #eval IO.FS.writeFile "EXTRACTED_HAOMEGA.md" showAll
 #eval IO.println ("written: " ++ toString showAll.length ++ " chars")

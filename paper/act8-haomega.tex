@@ -79,10 +79,10 @@ opaque element of the pure-type hierarchy, printable only by walking the
 derivation instead. A realizer that is a \emph{term} can be printed,
 normalized, emitted as Haskell, and reasoned about --- the repository's
 three-view artifact (\texttt{EXTRACTED\_HAOMEGA.md}, rewritten at every
-build) renders all nine realizers this way, and the displays below are its
+build) renders all ten realizers this way, and the displays below are its
 three renderings of one certified object each.
 
-\subsection*{Nine theorems, each extracted and run}
+\subsection*{Ten theorems, each extracted and run}
 
 \begin{center}\small
 \begin{tabular}{ll}
@@ -92,6 +92,7 @@ theorem & statement (derived in the object theory)\\
 Goodstein & $\forall m\,\exists t.\ \good(m,t)=0$\\
 Kirby--Paris & $\forall h\,\exists t.\ \hydra(h,t)=0$\\
 Hercules, $\forall$-strategy & $\forall h\,\forall f^{\Nat\to\Nat}\,\exists t.\ \mathrm{play}(f,h,t)=0$\\
+Hercules, any head & $\forall h\,\forall f^{\Nat\to\Nat}\,\forall g^{\Nat\to\Nat}\,\exists t.\ \mathrm{playAt}(g,f,h,t)=0$\\
 gcd, full specification & $\forall a\,\forall b\,\exists g.\ g\mid a \land g\mid b \land \forall d.(d\mid a\to d\mid b\to d\mid g)$\\
 Pascal mod 2 & $\forall n\,\forall k.\ \mathrm{pas}(n,k)=1 \lor \mathrm{pas}(n,k)=0$\\
 Sperner 1D & $\forall n\,\forall c^{\Nat\to\Nat}.\ c\,0=0 \to c\,n=1 \to \exists k.\ k<n \land c\,k\neq c(k{+}1)$\\
@@ -102,15 +103,17 @@ Fibonacci at type 2 & $\forall f^{\Nat\to\Nat}\,\exists y.\ y=\fib(f(f\,0))$\\
 \end{tabular}
 \end{center}
 
-Three of these the fragment could not even \emph{state}: Hercules and
-Sperner quantify over functions, and the type-2 Fibonacci is where the
-continuity theorem finally has content ($\mathsf{Continuous2}$ of the
-extracted functional, with an explicit computable modulus
-$\max(f\,0, f(f\,0))+1$). Two scope statements, verbatim from the audit:
-independence from \textsc{pa} is formalized nowhere; and
-$\mathrm{play}(f,h,t)$ quantifies the \emph{replication} strategy --- the
-head choice stays the value layer's, and the fully general any-head theorem
-is not derived.
+Four of these the fragment could not even \emph{state}: the two Hercules
+theorems and Sperner quantify over functions, and the type-2 Fibonacci is
+where the continuity theorem finally has content ($\mathsf{Continuous2}$ of
+the extracted functional, with an explicit computable modulus
+$\max(f\,0, f(f\,0))+1$). The any-head Hercules closes what the audit had
+recorded as the remaining gap: a computable surgery move ($\mathsf{hcutAt}$,
+the leftmost-head move with the head position as an argument) whose descent
+is the first-order \texttt{play\_descends} read on codes, so quantifying
+the head strategy costs one primitive and one schema. One scope statement
+survives, verbatim from the audit: independence from \textsc{pa} is
+formalized nowhere.
 
 \subsection*{Reading an extracted program, three ways}
 

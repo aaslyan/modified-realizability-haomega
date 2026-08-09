@@ -48,11 +48,17 @@ new primitive, no new eval/soundness/tracking cases), and the descent needs
 *no new import* (`hordCutLt` was already term-general in its replication
 argument).
 
-**Precise remaining gap:** the head choice stays the value layer's
-(leftmost).  The fully general Kirby–Paris `hercules_wins` — any head, any
-replication — needs a general tree-surgery move and its descent, which the
-value layer does not provide; **it remains underived**, and `Hercules.lean`'s
-header says so.  `[run]` extract checks: `herculesX (·+1)` on codes 0–2 =
+**Precise remaining gap (as of the audit):** the head choice stayed the
+value layer's (leftmost).  **Addendum (2026-08-09): the gap is closed.**
+`HydraSurgery.lean` supplies the computable tree-surgery move (`moveF` /
+`playAtN`, axiom-free — `cutH` with a position argument) with its descent
+`olt_ordOfHydraN_playAt` = H7's `play_descends` on codes; the `hcutAt`
+primitive and the `hordCutAtLt` schema thread it through all case sites; and
+`HerculesAny.lean` derives `herculesAnyD : ∀h ∀f ∀g. ∃t. playAt(g,f,h,t) = 0`
+at `[propext, Quot.sound]`.  `[run]`: `herculesAnyX` agrees with `herculesX`
+(hence `hydraX`) at the leftmost head strategy `g = 0` on codes 0–2, and
+distinct-head battles are certified terminal by the reference `playAtRef`;
+745 jobs green.  `[run]` extract checks: `herculesX (·+1)` on codes 0–2 =
 `[0,1,3]` (agrees with `hydraX` at the fragment's own strategy);
 `herculesX (fun _ ↦ 1)/(fun _ ↦ 9)` on codes 0–1 = `[0,1,1]` with `playRef`
 terminal certificates; `herculesX (fun _ ↦ 1) 2` **stack-overflows** — the
@@ -132,15 +138,18 @@ Two corrections to earlier claims, both now fixed in `HAOMEGA.md`:
 ## 6. Hygiene `[run]`
 
 * `lake build`: **743 jobs, success** (re-verified after
-  `Hercules.lean`/`Sperner.lean` landed).
+  `Hercules.lean`/`Sperner.lean` landed).  *Addendum 2026-08-09: 745 jobs
+  after `HydraSurgery.lean`/`HerculesAny.lean`.*
 * `wc -l HAomega/*.lean`: **5,454 lines** (23 files, after
   `Hercules.lean`/`Sperner.lean`; first-pass figure was 5,067/21).
+  *Addendum 2026-08-09: 6,008 lines, 28 files.*
 * `grep -rnw sorry HAomega/ --include=*.lean` → no matches (exit 1);
   same for `admit`.
 
 ## 7. `ShowAll.lean` / `EXTRACTED_HAOMEGA.md` `[src]/[run]`
 
-`ShowAll.lean` names all seven realizers (`R1`–`R7`), renders each three
+`ShowAll.lean` names the realizers (`R1`–`R7` at audit time; `R1`–`R10`
+since the Sperner/Hercules/any-head extensions), renders each three
 ways (raw `pretty`, collapsed `pretty'`, Haskell `EmitHaskell.hsTm`) and
 **writes `EXTRACTED_HAOMEGA.md` as a build side effect** (an `#eval
 IO.FS.writeFile` — worth knowing: every build regenerates the file).  The
@@ -183,4 +192,5 @@ extraction is faithful to proof structure.
    `bump`-row "definable" → "schemas gone, symbols primitive"; the Status
    section rewritten to the then-current, evidence-backed state (741 jobs and
    seven case studies at the time of that audit; 743 and nine after
-   Sperner/Hercules landed — §8/§9); "What is next" refreshed.
+   Sperner/Hercules landed — §8/§9; 745 and ten after the any-head
+   closure); "What is next" refreshed.

@@ -611,8 +611,8 @@ is still imported — see STATUS.md Phase P6 and `RESEARCH_PLAN.md` §2.
 
 The one-sentence version: **the same modified-realizability pipeline,
 rebuilt over Heyting arithmetic in all finite types, where the realizer is a
-term of the object language — nine theorems derived, extracted, and run,
-three of them unstatable in the fragment.**  Every fact below is
+term of the object language — ten theorems derived, extracted, and run,
+four of them unstatable in the fragment.**  Every fact below is
 evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 
 ## 5. Dependency-ordered map
@@ -641,7 +641,7 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 | H13 | the term-form kit (`plusAssocT`, …, `trichotomyT`) | `GcdFull.lean` | ∀-lemmas cannot be `allE`-instantiated at use sites (the unifier cannot invert `Formula.subst1`); each lemma gets a term-parameterized form via one KIT-`simp`. |
 | H14 | the explicit-chain discipline | `PascalTheorem.lean` header | Conversion chains written with holes make the elaborator symbolically execute substitution (20+ min/declaration); every intermediate named + every reduction its own `rfl`/`simp` link elaborates in milliseconds. |
 
-### 5.3 The nine case studies
+### 5.3 The ten case studies
 
 | # | Theorem | File | Read it for |
 |---|---|---|---|
@@ -653,7 +653,8 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 | H20 | `gcdT` … **`gcdTheoremD`**, `gcdFull` | `Gcd.lean` → `GcdStage2/Full/Dvd/Cases/Main/Theorem.lean` | The full specification by **fueled induction with slack** (`(a+b)+c = m` — plain `ind`, no strong-induction scaffold). Six landed layers; the first-order extract ran at *no* input, this one runs. |
 | H21 | **`goodsteinD`**, `goodsteinX` | `Goodstein.lean` | `tiEps0` used in anger; the first-order derivation line for line **minus the naming dodge**. Extract returns the published `[0,1,3,5]`; certificate `good(m, stop m) = 0` guarded. |
 | H22 | **`hydraD`**, `hydraX` | `Hydra.lean` | Goodstein's mirror with a shorter descent; one import (`hordCutLt`). Published lengths `[0,1,3]`. |
-| H23 | `playT`, **`herculesD`** | `Hercules.lean` | `∀h ∀f^(ℕ→ℕ) ∃t. play(f,h,t) = 0` — strategy-quantified, unstatable first-order; `play` is a *term*, the descent needs *no new import*. **Honest scope in the header**: replication strategy only; any-head `hercules_wins` not derived. |
+| H23 | `playT`, **`herculesD`** | `Hercules.lean` | `∀h ∀f^(ℕ→ℕ) ∃t. play(f,h,t) = 0` — strategy-quantified, unstatable first-order; `play` is a *term*, the descent needs *no new import*. Replication only; the head choice is quantified in H23b. |
+| H23b | `moveF`/`playAtN`, **`herculesAnyD`** | `HydraSurgery.lean`, `HerculesAny.lean` | **The fully general game**: `∀h ∀f ∀g ∃t. playAt(g,f,h,t) = 0`. The surgery layer is `cutH` with a position argument — every in-range move a legal H7 `Play`, descent = `play_descends` on codes; one new primitive (`hcutAt`) + one new schema (`hordCutAtLt`); the derivation transcribes H23 with the head strategy threaded through. Extract agrees with H23's at the leftmost strategy. |
 | H24 | **`spernerD`**, `spernerX` | `Sperner.lean` | Colorings as function variables — no `look`. **The fingerprint finding**: this proof extracts the *last* crossing where first-order S1 extracts the first (`[0,1,0,1] ↦ 2` vs `0`) — same theorem, different proof, measurably different program. |
 | H25 | `R1`–`R7`, `showAll` | `ShowAll.lean` | Renders every realizer in three views and **writes `EXTRACTED_HAOMEGA.md` at each build**. |
 
@@ -676,7 +677,7 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 ## 7. Reproducing the Part II claims
 
 ```bash
-lake build          # 743 jobs; every #print axioms / #guard runs here
+lake build          # 745 jobs; every #print axioms / #guard runs here
 ```
 
 Spot checks (each was run for the dossier; expected outputs quoted there):
@@ -691,6 +692,7 @@ open HAomega
 #eval (goodsteinX 0, goodsteinX 1, goodsteinX 2, goodsteinX 3)  -- (0,1,3,5)
 #eval (hydraX 0, hydraX 1, hydraX 2)                            -- (0,1,3)
 #eval herculesX (· + 1) 2                                       -- 3
+#eval herculesAnyX 2 (· + 1) (fun _ => 0)                       -- 3 (leftmost head = hydraX)
 #eval spernerX 3 (fun k => [0,1,0,1].getD k 0)                  -- 2 (last crossing)
 EOF
 lake env lean /tmp/check.lean

@@ -8,7 +8,7 @@ every extracted type-2 realizer among the Kleene–Kreisel continuous
 functionals.  The rule set includes **transfinite induction to `ε₀`**
 (`tiEps0`), with its recursor `tiRec` as a matching term former.
 
-Nine theorems are derived in the object theory, each with its realizer
+Ten theorems are derived in the object theory, each with its realizer
 extracted, certified, and **run** at every build:
 
 | | statement | notes |
@@ -16,6 +16,7 @@ extracted, certified, and **run** at every build:
 | **Goodstein** | `∀m ∃t. good(m,t) = 0` | by `tiEps0`; extract returns the published stop times `[0,1,3,5]` |
 | **Kirby–Paris (Hydra)** | `∀h ∃t. hydra(h,t) = 0` | by `tiEps0`; extract returns the published battle lengths `[0,1,3]` |
 | **Hercules, ∀-strategy** | `∀h ∀f^(ℕ→ℕ) ∃t. play(f,h,t) = 0` | replication-strategy quantified — *unstatable* first-order |
+| **Hercules, any head** | `∀h ∀f^(ℕ→ℕ) ∀g^(ℕ→ℕ) ∃t. playAt(g,f,h,t) = 0` | the fully general game: head choice *and* replication quantified |
 | **gcd, full spec** | `∀a∀b ∃g. g∣a ∧ g∣b ∧ ∀d.(d∣a→d∣b→d∣g)` | fueled induction; proof-computed program |
 | **Pascal mod 2** | `∀n∀k. pas(n,k)=1 ∨ pas(n,k)=0` | proof-computed decider; draws the Sierpiński gasket |
 | **Sperner 1D** | `∀n ∀c^(ℕ→ℕ). c 0=0 → c n=1 → ∃k<n. c k≠c(k+1)` | colorings are function variables — no coding |
@@ -85,7 +86,5 @@ The build is standalone.
 
 Independence results are **not** formalized: Goodstein and Kirby–Paris are
 proved as termination theorems; that PA cannot prove them is claimed
-nowhere.  `herculesD` quantifies the *replication* strategy — the fully
-general any-head theorem needs a tree-surgery move the value layer does not
-provide, and it is not derived.  The Haskell renderings are uncertified
+nowhere.  The Haskell renderings are uncertified
 translations; the certified artifact is always the System T term.

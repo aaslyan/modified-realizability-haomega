@@ -273,6 +273,13 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
   | hordCutLt {Γ as} {Δ : Ctx Γ as} (n c : Tm Γ .nat) :
       Deriv Δ (.imp ((Formula.eq c .zero).neg)
         (.eq (.prec (.hord (.hcut n c)) (.hord c)) (.succ .zero)))
+  -- The **any-head** descent: the same schema for the surgery move, with the
+  -- head position a term argument.  Discharged in soundness by exactly one
+  -- theorem (`olt_ordOfHydraN_playAt` = H7's `play_descends` on codes), the
+  -- D5 discipline verbatim.
+  | hordCutAtLt {Γ as} {Δ : Ctx Γ as} (p n c : Tm Γ .nat) :
+      Deriv Δ (.imp ((Formula.eq c .zero).neg)
+        (.eq (.prec (.hord (.hcutAt p n c)) (.hord c)) (.succ .zero)))
   | eqRefl {Γ as} {Δ : Ctx Γ as} {τ : Ty} (t : Tm Γ τ) : Deriv Δ (.eq t t)
   -- **Leibniz, at every type.**  One rule; every congruence follows.
   | eqSubst {Γ as a c} {Δ : Ctx Γ as} {s t : Tm Γ c}

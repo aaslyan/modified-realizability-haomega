@@ -69,6 +69,23 @@ theorem continuous2_binop {F G : (ℕ → ℕ) → ℕ} (op : ℕ → ℕ → �
   rw [hm β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi (Nat.le_max_left _ _)),
     hn β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi (Nat.le_max_right _ _))]
 
+/-- The ternary analogue of `continuous2_binop`, for the three-argument
+surgery primitive `hcutAt`. -/
+theorem continuous2_ternop {F G H : (ℕ → ℕ) → ℕ} (op : ℕ → ℕ → ℕ → ℕ)
+    (hF : Continuous2 F) (hG : Continuous2 G) (hH : Continuous2 H) :
+    Continuous2 fun α ↦ op (F α) (G α) (H α) := by
+  intro α
+  obtain ⟨m, hm⟩ := hF α
+  obtain ⟨n, hn⟩ := hG α
+  obtain ⟨k, hk⟩ := hH α
+  refine ⟨Nat.max m (Nat.max n k), fun β hβ ↦ ?_⟩
+  show op (F α) (G α) (H α) = op (F β) (G β) (H β)
+  rw [hm β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi (Nat.le_max_left _ _)),
+    hn β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi
+      (Nat.le_trans (Nat.le_max_left _ _) (Nat.le_max_right _ _))),
+    hk β fun i hi ↦ hβ i (Nat.lt_of_lt_of_le hi
+      (Nat.le_trans (Nat.le_max_right _ _) (Nat.le_max_right _ _)))]
+
 /-- **Applying a continuously-computed numeral index.**  If `k` is continuous
 and every fixed index gives a continuous family, so does the varying index.
 This is the fact the recursor needs, and the only place continuity of the
@@ -195,6 +212,9 @@ theorem eval_tracked {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | hcut a b iha ihb =>
       intro E hE
       exact continuous2_binop Realizability.hydraStepN (iha E hE) (ihb E hE)
+  | hcutAt p a b ihp iha ihb =>
+      intro E hE
+      exact continuous2_ternop playAtN (ihp E hE) (iha E hE) (ihb E hE)
   | hydra a b iha ihb =>
       intro E hE
       exact continuous2_binop Realizability.hydraSeqN (iha E hE) (ihb E hE)

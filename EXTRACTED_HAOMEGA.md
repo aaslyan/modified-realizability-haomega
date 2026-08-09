@@ -1,4 +1,4 @@
-# The nine extracted programs of the HA^ω development
+# The ten extracted programs of the HA^ω development
 
 Each section shows one certified realizer in three renderings.  The
 certified object is the System T term; soundness certifies it realizes
@@ -209,5 +209,28 @@ Realizer type: `N → ((N → N) → (N × 1))`
 
 ```haskell
 (\x0 -> (\x1 -> (((((\x2 -> (tiRec (\x3 -> (\x4 -> (\x5 -> (\x6 -> (\x7 -> (natRec (x6, (fst (snd (((\x8 -> (natRec 0 (\x9 -> (\x10 -> 1)) x8)) ((((\x8 -> (\x9 -> (natRec x8 (\x10 -> (\x11 -> ((\x12 -> (natRec 0 (\x13 -> (\x14 -> x13)) x12)) x11))) x9))) (natRec x5 (\x8 -> (\x9 -> (hydraStepN (x1 x8) x9))) x6)) 0) + (((\x8 -> (\x9 -> (natRec x8 (\x10 -> (\x11 -> ((\x12 -> (natRec 0 (\x13 -> (\x14 -> x13)) x12)) x11))) x9))) 0) (natRec x5 (\x8 -> (\x9 -> (hydraStepN (x1 x8) x9))) x6)))), ((), (\x8 -> ())))))) (\x8 -> (\x9 -> (((((x4 (ordOfHydraN (natRec x5 (\x10 -> (\x11 -> (hydraStepN (x1 x10) x11))) (1 + x6)))) ((\x10 -> ()) (snd (snd (((\x10 -> (natRec 0 (\x11 -> (\x12 -> 1)) x10)) ((((\x10 -> (\x11 -> (natRec x10 (\x12 -> (\x13 -> ((\x14 -> (natRec 0 (\x15 -> (\x16 -> x15)) x14)) x13))) x11))) (natRec x5 (\x10 -> (\x11 -> (hydraStepN (x1 x10) x11))) x6)) 0) + (((\x10 -> (\x11 -> (natRec x10 (\x12 -> (\x13 -> ((\x14 -> (natRec 0 (\x15 -> (\x16 -> x15)) x14)) x13))) x11))) 0) (natRec x5 (\x10 -> (\x11 -> (hydraStepN (x1 x10) x11))) x6)))), ((), (\x10 -> ()))))))) x5) (1 + x6)) ()))) (fst (((\x8 -> (natRec 0 (\x9 -> (\x10 -> 1)) x8)) ((((\x8 -> (\x9 -> (natRec x8 (\x10 -> (\x11 -> ((\x12 -> (natRec 0 (\x13 -> (\x14 -> x13)) x12)) x11))) x9))) (natRec x5 (\x8 -> (\x9 -> (hydraStepN (x1 x8) x9))) x6)) 0) + (((\x8 -> (\x9 -> (natRec x8 (\x10 -> (\x11 -> ((\x12 -> (natRec 0 (\x13 -> (\x14 -> x13)) x12)) x11))) x9))) 0) (natRec x5 (\x8 -> (\x9 -> (hydraStepN (x1 x8) x9))) x6)))), ((), (\x8 -> ())))))))))) x2)) (ordOfHydraN x0)) x0) 0) ())))
+```
+
+## 10. Hercules, any head (the fully general game)
+
+Theorem: `∀h ∀f^(ℕ→ℕ) ∀g^(ℕ→ℕ). ∃t. playAt(g, f, h, t) = 0`  
+Realizer type: `N → ((N → N) → ((N → N) → (N × 1)))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. (λx1. (λx2. (((((λx3. tiRec[(λx4. (λx5. (λx6. (λx7. (λx8. rec[⟨x7, fst snd ⟨((λx9. rec[0 | (λx10. (λx11. S 0)) | x9]) ((((λx9. (λx10. rec[x9 | (λx11. (λx12. ((λx13. rec[0 | (λx14. (λx15. x14)) | x13]) x12))) | x10])) rec[x6 | (λx9. (λx10. hcutAt((x2 x9), (x1 x9), x10))) | x7]) 0) + (((λx9. (λx10. rec[x9 | (λx11. (λx12. ((λx13. rec[0 | (λx14. (λx15. x14)) | x13]) x12))) | x10])) 0) rec[x6 | (λx9. (λx10. hcutAt((x2 x9), (x1 x9), x10))) | x7]))), ⟨★, (λx9. ★)⟩⟩⟩ | (λx9. (λx10. (((((x5 hord rec[x6 | (λx11. (λx12. hcutAt((x2 x11), (x1 x11), x12))) | S x7]) ((λx11. ★) snd snd ⟨((λx11. rec[0 | (λx12. (λx13. S 0)) | x11]) ((((λx11. (λx12. rec[x11 | (λx13. (λx14. ((λx15. rec[0 | (λx16. (λx17. x16)) | x15]) x14))) | x12])) rec[x6 | (λx11. (λx12. hcutAt((x2 x11), (x1 x11), x12))) | x7]) 0) + (((λx11. (λx12. rec[x11 | (λx13. (λx14. ((λx15. rec[0 | (λx16. (λx17. x16)) | x15]) x14))) | x12])) 0) rec[x6 | (λx11. (λx12. hcutAt((x2 x11), (x1 x11), x12))) | x7]))), ⟨★, (λx11. ★)⟩⟩)) x6) S x7) ★))) | fst ⟨((λx9. rec[0 | (λx10. (λx11. S 0)) | x9]) ((((λx9. (λx10. rec[x9 | (λx11. (λx12. ((λx13. rec[0 | (λx14. (λx15. x14)) | x13]) x12))) | x10])) rec[x6 | (λx9. (λx10. hcutAt((x2 x9), (x1 x9), x10))) | x7]) 0) + (((λx9. (λx10. rec[x9 | (λx11. (λx12. ((λx13. rec[0 | (λx14. (λx15. x14)) | x13]) x12))) | x10])) 0) rec[x6 | (λx9. (λx10. hcutAt((x2 x9), (x1 x9), x10))) | x7]))), ⟨★, (λx9. ★)⟩⟩]))))) | x3]) hord x0) x0) 0) ★))))
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. (λx1. (λx2. (((((λx3. tiRec[(λx4. (λx5. (λx6. (λx7. (λx8. rec[⟨x7, fst snd ⟨((λx9. rec[0 | (λx10. (λx11. S 0)) | x9]) ((((λx9. (λx10. rec[x9 | (λx11. (λx12. ((λx13. rec[0 | (λx14. (λx15. x14)) | x13]) x12))) | x10])) rec[x6 | (λx9. (λx10. hcutAt((x2 x9), (x1 x9), x10))) | x7]) 0) + (((λx9. (λx10. rec[x9 | (λx11. (λx12. ((λx13. rec[0 | (λx14. (λx15. x14)) | x13]) x12))) | x10])) 0) rec[x6 | (λx9. (λx10. hcutAt((x2 x9), (x1 x9), x10))) | x7]))), ⟨·, (λx9. ·)⟩⟩⟩ | (λx9. (λx10. (((((x5 hord rec[x6 | (λx11. (λx12. hcutAt((x2 x11), (x1 x11), x12))) | S x7]) ((λx11. ·) snd snd ⟨((λx11. rec[0 | (λx12. (λx13. S 0)) | x11]) ((((λx11. (λx12. rec[x11 | (λx13. (λx14. ((λx15. rec[0 | (λx16. (λx17. x16)) | x15]) x14))) | x12])) rec[x6 | (λx11. (λx12. hcutAt((x2 x11), (x1 x11), x12))) | x7]) 0) + (((λx11. (λx12. rec[x11 | (λx13. (λx14. ((λx15. rec[0 | (λx16. (λx17. x16)) | x15]) x14))) | x12])) 0) rec[x6 | (λx11. (λx12. hcutAt((x2 x11), (x1 x11), x12))) | x7]))), ⟨·, (λx11. ·)⟩⟩)) x6) S x7) ·))) | fst ⟨((λx9. rec[0 | (λx10. (λx11. S 0)) | x9]) ((((λx9. (λx10. rec[x9 | (λx11. (λx12. ((λx13. rec[0 | (λx14. (λx15. x14)) | x13]) x12))) | x10])) rec[x6 | (λx9. (λx10. hcutAt((x2 x9), (x1 x9), x10))) | x7]) 0) + (((λx9. (λx10. rec[x9 | (λx11. (λx12. ((λx13. rec[0 | (λx14. (λx15. x14)) | x13]) x12))) | x10])) 0) rec[x6 | (λx9. (λx10. hcutAt((x2 x9), (x1 x9), x10))) | x7]))), ⟨·, (λx9. ·)⟩⟩]))))) | x3]) hord x0) x0) 0) ·))))
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (\x1 -> (\x2 -> (((((\x3 -> (tiRec (\x4 -> (\x5 -> (\x6 -> (\x7 -> (\x8 -> (natRec (x7, (fst (snd (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (natRec x6 (\x9 -> (\x10 -> (playAtN (x2 x9) (x1 x9) x10))) x7)) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (natRec x6 (\x9 -> (\x10 -> (playAtN (x2 x9) (x1 x9) x10))) x7)))), ((), (\x9 -> ())))))) (\x9 -> (\x10 -> (((((x5 (ordOfHydraN (natRec x6 (\x11 -> (\x12 -> (playAtN (x2 x11) (x1 x11) x12))) (1 + x7)))) ((\x11 -> ()) (snd (snd (((\x11 -> (natRec 0 (\x12 -> (\x13 -> 1)) x11)) ((((\x11 -> (\x12 -> (natRec x11 (\x13 -> (\x14 -> ((\x15 -> (natRec 0 (\x16 -> (\x17 -> x16)) x15)) x14))) x12))) (natRec x6 (\x11 -> (\x12 -> (playAtN (x2 x11) (x1 x11) x12))) x7)) 0) + (((\x11 -> (\x12 -> (natRec x11 (\x13 -> (\x14 -> ((\x15 -> (natRec 0 (\x16 -> (\x17 -> x16)) x15)) x14))) x12))) 0) (natRec x6 (\x11 -> (\x12 -> (playAtN (x2 x11) (x1 x11) x12))) x7)))), ((), (\x11 -> ()))))))) x6) (1 + x7)) ()))) (fst (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (natRec x6 (\x9 -> (\x10 -> (playAtN (x2 x9) (x1 x9) x10))) x7)) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (natRec x6 (\x9 -> (\x10 -> (playAtN (x2 x9) (x1 x9) x10))) x7)))), ((), (\x9 -> ())))))))))) x3)) (ordOfHydraN x0)) x0) 0) ()))))
 ```
 

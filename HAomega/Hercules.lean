@@ -25,14 +25,14 @@ Two design facts make this nearly free:
   argument, so `hordCutLt (f t) (play f h t)` gives the descent for *any*
   strategy.
 
-## Honest scope
+## Scope
 
 This quantifies the **replication** strategy; the head choice stays the
 value layer's (leftmost), as in the fragment battle.  The fully general
-Kirby–Paris theorem — any head, any replication (`hercules_wins`, first-order
-H7) — additionally needs a general tree-surgery move and its descent, which
-the value layer does not provide; it remains metatheory there and is **not**
-derived here.
+Kirby–Paris theorem — any head, any replication — is derived in
+`HerculesAny.lean` on top of the surgery move `hcutAt`
+(`HydraSurgery.lean`); this file remains as the single-strategy stepping
+stone whose derivation `HerculesAny` transcribes.
 -/
 
 namespace HAomega

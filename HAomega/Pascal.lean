@@ -84,6 +84,8 @@ theorem Tm.subst_rename {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | good a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
   | ord a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
   | hcut a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
+  | hcutAt p a b ihp iha ihb =>
+      intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ihp, iha, ihb]
   | hydra a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
   | hord a ih => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ih]
   | tiRec sc n ihs ihn => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ihs, ihn]
@@ -112,6 +114,7 @@ theorem Tm.subst_id {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | good a b iha ihb => simp only [Tm.subst, iha, ihb]
   | ord a b iha ihb => simp only [Tm.subst, iha, ihb]
   | hcut a b iha ihb => simp only [Tm.subst, iha, ihb]
+  | hcutAt p a b ihp iha ihb => simp only [Tm.subst, ihp, iha, ihb]
   | hydra a b iha ihb => simp only [Tm.subst, iha, ihb]
   | hord a ih => simp only [Tm.subst, ih]
   | tiRec sc n ihs ihn => simp only [Tm.subst, ihs, ihn]

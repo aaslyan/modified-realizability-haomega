@@ -147,6 +147,8 @@ def Tm.pretty : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → (d : Nat) → Stri
   | _, _, .good a b, d => "good(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
   | _, _, .ord a b, d => "ord(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
   | _, _, .hcut a b, d => "hcut(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
+  | _, _, .hcutAt p a b, d =>
+      "hcutAt(" ++ p.pretty d ++ ", " ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
   | _, _, .hydra a b, d => "hydra(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
   | _, _, .hord a, d => "hord " ++ a.pretty d
   | _, _, .tiRec s n, d =>
@@ -178,6 +180,8 @@ def Tm.pretty' : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → (d : Nat) → Str
   | _, _, .good a b, d => "good(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
   | _, _, .ord a b, d => "ord(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
   | _, _, .hcut a b, d => "hcut(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
+  | _, _, .hcutAt p a b, d =>
+      "hcutAt(" ++ p.pretty' d ++ ", " ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
   | _, _, .hydra a b, d => "hydra(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
   | _, _, .hord a, d => "hord " ++ a.pretty' d
   | _, _, .tiRec s n, d =>

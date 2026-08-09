@@ -59,6 +59,8 @@ partial def hsTm : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → Nat → String
   | _, _, .good a b, d => "(goodN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
   | _, _, .ord a b, d => "(ordOfN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
   | _, _, .hcut a b, d => "(hydraStepN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
+  | _, _, .hcutAt p a b, d =>
+      "(playAtN " ++ hsTm p d ++ " " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
   | _, _, .hydra a b, d => "(hydraSeqN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
   | _, _, .hord a, d => "(ordOfHydraN " ++ hsTm a d ++ ")"
   | _, _, .tiRec s n, d => "(tiRec " ++ hsTm s d ++ " " ++ hsTm n d ++ ")"

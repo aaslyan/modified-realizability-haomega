@@ -70,7 +70,7 @@ Evidence: `lakefile.lean` require line; only two of its modules are imported (`C
 Dependencies: —
 Used later for: TCB; dependency figure
 Confidence: High
-Notes: Interim symlink; pinning as a git dependency is a deferred decision (QUESTIONS.md).
+Notes: Interim symlink; pinning as a git dependency is a deferred decision (docs/internal/QUESTIONS.md).
 ==============================================================
 
 ## Repository Statistics
@@ -134,12 +134,12 @@ Category: Repository Statistics
 Evidence Level: E3
 File: repository root
 Lean declarations: —
-Summary: STATUS.md (3,353 lines, authoritative record), HYDRA.md (445), READERS_GUIDE.md (390), CONSTRUCTIVITY.md (387, the axiom audit), NOTES_insertExp_monotonicity.md (306), QUESTIONS.md (296, decision log), CLAUDE.md (110), README.md (100).
+Summary: docs/first-order/STATUS.md (3,353 lines, authoritative record), docs/first-order/HYDRA.md (445), READERS_GUIDE.md (390), docs/first-order/CONSTRUCTIVITY.md (387, the axiom audit), docs/internal/NOTES_insertExp_monotonicity.md (306), docs/internal/QUESTIONS.md (296, decision log), CLAUDE.md (110), README.md (100).
 Evidence: `wc -l *.md` (measured).
 Dependencies: —
 Used later for: Documentation-discipline section
 Confidence: High
-Notes: QUESTIONS.md logs design forks with resolutions (e.g. items 17 gcd-precondition, 18 Sperner colors).
+Notes: docs/internal/QUESTIONS.md logs design forks with resolutions (e.g. items 17 gcd-precondition, 18 Sperner colors).
 ==============================================================
 Fact ID: STAT-006
 Title: 49 commits
@@ -240,7 +240,7 @@ Fact ID: CONST-006
 Title: Verdict — constructive except for proof packaging; TCB of programs = {kernel, propext, Quot.sound}
 Category: Trusted Computing Base
 Evidence Level: E5
-File: CONSTRUCTIVITY.md (this session's audit)
+File: docs/first-order/CONSTRUCTIVITY.md (this session's audit)
 Lean declarations: —
 Summary: Every executable artifact depends only on `propext`, `Quot.sound`, never `Classical.choice`; the single classical axiom is confined to (i) Prop-level correctness proofs (via two Mathlib environment lemmas) and (ii) the `CtQ` collapse. The Trusted Computing Base of every extracted computation is { Lean kernel, `propext`, `Quot.sound` } — no classical content.
 Evidence: Synthesis of CONST-001..005 (inference over verified E0 facts).
@@ -642,7 +642,7 @@ Summary, Evidence, Dependencies, and Notes.)*
 - **HYD-036** [E0] *`hydraStep_play`* — the fragment's battle is one of the general plays (H5 is an instance of `hercules_wins`, not a separate game).
 - **HYD-037** [E0] *`play_two_choices`* — genuine nondeterminism (both choices legal, lead to different hydras, both descend; not accidentally the leftmost strategy).
 - **HYD-038** [E0] *Battle on trees `battleLenH` — ~98 s→<1 s, certified equal to codes* (`battleLen_eq_battleLenH`; codes grow doubly exponentially).
-- **HYD-039** [E3] *Published lengths 1,3,37 `#guard`ed at every build* (`battleLenH 200 1 (path 3) == 37`; 37 discriminates vs the other game's 11; formerly a hand-checked STATUS.md claim).
+- **HYD-039** [E3] *Published lengths 1,3,37 `#guard`ed at every build* (`battleLenH 200 1 (path 3) == 37`; 37 discriminates vs the other game's 11; formerly a hand-checked docs/first-order/STATUS.md claim).
 - **HYD-040** [E3] *Bracket-notation battle trace with ordinals* (`battleTrace`; on the 4-node path the battle grows to 20 nodes, 5× starting size, while the ordinal falls at all 37 steps).
 - **HYD-041** [E4] *`descendsAlong` — the descent watched (demonstration, not proof)* (`#guard`ed for the whole 37-move battle; the proof is `cutH_descends`+`hercules_wins`).
 - **HYD-042** [E0] *Rightmost-head strategy as an instance of the general play* (`rightStep_descends := play_descends (rightStep_play …)` in one line; H3's three-case induction "absorbed into H7").
@@ -715,7 +715,7 @@ Summary, Evidence, Dependencies, and Notes.)*
 - **ES-015** [E4] *Euclid.lean certification + budgets* (`distrib_realized`, `dvdAdd_realized`, `dvdSub_realized` + continuity; 6 `#print axioms`).
 - **ES-016** [E0] *`gcdTheorem : Deriv [] (∀a∀b. ∃g. g∣a ∧ g∣b ∧ ∀d.(d∣a→d∣b→d∣g))`* — the extracted `g` IS the gcd (no `gcd` symbol), subtractive Euclid via strong induction on the sum a+b, scaffold inlined at the concrete φ.
 - **ES-017** [E4] *Measure is the SUM a+b* ("neither argument decreases every step, but the sum does: `a+(b−a)=b<a+b`"; the `b<a` branch recurses on `(b, succ s)` so recombination needs no commutativity) (quoted).
-- **ES-018** [E4] *Design: NO positivity precondition (`gcd(0,0)=0`)* ("`spec(0,0,0)` holds — everything divides 0 … the delivered theorem is the stronger `∀a∀b. ∃g. spec`") (quoted; QUESTIONS.md item 17).
+- **ES-018** [E4] *Design: NO positivity precondition (`gcd(0,0)=0`)* ("`spec(0,0,0)` holds — everything divides 0 … the delivered theorem is the stronger `∀a∀b. ∃g. spec`") (quoted; docs/internal/QUESTIONS.md item 17).
 - **ES-019** [E4] *Design: recursion composes BOTH capture dodges* (name the sub-sum with a fresh `∀17` = Goodstein's device; α-rename φ's inner `∀a∀b` to 15/16 = Hanoi's device) (quoted).
 - **ES-020** [E0] *`plusCommDeriv` — commutativity of `+`* (from `plusRightCommDeriv` at z=0; Arithmetic had only right-commutativity; used only for the two descents).
 - **ES-021** [E1] *`gcd_realized` / `gcd_extract_continuous`* (full spec realized; the "greatest" clause is the third conjunct, formally proved).

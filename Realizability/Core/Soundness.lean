@@ -46,7 +46,7 @@ theorem CtxR_congr {ρ ρ' : ℕ → ℕ} :
 ambient level** — the new theorem of the induction extension: the
 pure-type counterpart of the recursor's realizing clause in the
 soundness of modified realizability for induction (Troelstra 1973; see
-STATUS.md for the exact citation).  Stated once for every ambient `m`,
+docs/first-order/STATUS.md for the exact citation).  Stated once for every ambient `m`,
 per the level-free-core discipline; no level-by-level instances exist.
 
 This is the **"small" induction**: ordinary natural-number induction on

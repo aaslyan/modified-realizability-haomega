@@ -35,7 +35,7 @@ intrinsically-typed System T term language.  It imports nothing from
 `Realizability` except the proven choice-free value layers its primitives
 evaluate by (`Signature.*`, `Ordinals.Epsilon0`) — the first-order development
 otherwise stays in the tree as the reference implementation to compare
-against, not as a dependency.  See `HAOMEGA.md`. -/
+against, not as a dependency.  See `docs/haomega/HAOMEGA.md`. -/
 @[default_target]
 lean_lib «HAomega» where
   globs := #[.submodules `HAomega]

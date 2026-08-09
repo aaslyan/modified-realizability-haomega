@@ -42,7 +42,7 @@ Phase-B facts were moved here unchanged; `Goodstein.lean` and
    ordinal**.  Given 2, this is monotonicity of the assignment
    (`olt_ordOf_of_lt`) applied to `bumpN k n - 1 < bumpN k n`.
 
-A correction to Phase C's own prediction, recorded in STATUS.md: it
+A correction to Phase C's own prediction, recorded in docs/first-order/STATUS.md: it
 guessed that (3) would be the obligation using `tiEps0`'s machinery.  It
 does not — all three are value-level arithmetic, and `tiEps0` enters only
 in `GoodsteinTheorem.lean`, where the *induction* is performed.  What (3)

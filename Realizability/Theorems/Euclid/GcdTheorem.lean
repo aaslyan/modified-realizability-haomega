@@ -39,7 +39,7 @@ d ∣ 0 → d ∣ 0` is trivial because *everything* divides `0` — so the
 convention `gcd(0,0) = 0` (Lean's own `Nat.gcd 0 0 = 0`) realizes the
 predicate at the origin.  The delivered theorem is therefore the stronger
 `∀a ∀b. ∃g. spec`, and the base case `a = 0` returns `g := b`
-unconditionally.  (Recorded in QUESTIONS.md.)
+unconditionally.  (Recorded in docs/internal/QUESTIONS.md.)
 
 ## The two places naive substitution bites
 

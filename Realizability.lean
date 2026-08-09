@@ -1,7 +1,7 @@
 /-
 # Modified realizability for a minimal fragment
 
-Root module.  See STATUS.md for scope; since the Phase-2 extension the
+Root module.  See docs/first-order/STATUS.md for scope; since the Phase-2 extension the
 fragment includes the arithmetic induction rule, realized by the
 type-indexed primitive-recursion combinator (`indRecC`/`indC`).
 -/

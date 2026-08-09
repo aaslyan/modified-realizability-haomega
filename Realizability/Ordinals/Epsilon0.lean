@@ -833,7 +833,7 @@ theorem precB_mkO_rem (e c : ℕ) {r₁ r₂ : ℕ} (h : precB r₁ r₂ = true)
 /-! ## The canonicity failure, exhibited
 
 The statements below are the machine-checked form of the finding
-recorded in this file's header and in STATUS.md.  With `ω` coded as
+recorded in this file's header and in docs/first-order/STATUS.md.  With `ω` coded as
 `mkO 1 0 0` (that is `ω^1·1 + 0`, whose exponent is the code `1` of the
 notation `1`) and `1 + t` as `mkO 0 0 t`, the bare comparison ranks
 `1 + ω` strictly below `ω`, and `1 + (1 + ω)` strictly below `1 + ω`,

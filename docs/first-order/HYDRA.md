@@ -4,7 +4,7 @@ A self-contained account of Phases H1–H9: the Kirby–Paris Hydra theorem,
 proved twice — once inside the fragment, once in the metatheory — with a
 program extracted from the first proof and a trace you can read.
 
-STATUS.md remains the authoritative per-phase record with the full
+docs/first-order/STATUS.md remains the authoritative per-phase record with the full
 rationale and every flagged deviation; this file is the map.  Everything
 below is checkable against the Lean source, and §7 reproduces it from a
 clean build.
@@ -93,7 +93,7 @@ Goodstein layer's three schemas it is an axiom of the object theory
 justified by a Lean theorem.  Internalizing it would mean formalizing tree
 surgery and Cantor normal forms inside an equations-only first-order
 language — strictly harder than the Goodstein internalization that D5
-scoped as research-scale and declined.  QUESTIONS.md item 13 records the
+scoped as research-scale and declined.  docs/internal/QUESTIONS.md item 13 records the
 fork and the recommendation.
 
 ---
@@ -297,7 +297,7 @@ still reach the bare head after exactly 37 moves, also `#guard`ed.
 Stated carefully: strategy-independence of the battle *length* is a known
 result and is **not proved here**.  What is proved is that both strategies
 terminate; what is checked is that their lengths agree at the three
-published instances.  STATUS.md previously reported that agreement on the
+published instances.  docs/first-order/STATUS.md previously reported that agreement on the
 authority of a research pass — the build now checks it.
 
 ---

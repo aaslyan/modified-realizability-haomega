@@ -403,7 +403,7 @@ induction case inside §3.4's soundness proof is deliberately **not**
 cited, rather than guessed — refining to definition granularity
 requires the book itself and remains a documentation-only follow-up,
 exactly as recorded for Longley–Normann chapter-level citations in the
-parent project's STATUS.md.
+parent project's docs/first-order/STATUS.md.
 
 ## Out of scope (per the brief)
 
@@ -838,7 +838,7 @@ for `ordOfAux` comes first); (3) the descent
 
 **And the gap that is not ours to close here**: the fragment still has no
 `∃`, so `∀m ∃s. good m s = 0` cannot be *stated*, let alone proved (open
-item 3½ in QUESTIONS.md, raised during Phase B and deliberately not
+item 3½ in docs/internal/QUESTIONS.md, raised during Phase B and deliberately not
 folded into this phase — the transfinite-induction work turned out to be
 self-contained, and `∃` touches `Formula`, `MR`, the transports and the
 tracking relation, which is a phase-sized change of its own).
@@ -1155,7 +1155,7 @@ halves are below, with the measurements that support them.
 **No Lean file changed in this phase.**  `goodsteinStopTime_spec`, its
 statement and its proof, `soundness`, and the extraction algorithm are
 byte-for-byte as they were at the end of D3 — `git diff` for D4 touches
-only this file and QUESTIONS.md.
+only this file and docs/internal/QUESTIONS.md.
 
 ### The measurements
 
@@ -1383,13 +1383,13 @@ elementary number theory inside the object theory — not a phase, and it
 would roughly double the size of the development.  Recorded here so the
 decision is informed rather than implicit.
 
-## Hydra project — see also `HYDRA.md`
+## Hydra project — see also `docs/first-order/HYDRA.md`
 
 The Hydra work runs to eight phases and has its own self-contained
-document, **`HYDRA.md`**: what is proved, what is assumed, what is out of
+document, **`docs/first-order/HYDRA.md`**: what is proved, what is assumed, what is out of
 scope, the phase map, the trace, and the reproduction commands.  The
 sections below remain the authoritative per-phase record — rationale,
-flagged deviations, measurements — and `HYDRA.md` is the map over them.
+flagged deviations, measurements — and `docs/first-order/HYDRA.md` is the map over them.
 
 ## Hydra project, Phase H1 (tree encoding) and H2 (the move): COMPLETE
 
@@ -1686,7 +1686,7 @@ one entry, and it sits before monotonicity:
    Same nested induction as trichotomy — head exponents, coefficients,
    remainders — and comparable in size.
 
-Both attempts are written up in full in `NOTES_insertExp_monotonicity.md`
+Both attempts are written up in full in `docs/internal/NOTES_insertExp_monotonicity.md`
 — the Lean skeleton and its four rejected corners, then the grid on
 paper with rows Z and "equal head exponents" already worked out, so the
 next attempt starts from a plan rather than from scratch.
@@ -3197,7 +3197,7 @@ theorem is the stronger `∀a∀b. ∃g. …spec`.  `spec(0,0,0)` holds
 (everything divides `0`, so `∀d. d∣0→d∣0→d∣0` is trivial and `0∣0`), the
 convention `gcd(0,0)=0` = `Nat.gcd 0 0`.  The base case `a=0` returns
 `g:=b` unconditionally, and the recursion never needs to re-establish a
-precondition — simpler everywhere.  Recorded in QUESTIONS.md (item 9).
+precondition — simpler everywhere.  Recorded in docs/internal/QUESTIONS.md (item 9).
 
 **Measure**: strong induction on the **sum `a+b`**.  Subtractive Euclid
 recurses `gcd(a,b) → gcd(a, b−a)` for `a ≤ b` and `gcd(a,b) → gcd(a−b, b)`
@@ -3241,7 +3241,7 @@ E2 (order → divisibility → gcd) is complete.  Next is **E3, Bézout**:
 **the signed-coefficient formulation is a flagged decision**: the fragment
 has no negatives, so Bézout must be stated additively, e.g.
 `∃x∃y. a·x = b·y + g ∨ b·y = a·x + g`, or carry the gcd on the smaller
-side; decide and record in QUESTIONS.md before starting).  It reuses the
+side; decide and record in docs/internal/QUESTIONS.md before starting).  It reuses the
 same strong-induction-on-`a+b` scaffold as `gcdTheorem` — the extended
 Euclid recursion carries the coefficient pair alongside the gcd — so
 `gcdTheorem` is the template.  Then **E4** (CRT, needing `mod` — revisit
@@ -3276,7 +3276,7 @@ choice-free checks still pass.
 
 **Proved for arbitrary `ℕ`-valued colorings** — the `{0,1}` restriction is
 never used, so the delivered theorem is the general discrete IVT and
-binary Sperner is its special case (recorded in QUESTIONS.md item 18).
+binary Sperner is its special case (recorded in docs/internal/QUESTIONS.md item 18).
 
 **The argument** is a forward scan: `ind` on the invariant
 `P(m) := (c m = 0) ∨ ∃k<m. c k ≠ c(k+1)`; the step compares `c(m+1)` to `0`
@@ -3520,7 +3520,7 @@ nothing**; the module header is explicit that this is not a compiler from
 arbitrary Lean theorems, since a Lean theorem must first be represented
 as a `Formula` and proved as a `Deriv`.  Budget checked in-file: all
 computable helpers report `[propext, Quot.sound]`.
-`EXTRACTED_PROGRAMS.md` is the new quick index of the concrete programs.
+`docs/first-order/EXTRACTED_PROGRAMS.md` is the new quick index of the concrete programs.
 
 Three flagged points:
 
@@ -3561,7 +3561,7 @@ equality reasoning, and `succNeZero` (via the new helper
 The supporting `bumpN_ne_zero` was reproved directly from
 `bumpN_pos_eq` rather than through `bumpN_lt_bumpN`.
 
-This is the first internalization step against `RESEARCH_PLAN.md`'s
+This is the first internalization step against `docs/internal/RESEARCH_PLAN.md`'s
 ledger, and it targets the schema that plan picks first, for the reason
 it gives: `bumpNeZero` is the smallest remaining Goodstein import.
 **What remains imported is the uniform open-term schema** — the closed
@@ -3590,7 +3590,7 @@ appendix built from `xray-goodstein.tex`/`xray-small.tex` — the appendix
 is what closes the loop, since it prints the artifact the rest of the
 paper describes.  LaTeX build products are `.gitignore`d, not tracked.
 
-`RESEARCH_PLAN.md` is a **planning ledger, not an implementation
+`docs/internal/RESEARCH_PLAN.md` is a **planning ledger, not an implementation
 commitment** (its own words).  Its durable contribution is §2, the
 **internalization gap ledger**: every remaining imported schema
 (`ordBump`, `ordPredLt`, `bumpNeZero`; Hydra's `hordCutLt`) with its
@@ -3818,8 +3818,8 @@ Zeckendorf needs.  The next phase is refinement.
   renamed — that would erase the project's own vocabulary, which the
   convention guide explicitly warns against. Axiom budgets and the
   choice-free `Epsilon0`/Hydra definitions are unchanged (cosmetic edits +
-  a rename). `DOSSIER.md` cites declarations by **name** (no line numbers),
-  so it needed no resync beyond the rename; `CONSTRUCTIVITY.md`'s two
+  a rename). `docs/first-order/DOSSIER.md` cites declarations by **name** (no line numbers),
+  so it needed no resync beyond the rename; `docs/first-order/CONSTRUCTIVITY.md`'s two
   line-number citations were re-synced to the post-header positions.
 
 **Remaining targets** noticed while building E2/S1, to be worked from real
@@ -3846,7 +3846,7 @@ uses rather than speculation:
 - **`gcd` cleanup**: the 525-line proof has deep `set`-context `wk` chains
   and duplicated branch machinery that a factored recombination lemma (or
   the library above) could shrink.
-- Documentation: keep HYDRA.md-style maps and the `#print axioms` quotes
+- Documentation: keep docs/first-order/HYDRA.md-style maps and the `#print axioms` quotes
   in step; the signature is now 21 symbols / 76 rules (Fibonacci's `fib`
   and its four schemas `fibZero`/`fibOne`/`fibSucc`/`eqCongFib`).
 
@@ -3888,9 +3888,9 @@ the fix already identified — these are the shortest items on the list):
 - **Fix the paper's two necessity sentences** (≈ lines 1315, 1521): cite
   Kirby–Paris and add "not formalized here", matching how the same file
   already handles Gentzen.
-- **CI for `lake build`** — `RESEARCH_PLAN.md` Phase 1 lists it for
+- **CI for `lake build`** — `docs/internal/RESEARCH_PLAN.md` Phase 1 lists it for
   Aug–Sep 2026 and there is no `.github/`.  For a project whose test
   suite *is* the build, this is the largest gap between the plan and the
   repository.
 - **The 17 linter warnings** (unused variables, unused `simp` arguments),
-  also a `RESEARCH_PLAN.md` Phase 1 item: fix or intentionally silence.
+  also a `docs/internal/RESEARCH_PLAN.md` Phase 1 item: fix or intentionally silence.

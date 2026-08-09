@@ -44,7 +44,7 @@ elementary number theory about the hereditary representation — it would
 need `hlog`, `div` and `mod` as symbols with their recursion equations, an
 order relation (the fragment has only equations), course-of-values
 induction derived from `ind`, and then the whole of Phase D1 redone
-syntactically.  That is a research-scale project, not a phase; STATUS.md
+syntactically.  That is a research-scale project, not a phase; docs/first-order/STATUS.md
 records what it would take.
 
 So the gap is narrowed from "the theorem's core lemma is assumed" to

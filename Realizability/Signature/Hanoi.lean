@@ -321,7 +321,7 @@ moves solves the puzzle in fewer steps".  That would need a different
 semantics (a disk may only move onto a larger one), of which the
 recursive shape here is one particular family.  The classical `2^n − 1`
 lower bound over *that* relation is not formalized and is not claimed;
-see STATUS.md's Phase-E section. -/
+see docs/first-order/STATUS.md's Phase-E section. -/
 
 /-- **The parser accepts only what the solver produces.**  Induction on
 `n`, with the remainder generalized, mirroring `hcheck_hanoiAux` in the

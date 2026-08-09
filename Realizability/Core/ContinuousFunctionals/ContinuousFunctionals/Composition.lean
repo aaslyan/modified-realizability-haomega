@@ -34,7 +34,7 @@ if `F` is continuous and each `α ↦ G α k` is continuous, so is
 `α ↦ F (G α)`.  (The brief types the second map as `G : ℕ → (ℕ → ℕ)`,
 whose composite with `F` would be a type-1 function with no continuity
 content; the intended reading formalized here is `G : (ℕ → ℕ) → (ℕ → ℕ)`,
-continuous componentwise.  See STATUS.md.)
+continuous componentwise.  See docs/first-order/STATUS.md.)
 -/
 import ContinuousFunctionals.MainTheorem
 

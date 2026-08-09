@@ -1,6 +1,6 @@
 # Extracted programs — the HA^ω branch
 
-The counterpart of `EXTRACTED_PROGRAMS.md`, which indexes the **first-order**
+The counterpart of `docs/first-order/EXTRACTED_PROGRAMS.md`, which indexes the **first-order**
 development's seven programs. This file indexes this branch's, and says plainly
 what is and is not claimed.
 

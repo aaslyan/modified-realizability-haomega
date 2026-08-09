@@ -48,7 +48,7 @@ recommendations.  Items get moved to "Resolved" when you answer them.
    files are a **read-only mirror**, so fixes go upstream, not here.
 
 6. **Induction axiom (long-term plan).**  *Closed: delivered as Phase 2
-   (see STATUS.md), and now exercised on new content by Phase A — the
+   (see docs/first-order/STATUS.md), and now exercised on new content by Phase A — the
    four `+`/`×` defining equations are `ind` theorems (five inductions,
    `Arithmetic.lean`).*
 
@@ -60,7 +60,7 @@ recommendations.  Items get moved to "Resolved" when you answer them.
    sketch (second-argument axioms) would have collapsed into Option 1
    with `ind` never firing, and a term-level recursion binder was the
    "deeper syntactic machinery" wall the brief itself flagged.  Full
-   rationale in STATUS.md's Phase-A section.  Also settled there: the
+   rationale in docs/first-order/STATUS.md's Phase-A section.  Also settled there: the
    equational-logic kit as per-symbol implication schemas rather than
    a single Leibniz replacement rule.
 
@@ -76,7 +76,7 @@ recommendations.  Items get moved to "Resolved" when you answer them.
    argument.  One compromise flagged: `bump` enters the fragment by
    its numeral graph (`bumpNum`), since its course-of-values recursion
    through the exponent structure is not a first-order schema.  Full
-   rationale in STATUS.md's Phase-B section.
+   rationale in docs/first-order/STATUS.md's Phase-B section.
 
 9. **Phase C: how `tiEps0`'s quantifiers range, and whether canonicity
    of notations is load-bearing** (the brief delegated the first and
@@ -92,7 +92,7 @@ recommendations.  Items get moved to "Resolved" when you answer them.
    `ω ≻ 1 + ω ≻ 1 + (1 + ω) ≻ …` of terms all denoting `ω`, so the order
    is the comparison conjoined with a normal-form predicate — Phase B's
    deferred `NF` layer, now built.  Full rationale, with the
-   machine-checked witnesses, in STATUS.md's Phase-C section.
+   machine-checked witnesses, in docs/first-order/STATUS.md's Phase-C section.
 
 10. **Phase C: does the recursor need a well-foundedness theorem?**  The
    brief said no (structural recursion on the notation's subterms) and
@@ -102,7 +102,7 @@ recommendations.  Items get moved to "Resolved" when you answer them.
    proves `oLt_wf` and `tiRecC` is `WellFounded.fix` on it.  The brief's
    philosophical point survives in sharper form: that proof is
    elementary and `Classical`-free (`[propext, Quot.sound]`, strictly
-   less than the realization theorems' budget).  Recorded in STATUS.md,
+   less than the realization theorems' budget).  Recorded in docs/first-order/STATUS.md,
    together with the two things this forced — a hand-rolled pairing
    (Mathlib's `Nat.pair` theory is choice-dependent) and a ban on
    `by_cases` in that module.
@@ -162,7 +162,7 @@ chosen.)*
    different relation: legality on arbitrary sequences with a
    tower-state semantics, plus a counting argument for the lower bound.
    **Recommendation: leave it, and keep saying so.**  Adding the state
-   semantics is a phase of its own; STATUS.md's E5 section states the gap
+   semantics is a phase of its own; docs/first-order/STATUS.md's E5 section states the gap
    in the same words as this entry, so the two claims cannot drift apart.
 
 13. **Should the Hydra descent be *derived* the way D5 derived the
@@ -183,7 +183,7 @@ chosen.)*
    declined.
    **Recommendation: leave it.**  `hydra_descent_via_fragment` checks the
    import is faithful (it returns exactly H3's theorem through
-   `soundness`), and STATUS.md's H4 section states the gap plainly.  If
+   `soundness`), and docs/first-order/STATUS.md's H4 section states the gap plainly.  If
    this is ever revisited, the first genuine sub-step would be giving the
    fragment `hord` of a *node in terms of its children* — i.e. `insertExp`
    as a symbol with its four defining equations — which is a phase of its
@@ -233,7 +233,7 @@ chosen.)*
 12. **The extracted program is correct but not efficient.**  *Diagnosed
    2026-07-29 in Phase D4; the authorized memoization fix was built,
    proved and measured in Phase D6 (2026-07-30) and **does not help** —
-   see STATUS.md's D6 section for the numbers.*  The one-line summary:
+   see docs/first-order/STATUS.md's D6 section for the numbers.*  The one-line summary:
    memoizing the recursor by notation code achieves a 100 % hit rate
    (2376 hits, 0 misses at `m = 1`) and changes the wall clock by nothing
    (4693 ms against 4614 ms), because `app₁` returns a *closure* — so
@@ -255,7 +255,7 @@ chosen.)*
    reason no `csimp` can help is structural — it changes what a function
    computes, not how often the surrounding term calls it — and the fix
    that would work (memoization keyed by the code) is not expressible as
-   a provably-equal pure function.  Full evidence in STATUS.md's Phase-D4
+   a provably-equal pure function.  Full evidence in docs/first-order/STATUS.md's Phase-D4
    section.  Recommendation unchanged: leave it; the correctness theorem
    carries the content at every input.  Original entry: `goodsteinStopTime` evaluates at `m = 0, 1`
    in under a second and does not finish at `m = 2`, because every

@@ -8,7 +8,7 @@ import Realizability.Core.ModifiedRealizes
 /-!
 # Formula-indexed level transports
 
-The infrastructure identified in STATUS.md as the sole blocker for
+The infrastructure identified in docs/first-order/STATUS.md as the sole blocker for
 extraction: transports `liftR φ` / `dropR φ` moving realizers one
 ambient level up or down, defined by **mutual recursion on the
 formula** — the generic `up`/`down` maps do *not* preserve `MR` at

@@ -80,7 +80,7 @@ it would become load-bearing exactly when something quantified over
 ## Out of scope, per the brief
 
 Goodstein's theorem itself (Phase D: this rule plus Phase B's sequence
-machinery, and the missing `∃` — see QUESTIONS.md); any conservativity,
+machinery, and the missing `∃` — see docs/internal/QUESTIONS.md); any conservativity,
 consistency, or other metatheoretic claim about the extended fragment;
 ordinals beyond `ε₀`.
 -/
@@ -223,7 +223,7 @@ A closed derivation that fires `tiEps0`, so that extraction, soundness
 and generic continuity are all exercised on the new rule.  The formula is
 deliberately trivial (`0 = 0`): the *interesting* progressiveness
 premises — the ones whose recursive hypothesis carries real content — are
-Phase D's, and cannot be stated before `∃` is added (QUESTIONS.md).  What
+Phase D's, and cannot be stated before `∃` is added (docs/internal/QUESTIONS.md).  What
 this demo certifies is the machinery: the recursor is extracted, it
 realizes the concluded `∀x φ(x)` at every ambient above the bound, and
 its type-2 instance is continuous. -/

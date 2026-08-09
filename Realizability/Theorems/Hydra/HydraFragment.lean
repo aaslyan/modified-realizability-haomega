@@ -68,7 +68,7 @@ by a Lean theorem, and internalizing it would mean formalizing tree
 surgery and Cantor normal forms inside the fragment's equational
 language.  The round trip `hydra_descent_via_fragment` below checks the
 import is faithful — reading the schema back through `soundness` returns
-exactly the H3 theorem — and STATUS.md records the gap.
+exactly the H3 theorem — and docs/first-order/STATUS.md records the gap.
 -/
 
 namespace Realizability

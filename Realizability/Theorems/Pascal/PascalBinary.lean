@@ -19,7 +19,7 @@ whole of Lucas runs on:
 
 all four by ordinary `ind`, from Pascal's recursion and Phase A's
 arithmetic.  Only the final assembly — the induction down the bit
-positions — has to stay outside, and STATUS.md says why.
+positions — has to stay outside, and docs/first-order/STATUS.md says why.
 
 ## Doubling is `n + n`, not `2 × n`
 

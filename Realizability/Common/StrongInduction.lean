@@ -522,7 +522,7 @@ The reusable machinery, exercised end to end.  For a **concrete** `φ`
 every side condition is `decide`-able, so no formula-substitution lemmas
 are needed — the contrast with a fully generic-in-`φ` former (which would
 need a substitution-composition library) is recorded in the header and
-STATUS.md.  The demonstration `φ` is `x = x`; the derivation nonetheless
+docs/first-order/STATUS.md.  The demonstration `φ` is `x = x`; the derivation nonetheless
 routes through the whole scaffold — `ind` on the auxiliary
 `Aux(v) := ∀y. y < v → φ(y)`, progressiveness applied **at the point**,
 and `ltStepDown` — so every piece is certified together, exactly as a

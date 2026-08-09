@@ -7,7 +7,7 @@ substitute: every claim below is checkable against the Lean source.
 from `modified-realizability-lean`) maps the first-order fragment kept
 in-tree under `Realizability/` as the reference implementation.  **Part II
 (§5–§7) maps the HA^ω library under `HAomega/`** — the current development,
-whose README, `HAOMEGA.md`, and `HAOMEGA_DOSSIER.md` are its companion
+whose README, `docs/haomega/HAOMEGA.md`, and `HAOMEGA_DOSSIER.md` are its companion
 documents.  If you are here for HA^ω, start at §5 and treat Part I as the
 baseline the types are measured against.
 
@@ -126,7 +126,7 @@ noted only where they help.
 
 ### 1.7 The Hydra layer (H1–H9) — the second theorem, on the same machinery
 
-**`HYDRA.md` is the self-contained account of this layer**; the table
+**`docs/first-order/HYDRA.md` is the self-contained account of this layer**; the table
 below is the dependency-ordered reading list.
 
 | # | Declaration | File | What it gives you |
@@ -179,7 +179,7 @@ draws is the theorem, not an illustration of it.
 > **Phase-label warning.**  "E1"–"E5" are Hanoi's sub-phases (§1.8);
 > "E1"/"E2" are *also* the labels of the order foundation and the Euclid
 > work below.  They are different phases that happen to share letters.
-> STATUS.md has both under separate `##` headings; when a label is
+> docs/first-order/STATUS.md has both under separate `##` headings; when a label is
 > ambiguous, go by the file.
 
 The interesting constraint here is what this layer *refuses* to add.
@@ -243,7 +243,7 @@ so the witness `5` the proof supplies is not in the output.
 | 76 | `toSkel`, again — as **a per-rule site** | `Meta/RealizerDisplay.lean` | It matches every `Deriv` constructor with no wildcard, so a new rule breaks its build, exactly like `extract` / `derivBound` / `soundness` / `extract_tracked` — and, since §1.14, `emit` and `hsEmit`. Seven sites in total. If you are extending the fragment, these are the files people forget. |
 | 77 | **`#realizerCH d`**, `toCH` | `Meta/RealizerDisplay.lean` | The same walk as `program-op — logic-rule ⟦proposition⟧`, one line per node: the Curry–Howard extraction map made legible instead of asserted. `paper/curry-howard.tex` is a standalone figure of it. **Caveat, and STATUS Phase P records it as a gap:** `toCH` *does* use a wildcard, so a newly added content-bearing rule is silently mislabelled `· — axiom (proof-irrelevant)` rather than breaking the build. |
 | 78 | `#program d` | `Meta/RealizerDisplay.lean` | Pseudocode rendering of the same skeleton. Explicitly a generated **display view, not the certified artifact** — the artifact remains `extract D`, correct by `soundness`, continuous by `extract_continuous`. It dispatches on `toSkel`'s display strings, so treat its output as illustrative. |
-| 79 | `witness₁…₄`, `tag₂`, `extractedAt`, `extractedCtQ` | `Meta/ProgramExtraction.lean` | The "apply the realizer to numerals, read the witness or tag" boilerplate, factored. It **re-proves nothing** — and it is *not* a compiler from Lean theorems: a Lean theorem must first be written as a `Formula` and proved as a `Deriv`. `EXTRACTED_PROGRAMS.md` is the index of the resulting programs. |
+| 79 | `witness₁…₄`, `tag₂`, `extractedAt`, `extractedCtQ` | `Meta/ProgramExtraction.lean` | The "apply the realizer to numerals, read the witness or tag" boilerplate, factored. It **re-proves nothing** — and it is *not* a compiler from Lean theorems: a Lean theorem must first be written as a `Formula` and proved as a `Deriv`. `docs/first-order/EXTRACTED_PROGRAMS.md` is the index of the resulting programs. |
 | 80 | **`stopBySearch`** vs **`minStop`** vs `goodsteinStopTime` | `Theorems/Goodstein/GoodsteinSearch.lean` | **The clearest single statement of what extraction buys.** The μ-search `stopBySearch` must be `partial`: nothing bounds it, and its totality *is* Goodstein's theorem. `minStop := Nat.find (goodReachesZero m)` is the same search made *total* — and it type-checks only because `goodReachesZero` **is** `goodsteinStopTime_spec`, so the μ-operator literally consumes the theorem as its termination argument. "The search halts iff the theorem holds" becomes the type of `Nat.find`. Two honesty notes in the header: the proof is erased at runtime (so the certificate buys termination, *not* speed — `minStop 4` is as unreachable as the naive loop), and its `Classical.choice` is metatheory, not an extracted-program budget. |
 | 81 | `Deriv.bumpNeZeroNumeral`, `Deriv.neZeroOfEqSucc` | `Theorems/Goodstein/OrdinalDescent.lean` | Every **closed numeral** instance of `bumpNeZero` derived *without* the schema, from `bumpNum` + equality + `succNeZero`. The first dent in the import ledger, aimed at the smallest remaining Goodstein import. The uniform open-term schema is still imported — nothing was removed. |
 
@@ -444,7 +444,7 @@ namespace Realizability
 -- D3: the extracted function, running
 #eval goodsteinStopTime 0                     -- 0    (<1 s)
 #eval goodsteinStopTime 1                     -- 1    (<1 s)
--- #eval goodsteinStopTime 2                  -- does NOT finish; see STATUS.md
+-- #eval goodsteinStopTime 2                  -- does NOT finish; see docs/first-order/STATUS.md
 end Realizability
 EOF
 lake env lean /tmp/check.lean
@@ -480,7 +480,7 @@ namespace Realizability
 -- H6: the extracted function, running
 #eval hydraBattleLength 0                     -- 0    (a few s)
 #eval hydraBattleLength 1                     -- 1    (a few s)
--- #eval hydraBattleLength 2                  -- does NOT finish; see STATUS.md
+-- #eval hydraBattleLength 2                  -- does NOT finish; see docs/first-order/STATUS.md
 end Realizability
 EOF
 lake env lean /tmp/hcheck.lean
@@ -603,7 +603,7 @@ below it show for the reading API itself.
 budget is the ordinary one; what matters is what is absent from its
 proof, namely the `bumpNeZero` schema.  It is built from `bumpNum`,
 equality reasoning, and `succNeZero` alone.  The uniform open-term schema
-is still imported — see STATUS.md Phase P6 and `RESEARCH_PLAN.md` §2.
+is still imported — see docs/first-order/STATUS.md Phase P6 and `docs/internal/RESEARCH_PLAN.md` §2.
 
 ---
 
@@ -682,7 +682,7 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
    in principle (System T is closed under their recursions), primitive in
    practice, evaluated by proven choice-free layers.  The numeral-graph
    *schemas* of the fragment are gone; the trade is recorded in
-   `HAOMEGA.md`'s compromise table.
+   `docs/haomega/HAOMEGA.md`'s compromise table.
 5. **`tiRec` re-decides `≺`** — the order premise's realizer is
    contentless, so the recursor cannot receive descent evidence; the
    `dite` fallback mirrors the first-order `tiRecC` exactly.

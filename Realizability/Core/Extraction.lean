@@ -12,9 +12,9 @@ Extraction recurses on the derivation, carrying the context as a list of
 ambient-indexed realizer *families* (`Fam`); the transports of
 `Transport.lean` turn each binder's single-ambient realizer into such a
 family (`famOf`), which is what closes the ambient-mismatch gap
-identified in STATUS.md.
+identified in docs/first-order/STATUS.md.
 
-Every rule has its own named combinator, listed in STATUS.md:
+Every rule has its own named combinator, listed in docs/first-order/STATUS.md:
 
 * `axC`, and tail-recursion for `wk`;
 * `andIC`, `andE₁C`, `andE₂C` — pointwise pairing and projections;
@@ -249,7 +249,7 @@ D4 had: it is not that Lean lacks the state, it is that the repeated work
 is function application and there is nothing to key it by.
 
 It also corrects D4's headline proxy: the *entry count* is not a cost
-proxy, because an entry is `O(1)`.  See STATUS.md's Phase-D6 section for
+proxy, because an entry is `O(1)`.  See docs/first-order/STATUS.md's Phase-D6 section for
 the full accounting.
 
 To switch the memo path on, add `@[csimp]` to the two lemmas below. -/

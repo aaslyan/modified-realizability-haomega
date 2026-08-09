@@ -12,7 +12,7 @@ This phase makes Goodstein's theorem *expressible* in the fragment.  It
 does **not** prove it, and does not touch `TI(ε₀)` or ordinal notations
 — those are Phases C/D.
 
-## The encoding decision (the load-bearing choice; see STATUS.md)
+## The encoding decision (the load-bearing choice; see docs/first-order/STATUS.md)
 
 **A hereditary base-`k` representation is a term of the fragment's own
 syntax, in one distinguished free variable — variable `0`, "the
@@ -35,7 +35,7 @@ encoding:
 * *uniqueness* (canonicity of digit bounds and exponent ordering) is
   **deferred**: everything Phase D consumes factors through the
   deterministic function `hrep`, so no statement here ever quantifies
-  over "some representation" — see STATUS.md for the full argument.
+  over "some representation" — see docs/first-order/STATUS.md for the full argument.
 
 ## Correspondence with `WilliamAngus/Goodstein` (`Goodstein/HBase.lean`
 and `Goodstein/Goodstein.lean` there; reference only, no code reuse)
@@ -114,7 +114,7 @@ base variable (variable `0`), `zero`, `succ`, `+`, `×`, and `exp` —
 no `pred`/`bump`/`good`, and no variable other than the base.  This is
 the fragment image of `WilliamAngus/Goodstein`'s `HBase` inductive
 (their `NFBelow` normal-form predicate is the deferred canonicity
-layer; see STATUS.md).  `Prop`-valued: it certifies shape, while the
+layer; see docs/first-order/STATUS.md).  `Prop`-valued: it certifies shape, while the
 derivations below recurse on the fueled structure directly. -/
 inductive HTerm : Term → Prop
   | var0 : HTerm (.var 0)

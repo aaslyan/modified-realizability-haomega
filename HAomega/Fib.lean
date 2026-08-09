@@ -75,7 +75,7 @@ The proof is short *because* `fib` is definable — which is the point, but it
 also means the extracted program is essentially `fibT`.  The genuinely
 interesting extraction, where an induction with a paired invariant produces an
 algorithm the specification did not name, is the next milestone; see
-`HAOMEGA.md`. -/
+`docs/haomega/HAOMEGA.md`. -/
 def fibDeriv : Deriv Ctx.nil fibSpec := by
   refine Deriv.allI ?_
   exact Deriv.exI (.app fibT (.var .here)) (Deriv.eqRefl _)

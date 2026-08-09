@@ -285,7 +285,7 @@ theorem hydraOf_small :
 
 /-! ## Phase H2: the cutting-and-regrowth step
 
-The rule implemented here (see STATUS.md for the citation and for the
+The rule implemented here (see docs/first-order/STATUS.md for the citation and for the
 variants that exist in the literature):
 
 * a **head** is a leaf — a node with no children;
@@ -386,7 +386,7 @@ rule and the copy count.
 `battleLen` counts moves to death with the stage-indexed replication this
 file uses.  Paths 1 and 2 are checked by `rfl` at build time; path 3 takes
 about ninety seconds, so it is verified out of band and recorded in
-STATUS.md rather than run on every build:
+docs/first-order/STATUS.md rather than run on every build:
 
     #eval battleLen 200 1 (encodeH (path 3))   -- 37
 -/
@@ -590,7 +590,7 @@ theorem precB_insertExp_self (e : ℕ) :
         rwa [hA] at h
 
 /-- **Monotonicity of insertion in the accumulator.**  See
-`NOTES_insertExp_monotonicity.md` for the grid this follows: row `Z`
+`docs/internal/NOTES_insertExp_monotonicity.md` for the grid this follows: row `Z`
 (`c₁ = 0`) settles with one constructor each; the equal-head rows collapse
 to the diagonal, because both accumulators compare `e` against the same
 head and so take the same branch, and only the both-recursed corner uses

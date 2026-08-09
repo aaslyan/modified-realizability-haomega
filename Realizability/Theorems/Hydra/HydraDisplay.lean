@@ -34,7 +34,7 @@ The three published Kirby–Paris lengths are therefore `#guard`ed at every
 build now, `37` included.  That number is the discriminating one: the
 *other* game in circulation (copies as bare leaves at the parent) gives
 `1, 3, 11`, so landing on `37` pins down both the grandparent rule and the
-copy count.  It used to be a claim in STATUS.md checked by hand; it is now
+copy count.  It used to be a claim in docs/first-order/STATUS.md checked by hand; it is now
 checked by the build.
 
 ## 2. The trace: the tree grows, the ordinal falls

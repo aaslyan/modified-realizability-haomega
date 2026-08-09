@@ -26,7 +26,7 @@ ways:
   extensional collapse of the Kleene–Kreisel development.
 
 And it runs: see the `#eval`s at the end, and the timings recorded in
-STATUS.md.
+docs/first-order/STATUS.md.
 -/
 
 namespace Realizability
@@ -97,7 +97,7 @@ the extracted witness; the classical values are
     stop    0  1  3  5
 
 (`G(3) = 3, 3, 3, 2, 1, 0` reaches `0` at step 5, matching Phase B's
-`goodN_three`).  Timings are recorded in STATUS.md; `m = 4` is not
+`goodN_three`).  Timings are recorded in docs/first-order/STATUS.md; `m = 4` is not
 attempted — its sequence is astronomically long (`goodN 4 3 = 60` and
 growing), and the realizer would have to run every step.
 

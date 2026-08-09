@@ -34,7 +34,7 @@ verified behavior.
 first audit pass
 
 At the first pass (commit `3f2b422`): no declaration stated any
-strategy-quantified theorem; `HAOMEGA.md`'s "dissolves" row was corrected to
+strategy-quantified theorem; `docs/haomega/HAOMEGA.md`'s "dissolves" row was corrected to
 "expressible, not derived."
 
 **Since then** (`63d9e95`, same audit day): `HAomega/Hercules.lean` derives
@@ -107,7 +107,7 @@ claims independence from PA, and `Hydra.lean` disclaims it explicitly.
     'HAomega.hydraD'                [propext, Quot.sound]
     'HAomega.hydraX'                [propext, Quot.sound]
 
-Two corrections to earlier claims, both now fixed in `HAOMEGA.md`:
+Two corrections to earlier claims, both now fixed in `docs/haomega/HAOMEGA.md`:
 
 * **Continuity is `[propext, Quot.sound]`, not `[propext]`.**  The tighter
   footprint held before `tiRec`; its tracking case uses `oLt_wf`
@@ -326,7 +326,7 @@ the model *defines* to be the Lean primitives (`prim1Sem`/`prim2Sem`/
 
 1. `Fib.lean`: stale wall-diagnosis comment → historical note with the
    verified current behavior.
-2. `HAOMEGA.md`: Hydra "dissolves" row → "expressible, not derived";
+2. `docs/haomega/HAOMEGA.md`: Hydra "dissolves" row → "expressible, not derived";
    `bump`-row "definable" → "schemas gone, symbols primitive"; the Status
    section rewritten to the then-current, evidence-backed state (741 jobs and
    seven case studies at the time of that audit; 743 and nine after

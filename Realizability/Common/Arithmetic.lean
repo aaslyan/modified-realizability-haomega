@@ -30,7 +30,7 @@ recurses on the second argument) makes `0 + n = n` a theorem by
 induction.  Had the defining axioms been the briefed equations
 themselves, all four deliverables would have been one `allI` away from
 an axiom and `ind` would never fire — Option 2 would have collapsed
-into Option 1 with different labels.  See STATUS.md.
+into Option 1 with different labels.  See docs/first-order/STATUS.md.
 
 The multiplication step case needs one auxiliary induction,
 `plusRightCommDeriv` (`(z + x) + y = (z + y) + x`), itself an `ind`

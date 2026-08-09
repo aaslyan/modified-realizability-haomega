@@ -46,7 +46,7 @@ regrowth branches the tree, and still land on the same length.
 **Stated carefully**: that the battle length is independent of the
 strategy is a known result which is **not proved here**.  What is proved
 here is that both strategies terminate (via H7); what is *checked* is that
-their lengths agree at the three published instances.  STATUS.md
+their lengths agree at the three published instances.  docs/first-order/STATUS.md
 previously reported that agreement on the authority of a research pass —
 the build now checks it.
 -/

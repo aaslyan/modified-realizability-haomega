@@ -8,7 +8,7 @@ import Realizability.Core.Extraction
 /-!
 # Generic continuity: every extracted realizer is continuous
 
-The theorem closing the gap flagged in STATUS.md: for **every** closed
+The theorem closing the gap flagged in docs/first-order/STATUS.md: for **every** closed
 derivation `D : Deriv [] φ`, the extracted type-2 realizer
 `extract D ρ [] 1` is continuous (`Continuous2`), so `RealizesCtQ`
 applies uniformly — no per-derivation certificate.
@@ -53,7 +53,7 @@ closed derivation, at every ambient the capstone consults.
   `MR_liftR_dropR`, then `liftIter`/`dropIter`/`famOf`);
 * **one named preservation lemma per extraction combinator** (the same
   per-rule discipline as `Extraction.lean` — one lemma per rule, listed
-  in STATUS.md);
+  in docs/first-order/STATUS.md);
 * `extract_tracked` — the induction on `Deriv` threading the invariant;
 * **`extract_continuous`** — the capstone.
 -/
@@ -1284,7 +1284,7 @@ theorem extract_tracked {Γ : List Formula} {φ : Formula} (D : Deriv Γ φ) :
     exact axiomC_eqCongFib_tracked
 
 /-- **Generic continuity of extraction** (the theorem closing the gap
-flagged in STATUS.md): the extracted type-2 realizer of *every* closed
+flagged in docs/first-order/STATUS.md): the extracted type-2 realizer of *every* closed
 derivation is continuous.  The brief's level restriction `lvl φ ≤ 1` is
 not needed: continuity of the extract is a property of the extraction
 combinators alone, independent of what the extract realizes (the level

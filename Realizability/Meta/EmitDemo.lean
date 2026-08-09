@@ -41,7 +41,7 @@ was the ambient tower* and unchanged wherever the cost is real.  Measured:
 | Hydra | code `1` | code `3` | as Goodstein |
 | gcd | **nothing at all** | inputs in the hundreds | subtractive Euclid through the strong-induction scaffold: cost grows with `a + b`, not with `log` |
 | Pascal | row 7 | row 7+ | none hit |
-| Hanoi | `n = 4` | `n = 4` | **unchanged, and that is the point** — STATUS.md diagnosed Hanoi's wall as the *encoding* (code bit-length squares per move), not the extraction. Deleting the ambient tower did not move it, which is independent confirmation of that diagnosis. |
+| Hanoi | `n = 4` | `n = 4` | **unchanged, and that is the point** — docs/first-order/STATUS.md diagnosed Hanoi's wall as the *encoding* (code bit-length squares per move), not the extraction. Deleting the ambient tower did not move it, which is independent confirmation of that diagnosis. |
 
 The gcd row is the one worth pausing on: `derivBound gcdTheorem = 41` meant the
 certified `gcdWitness 0 0` never returned, so the repository has always had a

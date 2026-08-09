@@ -2,7 +2,7 @@
 
 ## 1. Fix documentation drift
 
-Update `HAOMEGA.md`, `HAOMEGA_PROGRAMS.md`, and relevant source comments so the public story matches the code:
+Update `docs/haomega/HAOMEGA.md`, `docs/haomega/HAOMEGA_PROGRAMS.md`, and relevant source comments so the public story matches the code:
 
 - Current build count: 743 jobs.
 - Current `HAomega/` size: 5,454 Lean lines.

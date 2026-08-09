@@ -20,7 +20,7 @@ The fragment of the project brief: intuitionistic propositional logic
 decidable equality (`s = t ∨ ¬ s = t`), `succ s ≠ 0`, and injectivity
 of `succ` — and, since the Phase-2 extension, the **arithmetic
 induction rule** `ind`: from `φ(0)` and `∀x (φ(x) → φ(succ x))`,
-conclude `∀x φ(x)` (see STATUS.md for its realizer, the
+conclude `∀x φ(x)` (see docs/first-order/STATUS.md for its realizer, the
 primitive-recursion combinator).
 
 Since the Phase-A extension the signature includes `+` and `×` as
@@ -43,7 +43,7 @@ the theorems about them (Phase D1) for the `ordDescent` case.
 Since the Phase-B extension the signature further includes `pred`,
 `exp`, hereditary base change `bump`, and the Goodstein sequence
 `good`, with their recursion-equation schemas, the numeral graph of
-`bump` (see the rule comment and STATUS.md for why `bump` alone enters
+`bump` (see the rule comment and docs/first-order/STATUS.md for why `bump` alone enters
 by its graph), and the matching congruence schemas.  The hereditary
 base-`k` *representation* itself lives in `Goodstein.lean` as a term of
 this very syntax in one distinguished base variable.
@@ -456,7 +456,7 @@ inductive Deriv : List Formula → Formula → Type where
         (eq (.times s₁ s₂) (.times t₁ t₂))))
   -- Phase A: the recursion equations *defining* `+` and `×`, recursing on
   -- the **first** argument (the mirror of the briefed equations, which are
-  -- thereby genuine `ind` theorems — see `Arithmetic.lean` and STATUS.md).
+  -- thereby genuine `ind` theorems — see `Arithmetic.lean` and docs/first-order/STATUS.md).
   | zeroPlus {Γ : List Formula} (t : Term) :
       Deriv Γ (eq (.plus .zero t) t)
   | succPlus {Γ : List Formula} (s t : Term) :
@@ -561,7 +561,7 @@ inductive Deriv : List Formula → Formula → Type where
   -- is course-of-values recursion through the hereditary structure, which
   -- is not a first-order equation schema over the fragment's terms.  The
   -- bases are written `succ (succ b)` because base change is false at
-  -- base 1 (see STATUS.md).
+  -- base 1 (see docs/first-order/STATUS.md).
   | ordBump {Γ : List Formula} (b n : Term) :
       Deriv Γ (eq (.ord (.succ (.succ (.succ b))) (.bump (.succ (.succ b)) n))
         (.ord (.succ (.succ b)) n))

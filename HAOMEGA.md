@@ -51,7 +51,7 @@ And two costs measured during the emitter work (Phase X of the original):
 
 ## Status (re-verified 2026-08-09 — see `HAOMEGA_DOSSIER.md` for evidence)
 
-**750 jobs green**, zero `sorry`/`admit`, 7,448 lines in `HAomega/` (33
+**751 jobs green**, zero `sorry`/`admit`, 7,994 lines in `HAomega/` (34
 files). Machinery complete and **thirteen extracted programs run** — the
 first-order repo's seven, plus three theorems that repo cannot state (the
 higher-type Fibonacci, the strategy-quantified Hercules, and the fully
@@ -91,15 +91,18 @@ the value-layer *theorem proofs*, exactly as in the first-order repo):
 | `tiEps0` + `tiRec` | ✅ used by Goodstein and Hydra |
 | Case studies: Fib, Fib-type-2, Pascal, Hanoi, gcd (full spec), Goodstein, Hydra, **Sperner**, **Hercules (∀-strategy)**, **Hercules (any head)**, **Goodstein on typed ordinals**, **Kirby–Paris on trees**, **Hercules on trees** | ✅ all extracted and running |
 | Proof engineering: `deriv_norm`, `deriv_assumption`, term-form kit | ✅ |
+| **Certified emission**: target syntax + big-step semantics, `hsOf_correct` (logical relation across the type erasure); the shipped emitter is *defined* as `hsPrint ∘ hsOf` (`HsSemantics.lean`) | ✅ 6 of 13 programs (all that avoid `TI(ε₀)`) |
 
 ### What is next
 
 * an `MR`-soundness bridge for the emitted Haskell;
 * automatic associates / moduli for extracted type-2 programs;
 * upstreaming the deriv-authoring kit into reusable tactics;
-* an `MR`-soundness bridge for the emitted Haskell, automatic
-  associates/moduli for type-2 extracts, and upstreaming the deriv-authoring
-  kit are what remain.  The de-coding programme is **finished**: the coded
+* automatic associates/moduli for type-2 extracts, and upstreaming the
+  deriv-authoring kit, are what remain.  Extending certified emission to
+  `tiRec` needs the target to *have* a transfinite recursor — the prelude
+  currently emits `error` for it, which `hsOf` models faithfully as a stuck
+  term.  The de-coding programme is **finished**: the coded
   `Goodstein`/`Hydra`/`Hercules` modules are kept only as the baselines their
   typed twins are measured against.
 

@@ -639,6 +639,7 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 
 | # | Declaration | File | What it gives you |
 |---|---|---|---|
+| H10b | `HsTm`/`HsEval`, `Rel`, **`hsOf_correct`** | `HsSemantics.lean` | **Certified emission.** The target gets a syntax and a big-step semantics; `hsOf_correct` proves the translation preserves meaning across the type erasure, by a logical relation (the continuity proof's device again). The shipped emitter is *defined* as `hsPrint ∘ hsOf`, so the strings in `EXTRACTED_HAOMEGA.md` come from the AST the theorem is about — verified byte-identical after the refactor. Read the header for the trusted base: prelude, printer, and the 7 `TI(ε₀)` programs. |
 | H11 | **`deriv_norm`** | `GcdDvd.lean` | The normalization tactic: reduces every `Ctx.wk`/`Formula.wk`/substitution in a `Deriv` goal — context index included — to ground form. The fix for whnf-vs-metavariable unification failures in nested eliminations. |
 | H12 | **`deriv_assumption`** | `GcdDvd.lean` | Context search over normalized goals; retired the pinned `ax1`–`ax7` accessors in goal positions. |
 | H13 | the term-form kit (`plusAssocT`, …, `trichotomyT`) | `GcdFull.lean` | ∀-lemmas cannot be `allE`-instantiated at use sites (the unifier cannot invert `Formula.subst1`); each lemma gets a term-parameterized form via one KIT-`simp`. |
@@ -689,7 +690,7 @@ evidence-tagged in `HAOMEGA_DOSSIER.md`; this section is the reading order.
 ## 7. Reproducing the Part II claims
 
 ```bash
-lake build          # 750 jobs; every #print axioms / #guard runs here
+lake build          # 751 jobs; every #print axioms / #guard runs here
 ```
 
 Spot checks (each was run for the dossier; expected outputs quoted there):

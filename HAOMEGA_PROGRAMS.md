@@ -30,6 +30,15 @@ The realizer is a **System T term**, not an opaque closure, so it prints, runs
 and normalises. `Tm.pretty` shows it raw; `Tm.pretty'` elides the contentless
 (`unit`-typed) parts left by equational subproofs.
 
+**The Haskell renderings are no longer wholly uncertified.**
+`HsSemantics.lean` gives the target a syntax and a big-step semantics, proves
+`hsOf_correct` — the translation preserves meaning across the type erasure,
+via a logical relation — and the shipped emitter is now *defined* as
+`hsPrint ∘ hsOf`, so the strings come from the AST the theorem is about.
+Outside the theorem: the printer, GHC's parse of it, the hand-written prelude,
+and the 7 programs that use `TI(ε₀)` (for which the emitter has never produced
+running code).
+
 ---
 
 ## 1. Fibonacci — `HAomega/Fib.lean`

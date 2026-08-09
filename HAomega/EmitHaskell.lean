@@ -3,7 +3,7 @@ Copyright (c) 2026 Ara Aslyan. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ara Aslyan
 -/
-import HAomega.Syntax
+import HAomega.HsSemantics
 
 /-!
 # Haskell emission for HA^ω terms
@@ -28,54 +28,18 @@ def hsTy : Ty → String
   | .arrow a b => "(" ++ hsTy a ++ " -> " ++ hsTy b ++ ")"
   | .prod a b => "(" ++ hsTy a ++ ", " ++ hsTy b ++ ")"
 
-/-- Render a variable as the de Bruijn *level* used by the surrounding lambdas. -/
-def hsVar : {Γ : List Ty} → {τ : Ty} → Var Γ τ → Nat → String
-  | _, _, .here, d => "x" ++ toString (d - 1)
-  | _, _, .there v, d => hsVar v (d - 1)
+/-- **Render an HA^ω term as a Haskell expression.**
 
-/-- Recognise numerals, so `S (S 0)` prints as `2`. -/
-partial def numLit? : {Γ : List Ty} → Tm Γ .nat → Option Nat
-  | _, .zero => some 0
-  | _, .succ t => (numLit? t).map (· + 1)
-  | _, _ => none
+Since the certified-semantics work this is *defined* as printing the verified
+translation: `hsOf` is the map proved correct in `HsSemantics.lean`
+(`hsOf_correct`), and `hsPrint` renders its output.  So the string shipped in
+`EXTRACTED_HAOMEGA.md` is produced from the AST the theorem is about, by
+construction — there is no second, unverified walk over `Tm` any more.
 
-/-- Render an HA^ω term as a Haskell expression. -/
-partial def hsTm : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → Nat → String
-  | _, _, .var v, d => hsVar v d
-  | _, _, .lam t, d => "(\\x" ++ toString d ++ " -> " ++ hsTm t (d + 1) ++ ")"
-  | _, _, .app f a, d => "(" ++ hsTm f d ++ " " ++ hsTm a d ++ ")"
-  | _, _, .star, _ => "()"
-  | _, _, .pair a b, d => "(" ++ hsTm a d ++ ", " ++ hsTm b d ++ ")"
-  | _, _, .fst t, d => "(fst " ++ hsTm t d ++ ")"
-  | _, _, .snd t, d => "(snd " ++ hsTm t d ++ ")"
-  | _, _, .zero, _ => "0"
-  | _, _, .succ t, d =>
-      match numLit? (.succ t) with
-      | some n => toString n
-      | none => "(1 + " ++ hsTm t d ++ ")"
-  | _, _, .add a b, d => "(" ++ hsTm a d ++ " + " ++ hsTm b d ++ ")"
-  | _, _, .recNat z s n, d => "(natRec " ++ hsTm z d ++ " " ++ hsTm s d ++ " " ++ hsTm n d ++ ")"
-  | _, _, .prec a b, d => "(oltN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
-  | _, _, .pred a, d => "(predN " ++ hsTm a d ++ ")"
-  | _, _, .bump a b, d => "(bumpN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
-  | _, _, .good a b, d => "(goodN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
-  | _, _, .ord a b, d => "(ordOfN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
-  | _, _, .hcut a b, d => "(hydraStepN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
-  | _, _, .hcutAt p a b, d =>
-      "(playAtN " ++ hsTm p d ++ " " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
-  | _, _, .ezero, _ => "EZero"
-  | _, _, .orde a b, d => "(ordE " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
-  | _, _, .olte a b, d => "(oltNE " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
-  | _, _, .tiRecE s n, d => "(tiRecE " ++ hsTm s d ++ " " ++ hsTm n d ++ ")"
-  | _, _, .hleaf, _ => "hLeaf"
-  | _, _, .hcutH a b, d => "(hydraStep " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
-  | _, _, .hleafQ a, d => "(isLeafN " ++ hsTm a d ++ ")"
-  | _, _, .hordH a, d => "(ordEOfHydra " ++ hsTm a d ++ ")"
-  | _, _, .hcutAtH p a b, d =>
-      "(playAt " ++ hsTm p d ++ " " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
-  | _, _, .hydra a b, d => "(hydraSeqN " ++ hsTm a d ++ " " ++ hsTm b d ++ ")"
-  | _, _, .hord a, d => "(ordOfHydraN " ++ hsTm a d ++ ")"
-  | _, _, .tiRec s n, d => "(tiRec " ++ hsTm s d ++ " " ++ hsTm n d ++ ")"
+What remains outside the theorem is exactly the printing and GHC's parsing of
+the result, plus the prelude below implementing the primitives. -/
+def hsTm {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) (d : Nat) : String :=
+  hsPrint (hsOf t) d
 
 /-- Runtime support for emitted System T terms.
 

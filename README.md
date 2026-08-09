@@ -37,7 +37,7 @@ This repository grew out of
 which does the same programme over a **minimal first-order fragment** — one
 sort, everything coded into ℕ.  That development is kept in-tree
 (`Realizability/`) as the reference implementation; the HA^ω library
-(`HAomega/`, ~5,500 lines) imports nothing from it except the proven
+(`HAomega/`, ~8,000 lines) imports nothing from it except the proven
 choice-free value layers (ε₀ notations, Goodstein and Hydra arithmetic).
 What the types buy, each verified here rather than asserted:
 
@@ -89,5 +89,7 @@ The build is standalone.
 
 Independence results are **not** formalized: Goodstein and Kirby–Paris are
 proved as termination theorems; that PA cannot prove them is claimed
-nowhere.  The Haskell renderings are uncertified
-translations; the certified artifact is always the System T term.
+nowhere.  The Haskell renderings are **certified against a formal semantics
+of the target** (`hsOf_correct`), for the 6 of 13 programs that avoid
+`TI(ε₀)`; the hand-written prelude, the printer, and GHC itself remain the
+trusted base.

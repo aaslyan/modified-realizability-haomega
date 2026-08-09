@@ -140,8 +140,7 @@ Collapsed --- contentless parts elided, what remains is exactly the
 computational content --- it is the same term minus the trailing
 $\star$-component: iterate $\langle a,b\rangle \mapsto \langle b,
 a{+}b\rangle$ from $\langle 0,1\rangle$, take the first projection. And as
-generated Haskell (an \emph{uncertified translation}; the certified artifact
-is always the term):
+generated Haskell (see the certification note below):
 \begin{quote}\ttfamily\small
 (\char`\\ x0 -> (((\char`\\ x1 -> (fst ((\char`\\ x2 -> (natRec (0, 1)\\
 \hspace*{1.2em}(\char`\\ x3 -> (\char`\\ x4 -> ((\char`\\ x5 -> ((snd x5), ((fst x5) + (snd x5)))) x4)))\\
@@ -240,6 +239,41 @@ the value level it cost \emph{nothing}, because the any-head move and its
 descent were already functions and theorems about trees. What had been
 coded was never the mathematics; it was only the interface the one-sorted
 object language forced on it.
+
+\subsection*{Certifying the emitted Haskell, and what stays trusted}
+
+The Haskell renderings carried a disclaimer for most of this development:
+\emph{uncertified translation; the certified artifact is the term}. That
+disclaimer is now a theorem plus a short, explicit trusted base.
+
+Certifying emitted code against \textsc{ghc} is not available to us --- it
+would need a formal semantics of Haskell and a proof that \textsc{ghc}
+implements it. What is available is what a verified compiler actually proves:
+correctness against a formal semantics of the \emph{target}. So the target
+fragment gets a syntax $\mathrm{HsTm}$ (untyped, since emission erases every
+distinction $\mathrm{Ty}$ makes), a big-step evaluation relation with closures, and a
+translation $\mathrm{hsOf}$. Agreement across a type erasure cannot be an
+equation, so it is a logical relation $\mathrm{Rel}\;\tau\;x\;v$ --- an
+equation at base types, closure under application at arrows. That is the same
+device the continuity theorem uses, put to a second purpose:
+\[
+  \mathrm{hsOf\_correct} :\ \text{related environments} \Rightarrow
+  \exists v.\ \mathrm{HsEval}\ (\mathrm{hsOf}\ t)\ \rho\ v \ \wedge\
+  \mathrm{Rel}\ \tau\ (t.\mathrm{eval}\ e)\ v .
+\]
+The emitter now \emph{is} $\mathrm{hsPrint} \circ \mathrm{hsOf}$, so the
+strings in the artifact come from the syntax tree the theorem is about; the
+regenerated artifact is byte-identical, which is the evidence that routing it
+through the certified translation changed nothing.
+
+What remains trusted is worth stating precisely, because it is short: the
+hand-written prelude, whose meaning the model \emph{defines} to be the
+corresponding Lean primitives; the printer, and \textsc{ghc}'s parse of its
+output; and the seven programs that use $\mathrm{TI}(\epsz)$, for which the
+emitter has never produced running code --- $\mathrm{hsOf}$ sends
+$\mathsf{tiRec}$ to a constructor with no evaluation rule, faithfully
+modelling the \texttt{error} the prelude emits. Six of the thirteen programs
+are covered, and which six is checked at every build.
 
 \subsection*{The audit, rerun}
 

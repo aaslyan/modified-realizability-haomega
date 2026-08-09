@@ -285,6 +285,43 @@ Hanoi's move sequences as the last coded object; that is wrong — `[src]`
 (its sequences are `(len, moves^(ℕ→ℕ))` pairs, which is precisely the
 encoding-wall experiment's result).
 
+## 13. Certified emission (addendum, 2026-08-09)
+
+`[src]` `HAomega/HsSemantics.lean` replaces the standing "uncertified
+translation" disclaimer with a theorem and a precisely stated trusted base.
+
+* target syntax `HsTm` (untyped — the emitter erases every `Ty` distinction),
+  values with **closures** (`(HsVal → HsVal) → HsVal` is not a legal
+  inductive), and a **big-step** relation `HsEval` (relational, so no fuel
+  bookkeeping enters the proof);
+* `hsOf : Tm Γ τ → HsTm`, and `Rel : (τ : Ty) → τ.interp → HsVal → Prop` — a
+  logical relation, since agreement *across an erasure* cannot be an equation.
+  At base types it is an equation; at arrows, closure under application.  Same
+  device as the continuity proof;
+* **`hsOf_correct`** `[run]` `[propext, Quot.sound]`: in related environments
+  the translation evaluates and its value is related to the realizer's, at
+  every type.  Corollaries `hsOf_closed_nat`, `hsOf_closed_fun`, and the
+  concrete `fib_emitted_correct`.
+
+`[run]` **The shipped path is the certified path.**  `EmitHaskell.hsTm` is now
+*defined* as `hsPrint (hsOf t) d`; there is no second walk over `Tm`.
+Evidence that this changed nothing observable: `EXTRACTED_HAOMEGA.md`
+regenerates **byte-identical** (`git diff` empty, 96,736 chars).
+
+`[run]` **Coverage, guarded in `ShowAll.lean`:** 6 of the 13 programs —
+Fibonacci, Fibonacci at type 2, Pascal, Hanoi, gcd, Sperner.  The other 7 use
+`TI(ε₀)`, and `hsOf` sends `tiRec`/`tiRecE` to `.oops`, a constructor with **no
+evaluation rule** — a faithful model of the `error "…"` the prelude has always
+emitted for them.
+
+`[src]` **Trusted base, exactly:** (1) the hand-written prelude, whose meaning
+the model *defines* to be the Lean primitives (`prim1Sem`/`prim2Sem`/
+`prim3Sem`) — the runtime-correctness assumption any verified compiler makes;
+(2) the printer and GHC's parse of its output; (3) nothing else.
+
+`[run]` Hygiene: `lake build` **751 jobs**, 7,994 lines, 34 files, zero
+`HAomega/` warnings.
+
 ## 10. Fixes applied by this audit
 
 1. `Fib.lean`: stale wall-diagnosis comment → historical note with the

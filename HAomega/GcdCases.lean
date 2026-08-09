@@ -60,7 +60,6 @@ def gcdZeroLD {Γ as : List Ty} {Δ : Ctx Γ as} :
     Deriv Δ (.all .nat (.all .nat (.imp (.eq (.var (.there .here)) .zero)
       (SpecF (.var (.there .here)) (.var .here))))) := by
   refine Deriv.allI (Deriv.allI (Deriv.impI ?_))
-  deriv_norm
   refine Deriv.exI (.var .here) ?_
   deriv_norm
   refine Deriv.andI ?_ (Deriv.andI (dvdReflT (.var .here)) ?_)
@@ -77,7 +76,6 @@ def gcdZeroRD {Γ as : List Ty} {Δ : Ctx Γ as} :
     Deriv Δ (.all .nat (.all .nat (.imp (.eq (.var .here) .zero)
       (SpecF (.var (.there .here)) (.var .here))))) := by
   refine Deriv.allI (Deriv.allI (Deriv.impI ?_))
-  deriv_norm
   refine Deriv.exI (.var (.there .here)) ?_
   deriv_norm
   refine Deriv.andI (dvdReflT (.var (.there .here))) (Deriv.andI ?_ ?_)

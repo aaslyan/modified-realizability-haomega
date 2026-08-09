@@ -245,10 +245,10 @@ def dvdAddT {Γ as : List Ty} {Δ : Ctx Γ as} (d x y : Tm Γ .nat) :
         (.ex .nat (.eq (.add (x.wk) (y.wk))
           (.app (.app mulT (d.wk)) (.var .here)))))) := by
   have h := Deriv.allE y (Deriv.allE x (Deriv.allE d (dvdAddD (Δ := Δ))))
-  simp only [Ctx.wk_cons, Ctx.wk_nil, Dvd, Formula.wk,
-      Formula.rename, Formula.subst1, Formula.subst, Tm.wk, Tm.rename,
-      Tm.subst1, Tm.subst, Sub.one, Sub.ext, Ren.wk, Ren.ext,
-      mulT_subst, mulT_rename, Tm.wk_subst_ext, Tm.wk_subst_one,
+  simp only [Dvd, 
+      Formula.subst1, Formula.subst, Tm.wk, Tm.rename,
+      Tm.subst, Sub.one, Sub.ext, Ren.wk, 
+      mulT_subst, 
       subst_one_rename, subst_ext_rename] at h
   exact h
 
@@ -259,10 +259,10 @@ def dvdSubT {Γ as : List Ty} {Δ : Ctx Γ as} (d x y : Tm Γ .nat) :
           (.app (.app mulT (d.wk)) (.var .here))))
         (.ex .nat (.eq (y.wk) (.app (.app mulT (d.wk)) (.var .here)))))) := by
   have h := Deriv.allE y (Deriv.allE x (Deriv.allE d (dvdSubD (Δ := Δ))))
-  simp only [Ctx.wk_cons, Ctx.wk_nil, Dvd, Formula.wk,
-      Formula.rename, Formula.subst1, Formula.subst, Tm.wk, Tm.rename,
-      Tm.subst1, Tm.subst, Sub.one, Sub.ext, Ren.wk, Ren.ext,
-      mulT_subst, mulT_rename, Tm.wk_subst_ext, Tm.wk_subst_one,
+  simp only [Dvd, 
+      Formula.subst1, Formula.subst, Tm.wk, Tm.rename,
+      Tm.subst, Sub.one, Sub.ext, Ren.wk, 
+      mulT_subst, 
       subst_one_rename, subst_ext_rename] at h
   exact h
 

@@ -91,7 +91,7 @@ theorem Tm.subst_rename {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
       intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ihz, ihs, ihn]
 
 theorem Tm.subst_id {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
-    t.subst (fun σ v ↦ Tm.var v) = t := by
+    t.subst (fun _ v ↦ Tm.var v) = t := by
   induction t with
   | var v => rfl
   | lam b ih =>

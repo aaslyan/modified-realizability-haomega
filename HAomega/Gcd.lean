@@ -117,14 +117,14 @@ theorem linkMul2 {Γ : List Ty} (a u : Tm Γ .nat) :
     Tm.subst1 (.recNat .zero
       (.lam (.lam (.add (((a.wk).wk).wk) (.var .here))))
       (.var .here)) u = .recNat .zero (mulStep a) u := by
-  simp only [Tm.subst1, Tm.subst, Sub.ext, Sub.one, Tm.rename, mulStep,
+  simp only [Tm.subst1, Tm.subst, Sub.ext, Sub.one, mulStep,
     Tm.wk_subst_ext, Tm.wk_subst_one]
 
 theorem linkMul3 {Γ : List Ty} (a k I : Tm Γ .nat) :
     Tm.subst1 (Tm.subst1 (.add (((a.wk).wk)) (.var .here)) (I.wk)) k
       = .add a I := by
-  simp only [Tm.subst1, Tm.subst, Sub.ext, Sub.one, Tm.rename,
-    Tm.wk_subst_ext, Tm.wk_subst_one]
+  simp only [Tm.subst1, Tm.subst, Sub.one, 
+    Tm.wk_subst_one]
 
 /-- `mul a u` unfolds to its recursor. -/
 def mulUnfold {Γ as : List Ty} {Δ : Ctx Γ as} (a u : Tm Γ .nat) :
@@ -146,14 +146,14 @@ theorem linkStep1 {Γ : List Ty} (a z : Tm Γ .nat) :
     Tm.subst1 ((.lam (.add (((a.wk (σ := .nat)).wk)) (.var .here))
       : Tm (.nat :: Γ) (.arrow .nat .nat))) z
       = .lam (.add (a.wk) (.var .here)) := by
-  simp only [Tm.subst1, Tm.subst, Sub.ext, Sub.one, Tm.rename,
+  simp only [Tm.subst1, Tm.subst, Sub.ext, 
     Tm.wk_subst_ext, Tm.wk_subst_one]
 
 theorem linkStep2 {Γ : List Ty} (a I : Tm Γ .nat) :
     Tm.subst1 ((.add ((a.wk (σ := .nat))) (.var .here) : Tm (.nat :: Γ) .nat)) I
       = .add a I := by
-  simp only [Tm.subst1, Tm.subst, Sub.ext, Sub.one, Tm.rename,
-    Tm.wk_subst_ext, Tm.wk_subst_one]
+  simp only [Tm.subst1, Tm.subst, Sub.one, 
+    Tm.wk_subst_one]
 
 /-- `mulStep a` applied twice is `add a ·`. -/
 def mulStepApp {Γ as : List Ty} {Δ : Ctx Γ as} (a k I : Tm Γ .nat) :

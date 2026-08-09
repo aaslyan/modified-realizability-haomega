@@ -268,9 +268,9 @@ computable. -/
 def tiRecVal {τ : Ty} (step : ℕ → (ℕ → Unit → τ.interp) → τ.interp)
     (x : ℕ) : τ.interp :=
   step x fun y _ ↦
-    if h : Realizability.OLt y x then tiRecVal step y else τ.dfltVal
+    if _h : Realizability.OLt y x then tiRecVal step y else τ.dfltVal
 termination_by OrdCode.mk x
-decreasing_by exact h
+decreasing_by exact _h
 
 /-! ## Evaluation -/
 

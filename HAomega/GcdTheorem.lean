@@ -133,7 +133,6 @@ def gcdFuelD {Γ as : List Ty} {Δ : Ctx Γ as} :
           have hIH3 := Deriv.allE (τ := .nat) (.add (.var (.there (.there .here))) (.var (.there (.there (.there .here))))) hIH2
           deriv_norm at hIH3
           refine Deriv.impE hIH3 ?_
-          deriv_norm
           refine Deriv.impE (Deriv.succInj _ _) ?_
           refine Deriv.transE (t := .add (.add (.var (.there (.there (.there (.there (.there .here)))))) (.add (.var (.there (.there (.there (.there (.there .here)))))) (.var .here))) (.var (.there (.there (.there .here)))))
             (Deriv.symmE ?_) ?_
@@ -163,7 +162,6 @@ def gcdFuelD {Γ as : List Ty} {Δ : Ctx Γ as} :
           have hIH3 := Deriv.allE (τ := .nat) (.add (.var (.there .here)) (.var (.there (.there (.there .here))))) hIH2
           deriv_norm at hIH3
           refine Deriv.impE hIH3 ?_
-          deriv_norm
           refine Deriv.impE (Deriv.succInj _ _) ?_
           refine Deriv.transE (t := .add (.add (.add (.var (.there (.there (.there (.there .here))))) (.succ (.var .here))) (.var (.there (.there (.there (.there .here)))))) (.var (.there (.there (.there .here)))))
             (Deriv.symmE ?_) ?_
@@ -192,7 +190,6 @@ def gcdTheoremD {Γ as : List Ty} {Δ : Ctx Γ as} :
   have h4 := Deriv.allE (τ := .nat) .zero h3
   deriv_norm at h4
   refine Deriv.impE h4 ?_
-  deriv_norm
   exact Deriv.eqRefl _
 
 /-- **The proof-computed gcd.**  The realizer's witness component, from the

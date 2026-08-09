@@ -58,15 +58,15 @@ theorem linkP1 {Γ : List Ty} (F : Tm Γ (.arrow .nat .nat)) (T : Tm Γ .nat) :
     Tm.subst1 ((.lam (.hcut (.app ((F.wk).wk) (.var (.there .here))) (.var .here))
       : Tm (.nat :: Γ) (.arrow .nat .nat))) T
       = .lam (.hcut (.app (F.wk) (T.wk)) (.var .here)) := by
-  simp only [Tm.subst1, Tm.subst, Sub.one, Sub.ext, Ren.wk, Tm.rename,
-    Tm.wk_subst_ext, Tm.wk_subst_one, subst_one_rename, subst_ext_rename]
+  simp only [Tm.subst1, Tm.subst, Sub.one, Sub.ext, 
+    Tm.wk_subst_ext, Tm.wk_subst_one]
   rfl
 
 theorem linkP2 {Γ : List Ty} (F : Tm Γ (.arrow .nat .nat)) (T u : Tm Γ .nat) :
     Tm.subst1 ((.hcut (.app (F.wk) (T.wk)) (.var .here) : Tm (.nat :: Γ) .nat)) u
       = .hcut (.app F T) u := by
-  simp only [Tm.subst1, Tm.subst, Sub.one, Sub.ext, Ren.wk, Tm.rename,
-    Tm.wk_subst_ext, Tm.wk_subst_one, subst_one_rename, subst_ext_rename]
+  simp only [Tm.subst1, Tm.subst, Sub.one, 
+    Tm.wk_subst_one]
 
 /-- One unfolding of the battle: `play f h (t+1) = hcut (f t) (play f h t)`. -/
 def playSucc {Γ as : List Ty} {Δ : Ctx Γ as}
@@ -96,7 +96,7 @@ def hercAuxD {Γ as : List Ty} {Δ : Ctx (.arrow .nat .nat :: Γ) as} :
   · refine Deriv.exI (.var .here) ?_
     deriv_norm
     deriv_assumption
-  · deriv_norm
+  ·
     have hneg : Deriv (.cons ((Formula.eq
         (playT (.var (.there (.there (.there .here)))) (.var (.there .here))
           (.var .here)) .zero).neg)

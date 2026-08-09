@@ -59,7 +59,7 @@ def hydAuxD {Γ as : List Ty} {Δ : Ctx Γ as} :
   · refine Deriv.exI (.var .here) ?_
     deriv_norm
     deriv_assumption
-  · deriv_norm
+  ·
     have hneg : Deriv (hydCtx Γ Δ)
         ((Formula.eq (.hydra (.var (.there .here)) (.var .here)) .zero).neg) :=
       Deriv.ax

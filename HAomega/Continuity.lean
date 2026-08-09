@@ -125,7 +125,7 @@ theorem tracked_apply_nat : (τ : Ty) → {k : (ℕ → ℕ) → ℕ} →
   | .prod a b, _, _, hk, hG =>
       ⟨tracked_apply_nat a hk fun j ↦ (hG j).1,
        tracked_apply_nat b hk fun j ↦ (hG j).2⟩
-  | .arrow a b, _, _, hk, hG =>
+  | .arrow _ b, _, _, hk, hG =>
       fun Y hY ↦ tracked_apply_nat b hk fun j ↦ hG j Y hY
 
 /-- **The canonical values are tracked.**  Needed by `tiRec`: when the
@@ -150,7 +150,7 @@ def TrackedEnv {Γ : List Ty} (E : (ℕ → ℕ) → Env Γ) : Prop :=
 
 /-- **Every System T term denotes a tracked family.**
 
-Eleven cases, one per constructor of `Tm`.  `recNat` is the only one that needs
+One case per constructor of `Tm`.  `recNat` is the only one that needs
 a closure fact — `tracked_apply_nat`, to absorb the oracle-dependent recursion
 depth — and the fixed-depth statement it consumes is an ordinary induction on
 the numeral. -/

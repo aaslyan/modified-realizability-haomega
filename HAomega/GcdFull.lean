@@ -111,8 +111,8 @@ theorem subst_ext_rename {Γ Δ : List Ty} {σ τ : Ty} (t : Tm Γ τ) (s : Sub 
 def plusAssocT {Γ as : List Ty} {Δ : Ctx Γ as} (x y z : Tm Γ .nat) :
     Deriv Δ (.eq (.add (.add x y) z) (.add x (.add y z))) := by
   have h := Deriv.allE z (Deriv.allE y (Deriv.allE x (plusAssocD (Δ := Δ))))
-  simp only [Formula.subst1, Formula.subst, Tm.subst1, Tm.subst, Sub.one,
-    Sub.ext, Ren.wk, Tm.rename, Tm.wk_subst_ext, Tm.wk_subst_one,
+  simp only [Formula.subst1, Formula.subst, Tm.subst, Sub.one,
+    Sub.ext, Ren.wk, Tm.rename, 
     subst_one_rename, subst_ext_rename] at h
   exact h
 
@@ -120,9 +120,9 @@ def plusAssocT {Γ as : List Ty} {Δ : Ctx Γ as} (x y z : Tm Γ .nat) :
 def plusCommT {Γ as : List Ty} {Δ : Ctx Γ as} (x y : Tm Γ .nat) :
     Deriv Δ (.eq (.add x y) (.add y x)) := by
   have h := Deriv.allE y (Deriv.allE x (plusCommD (Δ := Δ)))
-  simp only [Formula.subst1, Formula.subst, Tm.subst1, Tm.subst, Sub.one,
-    Sub.ext, Ren.wk, Tm.rename, Tm.wk_subst_ext, Tm.wk_subst_one,
-    subst_one_rename, subst_ext_rename] at h
+  simp only [Formula.subst1, Formula.subst, Tm.subst, Sub.one,
+    Sub.ext, 
+    subst_one_rename] at h
   exact h
 
 
@@ -130,26 +130,26 @@ def plusCommT {Γ as : List Ty} {Δ : Ctx Γ as} (x y : Tm Γ .nat) :
 def zeroPlusT {Γ as : List Ty} {Δ : Ctx Γ as} (x : Tm Γ .nat) :
     Deriv Δ (.eq (.add .zero x) x) := by
   have h := Deriv.allE x (zeroPlusD (Δ := Δ))
-  simp only [Formula.subst1, Formula.subst, Tm.subst1, Tm.subst, Sub.one,
-    Sub.ext, Ren.wk, Tm.rename, Tm.wk_subst_ext, Tm.wk_subst_one,
-    subst_one_rename, subst_ext_rename] at h
+  simp only [Formula.subst1, Formula.subst, Tm.subst, Sub.one,
+    
+    ] at h
   exact h
 
 /-- Term form of `succPlusD`. -/
 def succPlusT {Γ as : List Ty} {Δ : Ctx Γ as} (x y : Tm Γ .nat) :
     Deriv Δ (.eq (.add (.succ x) y) (.succ (.add x y))) := by
   have h := Deriv.allE y (Deriv.allE x (succPlusD (Δ := Δ)))
-  simp only [Formula.subst1, Formula.subst, Tm.subst1, Tm.subst, Sub.one,
-    Sub.ext, Ren.wk, Tm.rename, Tm.wk_subst_ext, Tm.wk_subst_one,
-    subst_one_rename, subst_ext_rename] at h
+  simp only [Formula.subst1, Formula.subst, Tm.subst, Sub.one,
+    Sub.ext, 
+    subst_one_rename] at h
   exact h
 
 /-- Term form of `cancelAddD` (the implication, ready for `impE`). -/
 def cancelAddT {Γ as : List Ty} {Δ : Ctx Γ as} (x y a : Tm Γ .nat) :
     Deriv Δ (.imp (.eq (.add x a) (.add y a)) (.eq x y)) := by
   have h := Deriv.allE a (Deriv.allE y (Deriv.allE x (cancelAddD (Δ := Δ))))
-  simp only [Formula.subst1, Formula.subst, Tm.subst1, Tm.subst, Sub.one,
-    Sub.ext, Ren.wk, Tm.rename, Tm.wk_subst_ext, Tm.wk_subst_one,
+  simp only [Formula.subst1, Formula.subst, Tm.subst, Sub.one,
+    Sub.ext, Ren.wk, Tm.rename, 
     subst_one_rename, subst_ext_rename] at h
   exact h
 
@@ -157,18 +157,18 @@ def cancelAddT {Γ as : List Ty} {Δ : Ctx Γ as} (x y a : Tm Γ .nat) :
 def addEqZeroT {Γ as : List Ty} {Δ : Ctx Γ as} (y z : Tm Γ .nat) :
     Deriv Δ (.imp (.eq (.add y z) .zero) (.eq y .zero)) := by
   have h := Deriv.allE z (Deriv.allE y (addEqZeroD (Δ := Δ)))
-  simp only [Formula.subst1, Formula.subst, Tm.subst1, Tm.subst, Sub.one,
-    Sub.ext, Ren.wk, Tm.rename, Tm.wk_subst_ext, Tm.wk_subst_one,
-    subst_one_rename, subst_ext_rename] at h
+  simp only [Formula.subst1, Formula.subst, Tm.subst, Sub.one,
+    Sub.ext, 
+    subst_one_rename] at h
   exact h
 
 /-- Term form of `caseNatD`. -/
 def caseNatT {Γ as : List Ty} {Δ : Ctx Γ as} (v : Tm Γ .nat) :
     Deriv Δ (.or (.eq v .zero) (.ex .nat (.eq (v.wk) (.succ (.var .here))))) := by
   have h := Deriv.allE v (caseNatD (Δ := Δ))
-  simp only [Formula.subst1, Formula.subst, Tm.subst1, Tm.subst, Sub.one,
-    Sub.ext, Ren.wk, Tm.rename, Tm.wk_subst_ext, Tm.wk_subst_one,
-    subst_one_rename, subst_ext_rename] at h
+  simp only [Formula.subst1, Formula.subst, Tm.subst, Sub.one,
+    Sub.ext, 
+    ] at h
   exact h
 
 /-- `a + (p + q) = p + (a + q)` — now a three-line chain of term forms. -/
@@ -214,8 +214,8 @@ def distribLT {Γ as : List Ty} {Δ : Ctx Γ as} (d x y : Tm Γ .nat) :
     Deriv Δ (.eq (.app (.app mulT d) (.add x y))
       (.add (.app (.app mulT d) x) (.app (.app mulT d) y))) := by
   have h := Deriv.allE y (Deriv.allE x (Deriv.allE d (distribLD (Δ := Δ))))
-  simp only [Formula.subst1, Formula.subst, Tm.subst1, Tm.subst, Sub.one,
-    Sub.ext, Ren.wk, Tm.rename, Tm.wk_subst_ext, Tm.wk_subst_one,
+  simp only [Formula.subst1, Formula.subst, Tm.subst, Sub.one,
+    Sub.ext, Ren.wk, Tm.rename, 
     subst_one_rename, subst_ext_rename, mulT_subst] at h
   exact h
 
@@ -282,8 +282,8 @@ def trichotomyT {Γ as : List Ty} {Δ : Ctx Γ as} (a b : Tm Γ .nat) :
     Deriv Δ (.or (.ex .nat (.eq (.add (a.wk) (.var .here)) (b.wk)))
                  (.ex .nat (.eq (.add (b.wk) (.succ (.var .here))) (a.wk)))) := by
   have h := Deriv.allE b (Deriv.allE a (trichotomyD (Δ := Δ)))
-  simp only [Formula.subst1, Formula.subst, Tm.subst1, Tm.subst, Sub.one,
-    Sub.ext, Ren.wk, Tm.rename, Tm.wk_subst_ext, Tm.wk_subst_one,
+  simp only [Formula.subst1, Formula.subst, Tm.subst, Sub.one,
+    Sub.ext, Ren.wk, Tm.rename, 
     subst_one_rename, subst_ext_rename] at h
   exact h
 

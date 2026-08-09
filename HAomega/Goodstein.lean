@@ -68,7 +68,6 @@ def goodAuxD {Γ as : List Ty} {Δ : Ctx Γ as} :
     deriv_norm
     deriv_assumption
   · -- not zero: descend
-    deriv_norm
     -- stack: hneg :: hx :: IH ; g := good m t
     have hneg : Deriv (goodCtx Γ Δ) ((Formula.eq (.good (.var (.there .here)) (.var .here)) .zero).neg) := Deriv.ax
     have hx1 : Deriv (goodCtx Γ Δ) (.eq (.ord (.succ (.succ (.var .here)))

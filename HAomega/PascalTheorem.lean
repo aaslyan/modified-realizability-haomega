@@ -308,7 +308,7 @@ theorem linkRow3 {Γ : List Ty} (R : Tm Γ (.arrow .nat .nat)) (u : Tm Γ .nat) 
         (.app ((R.wk).wk.wk) (.succ (.var (.there .here)))))))
       (.var .here)) u = .recNat (.succ .zero) (innerAt R) u := by
   simp only [Tm.subst1, Tm.subst, Sub.ext, Sub.one, Tm.rename, innerAt,
-    xorT_subst, parityT_subst, Tm.wk_subst_ext, Tm.wk_subst_one]
+    xorT_subst, Tm.wk_subst_ext, Tm.wk_subst_one]
   rfl
 
 theorem linkInner1 {Γ : List Ty} (R : Tm Γ (.arrow .nat .nat)) (k : Tm Γ .nat) :
@@ -317,8 +317,8 @@ theorem linkInner1 {Γ : List Ty} (R : Tm Γ (.arrow .nat .nat)) (k : Tm Γ .nat
       (.app ((R.wk (σ := .nat)).wk) (.succ (.var (.there .here)))))
       : Tm (.nat :: Γ) (.arrow .nat .nat))) k
       = innerApp R k := by
-  simp only [Tm.subst1, Tm.subst, Sub.ext, Sub.one, Tm.rename, innerApp,
-    xorT_subst, parityT_subst, Tm.wk_subst_ext, Tm.wk_subst_one]
+  simp only [Tm.subst1, Tm.subst, Sub.ext, Sub.one, innerApp,
+    xorT_subst, Tm.wk_subst_ext, Tm.wk_subst_one]
   rfl
 
 theorem linkInner2 {Γ : List Ty} (R : Tm Γ (.arrow .nat .nat)) (k : Tm Γ .nat)
@@ -326,8 +326,8 @@ theorem linkInner2 {Γ : List Ty} (R : Tm Γ (.arrow .nat .nat)) (k : Tm Γ .nat
     Tm.subst1 (.app (.app xorT (.app ((R.wk)) ((k.wk))))
       (.app ((R.wk)) (.succ ((k.wk))))) I
       = .app (.app xorT (.app R k)) (.app R (.succ k)) := by
-  simp only [Tm.subst1, Tm.subst, Sub.ext, Sub.one, Tm.rename,
-    xorT_subst, parityT_subst, Tm.wk_subst_ext, Tm.wk_subst_one]
+  simp only [Tm.subst1, Tm.subst, 
+    xorT_subst, Tm.wk_subst_one]
 
 theorem linkXor1 {Γ : List Ty} (a : Tm Γ .nat) :
     Tm.subst1 (.lam (.app parityT
@@ -337,8 +337,8 @@ theorem linkXor1 {Γ : List Ty} (a : Tm Γ .nat) :
 theorem linkXor2 {Γ : List Ty} (a b : Tm Γ .nat) :
     Tm.subst1 (.app parityT (.add ((a.wk)) (.var .here))) b
       = .app parityT (.add a b) := by
-  simp only [Tm.subst1, Tm.subst, Sub.ext, Sub.one, Tm.rename,
-    xorT_subst, parityT_subst, Tm.wk_subst_ext, Tm.wk_subst_one]
+  simp only [Tm.subst1, Tm.subst, Sub.one, 
+    parityT_subst, Tm.wk_subst_one]
 
 
 -- ===== the explicit chains =====

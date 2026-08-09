@@ -1769,4 +1769,112 @@ soundness theorem, continuity proof, and \CtQ collapse are the same.
 \bibliographystyle{plainnat}
 \bibliography{refs}
 
+
+%======================================================================
+\section{Appendix C --- The realizer as a term}
+\label{app:term}
+
+Appendix~A had to work around an obstacle: in the fragment you cannot see the
+extracted program by evaluating it. Evaluation either over-reduces (the witness
+disappears into an opaque code) or does not finish (the transfinite recursion
+is the astronomical computation itself). So \code{\#realizer} reads the
+\emph{proof} instead, walking the derivation to print a tree.
+
+In Part~II that obstacle is gone, and its absence is the structural point of
+Act~VIII. The realizer is a term of the object language, so printing it is
+printing --- no derivation walk, no separate viewer, and the same object that
+prints is the one that runs and the one the certified translation of Act~XII
+compiles. Here is a complete extracted program, verbatim: the Pascal
+mod-$2$ decision procedure, whose output is the Sierpi\'nski gasket drawn in
+Act~IV. Contentless components are elided (the collapsed view); nothing else
+is abridged.
+
+\begin{center}
+\fcolorbox{rulec}{boxbg}{\begin{minipage}{0.93\linewidth}
+\ttfamily\scriptsize\raggedright
+($\lambda$x0. rec[($\lambda$x1. rec[0 | ($\lambda$x2. ($\lambda$x3. S 0)) | fst (($\lambda$x2. rec[0 | ($\lambda$x3. ($\lambda$x4. S 0)) | x2]) x1)]) | ($\lambda$x1. ($\lambda$x2. ($\lambda$x3. rec[0 | ($\lambda$x4. ($\lambda$x5. rec[0 | ($\lambda$x6. ($\lambda$x7. S 0)) | fst (($\lambda$x6. rec[S 0 | ($\lambda$x7. ($\lambda$x8. rec[S 0 | ($\lambda$x9. ($\lambda$x10. 0)) | fst x8])) | x6]) (((($\lambda$x6. rec[($\lambda$x7. rec[S 0 | ($\lambda$x8. ($\lambda$x9. 0)) | x7]) | ($\lambda$x7. ($\lambda$x8. ($\lambda$x9. rec[S 0 | ($\lambda$x10. ($\lambda$x11. ((($\lambda$x12. ($\lambda$x13. (($\lambda$x14. rec[0 | ($\lambda$x15. ($\lambda$x16. (($\lambda$x17. rec[S 0 | ($\lambda$x18. ($\lambda$x19. 0)) | x17]) x16))) | x14]) (x12 + x13)))) (x8 x10)) (x8 S x10)))) | x9]))) | x6]) x1) x4) + ((($\lambda$x6. rec[($\lambda$x7. rec[S 0 | ($\lambda$x8. ($\lambda$x9. 0)) | x7]) | ($\lambda$x7. ($\lambda$x8. ($\lambda$x9. rec[S 0 | ($\lambda$x10. ($\lambda$x11. ((($\lambda$x12. ($\lambda$x13. (($\lambda$x14. rec[0 | ($\lambda$x15. ($\lambda$x16. (($\lambda$x17. rec[S 0 | ($\lambda$x18. ($\lambda$x19. 0)) | x17]) x16))) | x14]) (x12 + x13)))) (x8 x10)) (x8 S x10)))) | x9]))) | x6]) x1) S x4)))])) | x3]))) | x0])
+\end{minipage}}
+\end{center}
+
+\noindent
+Two things are worth noticing about that block. It is \emph{finite and
+complete} --- there is no elision but the contentless one, and no appeal to a
+viewer. And it contains no operation that inspects an encoding: the recursion
+is $\mathsf{rec}$ over the row at a function type, the arithmetic is $+$, and
+the branching is the numeral test extraction emits for $\lor$-elimination.
+
+That last property is what the de-coding programme of Act~X bought, and it can
+be counted rather than asserted. Taking the three theorems that have both a
+coded and a structural proof, and counting occurrences of the coded operations
+--- $\mathrm{ord}$, $\prec$, $\mathsf{tiRec}$, $\mathrm{hcut}$, $\hydra$,
+$\mathrm{hord}$ --- in the structural extract:
+
+\begin{center}\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+structural extract & coded operations & structural operations\\
+\midrule
+Goodstein on $\mathsf{ord}$ & $0$ & $2\times\mathrm{ord}^{\mathrm{o}}$, $1\times\mathsf{tiRec}^{\mathrm{o}}$\\
+Kirby--Paris on $\mathsf{hyd}$ & $0$ & $7\times\mathrm{cut}^{\mathrm{H}}$, $2\times\mathrm{hord}^{\mathrm{H}}$, $1\times\mathsf{tiRec}^{\mathrm{o}}$\\
+Hercules on $\mathsf{hyd}$ & $0$ & $7\times\mathrm{cutAt}^{\mathrm{H}}$, $1\times\mathsf{tiRec}^{\mathrm{o}}$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Zero is the whole claim. The encoding is not reduced in these programs; it is
+absent from them, surviving only inside the alignment proofs that let every
+certified fact about the coded version be inherited by the structural one.
+
+%======================================================================
+\section{Appendix D --- Catalogue of the thirteen \haomega{} programs}
+\label{app:catalogue2}
+
+Appendix~B catalogued the fragment's exports. This is the counterpart for
+Part~II. Every row is one derivation; the realizer type is computed from the
+statement by the modified-realizability assignment of Act~VIII, not chosen; and
+the last column records what the build checks at every compilation.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.18}
+\scriptsize
+\begin{tabular}{@{}p{0.20\linewidth}p{0.30\linewidth}p{0.40\linewidth}@{}}
+\toprule
+\textbf{Theorem} & \textbf{Realizer type} & \textbf{Extracted program, and what is checked}\\
+\midrule
+Fibonacci & \code{N -> (N x 1)} &
+\code{fibExtracted}; values to $n=15$, $n=100$, and $n=1000$ (209 digits)\\
+Fibonacci at type 2 & \code{(N -> N) -> (N x 1)} &
+\code{hiProgram}; continuous, modulus $\max(f0,f(f0)){+}1$, associate in $\CtQ 2$\\
+Pascal mod $2$ & \code{N -> (N -> (N x (1 x 1)))} &
+\code{pasTag}/\code{pasDecide}; gasket rows $0$--$7$ against the value layer\\
+Tower of Hanoi & \code{N -> (N x ((N -> N) x (1 x 1)))} &
+\code{hanoiExtracted}; $n=10$, all $1023$ moves against a reference\\
+gcd, full spec & \code{N -> (N -> (N x ((N x 1) x ((N x 1) x (N -> \dots)))))} &
+\code{gcdFull}; agrees with \code{Nat.gcd}\\
+Goodstein & \code{N -> (N x 1)} &
+\code{goodsteinX}; stop times $[0,1,3,5]$, each certified terminal\\
+Kirby--Paris & \code{N -> (N x 1)} &
+\code{hydraX}; battle lengths $[0,1,3]$, each certified terminal\\
+Sperner 1D & \code{N -> ((N -> N) -> (1 -> (1 -> (N x \dots))))} &
+\code{spernerX}; a certified crossing --- the \emph{last} (Act~X)\\
+Hercules, $\forall$-strategy & \code{N -> ((N -> N) -> (N x 1))} &
+\code{herculesX}; agrees with \code{hydraX} at the fragment's own strategy\\
+Hercules, any head & \code{N -> ((N -> N) -> ((N -> N) -> (N x 1)))} &
+\code{herculesAnyX}; agrees at the leftmost head strategy\\
+Goodstein, typed ordinals & \code{N -> (N x 1)} &
+\code{goodsteinOX}; equal to \code{goodsteinX} at every evaluated input\\
+Kirby--Paris, typed trees & \code{H -> (N x 1)} &
+\code{hydraHX}; codes $0$--$7$, including $37$ where the coded extract overflows\\
+Hercules, typed trees & \code{H -> ((N -> N) -> ((N -> N) -> (N x 1)))} &
+\code{herculesTX}; $37$ at the same hydra, under three strategy pairs\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Six of the thirteen are additionally covered by the certified translation of
+Act~XII --- those that do not use $\mathrm{TI}(\epsz)$ --- and which six is
+itself checked at every build.
+
 \end{document}

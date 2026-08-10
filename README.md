@@ -41,6 +41,8 @@ functional that **no derivation can extract to**.
    Regenerated at every build, so it cannot drift.
 4. **[`READERS_GUIDE.md`](READERS_GUIDE.md)** — the declaration-by-declaration
    map, if you want to read the Lean.
+5. **[`docs/haomega/STATUS.md`](docs/haomega/STATUS.md)** — the ledger: what is
+   proved, what is only *stated*, and what is blocked on what.
 
 ## The fifteen extracted programs
 

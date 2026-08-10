@@ -49,6 +49,10 @@ And two costs measured during the emitter work (Phase X of the original):
   not move Hanoi's wall at all (`n = 4` before and after), which is what
   proved the encoding is a *separate* cost. HA^ω removes it at the root.
 
+> **See [`STATUS.md`](STATUS.md)** for the current ledger — what is proved,
+> what is stated but unproved, and the open blocker. This section is the
+> roadmap-level summary.
+
 ## Status (re-verified 2026-08-09 — see `HAOMEGA_DOSSIER.md` for evidence)
 
 **751 jobs green**, zero `sorry`/`admit`, 7,994 lines in `HAomega/` (34

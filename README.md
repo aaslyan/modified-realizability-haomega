@@ -36,13 +36,13 @@ functional that **no derivation can extract to**.
 2. **[`HAOMEGA_DOSSIER.md`](HAOMEGA_DOSSIER.md)** — the evidence. Every claim
    tagged `[run]`, `[src]` or `[git]`, with exact axiom footprints, measured
    evaluation limits, and the claims this project walked back.
-3. **[`EXTRACTED_HAOMEGA.md`](EXTRACTED_HAOMEGA.md)** — the demos. All fourteen
+3. **[`EXTRACTED_HAOMEGA.md`](EXTRACTED_HAOMEGA.md)** — the demos. All fifteen
    realizers, each rendered three ways: raw object, collapsed program, Haskell.
    Regenerated at every build, so it cannot drift.
 4. **[`READERS_GUIDE.md`](READERS_GUIDE.md)** — the declaration-by-declaration
    map, if you want to read the Lean.
 
-## The fourteen extracted programs
+## The fifteen extracted programs
 
 Each is derived in the object theory, extracted, certified, and **run** at
 every build.
@@ -63,6 +63,7 @@ every build.
 | **Kirby–Paris, typed trees** | `∀h^hyd ∃t. deadᴴ?(play(h,t)) = 0` | hydras as a base type; computes **37** where the coded extract overflows |
 | **Hercules, typed trees** | `∀h^hyd ∀f ∀g ∃t. deadᴴ?(playAt(g,f,h,t)) = 0` | the general game with nothing encoded anywhere |
 | **Square roots** | `∀q^ℚ ∀n ∀K. col(0)=0 → col(K)=1 → ∃k<K. col(k)≠col(k+1)` | the discrete IVT applied to squaring; `√2` to `2⁻⁸` returns `181/128` |
+| **Uniform continuity** | `∀f^(ℚ→ℚ) ∀j. Lip(f,j) → ∀n ∃M ∀x∀y. close(M,x,y) → close(n,f x,f y)` | the extracted realizer **is** the modulus: `n+j` |
 
 Zero `sorry`/`admit`. `lake build` **is** the test suite: every correctness
 claim is a theorem and every evaluation claim an embedded `#guard`.

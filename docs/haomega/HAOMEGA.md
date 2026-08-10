@@ -110,6 +110,11 @@ runs (`√2` to `2⁻⁸` returns `181/128`).  It needs no arithmetic rules,
 because Sperner quantifies over the colouring as a function variable and so
 never inspects the arithmetic inside it.
 
+`UniformContinuity.lean` follows it: every `2ʲ`-contracting map is uniformly
+continuous with modulus `M = n + j`, and — because modified realizability
+sends `∀n ∃M` to `ℕ → ℕ × …` — the extracted realizer *is* that modulus.
+Measured: doubling gives `n+1`, translation gives `n`.
+
 Still absent, and deliberately: **reasoning rules** for the numeric
 operations.  `Deriv` has no conversion equations for them, so the object
 language can state, decide and search but cannot prove arithmetic identities.

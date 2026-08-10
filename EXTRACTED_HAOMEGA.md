@@ -1,4 +1,4 @@
-# The fourteen extracted programs of the HA^ω development
+# The fifteen extracted programs of the HA^ω development
 
 Each section shows one certified realizer in three renderings.  The
 certified object is the System T term; soundness certifies it realizes
@@ -324,5 +324,28 @@ Realizer type: `Q → (N → (N → (1 → (1 → (N × ((N × 1) × (1 → 1)))
 
 ```haskell
 (\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> (((((\x5 -> (\x6 -> (\x7 -> (\x8 -> (natRec (0, ((0, ()), (\x9 -> ()))) (\x9 -> (\x10 -> (snd (snd ((\x11 -> (natRec (0, (x7, (0, ((0, ()), (\x12 -> ()))))) (\x12 -> (\x13 -> (natRec (0, ((fst (snd (((\x14 -> (natRec 0 (\x15 -> (\x16 -> 1)) x14)) ((((\x14 -> (\x15 -> (natRec x14 (\x16 -> (\x17 -> ((\x18 -> (natRec 0 (\x19 -> (\x20 -> x19)) x18)) x17))) x15))) (x6 (1 + x12))) 0) + (((\x14 -> (\x15 -> (natRec x14 (\x16 -> (\x17 -> ((\x18 -> (natRec 0 (\x19 -> (\x20 -> x19)) x18)) x17))) x15))) 0) (x6 (1 + x12))))), ((), (\x14 -> ()))))), (0, ((0, ()), (\x14 -> ()))))) (\x14 -> (\x15 -> (natRec (1, ((), (x12, ((0, ()), (\x16 -> ((snd (snd (((\x17 -> (natRec 0 (\x18 -> (\x19 -> 1)) x17)) ((((\x17 -> (\x18 -> (natRec x17 (\x19 -> (\x20 -> ((\x21 -> (natRec 0 (\x22 -> (\x23 -> x22)) x21)) x20))) x18))) (x6 (1 + x12))) 0) + (((\x17 -> (\x18 -> (natRec x17 (\x19 -> (\x20 -> ((\x21 -> (natRec 0 (\x22 -> (\x23 -> x22)) x21)) x20))) x18))) 0) (x6 (1 + x12))))), ((), (\x17 -> ()))))) ())))))) (\x16 -> (\x17 -> (((\x18 -> (\x19 -> (1, ((), (x19, ((((\x20 -> (\x21 -> ((1 + x21), ()))) (snd (fst x18))) (fst (fst x18))), (snd x18))))))) (snd (snd (snd x13)))) (fst (snd (snd x13)))))) (fst x13)))) (fst (((\x14 -> (natRec 0 (\x15 -> (\x16 -> 1)) x14)) ((((\x14 -> (\x15 -> (natRec x14 (\x16 -> (\x17 -> ((\x18 -> (natRec 0 (\x19 -> (\x20 -> x19)) x18)) x17))) x15))) (x6 (1 + x12))) 0) + (((\x14 -> (\x15 -> (natRec x14 (\x16 -> (\x17 -> ((\x18 -> (natRec 0 (\x19 -> (\x20 -> x19)) x18)) x17))) x15))) 0) (x6 (1 + x12))))), ((), (\x14 -> ()))))))) x11)) x5))))) (fst ((\x9 -> (natRec (0, (x7, (0, ((0, ()), (\x10 -> ()))))) (\x10 -> (\x11 -> (natRec (0, ((fst (snd (((\x12 -> (natRec 0 (\x13 -> (\x14 -> 1)) x12)) ((((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) (x6 (1 + x10))) 0) + (((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) 0) (x6 (1 + x10))))), ((), (\x12 -> ()))))), (0, ((0, ()), (\x12 -> ()))))) (\x12 -> (\x13 -> (natRec (1, ((), (x10, ((0, ()), (\x14 -> ((snd (snd (((\x15 -> (natRec 0 (\x16 -> (\x17 -> 1)) x15)) ((((\x15 -> (\x16 -> (natRec x15 (\x17 -> (\x18 -> ((\x19 -> (natRec 0 (\x20 -> (\x21 -> x20)) x19)) x18))) x16))) (x6 (1 + x10))) 0) + (((\x15 -> (\x16 -> (natRec x15 (\x17 -> (\x18 -> ((\x19 -> (natRec 0 (\x20 -> (\x21 -> x20)) x19)) x18))) x16))) 0) (x6 (1 + x10))))), ((), (\x15 -> ()))))) ())))))) (\x14 -> (\x15 -> (((\x16 -> (\x17 -> (1, ((), (x17, ((((\x18 -> (\x19 -> ((1 + x19), ()))) (snd (fst x16))) (fst (fst x16))), (snd x16))))))) (snd (snd (snd x11)))) (fst (snd (snd x11)))))) (fst x11)))) (fst (((\x12 -> (natRec 0 (\x13 -> (\x14 -> 1)) x12)) ((((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) (x6 (1 + x10))) 0) + (((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) 0) (x6 (1 + x10))))), ((), (\x12 -> ()))))))) x9)) x5))))))) x2) (\x5 -> (qLtN x0 (qMul (qMul (qOfNat x5) (dToQ ((\x6 -> (natRec (dOfNat 1) (\x7 -> (\x8 -> (dHalf x8))) x6)) x1))) (qMul (qOfNat x5) (dToQ ((\x6 -> (natRec (dOfNat 1) (\x7 -> (\x8 -> (dHalf x8))) x6)) x1))))))) x3) x4))))))
+```
+
+## 15. Uniform continuity — the realizer is the modulus
+
+Theorem: `∀f^(ℚ→ℚ) ∀j. Lipschitz(f,j) → ∀n ∃M ∀x∀y. close(M,x,y) → close(n, f x, f y)`  
+Realizer type: `(Q → Q) → (N → ((Q → (Q → (N → (1 → 1)))) → (N → (N × (Q → (Q → (1 → 1)))))))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. (λx1. (λx2. (λx3. ⟨(x3 + x1), (λx4. (λx5. (λx6. ((((x2 x4) x5) x3) x6))))⟩))))
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. (λx1. (λx2. (λx3. ⟨(x3 + x1), (λx4. (λx5. (λx6. ((((x2 x4) x5) x3) x6))))⟩))))
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (\x1 -> (\x2 -> (\x3 -> ((x3 + x1), (\x4 -> (\x5 -> (\x6 -> ((((x2 x4) x5) x3) x6)))))))))
 ```
 

@@ -86,7 +86,7 @@ three-view artifact (\texttt{EXTRACTED\_HAOMEGA.md}, rewritten at every
 build) renders all thirteen realizers this way, and the displays below are its
 three renderings of one certified object each.
 
-\subsection*{Fourteen extracted programs}
+\subsection*{Fifteen extracted programs}
 
 \begin{center}\small
 \begin{tabular}{ll}
@@ -107,6 +107,7 @@ Goodstein, typed ordinals & $\forall m\,\exists t.\ \good(m,t)=0$ \ (again, on $
 Kirby--Paris, typed trees & $\forall h^{\mathsf{hyd}}\,\exists t.\ \mathrm{dead}(\mathrm{play}(h,t))=0$\\
 Hercules any head, typed trees & $\forall h^{\mathsf{hyd}}\forall f\forall g\,\exists t.\ \mathrm{dead}(\mathrm{playAt}(g,f,h,t))=0$\\
 Square roots & $\forall q^{\mathbb{Q}}\forall n\,\forall K.\ \dots \to \exists k{<}K.\ c_k \neq c_{k+1}$\\
+Uniform continuity & $\forall f^{\mathbb{Q}\to\mathbb{Q}}\forall j.\ \mathrm{Lip} \to \forall n\,\exists M.\ \dots$\\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -564,6 +565,16 @@ variable} and therefore never inspects the arithmetic inside it. The higher
 types that Part~II was built to obtain are what made a discrete combinatorial
 theorem reusable as an analytic one; the reuse was not designed for, and that
 is the better kind of evidence that the types were the right thing to add.
+
+Uniform continuity, proved next, makes the point about types sharper still.
+Its statement is $\forall n\,\exists M.\,\dots$, and the
+modified-realizability assignment sends that to $\Nat \to \Nat \times
+\dots$ --- so the first component of the extracted realizer, as a function of
+the precision, \emph{is} the modulus of continuity. Not by an encoding or an
+adapter: by the type assignment Act~VIII displays. Measured, the extract
+returns $n{+}1$ for doubling and $n$ for a translation, which are the moduli
+one would write by hand. Whatever else constructive analysis will need from
+this framework, its central object arrives for free.
 
 That is how a proof becomes a program: not by a grand mechanism, but by a
 small one applied with discipline, checked by something that cannot be talked

@@ -457,6 +457,41 @@ oscillating colouring, and squaring is not one.
 `[run]` Hygiene: 759 jobs, zero `HAomega/` warnings, fourteen realizers in
 `EXTRACTED_HAOMEGA.md`.
 
+## 18. Uniform continuity: the realizer *is* the modulus (addendum, 2026-08-10)
+
+`[src]` `HAomega/UniformContinuity.lean` derives
+
+    uniContD : ∀f^(ℚ→ℚ) ∀j. (∀x∀y∀m. close(m+j,x,y) → close(m,f x,f y))
+               → ∀n ∃M ∀x∀y. close(M,x,y) → close(n, f x, f y)
+
+`close(k,x,y)` is `|x − y| < 2⁻ᵏ`; `|·|` is *definable* (a `recNat` on the sign
+test), not primitive.
+
+`[src]` **The point.**  Modified realizability sends `∀n ∃M` to `ℕ → ℕ × …`,
+so the first component of the extracted realizer, as a function of the
+precision, is the modulus of continuity — by the type assignment, not by an
+encoding.  `[run]` It computes: doubling (`j = 1`) gives `[1,2,3,4,5,6]`, i.e.
+`n+1`; a translation (`j = 0`) gives `n`.  Those are the answers the roadmap
+predicts for `f(x) = 2x` and `f(x) = x+1`.  `uniContD` is **axiom-free**;
+`uniModulus` is `[propext, Quot.sound]`.
+
+`[src]` **Honest limit, same shape as the square root's.**  The Lipschitz
+scaling is a *hypothesis*, because proving it for a specific `f` is an
+arithmetic implication and `Deriv` still has no conversion equations for `Q`.
+What is proved is the general fact — every `2ʲ`-contracting map is uniformly
+continuous with modulus `n+j` — and the premise is discharged by the caller.
+`[run]` A guard discharges it by computation for doubling across five
+precisions and eight separations.
+
+`[src]` **Kit improvement forced by this file, and worth more than the
+theorem.**  `qclose`/`qabsT`/`qpow2`/`dpow2` are *closed* terms, so renaming
+and substitution are the identity on them — but without saying so, every
+`Formula.wk` traverses their bodies and the elaborator symbolically executes a
+`recNat`, which timed out at 200 000 heartbeats.  Eight `rfl` lemmas tagged
+`@[derivNorm]` replace the traversal with a rewrite.  This is the blow-up
+`PascalTheorem.lean`'s header records, met again in a new layer, and the
+extensible simp set is what made the fix local.
+
 ## 10. Fixes applied by this audit
 
 1. `Fib.lean`: stale wall-diagnosis comment → historical note with the

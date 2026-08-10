@@ -11,11 +11,12 @@ import HAomega.GoodsteinTyped
 import HAomega.HydraTree
 import HAomega.HerculesTree
 import HAomega.SquareRoot
+import HAomega.UniformContinuity
 
 /-!
 # Every extracted program, in three views
 
-For each of the fourteen case studies this module renders the realizer three
+For each of the fifteen case studies this module renders the realizer three
 ways and writes `EXTRACTED_HAOMEGA.md`:
 
 1. **the high-level object** — the raw extracted realizer, the element of the
@@ -46,6 +47,7 @@ def R11 := extractClosed (goodsteinOD (Γ := []) (Δ := Ctx.nil))
 def R12 := extractClosed (hydraHD (Γ := []) (Δ := Ctx.nil))
 def R13 := extractClosed (herculesTD (Γ := []) (Δ := Ctx.nil))
 def R14 := extractClosed (sqrtApproxD (Γ := []) (Δ := Ctx.nil))
+def R15 := extractClosed (uniContD (Γ := []) (Δ := Ctx.nil))
 
 private def section' (title thm ty : String)
     {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) : String :=
@@ -60,7 +62,7 @@ private def section' (title thm ty : String)
   "```haskell\n" ++ EmitHaskell.hsTm t 0 ++ "\n```\n\n"
 
 def showAll : String :=
-  "# The fourteen extracted programs of the HA^ω development\n\n" ++
+  "# The fifteen extracted programs of the HA^ω development\n\n" ++
   "Each section shows one certified realizer in three renderings.  The\n" ++
   "certified object is the System T term; soundness certifies it realizes\n" ++
   "its theorem, continuity that it denotes a continuous functional.\n\n" ++
@@ -96,15 +98,18 @@ def showAll : String :=
     "H → ((N → N) → ((N → N) → (N × 1)))" R13 ++
   section' "14. Square roots by approximation (the discrete IVT, applied)"
     "∀q^ℚ ∀n ∀K. col(0)=0 → col(K)=1 → ∃k. k<K ∧ col(k) ≠ col(k+1)"
-    "Q → (N → (N → (1 → (1 → (N × ((N × 1) × (1 → 1)))))))" R14
+    "Q → (N → (N → (1 → (1 → (N × ((N × 1) × (1 → 1)))))))" R14 ++
+  section' "15. Uniform continuity — the realizer is the modulus"
+    "∀f^(ℚ→ℚ) ∀j. Lipschitz(f,j) → ∀n ∃M ∀x∀y. close(M,x,y) → close(n, f x, f y)"
+    "(Q → Q) → (N → ((Q → (Q → (N → (1 → 1)))) → (N → (N × (Q → (Q → (1 → 1)))))))" R15
 
 -- **Coverage of the certified-emission theorem** (`HsSemantics.hsOf_correct`):
 -- all thirteen, since the target gained a transfinite recursor.
 #guard [hsSupported R1, hsSupported R2, hsSupported R3, hsSupported R4,
         hsSupported R5, hsSupported R6, hsSupported R7, hsSupported R8,
         hsSupported R9, hsSupported R10, hsSupported R11, hsSupported R12,
-        hsSupported R13, hsSupported R14]
-  == [true, true, true, true, true, true, true,
+        hsSupported R13, hsSupported R14, hsSupported R15]
+  == [true, true, true, true, true, true, true, true,
       true, true, true, true, true, true, true]
 
 #eval IO.FS.writeFile "EXTRACTED_HAOMEGA.md" showAll

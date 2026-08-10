@@ -95,16 +95,27 @@ the value-layer *theorem proofs*, exactly as in the first-order repo):
 
 ### What is next
 
-* an `MR`-soundness bridge for the emitted Haskell;
-* automatic associates / moduli for extracted type-2 programs;
-* upstreaming the deriv-authoring kit into reusable tactics;
-* automatic associates/moduli for type-2 extracts, and upstreaming the
-  deriv-authoring kit, are what remain.  Extending certified emission to
-  `tiRec` needs the target to *have* a transfinite recursor — the prelude
-  currently emits `error` for it, which `hsOf` models faithfully as a stuck
-  term.  The de-coding programme is **finished**: the coded
-  `Goodstein`/`Hydra`/`Hercules` modules are kept only as the baselines their
-  typed twins are measured against.
+Of the five items on the original research track, three are done: the
+fully general any-head Hercules, the typed ordinal and hydra value layers
+(the de-coding programme, now **finished** — the coded
+`Goodstein`/`Hydra`/`Hercules` modules are kept only as the baselines their
+typed twins are measured against), and certified semantics for the emitted
+Haskell.  Two remain:
+
+* **automatic associates / moduli for extracted type-2 programs.**  Today
+  `hiModulus` is computed and proved by hand for one example; the general
+  statement — extraction yields not only the program but a bound on how much
+  of its functional input it inspects — is not formalized.
+* **upstreaming the deriv-authoring kit into reusable tactics.**
+  `deriv_norm` and `deriv_assumption` live in `GcdDvd.lean`; the term-form
+  kit and the explicit-chain discipline are conventions, not tooling.
+
+One further item emerged during the work and is not on the original list:
+**extending certified emission to `tiRec`**, which would make the chain
+derivation → extract → target term → running code complete for the
+$\mathrm{TI}(\varepsilon_0)$ theorems as well.  It needs the *target* to
+have a transfinite recursor; the prelude currently emits `error`, which
+`hsOf` models faithfully as a stuck term.
 
 ## What this branch will *not* deliver
 

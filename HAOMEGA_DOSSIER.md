@@ -492,6 +492,49 @@ and substitution are the identity on them — but without saying so, every
 `PascalTheorem.lean`'s header records, met again in a new layer, and the
 extensible simp set is what made the fix local.
 
+## 19. Newton–Leibniz adequacy, positive half (addendum, 2026-08-10)
+
+`[src]` `HAomega/EFTC.lean`.  **Constructions and statements; not proofs.**
+The file is explicit about this and so is this entry.
+
+* `A0` (evaluator + modulus of continuity `ω`) and `A1` (`+` modulus of
+  uniform differentiability `δ`) as structures over the `Q`/`D` layers.
+* **Lemma 1's construction**: `derivEval k x`, the difference quotient at the
+  endpoint-safe step `h₀ = min(2⁻ᵟ⁽ᵏ⁺³⁾, (b−a)/4)` with the sign chosen by
+  which half of `[a,b]` holds `x`; and `omega' k = max(ω(k+5+δ(k+3)), η₂)`.
+* **Lemma 2's construction**: `integral k`, a left Riemann sum *of
+  `derivEval`* with `ℓ = ⌈log₂ L⌉`, `m = k+2+ℓ`, `N = ⌈L·2^ω'(m)⌉`.
+* **Theorem 2's witness**: `eftc2 A = (derivEval, integral)` — the pair
+  `(F, (qₖ))`, with the `qₖ` computed *from `F`*, which is what makes the
+  claim about `f'` and not about the numeral `f b − f a`.
+
+`[run]` It computes.  `linEx` (`3x` on `[0,2]`): `derivEval = 3` exactly,
+`integral k = 6` exactly for `k ≤ 3`.  `sqEx` (`x²` on `[0,1]`):
+`derivEval 8 (1/2) = 2049/2048`, and `integral 0/1/2` give errors
+`1.1e-4`, `3.0e-5`, `7.5e-6` at `N = 8192/32768/131072`.  All constructions
+axiom-free or `[propext, Quot.sound]`.
+
+`[src]` **NOT PROVED, and not claimed:** `Lemma1Claim`, `Lemma2Claim`,
+`EFTC2Claim` are `Prop`s that are *stated* and flagged unproved in the source.
+The error analyses are arithmetic reasoning about `Q`, and neither `Deriv` nor
+the value layer has the ring/order theory for them.  This is the same fork
+`UniformContinuity.lean` and `SquareRoot.lean` hit, and the same missing
+arithmetic rule base blocks all three.
+
+`[src]` **Also not done, deliberately:** the negative half (`A₀ ⊭ EFTC2`,
+Myhill) is a citation, not a formalization; there is no bridge to Mathlib's
+`ℝ` (the embedding is shallow, per the choice-free invariant `Rationals.lean`
+measures Mathlib's `Rat.add` to violate).
+
+`[run]` **`Modulus.lean` supplied nothing.**  `HasMod` is Baire-space
+continuity — how much of an *oracle* `ℕ→ℕ` a functional inspects — while `ω`
+and `δ` are metric moduli on `ℚ`.  Checked, and no lemma transfers.
+
+`[run]` Two measured surprises: the precision bookkeeping is very conservative
+(errors land far inside target), and Lean's interpreter does not eliminate
+tail calls, so the Riemann sum had to become a loop — an accumulator-passing
+recursion still exhausted the stack at `N = 32768`.
+
 ## 10. Fixes applied by this audit
 
 1. `Fib.lean`: stale wall-diagnosis comment → historical note with the

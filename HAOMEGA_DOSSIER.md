@@ -322,6 +322,40 @@ the model *defines* to be the Lean primitives (`prim1Sem`/`prim2Sem`/
 `[run]` Hygiene: `lake build` **751 jobs**, 7,994 lines, 34 files, zero
 `HAomega/` warnings.
 
+## 14. Computed moduli (addendum, 2026-08-09)
+
+`[src]` `HAomega/Modulus.lean` turns the continuity existential into a
+witness for the programs that admit one.
+
+* `HasMod F m := ∀ f g, (∀ i < m f, f i = g i) → F f = F g`, with
+  `HasMod.contAt` / `HasMod.continuous2` recovering the existing notions.
+* An algebra for building `m`: `hasMod_const`, `HasMod.mono`, `HasMod.comp`,
+  `HasMod.binop`, and the one clause that consults the oracle,
+  `hasMod_query` (to know `f (Z f)` you need `Z f`, then `f` there).
+* `[run]` **`hiProgram_hasMod`** — the type-2 Fibonacci modulus *derived*
+  from the algebra, at `[propext, Quot.sound]`.  It is strictly tighter than
+  the hand-written `hiModulus`: measured at three oracles,
+  `(11, 6)`, `(31, 31)`, `(22, 8)` (hand-written, computed).  The algebra
+  beats the bespoke argument without inspecting the program.
+* `[run]` **`no_constant_modulus`** — a new negative result, also
+  `[propext, Quot.sound]`: for *every* candidate `n` there are oracles
+  agreeing below `n` that the extracted type-2 Fibonacci separates.  So the
+  existential in `Continuous2` cannot be Skolemized to a number, and
+  discharging it by choice would produce something that no longer computes.
+
+`[src]` **Not claimed:** this automates the *construction* of moduli, not a
+metatheorem.  Extraction is **not** proved to yield a modulus for every
+derivation.  Two obstructions are recorded in the file header: at arrow types
+a single numeric bound is insufficient (the general statement needs a modulus
+whose type is computed from the finite type — a Kleene associate — which is
+exactly what `Continuity.lean`'s logical relation exists to avoid), and
+`tiRec` admits no compositional modulus, since the value at `x` may consult
+every `y ≺ x` and a notation can have infinitely many `≺`-predecessors.
+Continuity still holds there; the *bound* is what fails to be compositional.
+That is the same boundary certified emission meets, reached independently.
+
+`[run]` Hygiene: `lake build` **752 jobs**, zero `HAomega/` warnings.
+
 ## 10. Fixes applied by this audit
 
 1. `Fib.lean`: stale wall-diagnosis comment → historical note with the

@@ -102,10 +102,20 @@ fully general any-head Hercules, the typed ordinal and hydra value layers
 typed twins are measured against), and certified semantics for the emitted
 Haskell.  Two remain:
 
-* **automatic associates / moduli for extracted type-2 programs.**  Today
-  `hiModulus` is computed and proved by hand for one example; the general
-  statement — extraction yields not only the program but a bound on how much
-  of its functional input it inspects — is not formalized.
+* **automatic associates / moduli for extracted type-2 programs** —
+  *partially done*.  `Modulus.lean` supplies `HasMod` (the continuity
+  existential with its witness given) and an algebra for building the bound
+  compositionally; the type-2 Fibonacci modulus is now *derived* rather than
+  written by hand, and comes out strictly tighter than the hand-written one
+  (`f 0 + 1` against `max (f 0) (f (f 0)) + 1`).  `no_constant_modulus`
+  additionally proves the bound cannot be a number.  What remains is the
+  **metatheorem**: extraction is not yet proved to yield a modulus for every
+  derivation, and the file records why that is research rather than an
+  oversight — at arrow types a single number does not suffice (one needs a
+  modulus whose *type* is computed from the finite type, i.e. an associate,
+  which the continuity proof was designed to avoid), and `tiRec` has no
+  compositional modulus because a notation can have infinitely many
+  `≺`-predecessors.
 * **upstreaming the deriv-authoring kit into reusable tactics.**
   `deriv_norm` and `deriv_assumption` live in `GcdDvd.lean`; the term-form
   kit and the explicit-chain discipline are conventions, not tooling.

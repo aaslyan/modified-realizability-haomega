@@ -376,6 +376,35 @@ same answer. It is also exhibited as an element of $\CtQ 2$, with a type-$1$
 associate: the type-2 functional is represented by an ordinary function on
 numbers.
 
+That modulus was originally written down by inspecting this one program.
+It is now \emph{derived}. \texttt{Modulus.lean} supplies the continuity
+existential with its witness --- $\mathrm{HasMod}\,F\,m$, where $m$ is a
+function of the oracle --- together with an algebra for composing bounds:
+constants cost nothing, post-composition costs nothing, two subcomputations
+take the larger bound, and the single clause that consults the oracle says
+that to know $f(Z\,f)$ you need enough of $f$ to compute the query point and
+then $f$ at that point. Applied to the type-2 Fibonacci, the algebra returns
+$f\,0 + 1$ where the hand-written bound was $\max(f\,0, f(f\,0)) + 1$ ---
+correct, and strictly tighter, without looking at the program.
+
+Why the bound must be a \emph{function} of the oracle rather than a number is
+itself provable, and proved: for every candidate $n$ there are oracles
+agreeing below $n$ that this program separates. So the existential cannot be
+Skolemized to a constant, and discharging it by choice would yield a witness
+that no longer computes --- which is the whole point of having one.
+
+What is \emph{not} claimed is a metatheorem. Extraction is not proved to
+yield a modulus for every derivation, and two obstructions say why that is a
+research problem rather than an omission. At arrow types a single number does
+not suffice: the general statement needs a bound whose \emph{type} is
+computed from the finite type --- a Kleene associate --- which is exactly the
+construction this act's logical relation exists to avoid. And $\mathsf{tiRec}$
+admits no compositional bound at all, because the value at $x$ may consult
+every $y \prec x$ and a notation can have infinitely many $\prec$-predecessors:
+continuity survives, since for each fixed oracle the descending chain is
+finite, but the bound stops being a formula in the subterms' bounds. That is
+the same frontier Act~XII meets from the other side.
+
 The sharper evidence that the theorem is not vacuous is negative. Consider
 \[
   \mathrm{notAllZero}(\alpha) \;=\;

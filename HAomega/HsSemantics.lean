@@ -44,14 +44,18 @@ related results".
   assumption a verified compiler makes.
 * **The printer.**  `hsOf` produces an abstract syntax tree; turning it into a
   string, and GHC's parsing of that string back, are outside the theorem.
-* **`tiRec`/`tiRecE` are excluded.**  The emitter has never produced running
-  code for transfinite recursion — its prelude emits `error "…"` — so `hsOf`
-  maps them to `.oops`, a constructor with **no evaluation rule**, faithfully
-  modelling a program that gets stuck.  `hsSupported` decides membership of
-  the certified fragment, and the theorem assumes it.  Measured (guarded in
-  `ShowAll.lean`): **6 of the 13** extracted programs are covered — Fibonacci,
-  Fibonacci at type 2, Pascal, Hanoi, gcd and Sperner — and the 7 that use
-  `TI(ε₀)` are not.
+* **Transfinite recursion is covered, and its termination is not GHC's to
+  check.**  The target has `tiRecT`/`tiRecET` and a guarded caller that
+  recurses when the order test succeeds and returns a carried default when it
+  does not — the source recursor's `dite`, transcribed.  The correctness case
+  goes by well-founded induction on the ordinal, exactly as `soundness` and
+  `eval_tracked` do.  What that means precisely: the emitted Haskell is an
+  ordinary recursive function, GHC does not verify that it terminates, and the
+  theorem is relative to the ε₀-descent proved on the Lean side.  That is the
+  usual shape of a compiler correctness statement for a language whose type
+  system is weaker than the source's.  `hsSupported` is now true on the whole
+  language, and `ShowAll.lean` guards that all **13 of 13** extracted programs
+  are covered.
 -/
 
 namespace HAomega
@@ -88,10 +92,22 @@ inductive HsTm where
   | add : HsTm → HsTm → HsTm
   | natRec : HsTm → HsTm → HsTm → HsTm
   | ezero : HsTm
+  -- an ordinal literal, as `lit` is a numeral literal
+  | eord : Eps0 → HsTm
   | hleaf : HsTm
   | p1 : Prim1 → HsTm → HsTm
   | p2 : Prim2 → HsTm → HsTm → HsTm
   | p3 : Prim3 → HsTm → HsTm → HsTm → HsTm
+  -- **Transfinite recursion.**  `tiRecT step n dflt` and its `Eps0`-indexed
+  -- twin.  The third argument is the translation of `Ty.dflt`: the source
+  -- recursor re-decides the order and falls back when the test fails, and the
+  -- untyped target cannot reconstruct a type-indexed default, so it is
+  -- carried.  `recFun` is the guarded caller the step is applied to; it is an
+  -- internal form, emitted as a prelude call.
+  | tiRecT : HsTm → HsTm → HsTm → HsTm
+  | tiRecET : HsTm → HsTm → HsTm → HsTm
+  | recFun : HsTm → HsTm → Nat → HsTm
+  | recFunE : HsTm → HsTm → Eps0 → HsTm
   | oops : String → HsTm → HsTm → HsTm
   deriving Repr
 
@@ -105,6 +121,12 @@ inductive HsVal where
   | vUnit : HsVal
   | vPair : HsVal → HsVal → HsVal
   | vClos : HsTm → List HsVal → HsVal
+  -- the guarded recursive caller, awaiting the index and then the (unit)
+  -- realizer of the order premise
+  | vRec : HsTm → HsTm → List HsVal → Nat → HsVal
+  | vRec2 : HsTm → HsTm → List HsVal → Nat → Nat → HsVal
+  | vRecE : HsTm → HsTm → List HsVal → Eps0 → HsVal
+  | vRecE2 : HsTm → HsTm → List HsVal → Eps0 → Eps0 → HsVal
 
 /-! ## The prelude's meaning
 
@@ -168,6 +190,7 @@ inductive HsEval : HsTm → List HsVal → HsVal → Prop where
       HsEval (.app (.app s (.lit k)) (.natRec z s (.lit k))) ρ v →
       HsEval (.natRec z s n) ρ v
   | ezero {ρ : List HsVal} : HsEval .ezero ρ (.vOrd .zero)
+  | eord {o : Eps0} {ρ : List HsVal} : HsEval (.eord o) ρ (.vOrd o)
   | hleaf {ρ : List HsVal} :
       HsEval .hleaf ρ (.vHyd Realizability.Hydra.leaf)
   | p1 {op : Prim1} {t : HsTm} {ρ : List HsVal} {x v : HsVal} :
@@ -178,16 +201,95 @@ inductive HsEval : HsTm → List HsVal → HsVal → Prop where
   | p3 {op : Prim3} {a b c : HsTm} {ρ : List HsVal} {x y z v : HsVal} :
       HsEval a ρ x → HsEval b ρ y → HsEval c ρ z →
       prim3Sem op x y z = some v → HsEval (.p3 op a b c) ρ v
+  -- **Transfinite recursion.**  The step is applied to the index and then to
+  -- the guarded caller; the caller recurses when the order test succeeds and
+  -- returns the carried default when it does not — the source recursor's
+  -- `dite`, transcribed.
+  | recFun {s d : HsTm} {x : Nat} {ρ : List HsVal} :
+      HsEval (.recFun s d x) ρ (.vRec s d ρ x)
+  | recFunE {s d : HsTm} {o : Eps0} {ρ : List HsVal} :
+      HsEval (.recFunE s d o) ρ (.vRecE s d ρ o)
+  | appRec {f a : HsTm} {ρ : List HsVal} {s d : HsTm} {ρ' : List HsVal}
+      {x y : Nat} :
+      HsEval f ρ (.vRec s d ρ' x) → HsEval a ρ (.vNat y) →
+      HsEval (.app f a) ρ (.vRec2 s d ρ' x y)
+  | appRecE {f a : HsTm} {ρ : List HsVal} {s d : HsTm} {ρ' : List HsVal}
+      {x y : Eps0} :
+      HsEval f ρ (.vRecE s d ρ' x) → HsEval a ρ (.vOrd y) →
+      HsEval (.app f a) ρ (.vRecE2 s d ρ' x y)
+  | appRec2 {f a : HsTm} {ρ : List HsVal} {s d : HsTm} {ρ' : List HsVal}
+      {x y : Nat} {w r : HsVal} :
+      HsEval f ρ (.vRec2 s d ρ' x y) → HsEval a ρ w →
+      HsEval (.tiRecT s (.lit y) d) ρ' r → Realizability.OLt y x →
+      HsEval (.app f a) ρ r
+  | appRec2dflt {f a : HsTm} {ρ : List HsVal} {s d : HsTm} {ρ' : List HsVal}
+      {x y : Nat} {w r : HsVal} :
+      HsEval f ρ (.vRec2 s d ρ' x y) → HsEval a ρ w →
+      HsEval d ρ' r → ¬ Realizability.OLt y x →
+      HsEval (.app f a) ρ r
+  | appRecE2 {f a : HsTm} {ρ : List HsVal} {s d : HsTm} {ρ' : List HsVal}
+      {x y : Eps0} {w r : HsVal} :
+      HsEval f ρ (.vRecE2 s d ρ' x y) → HsEval a ρ w →
+      HsEval (.tiRecET s (.eord y) d) ρ' r → Eps0.OLtE y x →
+      HsEval (.app f a) ρ r
+  | appRecE2dflt {f a : HsTm} {ρ : List HsVal} {s d : HsTm} {ρ' : List HsVal}
+      {x y : Eps0} {w r : HsVal} :
+      HsEval f ρ (.vRecE2 s d ρ' x y) → HsEval a ρ w →
+      HsEval d ρ' r → ¬ Eps0.OLtE y x →
+      HsEval (.app f a) ρ r
+  | tiRec {s n d : HsTm} {ρ : List HsVal} {x : Nat} {v : HsVal} :
+      HsEval n ρ (.vNat x) →
+      HsEval (.app (.app s (.lit x)) (.recFun s d x)) ρ v →
+      HsEval (.tiRecT s n d) ρ v
+  | tiRecE {s n d : HsTm} {ρ : List HsVal} {o : Eps0} {v : HsVal} :
+      HsEval n ρ (.vOrd o) →
+      HsEval (.app (.app s (.eord o)) (.recFunE s d o)) ρ v →
+      HsEval (.tiRecET s n d) ρ v
 
-/-- Applying a target value to an argument. -/
+/-- **Applying a target value to an argument.**  A closure application, or one
+of the guarded-recursion steps.  This is a definition rather than a second
+inductive: `HsEval` is already fixed, so no mutual induction is needed. -/
 def HsApp (v w r : HsVal) : Prop :=
-  ∃ (b : HsTm) (ρ' : List HsVal), v = .vClos b ρ' ∧ HsEval b (w :: ρ') r
+  (∃ (b : HsTm) (ρ' : List HsVal), v = .vClos b ρ' ∧ HsEval b (w :: ρ') r)
+  ∨ (∃ (s d : HsTm) (ρ' : List HsVal) (x y : Nat),
+      v = .vRec s d ρ' x ∧ w = .vNat y ∧ r = .vRec2 s d ρ' x y)
+  ∨ (∃ (s d : HsTm) (ρ' : List HsVal) (x y : Nat),
+      v = .vRec2 s d ρ' x y ∧
+        ((Realizability.OLt y x ∧ HsEval (.tiRecT s (.lit y) d) ρ' r)
+          ∨ (¬ Realizability.OLt y x ∧ HsEval d ρ' r)))
+  ∨ (∃ (s d : HsTm) (ρ' : List HsVal) (x y : Eps0),
+      v = .vRecE s d ρ' x ∧ w = .vOrd y ∧ r = .vRecE2 s d ρ' x y)
+  ∨ (∃ (s d : HsTm) (ρ' : List HsVal) (x y : Eps0),
+      v = .vRecE2 s d ρ' x y ∧
+        ((Eps0.OLtE y x ∧ HsEval (.tiRecET s (.eord y) d) ρ' r)
+          ∨ (¬ Eps0.OLtE y x ∧ HsEval d ρ' r)))
 
 theorem HsEval.appOf {F A : HsTm} {ρ : List HsVal} {v w r : HsVal}
     (hF : HsEval F ρ v) (hA : HsEval A ρ w) (hr : HsApp v w r) :
     HsEval (.app F A) ρ r := by
-  obtain ⟨b, ρ', rfl, hb⟩ := hr
-  exact HsEval.app hF hA hb
+  rcases hr with ⟨b, ρ', rfl, hb⟩ | ⟨s, d, ρ', x, y, rfl, rfl, rfl⟩
+    | ⟨s, d, ρ', x, y, rfl, hcase⟩ | ⟨s, d, ρ', x, y, rfl, rfl, rfl⟩
+    | ⟨s, d, ρ', x, y, rfl, hcase⟩
+  · exact HsEval.app hF hA hb
+  · exact HsEval.appRec hF hA
+  · rcases hcase with ⟨hlt, hr⟩ | ⟨hlt, hr⟩
+    · exact HsEval.appRec2 hF hA hr hlt
+    · exact HsEval.appRec2dflt hF hA hr hlt
+  · exact HsEval.appRecE hF hA
+  · rcases hcase with ⟨hlt, hr⟩ | ⟨hlt, hr⟩
+    · exact HsEval.appRecE2 hF hA hr hlt
+    · exact HsEval.appRecE2dflt hF hA hr hlt
+
+/-- The translation of `Ty.dflt`, by recursion on the type.  The source
+recursor falls back on it when its re-decided order test fails, and the untyped
+target cannot rebuild a type-indexed default, so `hsOf` carries it. -/
+def hsDflt : Ty → HsTm
+  | .unit => .unit
+  | .nat => .lit 0
+  | .ord => .ezero
+  | .hyd => .hleaf
+  | .arrow _ b => .lam (hsDflt b)
+  | .prod a b => .pair (hsDflt a) (hsDflt b)
 
 /-! ## The translation -/
 
@@ -222,8 +324,8 @@ def hsSupported : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → Bool
   | _, _, .hleafQ t => hsSupported t
   | _, _, .hordH t => hsSupported t
   | _, _, .hcutAtH p a b => hsSupported p && hsSupported a && hsSupported b
-  | _, _, .tiRec _ _ => false
-  | _, _, .tiRecE _ _ => false
+  | _, _, .tiRec s n => hsSupported s && hsSupported n
+  | _, _, .tiRecE s n => hsSupported s && hsSupported n
 
 /-- **The translation.**  Types are erased; variables become de Bruijn indices;
 primitives become prelude calls.  `tiRec`/`tiRecE` become `oops`. -/
@@ -256,8 +358,8 @@ def hsOf : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → HsTm
   | _, _, .hleafQ t => .p1 .hleafQ (hsOf t)
   | _, _, .hordH t => .p1 .hordH (hsOf t)
   | _, _, .hcutAtH p a b => .p3 .hcutAtH (hsOf p) (hsOf a) (hsOf b)
-  | _, _, .tiRec s n => .oops "tiRec" (hsOf s) (hsOf n)
-  | _, _, .tiRecE s n => .oops "tiRecE" (hsOf s) (hsOf n)
+  | _, τ, .tiRec s n => .tiRecT (hsOf s) (hsOf n) (hsDflt τ)
+  | _, τ, .tiRecE s n => .tiRecET (hsOf s) (hsOf n) (hsDflt τ)
 
 /-! ## The printer
 
@@ -285,6 +387,11 @@ def Prim2.name : Prim2 → String
 def Prim3.name : Prim3 → String
   | .hcutAt => "playAtN" | .hcutAtH => "playAt"
 
+/-- Ordinal notations print structurally — no coding, matching the source. -/
+def hsOrd : Eps0 → String
+  | .zero => "EZero"
+  | .node e c r => "(ENode " ++ hsOrd e ++ " " ++ toString c ++ " " ++ hsOrd r ++ ")"
+
 /-- Render the target AST as Haskell source. -/
 def hsPrint : HsTm → Nat → String
   | .var i, d => "x" ++ toString (d - 1 - i)
@@ -303,6 +410,19 @@ def hsPrint : HsTm → Nat → String
   | .natRec z s n, d =>
       "(natRec " ++ hsPrint z d ++ " " ++ hsPrint s d ++ " " ++ hsPrint n d ++ ")"
   | .ezero, _ => "EZero"
+  | .eord o, _ => hsOrd o
+  | .tiRecT s n d, dep =>
+      "(tiRec " ++ hsPrint s dep ++ " " ++ hsPrint n dep ++ " "
+        ++ hsPrint d dep ++ ")"
+  | .tiRecET s n d, dep =>
+      "(tiRecE " ++ hsPrint s dep ++ " " ++ hsPrint n dep ++ " "
+        ++ hsPrint d dep ++ ")"
+  | .recFun s d x, dep =>
+      "(recFun " ++ hsPrint s dep ++ " " ++ hsPrint d dep ++ " "
+        ++ toString x ++ ")"
+  | .recFunE s d o, dep =>
+      "(recFunE " ++ hsPrint s dep ++ " " ++ hsPrint d dep ++ " "
+        ++ hsOrd o ++ ")"
   | .hleaf, _ => "hLeaf"
   | .p1 op t, d => "(" ++ op.name ++ " " ++ hsPrint t d ++ ")"
   | .p2 op a b, d =>
@@ -343,6 +463,23 @@ theorem RelEnv.cons {Γ : List Ty} {σ : Ty} {e : Env Γ} {ρ : List HsVal}
       obtain ⟨u, hu, hru⟩ := hρ τ v
       exact ⟨u, by simpa [Var.lvl] using hu, hru⟩
 
+/-- The carried default really denotes `Ty.dfltVal`. -/
+theorem hsDflt_rel : ∀ (τ : Ty) (ρ : List HsVal),
+    ∃ v, HsEval (hsDflt τ) ρ v ∧ Rel τ (Ty.dfltVal τ) v
+  | .unit, _ => ⟨.vUnit, HsEval.unit, rfl⟩
+  | .nat, _ => ⟨.vNat 0, HsEval.lit, rfl⟩
+  | .ord, _ => ⟨.vOrd .zero, HsEval.ezero, rfl⟩
+  | .hyd, _ => ⟨.vHyd Realizability.Hydra.leaf, HsEval.hleaf, rfl⟩
+  | .prod a b, ρ => by
+      obtain ⟨x, hx, hrx⟩ := hsDflt_rel a ρ
+      obtain ⟨y, hy, hry⟩ := hsDflt_rel b ρ
+      exact ⟨.vPair x y, HsEval.pair hx hy, ⟨x, y, rfl, hrx, hry⟩⟩
+  | .arrow a b, ρ => by
+      refine ⟨.vClos (hsDflt b) ρ, HsEval.lam, ?_⟩
+      intro x w _
+      obtain ⟨r, hr, hrr⟩ := hsDflt_rel b (w :: ρ)
+      exact ⟨r, Or.inl ⟨_, _, rfl, hr⟩, hrr⟩
+
 /-! ## The correctness theorem -/
 
 /-- **The emitted program computes what the realizer computes.**
@@ -367,7 +504,7 @@ theorem hsOf_correct : {Γ : List Ty} → {τ : Ty} → (t : Tm Γ τ) →
       refine ⟨.vClos (hsOf b) ρ, HsEval.lam, ?_⟩
       intro x w hx
       obtain ⟨r, hr, hrr⟩ := ih hs (Env.cons x e) (w :: ρ) (hρ.cons hx)
-      exact ⟨r, ⟨_, _, rfl, hr⟩, hrr⟩
+      exact ⟨r, Or.inl ⟨_, _, rfl, hr⟩, hrr⟩
   | app f a ihf iha =>
       intro hs e ρ hρ
       simp only [hsSupported, Bool.and_eq_true] at hs
@@ -532,8 +669,89 @@ theorem hsOf_correct : {Γ : List Ty} → {τ : Ty} → (t : Tm Γ τ) →
       obtain ⟨y, hy, hry⟩ := ihb hs.2 e ρ hρ
       subst hru; subst hrx; subst hry
       exact ⟨.vHyd _, HsEval.p3 hu hx hy rfl, rfl⟩
-  | tiRec s n _ _ => intro hs; simp [hsSupported] at hs
-  | tiRecE s n _ _ => intro hs; simp [hsSupported] at hs
+  | @tiRec _ τ' s n ihs ihn =>
+      intro hs e ρ hρ
+      simp only [hsSupported, Bool.and_eq_true] at hs
+      obtain ⟨vs, hvs, hrs⟩ := ihs hs.1 e ρ hρ
+      obtain ⟨vn, hvn, hrn⟩ := ihn hs.2 e ρ hρ
+      have hvn' : HsEval (hsOf n) ρ (.vNat (n.eval e)) := hrn ▸ hvn
+      -- the recursion at every ordinal, for any index term denoting it
+      have key : ∀ x : Nat, ∀ N : HsTm, HsEval N ρ (.vNat x) →
+          ∃ v, HsEval (.tiRecT (hsOf s) N (hsDflt τ')) ρ v
+            ∧ Rel τ' (tiRecVal (s.eval e) x) v := by
+        intro x
+        induction x using Realizability.oLt_wf.induction with
+        | _ x ihx =>
+            intro N hN
+            obtain ⟨r1, hap1, hr1⟩ := hrs x (.vNat x) rfl
+            have hguard : Rel (.arrow .nat (.arrow .unit τ'))
+                (fun y (_ : Unit) ↦
+                  if _h : Realizability.OLt y x then tiRecVal (s.eval e) y
+                  else Ty.dfltVal τ')
+                (.vRec (hsOf s) (hsDflt τ') ρ x) := by
+              intro y w hw
+              have hw' : w = .vNat y := hw
+              subst hw'
+              refine ⟨.vRec2 (hsOf s) (hsDflt τ') ρ x y,
+                Or.inr (Or.inl ⟨_, _, _, _, _, rfl, rfl, rfl⟩), ?_⟩
+              intro u wu _
+              by_cases hlt : Realizability.OLt y x
+              · obtain ⟨v', hv', hrv'⟩ := ihx y hlt (.lit y) HsEval.lit
+                exact ⟨v', Or.inr (Or.inr (Or.inl
+                  ⟨_, _, _, _, _, rfl, Or.inl ⟨hlt, hv'⟩⟩)), by
+                    simpa only [dif_pos hlt] using hrv'⟩
+              · obtain ⟨v', hv', hrv'⟩ := hsDflt_rel τ' ρ
+                exact ⟨v', Or.inr (Or.inr (Or.inl
+                  ⟨_, _, _, _, _, rfl, Or.inr ⟨hlt, hv'⟩⟩)), by
+                    simpa only [dif_neg hlt] using hrv'⟩
+            obtain ⟨r2, hap2, hr2⟩ := hr1 _ _ hguard
+            refine ⟨r2, HsEval.tiRec hN
+              (HsEval.appOf (HsEval.appOf hvs HsEval.lit hap1)
+                HsEval.recFun hap2), ?_⟩
+            rw [tiRecVal]
+            exact hr2
+      exact key (n.eval e) (hsOf n) hvn'
+  | @tiRecE _ τ' s n ihs ihn =>
+      intro hs e ρ hρ
+      simp only [hsSupported, Bool.and_eq_true] at hs
+      obtain ⟨vs, hvs, hrs⟩ := ihs hs.1 e ρ hρ
+      obtain ⟨vn, hvn, hrn⟩ := ihn hs.2 e ρ hρ
+      have hvn' : HsEval (hsOf n) ρ (.vOrd (n.eval e)) := hrn ▸ hvn
+      have key : ∀ x : Eps0, ∀ N : HsTm, HsEval N ρ (.vOrd x) →
+          ∃ v, HsEval (.tiRecET (hsOf s) N (hsDflt τ')) ρ v
+            ∧ Rel τ' (tiRecEVal (s.eval e) x) v := by
+        intro x
+        induction x using Eps0.oLtE_wf.induction with
+        | _ x ihx =>
+            intro N hN
+            obtain ⟨r1, hap1, hr1⟩ := hrs x (.vOrd x) rfl
+            have hguard : Rel (.arrow .ord (.arrow .unit τ'))
+                (fun y (_ : Unit) ↦
+                  if _h : Eps0.OLtE y x then tiRecEVal (s.eval e) y
+                  else Ty.dfltVal τ')
+                (.vRecE (hsOf s) (hsDflt τ') ρ x) := by
+              intro y w hw
+              have hw' : w = .vOrd y := hw
+              subst hw'
+              refine ⟨.vRecE2 (hsOf s) (hsDflt τ') ρ x y,
+                Or.inr (Or.inr (Or.inr (Or.inl ⟨_, _, _, _, _, rfl, rfl, rfl⟩))), ?_⟩
+              intro u wu _
+              by_cases hlt : Eps0.OLtE y x
+              · obtain ⟨v', hv', hrv'⟩ := ihx y hlt (.eord y) HsEval.eord
+                exact ⟨v', Or.inr (Or.inr (Or.inr (Or.inr
+                  ⟨_, _, _, _, _, rfl, Or.inl ⟨hlt, hv'⟩⟩))), by
+                    simpa only [dif_pos hlt] using hrv'⟩
+              · obtain ⟨v', hv', hrv'⟩ := hsDflt_rel τ' ρ
+                exact ⟨v', Or.inr (Or.inr (Or.inr (Or.inr
+                  ⟨_, _, _, _, _, rfl, Or.inr ⟨hlt, hv'⟩⟩))), by
+                    simpa only [dif_neg hlt] using hrv'⟩
+            obtain ⟨r2, hap2, hr2⟩ := hr1 _ _ hguard
+            refine ⟨r2, HsEval.tiRecE hN
+              (HsEval.appOf (HsEval.appOf hvs HsEval.eord hap1)
+                HsEval.recFunE hap2), ?_⟩
+            rw [tiRecEVal]
+            exact hr2
+      exact key (n.eval e) (hsOf n) hvn'
 
 /-- **The headline, at a closed program of numeric type**: the emitted program
 evaluates to exactly the number the realizer computes. -/

@@ -308,11 +308,9 @@ translation" disclaimer with a theorem and a precisely stated trusted base.
 Evidence that this changed nothing observable: `EXTRACTED_HAOMEGA.md`
 regenerates **byte-identical** (`git diff` empty, 96,736 chars).
 
-`[run]` **Coverage, guarded in `ShowAll.lean`:** 6 of the 13 programs —
-Fibonacci, Fibonacci at type 2, Pascal, Hanoi, gcd, Sperner.  The other 7 use
-`TI(ε₀)`, and `hsOf` sends `tiRec`/`tiRecE` to `.oops`, a constructor with **no
-evaluation rule** — a faithful model of the `error "…"` the prelude has always
-emitted for them.
+`[run]` **Coverage, guarded in `ShowAll.lean`: 13 of 13.**  (At the time this
+section was first written it was 6 of 13, the seven `TI(ε₀)` programs being
+excluded; §16 closes that.)
 
 `[src]` **Trusted base, exactly:** (1) the hand-written prelude, whose meaning
 the model *defines* to be the Lean primitives (`prim1Sem`/`prim2Sem`/
@@ -391,6 +389,37 @@ combinators and both tactics. Its import line is the test.
 `[src]` **Not claimed:** the term-form kit (`plusAssocT`, …, `trichotomyT`)
 and the explicit-chain discipline are still conventions recorded in file
 headers, not tooling.
+
+## 16. Certified emission for transfinite recursion (addendum, 2026-08-09)
+
+`[src]` The one gap in §13 is closed: the target now has transfinite
+recursion, and `hsOf_correct` covers the whole term language.
+
+* target constructs `tiRecT`/`tiRecET` (step, index, **carried default**) and
+  the guarded caller `recFun`/`recFunE`.  The default is carried because the
+  source recursor falls back on `Ty.dfltVal` when its re-decided order test
+  fails, and an untyped target cannot rebuild a type-indexed default; `hsOf`
+  emits `hsDflt τ`, whose correctness is `hsDflt_rel`, proved by induction on
+  the type.
+* `HsApp` generalized from closures-only to a five-way disjunction covering
+  the guarded-recursion steps.  It stays a *definition* rather than becoming a
+  second inductive, since `HsEval` is already fixed — no mutual induction.
+* the correctness cases go by well-founded induction on the ordinal
+  (`oLt_wf` / `oLtE_wf`), the same device `soundness` and `eval_tracked` use.
+
+`[run]` `hsOf_correct` remains `[propext, Quot.sound]` — choice-free — and
+`ShowAll.lean` now guards **13 of 13**.  `[run]` The emitted Goodstein source
+contains a real `tiRec` call and **no** `error` stub, where it previously had
+only the stub.
+
+`[src]` **What is trusted, restated exactly.**  GHC does not check that the
+emitted recursion terminates; it does, by the ε₀ descent proved on the Lean
+side, and the theorem is relative to that.  This is the usual shape of a
+compiler-correctness statement when the target's type system is weaker than
+the source's — the same posture as trusting the prelude's arithmetic.  The
+prelude now carries real `tiRec`/`tiRecE`/`recFun`/`recFunE` and an `Eps0`
+datatype; `oltN`/`oltNE` remain trusted primitives, as `goodN` and the rest
+always were.
 
 ## 10. Fixes applied by this audit
 

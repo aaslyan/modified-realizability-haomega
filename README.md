@@ -83,9 +83,10 @@ Independence from PA is **not** formalized — Goodstein and Kirby–Paris are
 proved here as termination theorems, and that PA cannot prove them is claimed
 nowhere. The typed-ordinal result is about representation **size**; no
 reproducible speed difference was found, and none is claimed. The Haskell
-translation is certified against a formal semantics of the target for the 6
-of 13 programs that avoid `TI(ε₀)`; the hand-written prelude, the printer and
-GHC remain the trusted base. The case-study symbols are imported primitives
+translation is certified against a formal semantics of the target for all 13
+programs; the hand-written prelude, the printer, and GHC's failure to check
+that the emitted transfinite recursion terminates (it does, by the ε₀ descent
+proved on the Lean side) remain the trusted base. The case-study symbols are imported primitives
 evaluated by verified value layers, not System T definitions — so the object
 theory is finite-type Heyting arithmetic *extended*, not the bare system.
 

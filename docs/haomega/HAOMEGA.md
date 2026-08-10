@@ -127,12 +127,15 @@ Haskell.  Two remain:
   What is *not* tooling: the term-form kit and the explicit-chain discipline
   remain conventions recorded in file headers.
 
-One further item emerged during the work and is not on the original list:
-**extending certified emission to `tiRec`**, which would make the chain
-derivation → extract → target term → running code complete for the
-$\mathrm{TI}(\varepsilon_0)$ theorems as well.  It needs the *target* to
-have a transfinite recursor; the prelude currently emits `error`, which
-`hsOf` models faithfully as a stuck term.
+One further item emerged during the work and is not on the original list —
+**extending certified emission to `tiRec`** — and it is now **done**.  The
+target has `tiRecT`/`tiRecET` with a guarded caller and a carried default,
+`hsOf_correct` covers the whole term language, and `ShowAll.lean` guards
+13 of 13.  The chain derivation → extract → target term → source is therefore
+complete for the $\mathrm{TI}(\varepsilon_0)$ theorems too.  GHC does not
+check that the emitted recursion terminates; the theorem is relative to the
+ε₀ descent proved on the Lean side, which is the usual posture for a target
+whose type system is weaker than the source's.
 
 ## What this branch will *not* deliver
 

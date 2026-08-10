@@ -456,14 +456,28 @@ strings in the artifact come from the syntax tree the theorem is about; the
 regenerated artifact is byte-identical, which is the evidence that routing it
 through the certified translation changed nothing.
 
+Transfinite recursion is covered too, and it is the interesting case. The
+target gains $\mathsf{tiRec}$ with a \emph{guarded caller}: the step is
+applied to the index and to a function that recurses when the order test
+succeeds and returns a carried default when it does not --- the source
+recursor's $\mathsf{dite}$, transcribed. (The default has to be carried
+because an untyped target cannot rebuild a type-indexed $\mathsf{dflt}$; what
+is emitted is the translation of the source's, proved correct by induction on
+the type.) The correctness case then goes by well-founded induction on the
+ordinal, the same device soundness and continuity already use. All
+\emph{thirteen} programs are covered, and that is checked at every build.
+
 What remains trusted is worth stating precisely, because it is short: the
 hand-written prelude, whose meaning the model \emph{defines} to be the
 corresponding Lean primitives; the printer, and \textsc{ghc}'s parse of its
-output; and the seven programs that use $\mathrm{TI}(\epsz)$, for which the
-emitter has never produced running code --- $\mathrm{hsOf}$ sends
-$\mathsf{tiRec}$ to a constructor with no evaluation rule, faithfully
-modelling the \texttt{error} the prelude emits. Six of the thirteen programs
-are covered, and which six is checked at every build.
+output; and one thing more, which the transfinite case introduces.
+\textsc{ghc} does not check that the emitted recursion terminates. It does
+terminate --- by the $\epsz$ descent proved on the Lean side --- and the
+theorem is relative to that proof. This is the ordinary shape of a
+compiler-correctness statement when the target's type system is weaker than
+the source's, and it is worth naming rather than eliding: the guarantee that
+the emitted Goodstein program halts is a theorem in Lean, not a property
+\textsc{ghc} could confirm.
 
 %======================================================================
 \section{Act XIII --- The ledger, and what the two systems show}

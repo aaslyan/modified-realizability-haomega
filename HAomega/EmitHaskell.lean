@@ -55,11 +55,32 @@ natRec z s n
   | n > 0 = s (n - 1) (natRec z s (n - 1))
   | otherwise = z
 
-oltN :: Integer -> Integer -> Integer
-oltN = error \"HAomega.EmitHaskell: port Realizability.oltN for epsilon-zero programs\"
+data Eps0 = EZero | ENode Eps0 Integer Eps0 deriving (Eq)
 
-tiRec :: (Integer -> (Integer -> () -> a) -> a) -> Integer -> a
-tiRec = error \"HAomega.EmitHaskell: Haskell backend has no certified epsilon-zero recursion\"
+-- Order tests: trusted prelude primitives, as the arithmetic ones are.
+oltN :: Integer -> Integer -> Integer
+oltN = error \"HAomega.EmitHaskell: port Realizability.oltN\"
+
+oltNE :: Eps0 -> Eps0 -> Integer
+oltNE = error \"HAomega.EmitHaskell: port Eps0.oltNE\"
+
+-- **Transfinite recursion.**  The step is applied to the index and to the
+-- guarded caller, which recurses when the order test succeeds and returns the
+-- carried default when it does not.  GHC does not check that this terminates;
+-- it does, by the epsilon-zero descent proved on the Lean side, which is what
+-- hsOf_correct is relative to.
+tiRec :: (Integer -> (Integer -> () -> a) -> a) -> Integer -> a -> a
+tiRec step n d = step n (recFun step d n)
+
+recFun :: (Integer -> (Integer -> () -> a) -> a) -> a -> Integer
+       -> (Integer -> () -> a)
+recFun step d x = \\y _ -> if oltN y x == 1 then tiRec step y d else d
+
+tiRecE :: (Eps0 -> (Eps0 -> () -> a) -> a) -> Eps0 -> a -> a
+tiRecE step n d = step n (recFunE step d n)
+
+recFunE :: (Eps0 -> (Eps0 -> () -> a) -> a) -> a -> Eps0 -> (Eps0 -> () -> a)
+recFunE step d x = \\y _ -> if oltNE y x == 1 then tiRecE step y d else d
 "
 
 /-- A complete Haskell module defining one closed HA^ω term. -/

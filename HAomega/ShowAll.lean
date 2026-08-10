@@ -93,15 +93,14 @@ def showAll : String :=
     "∀h^hyd ∀f^(ℕ→ℕ) ∀g^(ℕ→ℕ). ∃t. deadᴴ?(playAt(g, f, h, t)) = 0"
     "H → ((N → N) → ((N → N) → (N × 1)))" R13
 
--- **Coverage of the certified-emission fragment** (`HsSemantics.hsOf_correct`):
--- exactly the programs that do not use transfinite recursion, for which the
--- emitter has never produced running code.
+-- **Coverage of the certified-emission theorem** (`HsSemantics.hsOf_correct`):
+-- all thirteen, since the target gained a transfinite recursor.
 #guard [hsSupported R1, hsSupported R2, hsSupported R3, hsSupported R4,
         hsSupported R5, hsSupported R6, hsSupported R7, hsSupported R8,
         hsSupported R9, hsSupported R10, hsSupported R11, hsSupported R12,
         hsSupported R13]
-  == [true, true, true, true, true, false, false, true,
-      false, false, false, false, false]
+  == [true, true, true, true, true, true, true, true,
+      true, true, true, true, true]
 
 #eval IO.FS.writeFile "EXTRACTED_HAOMEGA.md" showAll
 #eval IO.println ("written: " ++ toString showAll.length ++ " chars")

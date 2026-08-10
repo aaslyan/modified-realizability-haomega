@@ -185,6 +185,11 @@ theorem Formula.subst1_eq_wk_var {Γ : List Ty} {τ : Ty} (s u : Tm Γ τ) :
 @[derivNorm] theorem Ctx.wk_nil {Γ : List Ty} {σ : Ty} :
     (Ctx.nil (Γ := Γ)).wk (σ := σ) = .nil := rfl
 
+-- Negation is a definition, so substitution does not push through it unless
+-- the normalizer is told to unfold it.  Sperner's conclusion has one, and any
+-- derivation that eliminates a negated equation will.
+attribute [derivNorm] Formula.neg
+
 /-! ## The tactics -/
 
 /-- **Normalize a `Deriv` goal or hypothesis.** Reduces every context and

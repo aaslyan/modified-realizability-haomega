@@ -103,11 +103,19 @@ the same trap `Epsilon0.lean` records for `Nat.pair`, measured rather than
 assumed.  `NumericsDemo.lean` computes the precision sequence `2⁻ⁿ` as an
 object term and decides a `|x² − q| < 2⁻ⁿ` approximation statement.
 
-Not yet present, and deliberately: **reasoning rules**.  `Deriv` has no
-conversion equations for the numeric operations, so the object language can
-state and decide but not yet prove arithmetic identities.  Those should be
-designed alongside the first analysis theorem, since writing it is what
-reveals which are needed.
+The **first analysis theorem** is `SquareRoot.lean`: `√q` to any precision
+`2⁻ⁿ`, derived as a corollary of Sperner 1D — which *is* the discrete
+intermediate value theorem — and extracting to a root-finding search that
+runs (`√2` to `2⁻⁸` returns `181/128`).  It needs no arithmetic rules,
+because Sperner quantifies over the colouring as a function variable and so
+never inspects the arithmetic inside it.
+
+Still absent, and deliberately: **reasoning rules** for the numeric
+operations.  `Deriv` has no conversion equations for them, so the object
+language can state, decide and search but cannot prove arithmetic identities.
+The square-root theorem shows how far that gets — further than expected — and
+also where it stops: the bound `K` is a hypothesis, because producing one from
+`q` is an Archimedean argument that does need the rules.
 
 ### What is next
 

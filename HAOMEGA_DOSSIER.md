@@ -421,6 +421,42 @@ prelude now carries real `tiRec`/`tiRecE`/`recFun`/`recFunE` and an `Eps0`
 datatype; `oltN`/`oltNE` remain trusted primitives, as `goodN` and the rest
 always were.
 
+## 17. The first analysis theorem (addendum, 2026-08-10)
+
+`[src]` `HAomega/SquareRoot.lean` derives
+
+    sqrtApproxD : ∀q^ℚ ∀n ∀K. col(q,n,0) = 0 → col(q,n,K) = 1 →
+                  ∃k. k < K ∧ col(q,n,k) ≠ col(q,n,k+1)
+
+with `col(q,n,k)` the test `q < (k·2⁻ⁿ)²`.  A crossing is a `k` with
+`(k·2⁻ⁿ)² ≤ q < ((k+1)·2⁻ⁿ)²` — the largest multiple of `2⁻ⁿ` whose square
+does not exceed `q`, i.e. `√q` to precision `2⁻ⁿ`.
+
+`[src]` **It is a corollary of Sperner 1D**, which is the discrete
+intermediate value theorem.  That works because `spernerD` quantifies over the
+colouring as a *function variable*, so its proof never inspects what the
+colouring computes; all the rational arithmetic sits inside an argument the
+derivation does not look at.  Consequence: the theorem needs **no arithmetic
+rules**, which is why it lands before `Deriv` has any conversion equations for
+`Q`.
+
+`[run]` The extract computes.  `sqrtApproxX 2 4 32 = 22` (`11/8`),
+`sqrtApproxX 2 8 512 = 362` (`181/128 ≈ 1.41406`), `sqrtApproxX 9 0 4 = 3`,
+`sqrtApproxX (1/4) 4 32 = 8` (`1/2`).  A guard checks for `n = 0…5` that the
+witness brackets the root: the colouring is `0` at `k` and `1` at `k+1`.
+`sqrtApproxD`/`sqrtApproxX` are `[propext, Quot.sound]`.
+
+`[src]` **Honest limits, two.**  (i) The bound `K` is a *hypothesis*, not
+derived: producing one from `q` is an Archimedean argument about the
+rationals and does need the arithmetic rule base.  The caller discharges it,
+by computation, at every input guarded above.  (ii) The Sperner fingerprint
+of Act~X does not appear here — this colouring is monotone, so first and last
+crossing coincide.  Distinguishing the two Sperner proofs needs an
+oscillating colouring, and squaring is not one.
+
+`[run]` Hygiene: 759 jobs, zero `HAomega/` warnings, fourteen realizers in
+`EXTRACTED_HAOMEGA.md`.
+
 ## 10. Fixes applied by this audit
 
 1. `Fib.lean`: stale wall-diagnosis comment → historical note with the

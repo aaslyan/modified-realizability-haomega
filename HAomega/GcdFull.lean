@@ -42,7 +42,7 @@ main induction, and none of it needs new machinery.
 namespace HAomega
 
 /-- `mulT` ignores substitution (closed). -/
-theorem mulT_subst {Γ Δ : List Ty} (s : Sub Γ Δ) :
+@[derivNorm] theorem mulT_subst {Γ Δ : List Ty} (s : Sub Γ Δ) :
     (mulT (Γ := Γ)).subst s = mulT := rfl
 
 
@@ -99,11 +99,11 @@ def addEqZeroD {Γ as : List Ty} {Δ : Ctx Γ as} :
 
 
 /-- `wk_subst_one`, rename-unfolded form (what simp-normalized goals show). -/
-theorem subst_one_rename {Γ : List Ty} {σ τ : Ty} (t : Tm Γ τ) (u : Tm Γ σ) :
+@[derivNorm] theorem subst_one_rename {Γ : List Ty} {σ τ : Ty} (t : Tm Γ τ) (u : Tm Γ σ) :
     Tm.subst (Sub.one u) (Tm.rename (Ren.wk σ) t) = t := Tm.subst1_wk t u
 
 /-- `wk_subst_ext`, rename-unfolded form. -/
-theorem subst_ext_rename {Γ Δ : List Ty} {σ τ : Ty} (t : Tm Γ τ) (s : Sub Γ Δ) :
+@[derivNorm] theorem subst_ext_rename {Γ Δ : List Ty} {σ τ : Ty} (t : Tm Γ τ) (s : Sub Γ Δ) :
     Tm.subst (Sub.ext (σ := σ) s) (Tm.rename (Ren.wk σ) t)
       = Tm.rename (Ren.wk σ) (Tm.subst s t) := Tm.wk_subst_ext t s
 

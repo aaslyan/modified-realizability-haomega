@@ -356,6 +356,42 @@ That is the same boundary certified emission meets, reached independently.
 
 `[run]` Hygiene: `lake build` **752 jobs**, zero `HAomega/` warnings.
 
+## 15. The authoring kit, upstreamed (addendum, 2026-08-09)
+
+`[src]` The tactics and equational combinators were discovered one case study
+at a time and had stayed where they were first needed: `Deriv.symmE` and
+`Deriv.transE` in `Pascal.lean`, `Deriv.congFun`/`congArg` in
+`PascalTheorem.lean`, `deriv_norm`/`deriv_assumption` in `GcdDvd.lean`. Every
+later derivation — Goodstein, Hydra, both Hercules theorems, Sperner —
+imported the gcd development in order to write an equational chain.
+
+`HAomega/Kit.lean` now sits directly on `Continuity.lean` and carries the
+core substitution lemmas, the four equational combinators (all derived from
+the single Leibniz rule), and the tactics. Two design changes rather than a
+move:
+
+* **`deriv_norm` is extensible.** It runs the `derivNorm` simp attribute, not
+  a fixed list. The gcd layer tags `Dvd`, `mulT_subst`, `mulT_rename`;
+  `PascalTheorem` tags `Tm.wk_subst_ext`, `Tm.wk_subst_one`. A new layer
+  extends the normalizer by tagging, without editing `Kit.lean`. (The
+  attribute is declared in a one-line module `KitAttr.lean`, because Lean
+  requires a simp attribute to be registered in a module earlier than its
+  uses.)
+* **`deriv_assumption` recurses** rather than trying a hard-coded ladder of
+  eight `Deriv.wk`s, so it is not bounded by a fixed context size.
+
+`[run]` **Evidence the refactor is behaviour-preserving:** the full build is
+green at **755 jobs** with zero `HAomega/` warnings, and no proof in any case
+study was edited — only the location of the lemmas they cite.
+
+`[run]` **Evidence the kit is usable standalone:** `KitDemo.lean` imports
+`HAomega.Kit` and nothing else, and derives two small theorems using the
+combinators and both tactics. Its import line is the test.
+
+`[src]` **Not claimed:** the term-form kit (`plusAssocT`, …, `trichotomyT`)
+and the explicit-chain discipline are still conventions recorded in file
+headers, not tooling.
+
 ## 10. Fixes applied by this audit
 
 1. `Fib.lean`: stale wall-diagnosis comment → historical note with the

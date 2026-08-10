@@ -32,42 +32,15 @@ unification failures blocked before the tactic existed.
 namespace HAomega
 
 
-/-! ## The normalization tactic -/
+/-! ## Extending the normalizer
 
-theorem Ctx.wk_cons {Γ : List Ty} {σ a : Ty} {as : List Ty}
-    (φ : Formula Γ a) (Δ : Ctx Γ as) :
-    (Ctx.cons φ Δ).wk (σ := σ) = .cons φ.wk Δ.wk := rfl
-theorem Ctx.wk_nil {Γ : List Ty} {σ : Ty} :
-    (Ctx.nil (Γ := Γ)).wk (σ := σ) = .nil := rfl
-theorem mulT_rename {Γ Δ : List Ty} (ρ : Ren Γ Δ) :
+`Kit.lean` supplies `deriv_norm`; the gcd layer contributes its own
+definitions to the simp set it runs, which is all a layer has to do. -/
+
+@[derivNorm] theorem mulT_rename {Γ Δ : List Ty} (ρ : Ren Γ Δ) :
     (mulT (Γ := Γ)).rename ρ = mulT := rfl
 
-/-- Normalize a `Deriv` goal (or hypothesis): reduce every `Ctx.wk`,
-`Formula.wk`/`rename`/`subst`, and `Tm`-level weakening to ground normal form,
-so accessors and lemmas match structurally.  The fix for the
-whnf-vs-metavariable unification failures in nested eliminations. -/
-macro "deriv_norm" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| try simp only [Ctx.wk_cons, Ctx.wk_nil, Dvd, Formula.wk,
-      Formula.rename, Formula.subst1, Formula.subst, Tm.wk, Tm.rename,
-      Tm.subst1, Tm.subst, Sub.one, Sub.ext, Ren.wk, Ren.ext,
-      mulT_subst, mulT_rename, Tm.wk_subst_ext, Tm.wk_subst_one,
-      subst_one_rename, subst_ext_rename] $(loc)?)
-
-/-- Close a `Deriv` goal by context search: normalize, then try the
-hypothesis at each depth.  Replaces the pinned `ax1`–`ax7` accessors in goal
-and scrutinee positions — the fix for the authoring bottleneck. -/
-macro "deriv_assumption" : tactic =>
-  `(tactic| (deriv_norm
-             first
-    | exact Deriv.ax
-    | exact Deriv.wk (Deriv.ax)
-    | exact Deriv.wk (Deriv.wk (Deriv.ax))
-    | exact Deriv.wk (Deriv.wk (Deriv.wk (Deriv.ax)))
-    | exact Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.ax))))
-    | exact Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.ax)))))
-    | exact Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.ax))))))
-    | exact Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.ax)))))))
-    | exact Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.wk (Deriv.ax))))))))))
+attribute [derivNorm] Dvd
 
 /-! ## Term forms of the stage-1 divisibility facts -/
 

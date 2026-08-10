@@ -3,7 +3,7 @@ Copyright (c) 2026 Ara Aslyan. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ara Aslyan
 -/
-import HAomega.Continuity
+import HAomega.Kit
 
 /-!
 # Pascal's triangle mod 2 in HA^ω — the terms, and a design consequence
@@ -56,118 +56,6 @@ derivable here**, and it is therefore not claimed.
 namespace HAomega
 
 
-theorem Sub.ext_ren {Γ Δ Θ : List Ty} {σ : Ty} (ρ : Ren Γ Δ) (s : Sub Δ Θ) :
-    (fun τ v ↦ Sub.ext (σ := σ) s τ (Ren.ext ρ τ v))
-      = Sub.ext (σ := σ) (fun τ v ↦ s τ (ρ τ v)) := by
-  funext τ v; cases v <;> rfl
-
-theorem Tm.subst_rename {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
-    ∀ {Δ Θ : List Ty} (ρ : Ren Γ Δ) (s : Sub Δ Θ),
-      (t.rename ρ).subst s = t.subst (fun σ v ↦ s σ (ρ σ v)) := by
-  induction t with
-  | var v => intros; rfl
-  | lam b ih =>
-      intro Δ Θ ρ s
-      simp only [Tm.rename, Tm.subst]
-      rw [ih ρ.ext s.ext, Sub.ext_ren]
-  | app f a ihf iha => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ihf, iha]
-  | star => intros; rfl
-  | pair a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
-  | fst t ih => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ih]
-  | snd t ih => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ih]
-  | zero => intros; rfl
-  | succ t ih => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ih]
-  | add a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
-  | prec a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
-  | pred a ih => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ih]
-  | bump a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
-  | good a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
-  | ord a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
-  | hcut a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
-  | hcutAt p a b ihp iha ihb =>
-      intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ihp, iha, ihb]
-  | ezero => intros; rfl
-  | orde a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
-  | olte a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
-  | tiRecE sc n ihs ihn =>
-      intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ihs, ihn]
-  | hleaf => intros; rfl
-  | hcutH a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
-  | hleafQ a ih => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ih]
-  | hordH a ih => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ih]
-  | hcutAtH p a b ihp iha ihb =>
-      intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ihp, iha, ihb]
-  | hydra a b iha ihb => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, iha, ihb]
-  | hord a ih => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ih]
-  | tiRec sc n ihs ihn => intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ihs, ihn]
-  | recNat z sc n ihz ihs ihn =>
-      intro Δ Θ ρ s; simp only [Tm.rename, Tm.subst, ihz, ihs, ihn]
-
-theorem Tm.subst_id {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
-    t.subst (fun _ v ↦ Tm.var v) = t := by
-  induction t with
-  | var v => rfl
-  | lam b ih =>
-      simp only [Tm.subst]
-      rw [show (Sub.ext (fun σ (v : Var _ σ) ↦ Tm.var v))
-          = (fun σ (v : Var _ σ) ↦ Tm.var v) from by funext σ v; cases v <;> rfl, ih]
-  | app f a ihf iha => simp only [Tm.subst, ihf, iha]
-  | star => rfl
-  | pair a b iha ihb => simp only [Tm.subst, iha, ihb]
-  | fst t ih => simp only [Tm.subst, ih]
-  | snd t ih => simp only [Tm.subst, ih]
-  | zero => rfl
-  | succ t ih => simp only [Tm.subst, ih]
-  | add a b iha ihb => simp only [Tm.subst, iha, ihb]
-  | prec a b iha ihb => simp only [Tm.subst, iha, ihb]
-  | pred a ih => simp only [Tm.subst, ih]
-  | bump a b iha ihb => simp only [Tm.subst, iha, ihb]
-  | good a b iha ihb => simp only [Tm.subst, iha, ihb]
-  | ord a b iha ihb => simp only [Tm.subst, iha, ihb]
-  | hcut a b iha ihb => simp only [Tm.subst, iha, ihb]
-  | hcutAt p a b ihp iha ihb => simp only [Tm.subst, ihp, iha, ihb]
-  | ezero => rfl
-  | orde a b iha ihb => simp only [Tm.subst, iha, ihb]
-  | olte a b iha ihb => simp only [Tm.subst, iha, ihb]
-  | tiRecE sc n ihs ihn => simp only [Tm.subst, ihs, ihn]
-  | hleaf => rfl
-  | hcutH a b iha ihb => simp only [Tm.subst, iha, ihb]
-  | hleafQ a ih => simp only [Tm.subst, ih]
-  | hordH a ih => simp only [Tm.subst, ih]
-  | hcutAtH p a b ihp iha ihb => simp only [Tm.subst, ihp, iha, ihb]
-  | hydra a b iha ihb => simp only [Tm.subst, iha, ihb]
-  | hord a ih => simp only [Tm.subst, ih]
-  | tiRec sc n ihs ihn => simp only [Tm.subst, ihs, ihn]
-  | recNat z sc n ihz ihs ihn => simp only [Tm.subst, ihz, ihs, ihn]
-
-theorem Tm.subst1_wk {Γ : List Ty} {σ τ : Ty} (t : Tm Γ τ) (u : Tm Γ σ) :
-    (t.wk (σ := σ)).subst1 u = t := by
-  rw [Tm.wk, Tm.subst1, Tm.subst_rename]
-  rw [show (fun τ' (v : Var Γ τ') ↦ Sub.one u τ' (Ren.wk σ τ' v))
-      = (fun τ' (v : Var Γ τ') ↦ Tm.var v) from rfl, Tm.subst_id]
-
-#print axioms Tm.subst1_wk
-theorem Formula.subst1_eq_var_wk {Γ : List Ty} {τ : Ty} (s u : Tm Γ τ) :
-    (Formula.eq (Tm.var .here) (s.wk)).subst1 u = Formula.eq u s := by
-  show Formula.eq u ((s.wk).subst1 u) = _
-  rw [Tm.subst1_wk]
-
-theorem Formula.subst1_eq_wk_var {Γ : List Ty} {τ : Ty} (s u : Tm Γ τ) :
-    (Formula.eq (s.wk) (Tm.var .here)).subst1 u = Formula.eq s u := by
-  show Formula.eq ((s.wk).subst1 u) u = _
-  rw [Tm.subst1_wk]
-
-def Deriv.symmE {Γ as} {Δ : Ctx Γ as} {τ : Ty} {s t : Tm Γ τ}
-    (h : Deriv Δ (.eq s t)) : Deriv Δ (.eq t s) := by
-  have key := Deriv.eqSubst (Δ := Δ) (Formula.eq (Tm.var .here) (s.wk)) h
-    (by rw [Formula.subst1_eq_var_wk]; exact Deriv.eqRefl s)
-  rw [Formula.subst1_eq_var_wk] at key; exact key
-
-def Deriv.transE {Γ as} {Δ : Ctx Γ as} {τ : Ty} {s t u : Tm Γ τ}
-    (h1 : Deriv Δ (.eq s t)) (h2 : Deriv Δ (.eq t u)) : Deriv Δ (.eq s u) := by
-  have key := Deriv.eqSubst (Δ := Δ) (Formula.eq (s.wk) (Tm.var .here)) h2
-    (by rw [Formula.subst1_eq_wk_var]; exact h1)
-  rw [Formula.subst1_eq_wk_var] at key; exact key
 
 -- the terms
 def flipT {Γ : List Ty} : Tm Γ (.arrow .nat .nat) :=

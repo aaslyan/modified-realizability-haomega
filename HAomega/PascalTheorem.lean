@@ -31,36 +31,6 @@ elaborate in milliseconds.  The rename/substitution composition kit
 
 namespace HAomega
 
-/-- Congruence in the function position — from Leibniz, now at every type. -/
-def Deriv.congFun {Γ as : List Ty} {Δ : Ctx Γ as} {c d : Ty}
-    {f g : Tm Γ (.arrow c d)} (h : Deriv Δ (.eq f g)) (x : Tm Γ c) :
-    Deriv Δ (.eq (.app f x) (.app g x)) := by
-  have hs : ∀ u : Tm Γ (.arrow c d),
-      (Formula.eq (.app (Tm.var .here) (x.wk)) ((Tm.app f x).wk)).subst1 u
-        = Formula.eq (.app u x) (.app f x) := by
-    intro u
-    show Formula.eq (.app u ((x.wk).subst1 u)) (((Tm.app f x).wk).subst1 u) = _
-    rw [Tm.subst1_wk, Tm.subst1_wk]
-  have key := Deriv.eqSubst (Δ := Δ)
-    (Formula.eq (.app (Tm.var .here) (x.wk)) ((Tm.app f x).wk)) h
-    (by rw [hs]; exact Deriv.eqRefl _)
-  rw [hs] at key; exact key.symmE
-
-/-- Congruence in the argument position. -/
-def Deriv.congArg {Γ as : List Ty} {Δ : Ctx Γ as} {c d : Ty}
-    (f : Tm Γ (.arrow c d)) {x y : Tm Γ c} (h : Deriv Δ (.eq x y)) :
-    Deriv Δ (.eq (.app f x) (.app f y)) := by
-  have hs : ∀ u : Tm Γ c,
-      (Formula.eq (.app (f.wk) (Tm.var .here)) ((Tm.app f x).wk)).subst1 u
-        = Formula.eq (.app f u) (.app f x) := by
-    intro u
-    show Formula.eq (.app ((f.wk).subst1 u) u) (((Tm.app f x).wk).subst1 u) = _
-    rw [Tm.subst1_wk, Tm.subst1_wk]
-  have key := Deriv.eqSubst (Δ := Δ)
-    (Formula.eq (.app (f.wk) (Tm.var .here)) ((Tm.app f x).wk)) h
-    (by rw [hs]; exact Deriv.eqRefl _)
-  rw [hs] at key; exact key.symmE
-
 /-- Row 0 of Pascal **is** `flip`. -/
 def rowZero {Γ as : List Ty} {Δ : Ctx Γ as} :
     Deriv Δ (.eq (.app pasT .zero) (flipT (Γ := Γ))) :=
@@ -253,7 +223,7 @@ theorem Tm.rename_subst {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
 
 /-- **The commutation the chains need**: substituting under a binder a term
 that was weakened past that binder just pushes the substitution inside. -/
-theorem Tm.wk_subst_ext {Γ Δ : List Ty} {σ τ : Ty} (t : Tm Γ τ) (s : Sub Γ Δ) :
+@[derivNorm] theorem Tm.wk_subst_ext {Γ Δ : List Ty} {σ τ : Ty} (t : Tm Γ τ) (s : Sub Γ Δ) :
     (t.wk (σ := σ)).subst s.ext = (t.subst s).wk (σ := σ) := by
   rw [Tm.wk, Tm.subst_rename, Tm.wk, Tm.rename_subst]
   rfl
@@ -265,7 +235,7 @@ theorem Tm.wk_subst_ext {Γ Δ : List Ty} {σ τ : Ty} (t : Tm Γ τ) (s : Sub �
 
 
 /-- Weakened terms ignore the substitution, `Sub.one` form. -/
-theorem Tm.wk_subst_one {Γ : List Ty} {σ τ : Ty} (t : Tm Γ τ) (u : Tm Γ σ) :
+@[derivNorm] theorem Tm.wk_subst_one {Γ : List Ty} {σ τ : Ty} (t : Tm Γ τ) (u : Tm Γ σ) :
     Tm.subst (Sub.one u) (t.wk (σ := σ)) = t := Tm.subst1_wk t u
 
 -- closed-term substitution lemmas: the walk never inspects `s`

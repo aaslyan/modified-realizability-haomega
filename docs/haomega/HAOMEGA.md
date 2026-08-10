@@ -116,9 +116,16 @@ Haskell.  Two remain:
   which the continuity proof was designed to avoid), and `tiRec` has no
   compositional modulus because a notation can have infinitely many
   `≺`-predecessors.
-* **upstreaming the deriv-authoring kit into reusable tactics.**
-  `deriv_norm` and `deriv_assumption` live in `GcdDvd.lean`; the term-form
-  kit and the explicit-chain discipline are conventions, not tooling.
+* ~~upstreaming the deriv-authoring kit into reusable tactics~~ — **done**.
+  `Kit.lean` sits directly on the core and carries the equational combinators
+  (`symmE`, `transE`, `congFun`, `congArg`, previously in `Pascal.lean` and
+  `PascalTheorem.lean`), the core substitution lemmas, and the tactics.
+  `deriv_norm` is now driven by the extensible `derivNorm` simp attribute
+  rather than a fixed list, so each layer tags its own definitions;
+  `deriv_assumption` searches recursively instead of by a hard-coded ladder.
+  `KitDemo.lean` checks the point by importing `HAomega.Kit` and nothing else.
+  What is *not* tooling: the term-form kit and the explicit-chain discipline
+  remain conventions recorded in file headers.
 
 One further item emerged during the work and is not on the original list:
 **extending certified emission to `tiRec`**, which would make the chain

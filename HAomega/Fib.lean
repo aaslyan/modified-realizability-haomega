@@ -126,6 +126,8 @@ def Ty.str : Ty → String
   | .unit => "1"
   | .ord => "O"
   | .hyd => "H"
+  | .rat => "Q"
+  | .dyad => "D"
   | .nat => "N"
   | .arrow a b => "(" ++ a.str ++ "→" ++ b.str ++ ")"
   | .prod a b => "(" ++ a.str ++ "×" ++ b.str ++ ")"
@@ -162,6 +164,19 @@ def Tm.pretty : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → (d : Nat) → Stri
   | _, _, .hordH a, d => "hordᴴ " ++ a.pretty d
   | _, _, .hcutAtH p a b, d =>
       "cutAtᴴ(" ++ p.pretty d ++ ", " ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
+  | _, _, .qnat a, d => "qℕ(" ++ a.pretty d ++ ")"
+  | _, _, .dnat a, d => "dℕ(" ++ a.pretty d ++ ")"
+  | _, _, .dhalf a, d => "half(" ++ a.pretty d ++ ")"
+  | _, _, .dtoq a, d => "toQ(" ++ a.pretty d ++ ")"
+  | _, _, .qadd a b, d => "(" ++ a.pretty d ++ " +q " ++ b.pretty d ++ ")"
+  | _, _, .qsub a b, d => "(" ++ a.pretty d ++ " -q " ++ b.pretty d ++ ")"
+  | _, _, .qmul a b, d => "(" ++ a.pretty d ++ " *q " ++ b.pretty d ++ ")"
+  | _, _, .qdiv a b, d => "(" ++ a.pretty d ++ " /q " ++ b.pretty d ++ ")"
+  | _, _, .qlt a b, d => "(" ++ a.pretty d ++ " <q " ++ b.pretty d ++ ")"
+  | _, _, .dadd a b, d => "(" ++ a.pretty d ++ " +d " ++ b.pretty d ++ ")"
+  | _, _, .dsub a b, d => "(" ++ a.pretty d ++ " -d " ++ b.pretty d ++ ")"
+  | _, _, .dmul a b, d => "(" ++ a.pretty d ++ " *d " ++ b.pretty d ++ ")"
+  | _, _, .dlt a b, d => "(" ++ a.pretty d ++ " <d " ++ b.pretty d ++ ")"
   | _, _, .hydra a b, d => "hydra(" ++ a.pretty d ++ ", " ++ b.pretty d ++ ")"
   | _, _, .hord a, d => "hord " ++ a.pretty d
   | _, _, .tiRec s n, d =>
@@ -206,6 +221,19 @@ def Tm.pretty' : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → (d : Nat) → Str
   | _, _, .hordH a, d => "hordᴴ " ++ a.pretty' d
   | _, _, .hcutAtH p a b, d =>
       "cutAtᴴ(" ++ p.pretty' d ++ ", " ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
+  | _, _, .qnat a, d => "qℕ(" ++ a.pretty' d ++ ")"
+  | _, _, .dnat a, d => "dℕ(" ++ a.pretty' d ++ ")"
+  | _, _, .dhalf a, d => "half(" ++ a.pretty' d ++ ")"
+  | _, _, .dtoq a, d => "toQ(" ++ a.pretty' d ++ ")"
+  | _, _, .qadd a b, d => "(" ++ a.pretty' d ++ " +q " ++ b.pretty' d ++ ")"
+  | _, _, .qsub a b, d => "(" ++ a.pretty' d ++ " -q " ++ b.pretty' d ++ ")"
+  | _, _, .qmul a b, d => "(" ++ a.pretty' d ++ " *q " ++ b.pretty' d ++ ")"
+  | _, _, .qdiv a b, d => "(" ++ a.pretty' d ++ " /q " ++ b.pretty' d ++ ")"
+  | _, _, .qlt a b, d => "(" ++ a.pretty' d ++ " <q " ++ b.pretty' d ++ ")"
+  | _, _, .dadd a b, d => "(" ++ a.pretty' d ++ " +d " ++ b.pretty' d ++ ")"
+  | _, _, .dsub a b, d => "(" ++ a.pretty' d ++ " -d " ++ b.pretty' d ++ ")"
+  | _, _, .dmul a b, d => "(" ++ a.pretty' d ++ " *d " ++ b.pretty' d ++ ")"
+  | _, _, .dlt a b, d => "(" ++ a.pretty' d ++ " <d " ++ b.pretty' d ++ ")"
   | _, _, .hydra a b, d => "hydra(" ++ a.pretty' d ++ ", " ++ b.pretty' d ++ ")"
   | _, _, .hord a, d => "hord " ++ a.pretty' d
   | _, _, .tiRec s n, d =>

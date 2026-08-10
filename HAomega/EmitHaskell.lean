@@ -24,6 +24,8 @@ def hsTy : Ty → String
   | .unit => "()"
   | .ord => "Eps0"
   | .hyd => "Hydra"
+  | .rat => "Q"
+  | .dyad => "Dy"
   | .nat => "Integer"
   | .arrow a b => "(" ++ hsTy a ++ " -> " ++ hsTy b ++ ")"
   | .prod a b => "(" ++ hsTy a ++ ", " ++ hsTy b ++ ")"
@@ -56,6 +58,53 @@ natRec z s n
   | otherwise = z
 
 data Eps0 = EZero | ENode Eps0 Integer Eps0 deriving (Eq)
+
+-- Rationals for stating, dyadics for computing.  Both are kept canonical, so
+-- structural equality is equality of the numbers denoted.
+data Q = Q Integer Integer deriving (Eq)
+data Dy = Dy Integer Integer deriving (Eq)
+
+qOf :: Integer -> Integer -> Q
+qOf n d | d == 0 = Q 0 1
+        | otherwise = let g = gcd (abs n) d in Q (quot n g) (quot d g)
+
+qOfNat :: Integer -> Q
+qOfNat n = Q n 1
+
+qAdd, qSub, qMul, qDiv :: Q -> Q -> Q
+qAdd (Q a b) (Q c d) = qOf (a*d + c*b) (b*d)
+qSub x (Q c d) = qAdd x (Q (negate c) d)
+qMul (Q a b) (Q c d) = qOf (a*c) (b*d)
+qDiv (Q a b) (Q c d) | c == 0 = Q 0 1
+                     | c < 0 = let Q u v = qOf (a*d) (b*abs c) in Q (negate u) v
+                     | otherwise = qOf (a*d) (b*c)
+
+qLtN :: Q -> Q -> Integer
+qLtN (Q a b) (Q c d) = if a*d < c*b then 1 else 0
+
+dOf :: Integer -> Integer -> Dy
+dOf m 0 = Dy m 0
+dOf m k = if even m then dOf (quot m 2) (k-1) else Dy m k
+
+dOfNat :: Integer -> Dy
+dOfNat n = Dy n 0
+
+dScaled :: Dy -> Integer -> Integer
+dScaled (Dy m e) t = m * 2 ^ (t - e)
+
+dAdd, dSub, dMul :: Dy -> Dy -> Dy
+dAdd a@(Dy _ e1) b@(Dy _ e2) = let t = max e1 e2 in dOf (dScaled a t + dScaled b t) t
+dSub a (Dy m e) = dAdd a (Dy (negate m) e)
+dMul (Dy m1 e1) (Dy m2 e2) = dOf (m1*m2) (e1+e2)
+
+dHalf :: Dy -> Dy
+dHalf (Dy m e) = dOf m (e+1)
+
+dLtN :: Dy -> Dy -> Integer
+dLtN a@(Dy _ e1) b@(Dy _ e2) = let t = max e1 e2 in if dScaled a t < dScaled b t then 1 else 0
+
+dToQ :: Dy -> Q
+dToQ (Dy m e) = qOf m (2 ^ e)
 
 -- Order tests: trusted prelude primitives, as the arithmetic ones are.
 oltN :: Integer -> Integer -> Integer

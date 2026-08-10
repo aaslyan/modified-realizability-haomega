@@ -161,6 +161,8 @@ def eqIdx : Ty → Ty
   | .nat => .unit
   | .ord => .unit
   | .hyd => .unit
+  | .rat => .unit
+  | .dyad => .unit
   | .arrow a b => .arrow a (eqIdx b)
   | .prod a b => .prod (eqIdx a) (eqIdx b)
 
@@ -171,6 +173,8 @@ def eqAt : {Γ : List Ty} → (τ : Ty) → Tm Γ τ → Tm Γ τ → Formula Γ
   | _, .nat, s, t => .eq s t
   | _, .ord, s, t => .eq s t
   | _, .hyd, s, t => .eq s t
+  | _, .rat, s, t => .eq s t
+  | _, .dyad, s, t => .eq s t
   | _, .arrow a b, s, t =>
       .all a (eqAt b (.app s.wk (.var .here)) (.app t.wk (.var .here)))
   | _, .prod a b, s, t =>
@@ -185,6 +189,8 @@ theorem interp_eqAt : ∀ (τ : Ty) {Γ : List Ty} (s t : Tm Γ τ) (e : Env Γ)
   | nat => intro Γ s t e; exact Iff.rfl
   | ord => intro Γ s t e; exact Iff.rfl
   | hyd => intro Γ s t e; exact Iff.rfl
+  | rat => intro Γ s t e; exact Iff.rfl
+  | dyad => intro Γ s t e; exact Iff.rfl
   | arrow a b _ ihb =>
       intro Γ s t e
       constructor

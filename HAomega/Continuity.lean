@@ -175,6 +175,8 @@ def Tracked : (τ : Ty) → ((ℕ → ℕ) → τ.interp) → Prop
   | .nat, X => Continuous2 X
   | .ord, X => ContAt Eps0 X
   | .hyd, X => ContAt Realizability.Hydra X
+  | .rat, X => ContAt Q X
+  | .dyad, X => ContAt D X
   | .prod a b, X => Tracked a (fun α ↦ (X α).1) ∧ Tracked b (fun α ↦ (X α).2)
   | .arrow a b, X => ∀ Y, Tracked a Y → Tracked b (fun α ↦ X α (Y α))
 
@@ -202,6 +204,8 @@ theorem tracked_apply {ι : Type} : (τ : Ty) → {k : (ℕ → ℕ) → ι} →
   | .nat, _, _, hk, hG => contAt_apply hk hG
   | .ord, _, _, hk, hG => contAt_apply hk hG
   | .hyd, _, _, hk, hG => contAt_apply hk hG
+  | .rat, _, _, hk, hG => contAt_apply hk hG
+  | .dyad, _, _, hk, hG => contAt_apply hk hG
   | .prod a b, _, _, hk, hG =>
       ⟨tracked_apply (ι := ι) a hk fun j ↦ (hG j).1,
        tracked_apply (ι := ι) b hk fun j ↦ (hG j).2⟩
@@ -235,6 +239,8 @@ theorem tracked_dflt : (τ : Ty) → Tracked τ (fun _ ↦ τ.dfltVal)
   | .nat => continuous2_const 0
   | .ord => contAt_const Eps0.zero
   | .hyd => contAt_const Realizability.Hydra.leaf
+  | .rat => contAt_const Q.zero
+  | .dyad => contAt_const D.zero
   | .prod a b => ⟨tracked_dflt a, tracked_dflt b⟩
   | .arrow _ b => fun _ _ ↦ tracked_dflt b
 
@@ -310,6 +316,45 @@ theorem eval_tracked {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | hcutAtH p a b ihp iha ihb =>
       intro E hE
       exact contAt_ternop playAt (ihp E hE) (iha E hE) (ihb E hE)
+  | qnat a ih =>
+      intro E hE
+      exact contAt_binop (fun x (_ : Unit) ↦ Q.ofNat x) (ih E hE) (contAt_const ())
+  | dnat a ih =>
+      intro E hE
+      exact contAt_binop (fun x (_ : Unit) ↦ D.ofNat x) (ih E hE) (contAt_const ())
+  | dhalf a ih =>
+      intro E hE
+      exact contAt_binop (fun x (_ : Unit) ↦ D.half x) (ih E hE) (contAt_const ())
+  | dtoq a ih =>
+      intro E hE
+      exact contAt_binop (fun x (_ : Unit) ↦ D.toQ x) (ih E hE) (contAt_const ())
+  | qadd a b iha ihb =>
+      intro E hE
+      exact contAt_binop Q.add (iha E hE) (ihb E hE)
+  | qsub a b iha ihb =>
+      intro E hE
+      exact contAt_binop Q.sub (iha E hE) (ihb E hE)
+  | qmul a b iha ihb =>
+      intro E hE
+      exact contAt_binop Q.mul (iha E hE) (ihb E hE)
+  | qdiv a b iha ihb =>
+      intro E hE
+      exact contAt_binop Q.div (iha E hE) (ihb E hE)
+  | qlt a b iha ihb =>
+      intro E hE
+      exact contAt_binop Q.ltN (iha E hE) (ihb E hE)
+  | dadd a b iha ihb =>
+      intro E hE
+      exact contAt_binop D.add (iha E hE) (ihb E hE)
+  | dsub a b iha ihb =>
+      intro E hE
+      exact contAt_binop D.sub (iha E hE) (ihb E hE)
+  | dmul a b iha ihb =>
+      intro E hE
+      exact contAt_binop D.mul (iha E hE) (ihb E hE)
+  | dlt a b iha ihb =>
+      intro E hE
+      exact contAt_binop D.ltN (iha E hE) (ihb E hE)
   | orde a b iha ihb =>
       intro E hE
       exact contAt_binop ordE (iha E hE) (ihb E hE)

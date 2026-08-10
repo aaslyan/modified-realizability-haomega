@@ -64,11 +64,12 @@ namespace HAomega
 
 /-- Runtime primitives of arity 1, 2 and 3 — the hand-written prelude. -/
 inductive Prim1 where
-  | pred | hord | hleafQ | hordH
+  | pred | hord | hleafQ | hordH | qnat | dnat | dhalf | dtoq
   deriving DecidableEq, Repr
 
 inductive Prim2 where
   | prec | bump | good | ord | hcut | hydra | orde | olte | hcutH
+  | qadd | qsub | qmul | qdiv | qlt | dadd | dsub | dmul | dlt
   deriving DecidableEq, Repr
 
 inductive Prim3 where
@@ -120,6 +121,8 @@ inductive HsVal where
   | vHyd : Realizability.Hydra → HsVal
   | vUnit : HsVal
   | vPair : HsVal → HsVal → HsVal
+  | vRat : Q → HsVal
+  | vDyad : D → HsVal
   | vClos : HsTm → List HsVal → HsVal
   -- the guarded recursive caller, awaiting the index and then the (unit)
   -- realizer of the order premise
@@ -138,6 +141,10 @@ def prim1Sem : Prim1 → HsVal → Option HsVal
   | .hord,   .vNat n => some (.vNat (Realizability.ordOfHydraN n))
   | .hleafQ, .vHyd h => some (.vNat (isLeafN h))
   | .hordH,  .vHyd h => some (.vOrd (ordEOfHydra h))
+  | .qnat,   .vNat n => some (.vRat (Q.ofNat n))
+  | .dnat,   .vNat n => some (.vDyad (D.ofNat n))
+  | .dhalf,  .vDyad a => some (.vDyad (D.half a))
+  | .dtoq,   .vDyad a => some (.vRat (D.toQ a))
   | _, _ => none
 
 def prim2Sem : Prim2 → HsVal → HsVal → Option HsVal
@@ -150,6 +157,15 @@ def prim2Sem : Prim2 → HsVal → HsVal → Option HsVal
   | .orde,  .vNat a, .vNat b => some (.vOrd (ordE a b))
   | .olte,  .vOrd a, .vOrd b => some (.vNat (Eps0.oltNE a b))
   | .hcutH, .vNat a, .vHyd h => some (.vHyd (Realizability.hydraStep a h))
+  | .qadd, .vRat a, .vRat b => some (.vRat (Q.add a b))
+  | .qsub, .vRat a, .vRat b => some (.vRat (Q.sub a b))
+  | .qmul, .vRat a, .vRat b => some (.vRat (Q.mul a b))
+  | .qdiv, .vRat a, .vRat b => some (.vRat (Q.div a b))
+  | .qlt,  .vRat a, .vRat b => some (.vNat (Q.ltN a b))
+  | .dadd, .vDyad a, .vDyad b => some (.vDyad (D.add a b))
+  | .dsub, .vDyad a, .vDyad b => some (.vDyad (D.sub a b))
+  | .dmul, .vDyad a, .vDyad b => some (.vDyad (D.mul a b))
+  | .dlt,  .vDyad a, .vDyad b => some (.vNat (D.ltN a b))
   | _, _, _ => none
 
 def prim3Sem : Prim3 → HsVal → HsVal → HsVal → Option HsVal
@@ -288,6 +304,8 @@ def hsDflt : Ty → HsTm
   | .nat => .lit 0
   | .ord => .ezero
   | .hyd => .hleaf
+  | .rat => .p1 .qnat (.lit 0)
+  | .dyad => .p1 .dnat (.lit 0)
   | .arrow _ b => .lam (hsDflt b)
   | .prod a b => .pair (hsDflt a) (hsDflt b)
 
@@ -324,6 +342,19 @@ def hsSupported : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → Bool
   | _, _, .hleafQ t => hsSupported t
   | _, _, .hordH t => hsSupported t
   | _, _, .hcutAtH p a b => hsSupported p && hsSupported a && hsSupported b
+  | _, _, .qnat a => hsSupported a
+  | _, _, .dnat a => hsSupported a
+  | _, _, .dhalf a => hsSupported a
+  | _, _, .dtoq a => hsSupported a
+  | _, _, .qadd a b => hsSupported a && hsSupported b
+  | _, _, .qsub a b => hsSupported a && hsSupported b
+  | _, _, .qmul a b => hsSupported a && hsSupported b
+  | _, _, .qdiv a b => hsSupported a && hsSupported b
+  | _, _, .qlt a b => hsSupported a && hsSupported b
+  | _, _, .dadd a b => hsSupported a && hsSupported b
+  | _, _, .dsub a b => hsSupported a && hsSupported b
+  | _, _, .dmul a b => hsSupported a && hsSupported b
+  | _, _, .dlt a b => hsSupported a && hsSupported b
   | _, _, .tiRec s n => hsSupported s && hsSupported n
   | _, _, .tiRecE s n => hsSupported s && hsSupported n
 
@@ -358,6 +389,19 @@ def hsOf : {Γ : List Ty} → {τ : Ty} → Tm Γ τ → HsTm
   | _, _, .hleafQ t => .p1 .hleafQ (hsOf t)
   | _, _, .hordH t => .p1 .hordH (hsOf t)
   | _, _, .hcutAtH p a b => .p3 .hcutAtH (hsOf p) (hsOf a) (hsOf b)
+  | _, _, .qnat a => .p1 .qnat (hsOf a)
+  | _, _, .dnat a => .p1 .dnat (hsOf a)
+  | _, _, .dhalf a => .p1 .dhalf (hsOf a)
+  | _, _, .dtoq a => .p1 .dtoq (hsOf a)
+  | _, _, .qadd a b => .p2 .qadd (hsOf a) (hsOf b)
+  | _, _, .qsub a b => .p2 .qsub (hsOf a) (hsOf b)
+  | _, _, .qmul a b => .p2 .qmul (hsOf a) (hsOf b)
+  | _, _, .qdiv a b => .p2 .qdiv (hsOf a) (hsOf b)
+  | _, _, .qlt a b => .p2 .qlt (hsOf a) (hsOf b)
+  | _, _, .dadd a b => .p2 .dadd (hsOf a) (hsOf b)
+  | _, _, .dsub a b => .p2 .dsub (hsOf a) (hsOf b)
+  | _, _, .dmul a b => .p2 .dmul (hsOf a) (hsOf b)
+  | _, _, .dlt a b => .p2 .dlt (hsOf a) (hsOf b)
   | _, τ, .tiRec s n => .tiRecT (hsOf s) (hsOf n) (hsDflt τ)
   | _, τ, .tiRecE s n => .tiRecET (hsOf s) (hsOf n) (hsDflt τ)
 
@@ -378,11 +422,15 @@ def hsNumLit? : HsTm → Option Nat
 def Prim1.name : Prim1 → String
   | .pred => "predN" | .hord => "ordOfHydraN"
   | .hleafQ => "isLeafN" | .hordH => "ordEOfHydra"
+  | .qnat => "qOfNat" | .dnat => "dOfNat" | .dhalf => "dHalf" | .dtoq => "dToQ"
 
 def Prim2.name : Prim2 → String
   | .prec => "oltN" | .bump => "bumpN" | .good => "goodN" | .ord => "ordOfN"
   | .hcut => "hydraStepN" | .hydra => "hydraSeqN" | .orde => "ordE"
   | .olte => "oltNE" | .hcutH => "hydraStep"
+  | .qadd => "qAdd" | .qsub => "qSub" | .qmul => "qMul" | .qdiv => "qDiv"
+  | .qlt => "qLtN"
+  | .dadd => "dAdd" | .dsub => "dSub" | .dmul => "dMul" | .dlt => "dLtN"
 
 def Prim3.name : Prim3 → String
   | .hcutAt => "playAtN" | .hcutAtH => "playAt"
@@ -444,6 +492,8 @@ def Rel : (τ : Ty) → τ.interp → HsVal → Prop
   | .nat, n, v => v = .vNat n
   | .ord, o, v => v = .vOrd o
   | .hyd, h, v => v = .vHyd h
+  | .rat, q, v => v = .vRat q
+  | .dyad, d, v => v = .vDyad d
   | .unit, _, v => v = .vUnit
   | .prod a b, p, v => ∃ x y, v = .vPair x y ∧ Rel a p.1 x ∧ Rel b p.2 y
   | .arrow a b, f, v => ∀ x w, Rel a x w → ∃ r, HsApp v w r ∧ Rel b (f x) r
@@ -470,6 +520,8 @@ theorem hsDflt_rel : ∀ (τ : Ty) (ρ : List HsVal),
   | .nat, _ => ⟨.vNat 0, HsEval.lit, rfl⟩
   | .ord, _ => ⟨.vOrd .zero, HsEval.ezero, rfl⟩
   | .hyd, _ => ⟨.vHyd Realizability.Hydra.leaf, HsEval.hleaf, rfl⟩
+  | .rat, _ => ⟨.vRat (Q.ofNat 0), HsEval.p1 HsEval.lit rfl, rfl⟩
+  | .dyad, _ => ⟨.vDyad (D.ofNat 0), HsEval.p1 HsEval.lit rfl, rfl⟩
   | .prod a b, ρ => by
       obtain ⟨x, hx, hrx⟩ := hsDflt_rel a ρ
       obtain ⟨y, hy, hry⟩ := hsDflt_rel b ρ
@@ -669,6 +721,89 @@ theorem hsOf_correct : {Γ : List Ty} → {τ : Ty} → (t : Tm Γ τ) →
       obtain ⟨y, hy, hry⟩ := ihb hs.2 e ρ hρ
       subst hru; subst hrx; subst hry
       exact ⟨.vHyd _, HsEval.p3 hu hx hy rfl, rfl⟩
+  | qnat a ih =>
+      intro hs e ρ hρ
+      obtain ⟨x, hx, hrx⟩ := ih hs e ρ hρ
+      subst hrx
+      exact ⟨_, HsEval.p1 hx rfl, rfl⟩
+  | dnat a ih =>
+      intro hs e ρ hρ
+      obtain ⟨x, hx, hrx⟩ := ih hs e ρ hρ
+      subst hrx
+      exact ⟨_, HsEval.p1 hx rfl, rfl⟩
+  | dhalf a ih =>
+      intro hs e ρ hρ
+      obtain ⟨x, hx, hrx⟩ := ih hs e ρ hρ
+      subst hrx
+      exact ⟨_, HsEval.p1 hx rfl, rfl⟩
+  | dtoq a ih =>
+      intro hs e ρ hρ
+      obtain ⟨x, hx, hrx⟩ := ih hs e ρ hρ
+      subst hrx
+      exact ⟨_, HsEval.p1 hx rfl, rfl⟩
+  | qadd a b iha ihb =>
+      intro hs e ρ hρ
+      simp only [hsSupported, Bool.and_eq_true] at hs
+      obtain ⟨x, hx, hrx⟩ := iha hs.1 e ρ hρ
+      obtain ⟨y, hy, hry⟩ := ihb hs.2 e ρ hρ
+      subst hrx; subst hry
+      exact ⟨_, HsEval.p2 hx hy rfl, rfl⟩
+  | qsub a b iha ihb =>
+      intro hs e ρ hρ
+      simp only [hsSupported, Bool.and_eq_true] at hs
+      obtain ⟨x, hx, hrx⟩ := iha hs.1 e ρ hρ
+      obtain ⟨y, hy, hry⟩ := ihb hs.2 e ρ hρ
+      subst hrx; subst hry
+      exact ⟨_, HsEval.p2 hx hy rfl, rfl⟩
+  | qmul a b iha ihb =>
+      intro hs e ρ hρ
+      simp only [hsSupported, Bool.and_eq_true] at hs
+      obtain ⟨x, hx, hrx⟩ := iha hs.1 e ρ hρ
+      obtain ⟨y, hy, hry⟩ := ihb hs.2 e ρ hρ
+      subst hrx; subst hry
+      exact ⟨_, HsEval.p2 hx hy rfl, rfl⟩
+  | qdiv a b iha ihb =>
+      intro hs e ρ hρ
+      simp only [hsSupported, Bool.and_eq_true] at hs
+      obtain ⟨x, hx, hrx⟩ := iha hs.1 e ρ hρ
+      obtain ⟨y, hy, hry⟩ := ihb hs.2 e ρ hρ
+      subst hrx; subst hry
+      exact ⟨_, HsEval.p2 hx hy rfl, rfl⟩
+  | qlt a b iha ihb =>
+      intro hs e ρ hρ
+      simp only [hsSupported, Bool.and_eq_true] at hs
+      obtain ⟨x, hx, hrx⟩ := iha hs.1 e ρ hρ
+      obtain ⟨y, hy, hry⟩ := ihb hs.2 e ρ hρ
+      subst hrx; subst hry
+      exact ⟨_, HsEval.p2 hx hy rfl, rfl⟩
+  | dadd a b iha ihb =>
+      intro hs e ρ hρ
+      simp only [hsSupported, Bool.and_eq_true] at hs
+      obtain ⟨x, hx, hrx⟩ := iha hs.1 e ρ hρ
+      obtain ⟨y, hy, hry⟩ := ihb hs.2 e ρ hρ
+      subst hrx; subst hry
+      exact ⟨_, HsEval.p2 hx hy rfl, rfl⟩
+  | dsub a b iha ihb =>
+      intro hs e ρ hρ
+      simp only [hsSupported, Bool.and_eq_true] at hs
+      obtain ⟨x, hx, hrx⟩ := iha hs.1 e ρ hρ
+      obtain ⟨y, hy, hry⟩ := ihb hs.2 e ρ hρ
+      subst hrx; subst hry
+      exact ⟨_, HsEval.p2 hx hy rfl, rfl⟩
+  | dmul a b iha ihb =>
+      intro hs e ρ hρ
+      simp only [hsSupported, Bool.and_eq_true] at hs
+      obtain ⟨x, hx, hrx⟩ := iha hs.1 e ρ hρ
+      obtain ⟨y, hy, hry⟩ := ihb hs.2 e ρ hρ
+      subst hrx; subst hry
+      exact ⟨_, HsEval.p2 hx hy rfl, rfl⟩
+  | dlt a b iha ihb =>
+      intro hs e ρ hρ
+      simp only [hsSupported, Bool.and_eq_true] at hs
+      obtain ⟨x, hx, hrx⟩ := iha hs.1 e ρ hρ
+      obtain ⟨y, hy, hry⟩ := ihb hs.2 e ρ hρ
+      subst hrx; subst hry
+      exact ⟨_, HsEval.p2 hx hy rfl, rfl⟩
   | @tiRec _ τ' s n ihs ihn =>
       intro hs e ρ hρ
       simp only [hsSupported, Bool.and_eq_true] at hs

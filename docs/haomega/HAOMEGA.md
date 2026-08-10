@@ -93,6 +93,22 @@ the value-layer *theorem proofs*, exactly as in the first-order repo):
 | Proof engineering: `deriv_norm`, `deriv_assumption`, term-form kit | ✅ |
 | **Certified emission**: target syntax + big-step semantics, `hsOf_correct` (logical relation across the type erasure); the shipped emitter is *defined* as `hsPrint ∘ hsOf` (`HsSemantics.lean`) | ✅ 6 of 13 programs (all that avoid `TI(ε₀)`) |
 
+### Groundwork for constructive analysis
+
+Two numeric base types are in place: `rat` (general fractions, for *stating*
+approximation theorems) and `dyad` (`m · 2⁻ᵏ`, for *computing* them), with the
+bridge `dtoq`.  Both value layers are **hand-rolled**, because Mathlib's `Rat`
+arithmetic reports `Classical.choice` and `Tm.eval` must stay choice-free —
+the same trap `Epsilon0.lean` records for `Nat.pair`, measured rather than
+assumed.  `NumericsDemo.lean` computes the precision sequence `2⁻ⁿ` as an
+object term and decides a `|x² − q| < 2⁻ⁿ` approximation statement.
+
+Not yet present, and deliberately: **reasoning rules**.  `Deriv` has no
+conversion equations for the numeric operations, so the object language can
+state and decide but not yet prove arithmetic identities.  Those should be
+designed alongside the first analysis theorem, since writing it is what
+reveals which are needed.
+
 ### What is next
 
 Of the five items on the original research track, three are done: the

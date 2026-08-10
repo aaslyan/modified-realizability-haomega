@@ -7,6 +7,7 @@ import Realizability.Signature.OrdinalAssignment
 import Realizability.Signature.Hydra
 import HAomega.HydraSurgery
 import HAomega.OrdCnf
+import HAomega.Dyadics
 import HAomega.HydraTyped
 
 /-!
@@ -80,6 +81,13 @@ inductive Ty where
   -- Hydras as their own base type — the typed hydra layer (`HydraTyped.lean`).
   -- The battle state is a tree, not a doubly-exponential code.
   | hyd : Ty
+  -- **Rationals, two representations.**  `rat` states — general fractions are
+  -- the vocabulary of an analytic theorem — and `dyad` computes, because an
+  -- approximation is always *at* a precision `2⁻ⁿ`.  Both are hand-rolled
+  -- (`Rationals.lean`, `Dyadics.lean`): Mathlib's `Rat` arithmetic is
+  -- choice-dependent and `Tm.eval` must stay choice-free.
+  | rat : Ty
+  | dyad : Ty
   | arrow : Ty → Ty → Ty
   | prod : Ty → Ty → Ty
   deriving DecidableEq, Repr
@@ -92,6 +100,8 @@ model is a later concern. -/
   | .nat => Nat
   | .ord => Eps0
   | .hyd => Realizability.Hydra
+  | .rat => Q
+  | .dyad => D
   | .arrow a b => a.interp → b.interp
   | .prod a b => a.interp × b.interp
 
@@ -104,6 +114,8 @@ def Ty.dfltVal : (τ : Ty) → τ.interp
   | .nat => 0
   | .ord => .zero
   | .hyd => Realizability.Hydra.leaf
+  | .rat => Q.zero
+  | .dyad => D.zero
   | .arrow _ b => fun _ ↦ b.dfltVal
   | .prod a b => (a.dfltVal, b.dfltVal)
 
@@ -179,6 +191,23 @@ inductive Tm : List Ty → Ty → Type where
   -- by the surgery layer's `playAt` — already a tree function, so the typed
   -- general game needs no new value-level mathematics.
   | hcutAtH {Γ : List Ty} : Tm Γ .nat → Tm Γ .nat → Tm Γ .hyd → Tm Γ .hyd
+  -- The stating layer.  `qlt` returns a numeral, so a derivation branches on
+  -- it with the existing numeric `eqDec` -- no new decision rule.
+  | qnat {Γ : List Ty} : Tm Γ .nat → Tm Γ .rat
+  | qadd {Γ : List Ty} : Tm Γ .rat → Tm Γ .rat → Tm Γ .rat
+  | qsub {Γ : List Ty} : Tm Γ .rat → Tm Γ .rat → Tm Γ .rat
+  | qmul {Γ : List Ty} : Tm Γ .rat → Tm Γ .rat → Tm Γ .rat
+  | qdiv {Γ : List Ty} : Tm Γ .rat → Tm Γ .rat → Tm Γ .rat
+  | qlt  {Γ : List Ty} : Tm Γ .rat → Tm Γ .rat → Tm Γ .nat
+  -- The computing layer.  No division: dyadics are not closed under it, and
+  -- `dhalf` is what `2⁻ⁿ` is built from.  `dtoq` is the bridge.
+  | dnat {Γ : List Ty} : Tm Γ .nat → Tm Γ .dyad
+  | dadd {Γ : List Ty} : Tm Γ .dyad → Tm Γ .dyad → Tm Γ .dyad
+  | dsub {Γ : List Ty} : Tm Γ .dyad → Tm Γ .dyad → Tm Γ .dyad
+  | dmul {Γ : List Ty} : Tm Γ .dyad → Tm Γ .dyad → Tm Γ .dyad
+  | dhalf {Γ : List Ty} : Tm Γ .dyad → Tm Γ .dyad
+  | dlt  {Γ : List Ty} : Tm Γ .dyad → Tm Γ .dyad → Tm Γ .nat
+  | dtoq {Γ : List Ty} : Tm Γ .dyad → Tm Γ .rat
   -- **Recursion along `≺`** — the program construct matching the `tiEps0`
   -- rule.  Its step type is the rule's nested `∀→` pair read off exactly: at
   -- `x`, given the recursive values at every `y` together with the (`unit`)
@@ -237,6 +266,19 @@ def Tm.rename {Γ Δ : List Ty} (ρ : Ren Γ Δ) : {τ : Ty} → Tm Γ τ → Tm
   | _, .hleafQ a => .hleafQ (a.rename ρ)
   | _, .hordH a => .hordH (a.rename ρ)
   | _, .hcutAtH p a b => .hcutAtH (p.rename ρ) (a.rename ρ) (b.rename ρ)
+  | _, .qnat a => .qnat (a.rename ρ)
+  | _, .dnat a => .dnat (a.rename ρ)
+  | _, .dhalf a => .dhalf (a.rename ρ)
+  | _, .dtoq a => .dtoq (a.rename ρ)
+  | _, .qadd a b => .qadd (a.rename ρ) (b.rename ρ)
+  | _, .qsub a b => .qsub (a.rename ρ) (b.rename ρ)
+  | _, .qmul a b => .qmul (a.rename ρ) (b.rename ρ)
+  | _, .qdiv a b => .qdiv (a.rename ρ) (b.rename ρ)
+  | _, .qlt a b => .qlt (a.rename ρ) (b.rename ρ)
+  | _, .dadd a b => .dadd (a.rename ρ) (b.rename ρ)
+  | _, .dsub a b => .dsub (a.rename ρ) (b.rename ρ)
+  | _, .dmul a b => .dmul (a.rename ρ) (b.rename ρ)
+  | _, .dlt a b => .dlt (a.rename ρ) (b.rename ρ)
   | _, .hydra a b => .hydra (a.rename ρ) (b.rename ρ)
   | _, .hord a => .hord (a.rename ρ)
   | _, .tiRec s n => .tiRec (s.rename ρ) (n.rename ρ)
@@ -282,6 +324,19 @@ def Tm.subst {Γ Δ : List Ty} (s : Sub Γ Δ) : {τ : Ty} → Tm Γ τ → Tm �
   | _, .hleafQ a => .hleafQ (a.subst s)
   | _, .hordH a => .hordH (a.subst s)
   | _, .hcutAtH p a b => .hcutAtH (p.subst s) (a.subst s) (b.subst s)
+  | _, .qnat a => .qnat (a.subst s)
+  | _, .dnat a => .dnat (a.subst s)
+  | _, .dhalf a => .dhalf (a.subst s)
+  | _, .dtoq a => .dtoq (a.subst s)
+  | _, .qadd a b => .qadd (a.subst s) (b.subst s)
+  | _, .qsub a b => .qsub (a.subst s) (b.subst s)
+  | _, .qmul a b => .qmul (a.subst s) (b.subst s)
+  | _, .qdiv a b => .qdiv (a.subst s) (b.subst s)
+  | _, .qlt a b => .qlt (a.subst s) (b.subst s)
+  | _, .dadd a b => .dadd (a.subst s) (b.subst s)
+  | _, .dsub a b => .dsub (a.subst s) (b.subst s)
+  | _, .dmul a b => .dmul (a.subst s) (b.subst s)
+  | _, .dlt a b => .dlt (a.subst s) (b.subst s)
   | _, .hydra a b => .hydra (a.subst s) (b.subst s)
   | _, .hord a => .hord (a.subst s)
   | _, .tiRec sc n => .tiRec (sc.subst s) (n.subst s)
@@ -397,6 +452,19 @@ def Tm.eval {Γ : List Ty} : {τ : Ty} → Tm Γ τ → Env Γ → τ.interp
   | _, .hleafQ a, e => isLeafN (a.eval e)
   | _, .hordH a, e => ordEOfHydra (a.eval e)
   | _, .hcutAtH p a b, e => playAt (p.eval e) (a.eval e) (b.eval e)
+  | _, .qnat a, e => Q.ofNat (a.eval e)
+  | _, .dnat a, e => D.ofNat (a.eval e)
+  | _, .dhalf a, e => D.half (a.eval e)
+  | _, .dtoq a, e => D.toQ (a.eval e)
+  | _, .qadd a b, e => Q.add (a.eval e) (b.eval e)
+  | _, .qsub a b, e => Q.sub (a.eval e) (b.eval e)
+  | _, .qmul a b, e => Q.mul (a.eval e) (b.eval e)
+  | _, .qdiv a b, e => Q.div (a.eval e) (b.eval e)
+  | _, .qlt a b, e => Q.ltN (a.eval e) (b.eval e)
+  | _, .dadd a b, e => D.add (a.eval e) (b.eval e)
+  | _, .dsub a b, e => D.sub (a.eval e) (b.eval e)
+  | _, .dmul a b, e => D.mul (a.eval e) (b.eval e)
+  | _, .dlt a b, e => D.ltN (a.eval e) (b.eval e)
   | _, .hydra a b, e => Realizability.hydraSeqN (a.eval e) (b.eval e)
   | _, .hord a, e => Realizability.ordOfHydraN (a.eval e)
   | _, .tiRec s n, e => tiRecVal (s.eval e) (n.eval e)
@@ -452,6 +520,19 @@ theorem Tm.eval_rename {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | hordH a ih => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ih]
   | hcutAtH p a b ihp iha ihb =>
       intro Δ ρ e; simp only [Tm.rename, Tm.eval, ihp, iha, ihb]
+  | qnat a ih => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ih]
+  | dnat a ih => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ih]
+  | dhalf a ih => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ih]
+  | dtoq a ih => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ih]
+  | qadd a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | qsub a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | qmul a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | qdiv a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | qlt a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | dadd a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | dsub a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | dmul a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
+  | dlt a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
   | hydra a b iha ihb => intro Δ ρ e; simp only [Tm.rename, Tm.eval, iha, ihb]
   | hord a ih => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ih]
   | tiRec sc n ihs ihn => intro Δ ρ e; simp only [Tm.rename, Tm.eval, ihs, ihn]
@@ -509,6 +590,19 @@ theorem Tm.eval_subst {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
   | hordH a ih => intro Δ s e; simp only [Tm.subst, Tm.eval, ih]
   | hcutAtH p a b ihp iha ihb =>
       intro Δ s e; simp only [Tm.subst, Tm.eval, ihp, iha, ihb]
+  | qnat a ih => intro Δ s e; simp only [Tm.subst, Tm.eval, ih]
+  | dnat a ih => intro Δ s e; simp only [Tm.subst, Tm.eval, ih]
+  | dhalf a ih => intro Δ s e; simp only [Tm.subst, Tm.eval, ih]
+  | dtoq a ih => intro Δ s e; simp only [Tm.subst, Tm.eval, ih]
+  | qadd a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | qsub a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | qmul a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | qdiv a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | qlt a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | dadd a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | dsub a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | dmul a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
+  | dlt a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
   | hydra a b iha ihb => intro Δ s e; simp only [Tm.subst, Tm.eval, iha, ihb]
   | hord a ih => intro Δ s e; simp only [Tm.subst, Tm.eval, ih]
   | tiRec sc n ihs ihn => intro Δ s e; simp only [Tm.subst, Tm.eval, ihs, ihn]

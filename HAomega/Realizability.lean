@@ -189,6 +189,8 @@ def Tm.dflt : {Γ : List Ty} → (τ : Ty) → Tm Γ τ
   | _, .nat => .zero
   | _, .ord => .ezero
   | _, .hyd => .hleaf
+  | _, .rat => .qnat .zero
+  | _, .dyad => .dnat .zero
   | _, .arrow _ b => .lam (Tm.dflt b)
   | _, .prod a b => .pair (Tm.dflt a) (Tm.dflt b)
 

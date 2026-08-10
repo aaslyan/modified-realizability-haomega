@@ -6,13 +6,11 @@ Authors: Ara Aslyan
 import Realizability.Ordinals.Epsilon0
 
 /-!
-# A hand-rolled rational layer — value level only, not yet a base type
+# A hand-rolled rational layer
 
 Groundwork for constructive analysis, and a measurement that constrains it.
-**Nothing in the object language uses this yet**: `Ty` has no rational base
-type, and adding one is deliberately deferred until the representation
-question below is settled, since every base type enlarges every per-rule and
-per-type site in the development permanently.
+This is the *stating* representation; `Dyadics.lean` is the computing one, and
+`Syntax.lean` carries both as base types `rat` and `dyad`.
 
 ## The measurement: it cannot be Mathlib's `Rat`
 
@@ -44,15 +42,11 @@ the interpreting values, so `1/2` and `2/4` must be the *same* record, not
 merely equivalent ones. Division by zero yields `0`, as it does in `Rat` and
 for the same reason — totality keeps the evaluator free of side conditions.
 
-**Open question, deliberately not settled here.** Constructive analysis
-usually wants *dyadic* rationals, `m · 2⁻ᵏ`: approximations are stated at
-precision `2⁻ⁿ`, normalization is shifting rather than `gcd`, and denominators
-do not grow the way general fractions' do. General `Q` is the better type for
-*stating* theorems and dyadics the better one for *computing* with them, and
-this framework can carry both — adding a base type is a known, mechanical
-operation here, done twice already for `ord` and `hyd`. Which to wire in, and
-whether to wire in one or two, is a design decision that should precede the
-first analysis theorem rather than follow it.
+**Settled: both.** `Q` states and `Dyadics.lean`'s `D` computes, and the
+object language carries the base types `rat` and `dyad` together with the
+bridge `dtoq`. The division of labour is that approximations are always *at* a
+precision `2⁻ⁿ`, which dyadics represent directly, while the theorem being
+approximated reads naturally over general fractions.
 
 What this file settles regardless of that choice is the *constraint*: whatever
 representation is chosen must be built from measured-axiom-free primitives,

@@ -118,31 +118,66 @@ have now hit it.
 * Coded hydra extracts still overflow at codes 4 and 7. That is the
   measurement their typed twins are measured against, not an unrepaired bug.
 
-## 7. In progress: the arithmetic rule base for `Q`
+## 7. The arithmetic rule base for `Q` — partially unblocked
 
-**Decision taken:** re-represent `Q` as a **quotient** of `Int × Nat` by
-cross-multiplication, rather than a gcd-normalized record.
+**The quotient re-representation was planned, measured, and then abandoned as
+unnecessary.** What follows is what happened, not what was intended.
 
-*Why.* With the normalized record, every ring identity reduces to uniqueness
-of lowest-terms form — a real gcd theorem that does not exist in-tree, and
-whose Mathlib counterpart sits behind the choice-contaminated `mkRat`. With a
-quotient, equality is right by construction and the ring laws follow from
-`Int` algebra via `Quotient.sound`. `Quot.sound` is already inside the
-permitted axiom set, and quotients compute (`Quot.lift` reduces on `Quot.mk`,
-and they erase at runtime).
+### The measurement that decided it
 
-*Investigated so far, and it matters:* `Quotient.lift`'s proof argument
-becomes part of the **definition**, so the well-definedness proofs must
-themselves be choice-free or `Tm.eval` breaks. Measured: `omega` is
-`[propext, Quot.sound]` and core `Int` lemmas are `[propext]` — both fine.
-But the respect proofs are *nonlinear* (cross-multiplication cancellation),
-which `omega` cannot do, and `ring` is not in scope because the import chain
-pulls a Mathlib subset. **Open question:** whether `ring` and
-`mul_right_cancel₀` stay choice-free once imported, or whether the respect
-lemmas need hand-rolled `Int` proofs. That check is the next step and it
-gates the whole design.
+The plan branched on whether the `Quotient.lift` respect proofs could be
+choice-free, since under a quotient those proofs become part of the
+*definition*. Measured, exactly as printed:
 
-*If it lands*, it unblocks §5's first three rows in one move.
+    crossTrans  via  mul_left_cancel₀            [propext, Classical.choice, Quot.sound]
+    crossTrans  via  Int.eq_of_mul_eq_mul_left   [propext]
+    addRespects via  ring                        [propext]
+
+So `ring` is clean and the *generic* `mul_left_cancel₀` is not, while the
+`Int`-specific cancellation is — a one-lemma swap, not the sign-case-split
+fallback the plan anticipated.
+
+### The finding that made the whole question moot
+
+While checking the above: **the choice constraint never bound the lemmas at
+all.** The rule base is consumed by `soundness`, whose footprint already is
+`[propext, Classical.choice, Quot.sound]`. Only *definitions* reachable from
+`Tm.eval` must be clean, and `Q.add`/`Q.mul`/`Q.div` are measured axiom-free
+already. So the lemmas may use Mathlib freely, and neither the quotient
+re-representation nor a hand-rolled `gcd` theory is needed. **`Q`'s
+representation is unchanged.** The earlier reasoning in this document — that
+the lemmas had to be choice-free too — was simply wrong.
+
+### What landed: `HAomega/QArith.lean`
+
+* `Q.of_eq_mkRat` — `Q.of` agrees with Mathlib's normalization.
+* **`Q.of_eq_of`** — *the* lemma five pieces of work were blocked on:
+  equivalent fractions normalize to the same `Q`. With it, a ring identity
+  reduces to an `Int` polynomial identity that `ring` closes.
+* `Q.add_comm`, `Q.mul_comm` — demonstrating the route composes.
+
+All `[propext, Classical.choice, Quot.sound]`, which is harmless here for the
+reason above.
+
+### What did **not** land, and why
+
+**The laws carry a `den ≠ 0` hypothesis, so they are not yet `Deriv` rules.**
+`Q`'s denominator is a bare `Nat`, so `⟨5,0⟩` inhabits `Q` and the object
+language's `∀x^rat` ranges over it. Removing the hypothesis needs positivity
+made structural — store `den : Nat` meaning `den+1` — which ripples through
+every site reading `.num`/`.den` (`EFTC.lean`'s `ceilNatQ`, `Dyadics.toQ`,
+the guards). That refactor is the next step and is **not done**.
+
+Consequently **none of §5's rows has moved yet**: `SquareRoot`'s `K`,
+`UniformContinuity`'s Lipschitz premise, and `EFTC`'s three claims are all
+still hypothesis-discharged-by-caller or stated-unproved. The blocker is now
+one concrete refactor rather than an open mathematical question, which is the
+real change.
+
+*Cost note:* `QArith.lean` imports `Mathlib` wholesale — narrower imports were
+tried and the module paths do not exist in the pinned version. Since the file
+is proof-side only, the cost is build time (7,849 jobs, ~11 s warm), not
+trust.
 
 ## 8. Not started
 

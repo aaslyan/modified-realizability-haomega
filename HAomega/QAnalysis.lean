@@ -1191,6 +1191,107 @@ theorem riemann_refine_gen (A : A0) (k N m : Nat) (hN : 0 < N) (hm : 0 < m) (x h
         mul_le_mul_of_nonneg_left hb (by positivity)
     _ = |h.val| * (1 / 2 ^ k) := by field_simp
 
+/-! ### Splitting a uniform grid exactly
+
+Additivity is what `∫ₐˣ⁺ʰ ≈ ∫ₐˣ + ∫ₓˣ⁺ʰ` needs, and the obstacle recorded
+earlier was that concatenating the grids of `[a,x]` and `[x,x+h]` gives a
+*non-uniform* partition of `[a,x+h]`.  That obstacle is avoidable: the split
+point is **rational**, so `h/(x−a)` is a ratio of integers, and cell counts in
+that ratio make the concatenation uniform again.  A uniform grid of `[x, x+h₁+h₂]`
+with `N₁+N₂` cells splits *exactly* at `x+h₁` whenever the two cell widths
+agree — no tagged partitions, no common refinement of unequal grids. -/
+
+theorem riemann_split (A : A0) (k : Nat) (x h₁ h₂ : Q) (N₁ N₂ : Nat)
+    (hN₁ : 0 < N₁) (hN₂ : 0 < N₂)
+    (hw : h₁.val / (N₁ : Rat) = h₂.val / (N₂ : Rat))
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val)
+    (h1a : A.a.val ≤ x.val + h₁.val) (h1b : x.val + h₁.val ≤ A.b.val)
+    (h2a : A.a.val ≤ x.val + h₁.val + h₂.val)
+    (h2b : x.val + h₁.val + h₂.val ≤ A.b.val) :
+    (A.riemann x (Q.add h₁ h₂) (N₁ + N₂)).val
+      = (A.riemann x h₁ N₁).val + (A.riemann (Q.add x h₁) h₂ N₂).val := by
+  have hNs : 0 < N₁ + N₂ := by omega
+  have h1R : (0 : Rat) < (N₁ : Rat) := by exact_mod_cast hN₁
+  have h2R : (0 : Rat) < (N₂ : Rat) := by exact_mod_cast hN₂
+  have hsR : (0 : Rat) < ((N₁ + N₂ : Nat) : Rat) := by exact_mod_cast hNs
+  have hcast : ((N₁ + N₂ : Nat) : Rat) = (N₁ : Rat) + (N₂ : Rat) := by push_cast; ring
+  -- the common cell width
+  have hwidth : (h₁.val + h₂.val) / ((N₁ + N₂ : Nat) : Rat) = h₁.val / (N₁ : Rat) := by
+    rw [hcast]
+    field_simp at hw ⊢
+    linarith
+  -- the interval `[x, x+h₁]` sits inside `[a,b]`, and so does `[x+h₁, x+h₁+h₂]`
+  have hmemS : ∀ i : Nat, i ≤ N₁ + N₂ →
+      A.a.val ≤ (rPt x (Q.add h₁ h₂) (N₁ + N₂) i).val
+        ∧ (rPt x (Q.add h₁ h₂) (N₁ + N₂) i).val ≤ A.b.val := by
+    intro i hi
+    exact rPt_mem A hNs i hi hxa hxb (by rw [Q.val_add]; linarith)
+      (by rw [Q.val_add]; linarith)
+  -- first block: the fine points coincide with `[x, x+h₁]`'s
+  have hlow : ∀ i ∈ Finset.range N₁,
+      (A.f (rPt x (Q.add h₁ h₂) (N₁ + N₂) i)).val = (A.f (rPt x h₁ N₁ i)).val := by
+    intro i hi
+    have hlt := Finset.mem_range.mp hi
+    refine f_val_congr A (hmemS i (by omega)).1 (hmemS i (by omega)).2
+      (rPt_mem A hN₁ i (le_of_lt hlt) hxa hxb h1a h1b).1
+      (rPt_mem A hN₁ i (le_of_lt hlt) hxa hxb h1a h1b).2 ?_
+    rw [rPt_val x _ hNs, rPt_val x h₁ hN₁]
+    simp only [Q.val_add]
+    have e : (i : Rat) / ((N₁ + N₂ : Nat) : Rat) * (h₁.val + h₂.val)
+        = (i : Rat) * ((h₁.val + h₂.val) / ((N₁ + N₂ : Nat) : Rat)) := by ring
+    rw [e, hwidth]
+    ring
+  -- second block: they coincide with `[x+h₁, x+h₁+h₂]`'s
+  have hhigh : ∀ j ∈ Finset.range N₂,
+      (A.f (rPt x (Q.add h₁ h₂) (N₁ + N₂) (N₁ + j))).val
+        = (A.f (rPt (Q.add x h₁) h₂ N₂ j)).val := by
+    intro j hj
+    have hlt := Finset.mem_range.mp hj
+    refine f_val_congr A (hmemS (N₁ + j) (by omega)).1 (hmemS (N₁ + j) (by omega)).2
+      (rPt_mem A hN₂ j (le_of_lt hlt) (by rw [Q.val_add]; linarith)
+        (by rw [Q.val_add]; linarith) (by rw [Q.val_add]; linarith)
+        (by rw [Q.val_add]; linarith)).1
+      (rPt_mem A hN₂ j (le_of_lt hlt) (by rw [Q.val_add]; linarith)
+        (by rw [Q.val_add]; linarith) (by rw [Q.val_add]; linarith)
+        (by rw [Q.val_add]; linarith)).2 ?_
+    rw [rPt_val x _ hNs, rPt_val _ h₂ hN₂]
+    simp only [Q.val_add]
+    have e : ((N₁ + j : Nat) : Rat) / ((N₁ + N₂ : Nat) : Rat) * (h₁.val + h₂.val)
+        = ((N₁ : Rat) + (j : Rat)) * ((h₁.val + h₂.val) / ((N₁ + N₂ : Nat) : Rat)) := by
+      push_cast; ring
+    have e2 : (j : Rat) / (N₂ : Rat) * h₂.val = (j : Rat) * (h₂.val / (N₂ : Rat)) := by ring
+    rw [e, hwidth, e2, ← hw]
+    field_simp
+    ring
+  rw [A0.riemann, A0.riemann, A0.riemann, Q.val_mul, Q.val_mul, Q.val_mul,
+    sumQ_val, sumQ_val, sumQ_val, rStep_val _ hNs, rStep_val _ hN₁, rStep_val _ hN₂,
+    Finset.sum_range_add, Finset.sum_congr rfl hlow, Finset.sum_congr rfl hhigh,
+    Q.val_add, hwidth, hw, mul_add]
+
+/-- **Grid independence.**  Two uniform grids over the same interval, both with
+mesh at most `2⁻ω⁽ᵏ⁾`, give sums within `2|h|·2⁻ᵏ` — compare each to the product
+grid, which refines both.  This is the classical "any two fine partitions agree"
+statement, restricted to uniform grids, which by `riemann_split` is no
+restriction for the additivity it is wanted for. -/
+theorem riemann_uniform_close (A : A0) (k N m : Nat) (hN : 0 < N) (hm : 0 < m) (x h : Q)
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val)
+    (hha : A.a.val ≤ x.val + h.val) (hhb : x.val + h.val ≤ A.b.val)
+    (hmN : |h.val| / (N : Rat) ≤ 1 / 2 ^ A.ω k)
+    (hmM : |h.val| / (m : Rat) ≤ 1 / 2 ^ A.ω k) :
+    |(A.riemann x h N).val - (A.riemann x h m).val| ≤ 2 * (|h.val| * (1 / 2 ^ k)) := by
+  have h1 := riemann_refine_gen A k N m hN hm x h hxa hxb hha hhb hmN
+  have h2 := riemann_refine_gen A k m N hm hN x h hxa hxb hha hhb hmM
+  rw [Nat.mul_comm m N] at h2
+  have e1 : |(A.riemann x h N).val - (A.riemann x h (N * m)).val| ≤ |h.val| * (1 / 2 ^ k) := by
+    rw [abs_sub_comm]; exact h1
+  have t : |(A.riemann x h N).val - (A.riemann x h m).val|
+      ≤ |(A.riemann x h N).val - (A.riemann x h (N * m)).val|
+        + |(A.riemann x h (N * m)).val - (A.riemann x h m).val| := abs_sub_le _ _ _
+  linarith
+
+#print axioms riemann_split
+#print axioms riemann_uniform_close
+
 /-! ### The representation, and the integral as an inhabitant of it -/
 
 theorem A0.len_val (A : A0) : A.len.val = A.b.val - A.a.val := Q.val_sub _ _
@@ -1303,27 +1404,31 @@ def A1.toE1 (A : A1) : E1 :=
 
 /-! ### What `∫f` still needs to be an `E₁`
 
-`A0.intE0` puts the integral in `E₀`.  Lifting it to `E₁` needs two things
-this development does not have, and both are about Riemann sums rather than
-about the representation:
+The obstacle recorded earlier was additivity, and the plan was tagged
+partitions.  **They turned out not to be needed.**  The split point is a
+*rational*, so `h/(x−a)` is a ratio of integers, and cell counts in that ratio
+make the concatenated grid uniform again — `riemann_split` gives **exact**
+additivity for uniform grids whose cell widths agree, and
+`riemann_uniform_close` gives grid independence.  Between them they do what a
+common refinement of two arbitrary partitions would have done, with no
+partition objects, no sortedness, and no merge.
 
-* **`cont`** needs `|∫ₐˣ f − ∫ₐʸ f| ≤ M·|x−y|` with an explicit bound `M` on
-  `|f|`.  `M` is computable from `ω` and one sample — step from `a` to `x` in
-  `⌈L·2^ω(0)⌉` moves of size `2⁻ω⁽⁰⁾`, each changing `f` by under `1` — but
-  that construction and its proof are not written.
-* **`diff`** needs approximate additivity, `∫ₐˣ⁺ʰ ≈ ∫ₐˣ + ∫ₓˣ⁺ʰ`.  This is the
-  one real obstacle.  `intEv n` uses a *uniform* grid of `evN n` cells on
-  `[a,x]`, and the grids for `[a,x]` and `[a,x+h]` are incommensurate, so the
-  difference of the two sums is not the sum over `[x, x+h]`.  Concatenating the
-  grids of `[a,x]` and `[x,x+h]` gives a partition of `[a,x+h]` with `x` as a
-  node — but a *non-uniform* one, and `A0.riemann` only knows uniform
-  partitions.  Closing this means generalizing to arbitrary tagged partitions
-  and redoing `riemann_refine_gen` at that generality.
+What is left is bookkeeping rather than a missing idea, and it is **not
+written**:
 
-So `eftc1` proves the differentiability content about Riemann sums, `A0.intE0`
-proves the object exists, and "`∫f` is `A₁`-adequate" as one sentence is still
-**not** formalized.  What has changed is the size of the gap: it is now one
-missing lemma about partitions, not a missing notion. -/
+* **The counts.**  Turning `h/(x−a)` into a concrete `N₁, N₂` with matching
+  widths — take `p/q` from the numerator and denominator of `Q.div h (x−a)`
+  and scale until the mesh is fine.  Mechanical, and it has to handle `h < 0`
+  as a separate case, since the interval is then `[x+h, x]`.
+* **`cont`** needs an explicit bound `M` on `|f|`, computable from `ω` and one
+  sample: step from `a` to `x` in `⌈L·2^ω(0)⌉` moves of size `2⁻ω⁽⁰⁾`, each
+  changing `f` by under `1`.
+* **Assembly** — instantiating `E1`'s `dq` from the two comparison errors,
+  which is where the `2L·2⁻ᵏ′/|h| ≤ 2⁻ᵏ` choice is made.
+
+So `A0.intE0` still stops at `E₀`, and "`∫f` is `A₁`-adequate" as a single
+sentence is still not formalized.  What changed this round is that the
+remaining work no longer needs a theory of partitions. -/
 
 #print axioms A1.toE1
 #print axioms A0.toE0

@@ -447,25 +447,44 @@ factor, because every fine sample lies within the **coarse** mesh of its
 block's left endpoint however many fine samples there are. The block
 decomposition is `sum_range_mul_block`, an induction on the outer count.
 
+### Additivity without tagged partitions
+
+The obstacle to lifting `∫f` from `E₀` to `E₁` was additivity — the grids for
+`[a,x]` and `[a,x+h]` are incommensurate, so the difference of the two sums is
+not the sum over `[x,x+h]` — and the plan of record was to generalize to
+tagged partitions and redo the refinement estimate at that generality.
+
+**Tagged partitions turned out not to be needed.** The split point is a
+*rational*, so `h/(x−a)` is a ratio of integers, and cell counts in that ratio
+make the concatenated grid uniform again. Two lemmas do what a common
+refinement of two arbitrary partitions would have done:
+
+    'HAomega.riemann_split'          depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.riemann_uniform_close'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+`riemann_split` is **exact**: a uniform grid of `[x, x+h₁+h₂]` with `N₁+N₂`
+cells splits at `x+h₁` into the grids of `[x,x+h₁]` and `[x+h₁,x+h₁+h₂]`
+whenever the two cell widths agree. `riemann_uniform_close` is grid
+independence: two uniform grids with mesh at most `2⁻ω⁽ᵏ⁾` agree to `2|h|·2⁻ᵏ`,
+by comparing each to the product grid. No partition objects, no sortedness, no
+merge.
+
 ### What `∫f` still needs to be an `E₁`
 
-Two things, both about Riemann sums rather than the representation:
+Bookkeeping rather than a missing idea, and **not written**:
 
-* **`cont`** needs `|∫ₐˣ f − ∫ₐʸ f| ≤ M·|x−y|` with an explicit bound `M` on
-  `|f|`. `M` is computable from `ω` and one sample; the construction and proof
-  are not written.
-* **`diff`** needs approximate additivity `∫ₐˣ⁺ʰ ≈ ∫ₐˣ + ∫ₓˣ⁺ʰ`, and this is
-  the real obstacle. `intEv n` uses a *uniform* grid of `evN n` cells, and the
-  grids for `[a,x]` and `[a,x+h]` are incommensurate, so the difference of the
-  two sums is not the sum over `[x, x+h]`. Concatenating the grids of `[a,x]`
-  and `[x,x+h]` does give a partition of `[a,x+h]` with `x` as a node — but a
-  **non-uniform** one, and `A0.riemann` only knows uniform partitions. Closing
-  it means generalizing to arbitrary tagged partitions and redoing
-  `riemann_refine_gen` at that generality.
+* **The counts** — turning `h/(x−a)` into concrete `N₁, N₂` with matching
+  widths (take `p/q` from `Q.div h (x−a)` and scale until the mesh is fine).
+  Mechanical, but it must handle `h < 0` separately, the interval then being
+  `[x+h, x]`.
+* **`cont`** needs an explicit bound `M` on `|f|`, computable from `ω` and one
+  sample.
+* **Assembly** — instantiating `E1.dq` from the two comparison errors, which is
+  where the `2L·2⁻ᵏ′/|h| ≤ 2⁻ᵏ` choice gets made.
 
-So "`∫f` is `A₁`-adequate" as a single sentence remains **not formalized**.
-What changed is the size of the gap: one missing lemma about partitions, not a
-missing notion.
+So `A0.intE0` still stops at `E₀`, and "`∫f` is `A₁`-adequate" as a single
+sentence is still **not formalized**. What changed is that the remaining work
+no longer needs a theory of partitions.
 
 **Not claimed:** the negative half, `A₀ ⊭ EFTC2`. That is Myhill's theorem, a
 citation here, not a formalization — so "`A₁ ⊨ EFTC2`" is proved and the

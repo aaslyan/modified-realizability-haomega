@@ -94,9 +94,16 @@ def ceilLog2Aux (L : Q) : Nat → Nat → Nat
 
 def ceilLog2Q (L : Q) : Nat := ceilLog2Aux L 0 64
 
-/-- Least `η ≤ fuel` with `2⁻ᵑ ≤ L/2`. -/
+/-- Least `η` in `[acc, acc+fuel]` with `2⁻ᵑ ≤ L/2`.
+
+The exhausted case returns `acc`, **not `0`**.  Returning `0` looks harmless —
+it is the "search failed" branch — but `0` is precisely a value that does not
+satisfy the property being searched for, so a caller that runs out of fuel
+gets a confident wrong answer rather than a bad one it can detect.  With `acc`
+the returned value is at least monotone in the search, and `etaAux_spec` below
+can be proved by induction on the fuel. -/
 def etaAux (L : Q) : Nat → Nat → Nat
-  | _, 0 => 0
+  | acc, 0 => acc
   | acc, fuel + 1 =>
       if Qle (D.toQ (D.pow2neg acc)) (Q.div L (Q.ofNat 2)) then acc
       else etaAux L (acc + 1) fuel
@@ -189,8 +196,16 @@ def derivEval (A : A1) (k : Nat) (x : Q) : Q :=
   let h := if A.stepRight x then h₀ else Q.neg h₀
   Q.div (Q.sub (A.f (Q.add x h)) (A.f x)) h
 
-/-- `η₂` — a fixed constant with `2⁻ᵑ² ≤ (b−a)/2`. -/
-def eta2 (A : A1) : Nat := etaAux (Q.sub A.b A.a) 0 64
+/-- `η₂` — a constant with `2⁻ᵑ² ≤ (b−a)/2`, and `eta2_spec` proves it is one.
+
+The fuel is taken from the data rather than fixed at `64`.  `L = b−a` is
+positive, so `L ≥ 1/L.den`, so `η = L.den + 1` already works; searching with
+fuel `L.den + 2` therefore *cannot* exhaust, and the value returned is the
+least one, which is small in practice — `0` for `[0,2]` and `1` for `[0,1]`,
+exactly what the fixed fuel gave. A fixed `64` is only correct for intervals
+longer than about `2⁻⁶³`, and nothing checked that. -/
+def eta2 (A : A1) : Nat :=
+  etaAux (Q.sub A.b A.a) 0 ((Q.sub A.b A.a).den + 2)
 
 /-- **The modulus of continuity of `f'`.**  The two evaluations of `f` inside
 the difference quotient are divided by the step, so the estimate multiplies by
@@ -243,10 +258,18 @@ end A1
 Stated, **not proved**.  Each is an arithmetic claim about `Q` of exactly the
 kind the missing rule base would discharge. -/
 
-/-- Lemma 1's correctness: `derivEval` is a modulus-`ω'` representation of a
-function that the `δ`-data pins down.  **Not proved.** -/
+/-- Lemma 1's correctness: `derivEval` is uniformly continuous with modulus
+`ω'`.  Proved, as `lemma1` in `QAnalysis.lean`.
+
+**The four interval premises are load-bearing and were missing.**  Without
+them the claim ranges over points outside `[a,b]`, where `A1`'s `cont` and
+`diff` say nothing at all about `f` — so it was false for reasons having
+nothing to do with the difference quotient.  The manifesto's Lemma 1 restricts
+to the interval too (its `x + s·h₀`, `y + s·h₀` are required to lie in
+`[a,b]`); the restriction was lost in transcription, not chosen. -/
 def Lemma1Claim (A : A1) : Prop :=
   ∀ k : Nat, ∀ x y : Q,
+    Qle A.a x = true → Qle x A.b = true → Qle A.a y = true → Qle y A.b = true →
     Qle (Q.abs (Q.sub x y)) (D.toQ (D.pow2neg (A.omega' k))) = true →
     Q.ltN (Q.abs (Q.sub (A.derivEval k x) (A.derivEval k y)))
       (D.toQ (D.pow2neg k)) = 1

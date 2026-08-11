@@ -89,7 +89,8 @@ Listed here so it cannot be missed. Each is flagged in its own source file too.
 |---|---|---|
 | bound `K` in the square-root theorem | `SquareRoot.lean` | **discharged** — `sqrt_premises` (`QAnalysis.lean`) proves both colouring premises for every `q ≥ 0` at every precision |
 | Lipschitz premise of uniform continuity | `UniformContinuity.lean` | **discharged at the three guarded maps**, for all `x`, `y`, `m`; an arbitrary `f` still owes its own |
-| `Lemma1Claim`, `Lemma2Claim`, `EFTC2Claim` | `EFTC.lean` | **still unproved**, but no longer false: `A1` now carries the modulus hypotheses, and `omega'` is fixed. Lemma 1's computable half is proved; its uniform-continuity half and Lemma 2 are not — see §7 |
+| `Lemma1Claim` | `EFTC.lean` | **proved** — `lemma1` in `QAnalysis.lean`, for every `A1`, both halves |
+| `Lemma2Claim`, `EFTC2Claim` | `EFTC.lean` | **stated, unproved.** Lemma 2 needs a discrete substitute for classical FTC2 that this embedding does not have — see §7 |
 | modulus metatheorem (extraction yields a modulus for *every* derivation) | `Modulus.lean` | not proved; two recorded obstructions, see §6 |
 
 The first three rows were all blocked on the same missing thing — an
@@ -307,27 +308,50 @@ constant factors, not in the growth rate, which is still `2^ω'(m)`. Guards
 updated: `sqEx.derivEval 8` now lands within `2⁻¹²`, `sqEx.integral 0` is
 `524257/524288` (error `31/524288`), `linEx.integral 0..3` still exactly `6`.
 
-**What is proved under the new hypotheses:** Lemma 1's computable half,
+**Lemma 1 is proved, both halves:**
 
-    'HAomega.derivEval_approx'          depends on axioms: [propext, Classical.choice, Quot.sound]
-    'HAomega.derivEval_approx_of_diff'  depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.derivEval_approx'              depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.derivEval_approx_of_diff'      depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.derivEval_uniformly_continuous' depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.lemma1'                        depends on axioms: [propext, Classical.choice, Quot.sound]
 
-`|derivEval k x − F x| < 2⁻⁽ᵏ⁺³⁾` at every `x ∈ [a,b]`, with a single `F`
-drawn from `diff`, uniformly in `k` and `x`. The endpoint-safe sign is what
-the proof spends its effort on.
+`derivEval` computes the derivative to `2⁻⁽ᵏ⁺³⁾` at every point of `[a,b]`,
+with a single `F` drawn from `diff` uniformly in `k` and `x`; and it is
+uniformly continuous with modulus `ω'`, which is `Lemma1Claim`'s content.
+`lemma1 : ∀ A : A1, Lemma1Claim A`.
 
-**What is still not proved.** Lemma 1's uniform-continuity half. Of the three
-obstructions recorded earlier, two are gone: the reciprocal step (fixed by
-`omega'` above) and the index mismatch (an artefact of routing through `f'` at
-`k+4` — taken at `k+3`, the precision `stepSize` itself uses, the bookkeeping
-closes with room to spare). What remains is the *common step*: `stepRight`
-picks the sign pointwise, so two points either side of the midpoint use
-opposite steps and the cancellation does not happen for them; routing through
-`F` avoids it but needs a pigeonhole (`|x−y| ≤ (b−a)/2` and `h₀ ≤ (b−a)/4`
-imply one of `±h₀` is admissible for both). **The arithmetic closes; the Lean
-proof of that half is not written.** Lemma 2 is further off — §5.2 imports
+**Two further corrections were needed to get there**, both to constructions
+rather than to the analysis, and both found by the proof failing:
+
+* **`etaAux` returned `0` on fuel exhaustion** — a value that does *not*
+  satisfy `2⁻ᵑ ≤ L/2`, the property it is searching for, so a caller past the
+  fuel received a confident wrong answer rather than a detectable one. With a
+  fixed fuel of `64` that happened for any interval shorter than about
+  `2⁻⁶³`. It now returns the accumulator, and `eta2`'s fuel is taken from the
+  data (`L.den + 2`), which provably cannot exhaust since `η = L.den+1`
+  already works. `eta2_spec` proves the property outright. The returned values
+  for both instances are unchanged (`0` for `[0,2]`, `1` for `[0,1]`), so no
+  guard moved. `ceilLog2Aux` still has the same bug; it is on Lemma 2's path,
+  not Lemma 1's, and was left alone.
+* **`Lemma1Claim` was missing its interval premises.** As stated it ranged
+  over all `x y : Q`, including points outside `[a,b]` where `cont` and `diff`
+  say nothing about `f` — false for reasons unrelated to the difference
+  quotient. The manifesto's Lemma 1 restricts to the interval (`x + s·h₀`,
+  `y + s·h₀ ∈ [a,b]`); the restriction was lost in transcription. Restored.
+
+**The mathematical content of the proof** is that `derivEval` picks its step
+*pointwise*, so `DE(x)` and `DE(y)` may use opposite steps and nothing cancels
+between them directly. The proof routes through `F`: both `DE`s are near `F`
+(`derivEval_approx`), both *common-step* quotients are near `F` (`diff`), and
+those cancel. The common step exists by `common_step` — if `|x−y| ≤ (b−a)/2`
+and `h₀ ≤ (b−a)/4` then one of `±h₀` keeps both points inside `[a,b]`. Four
+terms of `2⁻⁽ᵏ⁺³⁾` and one of `2⁻⁽ᵏ⁺⁴⁾` sum to `2⁻⁽ᵏ⁺¹⁾ + 2⁻⁽ᵏ⁺⁴⁾ < 2⁻ᵏ`.
+
+**Lemma 2 is still open**, and is a different problem: §5.2 imports
 `∫f' = f(b)−f(a)` from classical FTC2, and there is no real integral here for
-that to be imported into.
+that to be imported into. The mesh `L/N` and the step `h₀` are unrelated, so
+no discrete telescoping replaces it, and nothing about `integral` can be
+settled by computation inside a proof (the `sumQ` kernel wall, §6).
 
 ### What has still not moved
 

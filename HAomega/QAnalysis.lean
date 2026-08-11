@@ -209,17 +209,22 @@ theorem stepRight_iff (A : A1) (x : Q) :
   rw [Qle_eq_true_iff, Q.val_div _ _ (by decide), Q.val_add, Q.val_ofNat]
   norm_num
 
+/-- The property `A1.diff` asserts of its witness, named so it can be carried
+around once `A.diff` has been opened. -/
+def IsDeriv (A : A1) (F : Q → Q) : Prop :=
+  ∀ (k : Nat) (x h : Q), Qle A.a x = true → Qle x A.b = true →
+    Qle A.a (Q.add x h) = true → Qle (Q.add x h) A.b = true →
+    h.num ≠ 0 → Qle (Q.abs h) (D.toQ (D.pow2neg (A.δ k))) = true →
+    Q.ltN (Q.abs (Q.sub (Q.div (Q.sub (A.f (Q.add x h)) (A.f x)) h) (F x)))
+      (D.toQ (D.pow2neg k)) = 1
+
 /-- **Lemma 1's computable half, proved.**  The extracted `derivEval` really
 does approximate the derivative to `2⁻⁽ᵏ⁺³⁾` at every point of `[a,b]` — this
 is what makes the `EFTC2` witness a statement about `f'` rather than about the
 numeral `f b − f a`.  The endpoint-safe sign is what the proof spends its
 effort on: `h₀ ≤ (b−a)/4` and the midpoint test together keep `x + h` inside
-`[a,b]` in both branches. -/theorem derivEval_approx (A : A1) {F : Q → Q}
-    (hF : ∀ (k : Nat) (x h : Q), Qle A.a x = true → Qle x A.b = true →
-      Qle A.a (Q.add x h) = true → Qle (Q.add x h) A.b = true →
-      h.num ≠ 0 → Qle (Q.abs h) (D.toQ (D.pow2neg (A.δ k))) = true →
-      Q.ltN (Q.abs (Q.sub (Q.div (Q.sub (A.f (Q.add x h)) (A.f x)) h) (F x)))
-        (D.toQ (D.pow2neg k)) = 1)
+`[a,b]` in both branches. -/
+theorem derivEval_approx (A : A1) {F : Q → Q} (hF : IsDeriv A F)
     (k : Nat) (x : Q) (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val) :
     |(A.derivEval k x).val - (F x).val| < 1 / 2 ^ (k + 3) := by
   have hs := stepSize_pos A k
@@ -276,41 +281,274 @@ theorem derivEval_approx_of_diff (A : A1) :
   obtain ⟨F, hF⟩ := A.diff
   exact ⟨F, fun k x hxa hxb ↦ derivEval_approx A hF k x hxa hxb⟩
 
-/-! ### What the rest of Lemma 1 needs
+/-! ## Lemma 1, the uniform-continuity half
 
-The remaining half — that `derivEval` is *uniformly continuous* with modulus
-`ω'`, which is `Lemma1Claim`'s actual content — is **not proved here**.  What
-has changed is why.  Three obstructions were recorded when `omega'` was the
-old `ω(k+5+δ(k+3))` and `A1` carried no hypotheses; two are now gone, and it
-is worth being exact about which.
+The estimate needs three things the file did not have: that `η₂` really
+satisfies `2⁻ᵑ² ≤ (b−a)/2`, a *lower* bound on the step (the reciprocal is what
+the estimate multiplies by), and a step admissible for **both** points. -/
 
-**Gone — the reciprocal step.**  When `(b−a)/4` is the smaller half of `h₀`,
-the estimate divides by `4/(b−a)`, and the old index had no term bounding it.
-`omega'` now carries `max(δ(k+3), η₂+1)` inside `ω`'s argument, and
-`2⁻ᵑ² ≤ (b−a)/2` gives `1/h₀ ≤ 2^max(δ(k+3), η₂+1)` in both branches of the
-`min`.  That is what the fix is for.
+/-- `2⁻ᵐ ≤ 2⁻ⁿ` when `n ≤ m`. -/
+theorem inv_pow_le {m n : Nat} (h : n ≤ m) : (1 : Rat) / 2 ^ m ≤ 1 / 2 ^ n := by
+  apply one_div_le_one_div_of_le (by positivity)
+  exact pow_le_pow_right₀ (by norm_num) h
 
-**Gone — the index mismatch.**  It was an artefact of routing the estimate
-through `f'` at precision `k+4`.  Taken at `k+3` instead — the precision
-`stepSize` itself uses — the bookkeeping closes with room to spare, writing
-`M` for `max(δ(k+3), η₂+1)` and `p` for `k+5+M`:
+/-- The bounded search returns a value with the property it is searching for,
+provided the fuel reaches one. -/
+theorem etaAux_spec (L : Q) (fuel : Nat) : ∀ acc : Nat,
+    (D.toQ (D.pow2neg (acc + fuel))).val ≤ (Q.div L (Q.ofNat 2)).val →
+    (D.toQ (D.pow2neg (etaAux L acc fuel))).val ≤ (Q.div L (Q.ofNat 2)).val := by
+  induction fuel with
+  | zero => intro acc h; simpa using h
+  | succ n ih =>
+    intro acc h
+    simp only [etaAux]
+    split
+    · rename_i hc; exact (Qle_eq_true_iff _ _).mp hc
+    · exact ih (acc + 1) (by rw [show acc + 1 + n = acc + (n + 1) by ring]; exact h)
 
-    |F(x) − DQ(x)|, |F(y) − DQ(y)| < 2⁻⁽ᵏ⁺³⁾           (diff, at j = k+3)
-    |DQ(x) − DQ(y)| ≤ 2·2⁻ᵖ·2^M = 2⁻⁽ᵏ⁺⁴⁾              (cont, at p)
-    |F(x) − F(y)| < 2⁻⁽ᵏ⁺²⁾ + 2⁻⁽ᵏ⁺⁴⁾
-    |DE(x) − DE(y)| < 2⁻⁽ᵏ⁺¹⁾ + 2⁻⁽ᵏ⁺⁴⁾ < 2⁻ᵏ          (derivEval_approx twice)
+/-- **`η₂` is what it claims to be.**  The fuel is `L.den + 2` and `η = L.den+1`
+already works, so the search cannot exhaust. -/
+theorem eta2_spec (A : A1) : (1 : Rat) / 2 ^ A.eta2 ≤ (A.b.val - A.a.val) / 2 := by
+  unfold A1.eta2
+  set L := Q.sub A.b A.a with hLdef
+  have hL : L.val = A.b.val - A.a.val := Q.val_sub _ _
+  have hpos : 0 < L.val := by rw [hL]; linarith [A.ivl_val]
+  have hdiv : (Q.div L (Q.ofNat 2)).val = (A.b.val - A.a.val) / 2 := by
+    rw [Q.val_div _ _ (by decide), hL, Q.val_ofNat]; norm_num
+  have hd : (0 : Rat) < (L.den : Rat) := L.den_cast_pos
+  have hnumR : (0 : Rat) < (L.num : Rat) := by
+    have hpos' : 0 < (L.num : Rat) / (L.den : Rat) := hpos
+    rcases div_pos_iff.mp hpos' with ⟨h1, _⟩ | ⟨_, h2⟩
+    · exact h1
+    · exact absurd h2 (not_lt.mpr (le_of_lt hd))
+  have hnumI : (0 : Int) < L.num := by exact_mod_cast hnumR
+  have h1 : (1 : Rat) ≤ (L.num : Rat) := by
+    have hi : (1 : Int) ≤ L.num := by omega
+    exact_mod_cast hi
+  have hge : (1 : Rat) / (L.den : Rat) ≤ L.val := by
+    have hnn : (0 : Rat) ≤ ((L.num : Rat) - 1) / (L.den : Rat) :=
+      div_nonneg (by linarith) (le_of_lt hd)
+    have heq : ((L.num : Rat) - 1) / (L.den : Rat)
+        = (L.num : Rat) / (L.den : Rat) - 1 / (L.den : Rat) := by field_simp
+    rw [heq] at hnn
+    unfold Q.val
+    linarith
+  have hlt : (L.den : Rat) < 2 ^ L.den := by exact_mod_cast Nat.lt_two_pow_self
+  have hsplit : (2 : Rat) ^ (L.den + 2) = 2 ^ L.den * 4 := by rw [pow_add]; norm_num
+  have h2d : (2 : Rat) * (L.den : Rat) ≤ 2 ^ (L.den + 2) := by rw [hsplit]; linarith
+  have hstart : (D.toQ (D.pow2neg (0 + (L.den + 2)))).val ≤ (Q.div L (Q.ofNat 2)).val := by
+    rw [toQ_pow2neg_val, hdiv, Nat.zero_add, ← hL]
+    calc (1 : Rat) / 2 ^ (L.den + 2) ≤ 1 / (2 * (L.den : Rat)) :=
+          one_div_le_one_div_of_le (by linarith) h2d
+      _ = (1 / (L.den : Rat)) / 2 := by field_simp
+      _ ≤ L.val / 2 := by linarith
+  have hfin := etaAux_spec L (L.den + 2) 0 hstart
+  rw [toQ_pow2neg_val, hdiv] at hfin
+  exact hfin
 
-**Remaining — the common step, and the assembly.**  `DQ` above is a difference
-quotient at a step admissible for *both* points, which is not the step
-`derivEval` takes: `stepRight` chooses the sign pointwise, so two points either
-side of the midpoint use opposite steps and the cancellation in line two does
-not happen for them.  Routing through `F` is what avoids that, and it needs the
-pigeonhole — if `|x−y| ≤ (b−a)/2` and `h₀ ≤ (b−a)/4` then one of `±h₀` is
-admissible for both, since either `max(x,y) ≤ b − h₀` or else
-`min(x,y) ≥ a + h₀`.  That argument, and the assembly of the four lines above,
-are **not formalized**.  The arithmetic closes; the Lean proof is not written.
+/-- The index `ω` is evaluated at, inside `omega'`. -/
+abbrev stepIx (A : A1) (k : Nat) : Nat := Nat.max (A.δ (k + 3)) (A.eta2 + 1)
 
-**Lemma 2 is further off, and for a different reason.**  §5.2 gets
+/-- **A lower bound on the step** — the reciprocal is what the estimate
+multiplies by, and it is bounded in *both* branches of the `min`: by `δ` in
+one, and by `η₂` in the other.  Bounding only the first is the gap the old
+`omega'` had. -/
+theorem stepSize_ge (A : A1) (k : Nat) :
+    (1 : Rat) / 2 ^ stepIx A k ≤ (A.stepSize k).val := by
+  rw [stepSize_val]
+  refine le_min (inv_pow_le (Nat.le_max_left _ _)) ?_
+  have h := eta2_spec A
+  have h1 : (1 : Rat) / 2 ^ (A.eta2 + 1) ≤ (A.b.val - A.a.val) / 4 := by
+    rw [halve_pow]; linarith
+  exact le_trans (inv_pow_le (Nat.le_max_right _ _)) h1
+
+/-- **The common step.**  If `x` and `y` are within `(b−a)/2` and the step is
+at most `(b−a)/4`, then one of `±h₀` keeps *both* inside `[a,b]`.  This is what
+lets the estimate use one step for two points, which the pointwise
+`stepRight` does not. -/
+theorem common_step (A : A1) (k : Nat) (x y : Q)
+    (_hxa : A.a.val ≤ x.val) (_hxb : x.val ≤ A.b.val)
+    (_hya : A.a.val ≤ y.val) (_hyb : y.val ≤ A.b.val)
+    (hxy : |x.val - y.val| ≤ (A.b.val - A.a.val) / 2) :
+    (x.val + (A.stepSize k).val ≤ A.b.val ∧ y.val + (A.stepSize k).val ≤ A.b.val)
+      ∨ (A.a.val ≤ x.val - (A.stepSize k).val ∧ A.a.val ≤ y.val - (A.stepSize k).val) := by
+  have hs := stepSize_pos A k
+  have hq : (A.stepSize k).val ≤ (A.b.val - A.a.val) / 4 := by
+    rw [stepSize_val]; exact min_le_right _ _
+  obtain ⟨hd1, hd2⟩ := abs_le.mp hxy
+  by_cases hc : x.val + (A.stepSize k).val ≤ A.b.val ∧ y.val + (A.stepSize k).val ≤ A.b.val
+  · exact Or.inl hc
+  · refine Or.inr ?_
+    rcases not_and_or.mp hc with h | h <;> push_neg at h <;> constructor <;> linarith
+
+/-! ### The estimate
+
+Four terms of `2⁻⁽ᵏ⁺³⁾` and one of `2⁻⁽ᵏ⁺⁴⁾`, summing to
+`2⁻⁽ᵏ⁺¹⁾ + 2⁻⁽ᵏ⁺⁴⁾ < 2⁻ᵏ`.  The route goes through `F` precisely because
+`derivEval` picks its step pointwise: `DE(x)` and `DE(y)` may use *opposite*
+steps, so nothing cancels between them directly.  Both are near `F`, and both
+common-step quotients are near `F`, and *those* cancel. -/
+
+theorem cont_val (A : A1) (p : Nat) (u v : Q)
+    (hua : A.a.val ≤ u.val) (hub : u.val ≤ A.b.val)
+    (hva : A.a.val ≤ v.val) (hvb : v.val ≤ A.b.val)
+    (h : |u.val - v.val| ≤ 1 / 2 ^ A.ω p) :
+    |(A.f u).val - (A.f v).val| < 1 / 2 ^ p := by
+  have := A.cont p u v ((Qle_eq_true_iff _ _).mpr hua) ((Qle_eq_true_iff _ _).mpr hub)
+    ((Qle_eq_true_iff _ _).mpr hva) ((Qle_eq_true_iff _ _).mpr hvb)
+    ((Qle_eq_true_iff _ _).mpr (by rw [Q.val_abs, Q.val_sub, toQ_pow2neg_val]; exact h))
+  rwa [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val] at this
+
+theorem diff_val (A : A1) {F : Q → Q} (hF : IsDeriv A F) (j : Nat) (x s : Q)
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val)
+    (h1 : A.a.val ≤ (Q.add x s).val) (h2 : (Q.add x s).val ≤ A.b.val)
+    (hs : s.num ≠ 0) (hstep : |s.val| ≤ 1 / 2 ^ A.δ j) :
+    |((A.f (Q.add x s)).val - (A.f x).val) / s.val - (F x).val| < 1 / 2 ^ j := by
+  have := hF j x s ((Qle_eq_true_iff _ _).mpr hxa) ((Qle_eq_true_iff _ _).mpr hxb)
+    ((Qle_eq_true_iff _ _).mpr h1) ((Qle_eq_true_iff _ _).mpr h2) hs
+    ((Qle_eq_true_iff _ _).mpr (by rw [Q.val_abs, toQ_pow2neg_val]; exact hstep))
+  rwa [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, Q.val_div _ _ hs, Q.val_sub,
+    toQ_pow2neg_val] at this
+
+/-- The estimate, **given** a step admissible for both points. -/
+theorem derivEval_uc_of_step (A : A1) {F : Q → Q} (hF : IsDeriv A F) (k : Nat) (x y s : Q)
+    (hs : s.num ≠ 0) (hsabs : |s.val| = (A.stepSize k).val)
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val)
+    (hya : A.a.val ≤ y.val) (hyb : y.val ≤ A.b.val)
+    (hxs1 : A.a.val ≤ (Q.add x s).val) (hxs2 : (Q.add x s).val ≤ A.b.val)
+    (hys1 : A.a.val ≤ (Q.add y s).val) (hys2 : (Q.add y s).val ≤ A.b.val)
+    (hcl : |x.val - y.val| ≤ 1 / 2 ^ A.omega' k) :
+    |(A.derivEval k x).val - (A.derivEval k y).val| < 1 / 2 ^ k := by
+  have hsv : 0 < |s.val| := by rw [hsabs]; exact stepSize_pos A k
+  have hstep : |s.val| ≤ 1 / 2 ^ A.δ (k + 3) := by
+    rw [hsabs, stepSize_val]; exact min_le_left _ _
+  have hDEx := derivEval_approx A hF k x hxa hxb
+  have hDEy := derivEval_approx A hF k y hya hyb
+  have hqx := diff_val A hF (k + 3) x s hxa hxb hxs1 hxs2 hs hstep
+  have hqy := diff_val A hF (k + 3) y s hya hyb hys1 hys2 hs hstep
+  have hwo : (1 : Rat) / 2 ^ A.omega' k ≤ 1 / 2 ^ A.ω (k + 5 + stepIx A k) :=
+    inv_pow_le (Nat.le_max_left _ _)
+  have hc1 : |(A.f (Q.add x s)).val - (A.f (Q.add y s)).val| < 1 / 2 ^ (k + 5 + stepIx A k) :=
+    cont_val A _ _ _ hxs1 hxs2 hys1 hys2 (by
+      rw [Q.val_add, Q.val_add,
+        show x.val + s.val - (y.val + s.val) = x.val - y.val by ring]
+      exact le_trans hcl hwo)
+  have hc2 : |(A.f x).val - (A.f y).val| < 1 / 2 ^ (k + 5 + stepIx A k) :=
+    cont_val A _ _ _ hxa hxb hya hyb (le_trans hcl hwo)
+  -- the two common-step quotients agree to `2⁻⁽ᵏ⁺⁴⁾`
+  have hquot : |((A.f (Q.add x s)).val - (A.f x).val) / s.val
+      - ((A.f (Q.add y s)).val - (A.f y).val) / s.val| < 1 / 2 ^ (k + 4) := by
+    rw [div_sub_div_same, abs_div, div_lt_iff₀ hsv]
+    have hMle : (1 : Rat) / 2 ^ stepIx A k ≤ |s.val| := by
+      rw [hsabs]; exact stepSize_ge A k
+    have hp4 : (0 : Rat) < 1 / 2 ^ (k + 4) := by positivity
+    have hpow : (2 : Rat) * (1 / 2 ^ (k + 5 + stepIx A k))
+        = 1 / 2 ^ (k + 4) * (1 / 2 ^ stepIx A k) := by
+      rw [show k + 5 + stepIx A k = k + 4 + stepIx A k + 1 by ring, pow_succ, pow_add]
+      field_simp
+    rw [show (A.f (Q.add x s)).val - (A.f x).val - ((A.f (Q.add y s)).val - (A.f y).val)
+        = ((A.f (Q.add x s)).val - (A.f (Q.add y s)).val)
+          - ((A.f x).val - (A.f y).val) by ring]
+    calc |((A.f (Q.add x s)).val - (A.f (Q.add y s)).val)
+            - ((A.f x).val - (A.f y).val)|
+        ≤ |(A.f (Q.add x s)).val - (A.f (Q.add y s)).val - 0|
+            + |0 - ((A.f x).val - (A.f y).val)| := abs_sub_le _ _ _
+      _ = |(A.f (Q.add x s)).val - (A.f (Q.add y s)).val|
+            + |(A.f x).val - (A.f y).val| := by rw [sub_zero, zero_sub, abs_neg]
+      _ < 2 * (1 / 2 ^ (k + 5 + stepIx A k)) := by linarith
+      _ = 1 / 2 ^ (k + 4) * (1 / 2 ^ stepIx A k) := hpow
+      _ ≤ 1 / 2 ^ (k + 4) * |s.val| := by
+          exact mul_le_mul_of_nonneg_left hMle (le_of_lt hp4)
+  -- assemble
+  have t1 : |(A.derivEval k x).val - (A.derivEval k y).val|
+      ≤ |(A.derivEval k x).val - ((A.f (Q.add x s)).val - (A.f x).val) / s.val|
+        + |((A.f (Q.add x s)).val - (A.f x).val) / s.val - (A.derivEval k y).val| :=
+    abs_sub_le _ _ _
+  have t2 : |((A.f (Q.add x s)).val - (A.f x).val) / s.val - (A.derivEval k y).val|
+      ≤ |((A.f (Q.add x s)).val - (A.f x).val) / s.val
+          - ((A.f (Q.add y s)).val - (A.f y).val) / s.val|
+        + |((A.f (Q.add y s)).val - (A.f y).val) / s.val - (A.derivEval k y).val| :=
+    abs_sub_le _ _ _
+  have t3 : |(A.derivEval k x).val - ((A.f (Q.add x s)).val - (A.f x).val) / s.val|
+      ≤ |(A.derivEval k x).val - (F x).val|
+        + |(F x).val - ((A.f (Q.add x s)).val - (A.f x).val) / s.val| :=
+    abs_sub_le _ _ _
+  have t4 : |((A.f (Q.add y s)).val - (A.f y).val) / s.val - (A.derivEval k y).val|
+      ≤ |((A.f (Q.add y s)).val - (A.f y).val) / s.val - (F y).val|
+        + |(F y).val - (A.derivEval k y).val| :=
+    abs_sub_le _ _ _
+  rw [abs_sub_comm (F x).val] at t3
+  rw [abs_sub_comm (F y).val] at t4
+  have p3 : (1 : Rat) / 2 ^ (k + 3) = 1 / 2 ^ k / 8 := by rw [pow_add]; field_simp; norm_num
+  have p4 : (1 : Rat) / 2 ^ (k + 4) = 1 / 2 ^ k / 16 := by rw [pow_add]; field_simp; norm_num
+  have hpk : (0 : Rat) < 1 / 2 ^ k := by positivity
+  linarith
+
+/-- **Lemma 1, the uniform-continuity half.**  Every `A₁` representation's
+extracted derivative is uniformly continuous with modulus `ω'`. -/
+theorem derivEval_uniformly_continuous (A : A1) (k : Nat) (x y : Q)
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val)
+    (hya : A.a.val ≤ y.val) (hyb : y.val ≤ A.b.val)
+    (hcl : |x.val - y.val| ≤ 1 / 2 ^ A.omega' k) :
+    |(A.derivEval k x).val - (A.derivEval k y).val| < 1 / 2 ^ k := by
+  obtain ⟨F, hF⟩ := A.diff
+  have hs := stepSize_pos A k
+  have hnum : (A.stepSize k).num ≠ 0 := Q.num_ne_zero_of_val_ne_zero (ne_of_gt hs)
+  have hprox : |x.val - y.val| ≤ (A.b.val - A.a.val) / 2 :=
+    le_trans hcl (le_trans (inv_pow_le (Nat.le_max_right _ _)) (eta2_spec A))
+  rcases common_step A k x y hxa hxb hya hyb hprox with ⟨h1, h2⟩ | ⟨h1, h2⟩
+  · refine derivEval_uc_of_step A hF k x y (A.stepSize k) hnum (abs_of_pos hs)
+      hxa hxb hya hyb ?_ ?_ ?_ ?_ hcl <;> rw [Q.val_add] <;> linarith
+  · have hnegv : (Q.neg (A.stepSize k)).val = -(A.stepSize k).val := Q.val_neg _
+    have hnegnum : (Q.neg (A.stepSize k)).num ≠ 0 :=
+      Q.num_ne_zero_of_val_ne_zero (by rw [hnegv]; linarith)
+    refine derivEval_uc_of_step A hF k x y (Q.neg (A.stepSize k)) hnegnum ?_
+      hxa hxb hya hyb ?_ ?_ ?_ ?_ hcl
+    · rw [hnegv, abs_of_neg (by linarith : -(A.stepSize k).val < 0)]
+      ring
+    · rw [Q.val_add, hnegv]; linarith
+    · rw [Q.val_add, hnegv]; linarith
+    · rw [Q.val_add, hnegv]; linarith
+    · rw [Q.val_add, hnegv]; linarith
+
+/-- **Lemma 1**, in the form `EFTC.lean` states it. -/
+theorem lemma1 (A : A1) : Lemma1Claim A := by
+  intro k x y hxa hxb hya hyb h
+  rw [Qle_eq_true_iff] at hxa hxb hya hyb
+  rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val] at h
+  rw [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val]
+  exact derivEval_uniformly_continuous A k x y hxa hxb hya hyb h
+
+#print axioms derivEval_uniformly_continuous
+#print axioms lemma1
+
+/-! ### Lemma 1 is done; what Lemma 2 still needs
+
+Both halves of Lemma 1 are proved: `derivEval_approx` (it computes the
+derivative) and `derivEval_uniformly_continuous` / `lemma1` (it does so
+uniformly continuously, with modulus `ω'`).  Getting there needed four
+corrections, all to the *constructions*, none to the arithmetic:
+
+1. **`omega'` was too small.**  The estimate divides by
+   `h₀ = min(2⁻ᵟ⁽ᵏ⁺³⁾, (b−a)/4)`, and when the second term is the minimum the
+   factor is `4/(b−a)`, which a `δ`-only index cannot bound.  `omega'` now
+   carries `max(δ(k+3), η₂+1)`.
+2. **`etaAux` returned `0` when out of fuel** — a value that does not satisfy
+   the property being searched for, so a caller past the fuel got a confident
+   wrong answer.  It now returns the accumulator, and `eta2`'s fuel is taken
+   from the data (`L.den + 2`), which provably cannot exhaust.
+3. **`Lemma1Claim` was missing its interval premises**, so it ranged over
+   points where `A1` says nothing about `f`.
+4. **`sqEx.δ` was off by one** — caught by having to discharge `diff`.
+
+The one mathematical subtlety is that `derivEval` picks its step *pointwise*,
+so `DE(x)` and `DE(y)` may use opposite steps and nothing cancels between them
+directly.  The proof therefore goes through `F`: both `DE`s are near `F` by
+`derivEval_approx`, both *common-step* quotients are near `F` by `diff`, and
+those two cancel.  The common step exists by `common_step` — if `|x−y| ≤
+(b−a)/2` and `h₀ ≤ (b−a)/4` then one of `±h₀` keeps both points inside.
+
+**Lemma 2 is a different problem and is still open.**  §5.2 gets
 `∫ f' = f(b) − f(a)` from *classical* FTC2 and then estimates the quadrature.
 There is no real integral in this shallow embedding, so the classical step has
 nothing to be imported into: the only available route is a discrete
@@ -325,10 +563,9 @@ smallest instance —
 the `WellFounded.fix` wall the first-order development records for its own
 value-level recursions, reached from the opposite direction: the loop was
 chosen so the sums survive `N = 32768` in the *interpreter*, and the cost is
-that the kernel can no longer see through it. -/
-
-#print axioms derivEval_approx
-#print axioms derivEval_approx_of_diff
+that the kernel can no longer see through it.  `ceilLog2Aux`, which Lemma 2's
+`ℓ` comes from, still has the fuel-exhaustion bug fixed in `etaAux` at (2)
+above; it is not on Lemma 1's path, and has been left alone. -/
 
 #print axioms doubling_lipschitz
 #print axioms translation_lipschitz

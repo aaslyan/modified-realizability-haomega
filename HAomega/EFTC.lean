@@ -331,11 +331,39 @@ structure E0 where
   b : Q
   /-- `ev n x` — the `n`-th approximation at `x`. -/
   ev : Nat → Q → Q
-  /-- modulus of convergence: past level `cm k`, successive levels agree to `2⁻ᵏ`. -/
+  /-- modulus of convergence: past level `cm k`, **all** later levels agree to
+  `2⁻ᵏ`.  Bounding only *successive* levels would be too weak to make the family
+  Cauchy — `j` consecutive gaps of `2⁻ᵏ` sum to `j·2⁻ᵏ`, which is unbounded. -/
   cm : Nat → Nat
   ivl : Q.ltN a b = 1
-  conv : ∀ (k n : Nat), cm k ≤ n → ∀ x : Q, Qle a x = true → Qle x b = true →
-      Qle (Q.abs (Q.sub (ev n x) (ev (n + 1) x))) (D.toQ (D.pow2neg k)) = true
+  conv : ∀ (k n m : Nat), cm k ≤ n → n ≤ m → ∀ x : Q,
+      Qle a x = true → Qle x b = true →
+      Qle (Q.abs (Q.sub (ev n x) (ev m x))) (D.toQ (D.pow2neg k)) = true
+
+/-- **`E₁`** — an approximating evaluator with a modulus of continuity and a
+modulus of uniform differentiability: `A₁`'s conditions transposed to the
+approximating setting.
+
+`diff` needs one thing `A1.diff` did not: a level bound depending on the
+**step** as well as the precision.  A difference quotient divides by `h`, so an
+evaluator error of `ε` contributes `2ε/|h|` to it, and no fixed level works for
+every `h`.  `dq k h` is the level at which the quotient at step `h` is good to
+`2⁻ᵏ`. -/
+structure E1 extends E0 where
+  ω : Nat → Nat
+  δ : Nat → Nat
+  /-- level at which a difference quotient at step `h` is good to `2⁻ᵏ` -/
+  dq : Nat → Q → Nat
+  cont : ∀ (k n : Nat) (x y : Q), cm k ≤ n →
+      Qle a x = true → Qle x b = true → Qle a y = true → Qle y b = true →
+      Qle (Q.abs (Q.sub x y)) (D.toQ (D.pow2neg (ω k))) = true →
+      Qle (Q.abs (Q.sub (ev n x) (ev n y))) (D.toQ (D.pow2neg k)) = true
+  diff : ∃ F : Q → Q, ∀ (k n : Nat) (x h : Q), dq k h ≤ n →
+      Qle a x = true → Qle x b = true →
+      Qle a (Q.add x h) = true → Qle (Q.add x h) b = true →
+      h.num ≠ 0 → Qle (Q.abs h) (D.toQ (D.pow2neg (δ k))) = true →
+      Qle (Q.abs (Q.sub (Q.div (Q.sub (ev n (Q.add x h)) (ev n x)) h) (F x)))
+        (D.toQ (D.pow2neg k)) = true
 
 namespace A0
 

@@ -413,11 +413,59 @@ only that the even fine points are the coarse points, which is an induction
 indexing is chosen to make the estimate provable. `f_val_congr` is needed again
 here: the even fine points equal the coarse points as *values*, not as terms.
 
-**What is still not done.** The `E₁` layer — modulus of continuity and of
-uniform differentiability stated for approximating evaluators rather than exact
-ones. `eftc1` proves the differentiability content about the Riemann sums and
-`A0.intE0` proves the object exists, but joining them into "`∫f` is
-`A₁`-adequate" needs `E₁`, which is not built. Not claimed.
+### The `E₁` layer
+
+`E1 extends E0` with `ω`, `δ` and the two conditions transposed to the
+approximating setting, plus one field `A1` did not need: **`dq : Nat → Q → Nat`**,
+the level at which a difference quotient at step `h` is good to `2⁻ᵏ`. A
+difference quotient divides by `h`, so an evaluator error `ε` contributes
+`2ε/|h|`, and no fixed level works for every `h`. That dependence is the whole
+difference between `A1.diff` and `E1.diff`.
+
+    'HAomega.A1.toE1'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+**Conservativity again**: every exact `A₁` is an `E₁` via the constant family,
+with `dq := 0` — an exact evaluator has no error for the quotient to amplify.
+
+### A correction to `E0`, found while building `E1`
+
+`E0.conv` as shipped in the previous commit bounded only **successive** levels:
+`|ev n x − ev (n+1) x| ≤ 2⁻ᵏ` past level `cm k`. That is too weak to make the
+family Cauchy — `j` consecutive gaps of `2⁻ᵏ` sum to `j·2⁻ᵏ`, which is
+unbounded, so the condition does not say the approximations converge. It was
+not false, and `A0.intE0` proved a true statement; the *structure* was simply
+weaker than a representation needs. `conv` now quantifies over all later
+levels:
+
+    conv : ∀ k n m, cm k ≤ n → n ≤ m → … |ev n x − ev m x| ≤ 2⁻ᵏ
+
+Reproving `A0.intE0` at that strength needed a better estimate than the
+doubling one. Chaining doublings **accumulates** — `j` steps give `j·|h|·2⁻ᵏ` —
+so `riemann_refine_gen` proves the classical form instead: refining a Riemann
+sum by *any* factor moves it by at most `|h|·2⁻ᵏ`, with no dependence on the
+factor, because every fine sample lies within the **coarse** mesh of its
+block's left endpoint however many fine samples there are. The block
+decomposition is `sum_range_mul_block`, an induction on the outer count.
+
+### What `∫f` still needs to be an `E₁`
+
+Two things, both about Riemann sums rather than the representation:
+
+* **`cont`** needs `|∫ₐˣ f − ∫ₐʸ f| ≤ M·|x−y|` with an explicit bound `M` on
+  `|f|`. `M` is computable from `ω` and one sample; the construction and proof
+  are not written.
+* **`diff`** needs approximate additivity `∫ₐˣ⁺ʰ ≈ ∫ₐˣ + ∫ₓˣ⁺ʰ`, and this is
+  the real obstacle. `intEv n` uses a *uniform* grid of `evN n` cells, and the
+  grids for `[a,x]` and `[a,x+h]` are incommensurate, so the difference of the
+  two sums is not the sum over `[x, x+h]`. Concatenating the grids of `[a,x]`
+  and `[x,x+h]` does give a partition of `[a,x+h]` with `x` as a node — but a
+  **non-uniform** one, and `A0.riemann` only knows uniform partitions. Closing
+  it means generalizing to arbitrary tagged partitions and redoing
+  `riemann_refine_gen` at that generality.
+
+So "`∫f` is `A₁`-adequate" as a single sentence remains **not formalized**.
+What changed is the size of the gap: one missing lemma about partitions, not a
+missing notion.
 
 **Not claimed:** the negative half, `A₀ ⊭ EFTC2`. That is Myhill's theorem, a
 citation here, not a formalization — so "`A₁ ⊨ EFTC2`" is proved and the

@@ -1085,6 +1085,112 @@ theorem riemann_refine (A : A0) (k N : Nat) (hN : 0 < N) (x h : Q)
         mul_le_mul_of_nonneg_left hb (by positivity)
     _ = |h.val| / 2 * (1 / 2 ^ k) := by field_simp
 
+/-! ### From doubling to arbitrary refinement
+
+The doubling estimate is not enough, and the reason is worth recording.
+Chaining it along a tower `N, 2N, 4N, …` **accumulates**: `j` steps give
+`j·|h|·2⁻ᵏ`, which is unbounded, so it does not show the levels form a Cauchy
+family.  The classical estimate does not accumulate, because it compares each
+sum to a *common refinement* directly — every fine sample lies within the
+**coarse** mesh of its block's left endpoint, however many fine samples there
+are.  So the general block form is what a representation needs, and the tower
+is only how the levels happen to be indexed. -/
+
+theorem sum_range_mul_block {M : Type*} [AddCommMonoid M] (g : Nat → M) (N m : Nat) :
+    ∑ i ∈ Finset.range (N * m), g i
+      = ∑ p ∈ Finset.range N, ∑ q ∈ Finset.range m, g (p * m + q) := by
+  induction N with
+  | zero => simp
+  | succ n ih =>
+    rw [show (n + 1) * m = n * m + m by ring, Finset.sum_range_add, ih,
+      Finset.sum_range_succ]
+
+/-- **Refining a Riemann sum by any factor moves it by at most `|h|·2⁻ᵏ`** —
+with no dependence on the factor.  This is the estimate the doubling one
+should have been. -/
+theorem riemann_refine_gen (A : A0) (k N m : Nat) (hN : 0 < N) (hm : 0 < m) (x h : Q)
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val)
+    (hha : A.a.val ≤ x.val + h.val) (hhb : x.val + h.val ≤ A.b.val)
+    (hmesh : |h.val| / (N : Rat) ≤ 1 / 2 ^ A.ω k) :
+    |(A.riemann x h (N * m)).val - (A.riemann x h N).val| ≤ |h.val| * (1 / 2 ^ k) := by
+  have hNm : 0 < N * m := Nat.mul_pos hN hm
+  have hNR : (0 : Rat) < (N : Rat) := by exact_mod_cast hN
+  have hmR : (0 : Rat) < (m : Rat) := by exact_mod_cast hm
+  have hNmR : (0 : Rat) < ((N * m : Nat) : Rat) := by exact_mod_cast hNm
+  have hcast : ((N * m : Nat) : Rat) = (N : Rat) * (m : Rat) := by push_cast; ring
+  have hfine : (A.riemann x h (N * m)).val
+      = h.val / ((N * m : Nat) : Rat)
+        * ∑ i ∈ Finset.range (N * m), (A.f (rPt x h (N * m) i)).val := by
+    rw [A0.riemann, Q.val_mul, sumQ_val, rStep_val h hNm]
+  have hcoarse : (A.riemann x h N).val
+      = h.val / (N : Rat) * ∑ p ∈ Finset.range N, (A.f (rPt x h N p)).val := by
+    rw [A0.riemann, Q.val_mul, sumQ_val, rStep_val h hN]
+  -- every fine sample is within the *coarse* mesh of its block's left endpoint
+  have hterm : ∀ p ∈ Finset.range N, ∀ q ∈ Finset.range m,
+      |(A.f (rPt x h (N * m) (p * m + q))).val - (A.f (rPt x h N p)).val| < 1 / 2 ^ k := by
+    intro p hp q hq
+    have hpl := Finset.mem_range.mp hp
+    have hql := Finset.mem_range.mp hq
+    refine cont_val A k _ _
+      (rPt_mem A hNm (p * m + q) (by nlinarith) hxa hxb hha hhb).1
+      (rPt_mem A hNm (p * m + q) (by nlinarith) hxa hxb hha hhb).2
+      (rPt_mem A hN p (le_of_lt hpl) hxa hxb hha hhb).1
+      (rPt_mem A hN p (le_of_lt hpl) hxa hxb hha hhb).2 ?_
+    have hd : (rPt x h (N * m) (p * m + q)).val - (rPt x h N p).val
+        = (q : Rat) / ((N : Rat) * (m : Rat)) * h.val := by
+      rw [rPt_val x h hNm, rPt_val x h hN, hcast]
+      push_cast
+      field_simp
+      ring
+    rw [hd, abs_mul, abs_div, abs_of_pos (by positivity : (0 : Rat) < (N : Rat) * (m : Rat)),
+      abs_of_nonneg (Nat.cast_nonneg q)]
+    have hq1 : (q : Rat) / ((N : Rat) * (m : Rat)) ≤ 1 / (N : Rat) := by
+      rw [div_le_div_iff₀ (by positivity) hNR]
+      have : (q : Rat) ≤ (m : Rat) := by exact_mod_cast le_of_lt hql
+      nlinarith
+    calc (q : Rat) / ((N : Rat) * (m : Rat)) * |h.val|
+        ≤ 1 / (N : Rat) * |h.val| := mul_le_mul_of_nonneg_right hq1 (abs_nonneg _)
+      _ = |h.val| / (N : Rat) := by ring
+      _ ≤ 1 / 2 ^ A.ω k := hmesh
+  -- rewrite the gap as one double sum
+  have hkey : (A.riemann x h (N * m)).val - (A.riemann x h N).val
+      = h.val / ((N : Rat) * (m : Rat)) * ∑ p ∈ Finset.range N, ∑ q ∈ Finset.range m,
+          ((A.f (rPt x h (N * m) (p * m + q))).val - (A.f (rPt x h N p)).val) := by
+    have hinner : ∀ p ∈ Finset.range N, ∑ q ∈ Finset.range m,
+        ((A.f (rPt x h (N * m) (p * m + q))).val - (A.f (rPt x h N p)).val)
+        = (∑ q ∈ Finset.range m, (A.f (rPt x h (N * m) (p * m + q))).val)
+          - (m : Rat) * (A.f (rPt x h N p)).val := by
+      intro p _
+      rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+    rw [Finset.sum_congr rfl hinner, Finset.sum_sub_distrib, ← Finset.mul_sum,
+      hfine, hcoarse, sum_range_mul_block, hcast]
+    field_simp
+  -- and bound it
+  have hb : |∑ p ∈ Finset.range N, ∑ q ∈ Finset.range m,
+      ((A.f (rPt x h (N * m) (p * m + q))).val - (A.f (rPt x h N p)).val)|
+      ≤ (N : Rat) * ((m : Rat) * (1 / 2 ^ k)) := by
+    refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
+    have hrow : ∀ p ∈ Finset.range N, |∑ q ∈ Finset.range m,
+        ((A.f (rPt x h (N * m) (p * m + q))).val - (A.f (rPt x h N p)).val)|
+        ≤ (m : Rat) * (1 / 2 ^ k) := by
+      intro p hp
+      refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
+      have := Finset.sum_le_card_nsmul (Finset.range m)
+        (fun q ↦ |(A.f (rPt x h (N * m) (p * m + q))).val - (A.f (rPt x h N p)).val|)
+        (1 / 2 ^ k) (fun q hq ↦ le_of_lt (hterm p hp q hq))
+      rwa [Finset.card_range, nsmul_eq_mul] at this
+    have := Finset.sum_le_card_nsmul (Finset.range N)
+      (fun p ↦ |∑ q ∈ Finset.range m,
+        ((A.f (rPt x h (N * m) (p * m + q))).val - (A.f (rPt x h N p)).val)|)
+      ((m : Rat) * (1 / 2 ^ k)) hrow
+    rwa [Finset.card_range, nsmul_eq_mul] at this
+  rw [hkey, abs_mul, abs_div, abs_of_pos (by positivity : (0 : Rat) < (N : Rat) * (m : Rat))]
+  calc |h.val| / ((N : Rat) * (m : Rat)) * |∑ p ∈ Finset.range N, ∑ q ∈ Finset.range m,
+          ((A.f (rPt x h (N * m) (p * m + q))).val - (A.f (rPt x h N p)).val)|
+      ≤ |h.val| / ((N : Rat) * (m : Rat)) * ((N : Rat) * ((m : Rat) * (1 / 2 ^ k))) :=
+        mul_le_mul_of_nonneg_left hb (by positivity)
+    _ = |h.val| * (1 / 2 ^ k) := by field_simp
+
 /-! ### The representation, and the integral as an inhabitant of it -/
 
 theorem A0.len_val (A : A0) : A.len.val = A.b.val - A.a.val := Q.val_sub _ _
@@ -1096,9 +1202,10 @@ theorem A0.len_pos (A : A0) : 0 < A.len.val := by
 theorem A0.evN_pos (A : A0) (n : Nat) : 0 < A.evN n :=
   Nat.mul_pos (Nat.two_pow_pos n) (lt_of_lt_of_le Nat.zero_lt_one (Nat.le_max_left 1 _))
 
-theorem A0.evN_succ (A : A0) (n : Nat) : A.evN (n + 1) = 2 * A.evN n := by
+theorem A0.evN_mul (A : A0) {n m : Nat} (h : n ≤ m) :
+    A.evN m = A.evN n * 2 ^ (m - n) := by
   unfold A0.evN
-  rw [pow_succ]
+  rw [show m = n + (m - n) by omega, pow_add, show n + (m - n) - n = m - n by omega]
   ring
 
 theorem A0.evBase_ge (A : A0) : A.len.val ≤ (A.evBase : Rat) := by
@@ -1113,7 +1220,7 @@ loses nothing; it only admits more functions. -/
 def A0.toE0 (A : A0) : E0 :=
   { a := A.a, b := A.b, ev := fun _ x ↦ A.f x, cm := fun _ ↦ 0, ivl := A.ivl,
     conv := by
-      intro k n _ x _ _
+      intro k n m _ _ x _ _
       rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, sub_self, abs_zero, toQ_pow2neg_val]
       positivity }
 
@@ -1140,38 +1247,85 @@ of convergence built from `f`'s own modulus of continuity. -/
 def A0.intE0 (A : A0) : E0 :=
   { a := A.a, b := A.b, ev := A.intEv, cm := fun k ↦ A.ω (k + A.ell), ivl := A.ivl,
     conv := by
-      intro k n hn x hxa hxb
+      intro k n m hn hnm x hxa hxb
       rw [Qle_eq_true_iff] at hxa hxb
       rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val]
       have hNpos := A.evN_pos n
       have hxab : A.a.val + (Q.sub x A.a).val = x.val := by rw [Q.val_sub]; ring
       have hmesh : |(Q.sub x A.a).val| / (A.evN n : Rat) ≤ 1 / 2 ^ A.ω (k + A.ell) :=
         le_trans (A.intEv_mesh n hxa hxb) (inv_pow_le hn)
-      have href := riemann_refine A (k + A.ell) (A.evN n) hNpos A.a (Q.sub x A.a)
+      have href := riemann_refine_gen A (k + A.ell) (A.evN n) (2 ^ (m - n)) hNpos
+        (Nat.two_pow_pos _) A.a (Q.sub x A.a)
         le_rfl (le_of_lt ((Q.ltN_eq_one_iff _ _).mp A.ivl))
         (by rw [hxab]; exact hxa) (by rw [hxab]; exact hxb) hmesh
-      rw [← A.evN_succ] at href
+      rw [← A.evN_mul hnm] at href
       rw [abs_sub_comm]
       refine le_trans href ?_
-      -- `|h|/2 · 2⁻⁽ᵏ⁺ˡ⁾ ≤ 2⁻ᵏ`, since `|h| ≤ len ≤ 2ˡ`
       have hnn : (0 : Rat) ≤ x.val - A.a.val := by linarith
       have hlen : |(Q.sub x A.a).val| ≤ 2 ^ A.ell := by
         rw [Q.val_sub, abs_of_nonneg hnn]
         have h1 : A.len.val ≤ 2 ^ A.ell := ceilLog2Q_spec A.len
         rw [A0.len_val] at h1
         linarith
-      have hpk : (0 : Rat) < 2 ^ k := by positivity
-      have hstep : |(Q.sub x A.a).val| / 2 * (1 / 2 ^ (k + A.ell))
-          ≤ (2 : Rat) ^ A.ell / 2 * (1 / 2 ^ (k + A.ell)) := by
-        refine mul_le_mul_of_nonneg_right ?_ (by positivity)
-        linarith
-      refine le_trans hstep ?_
-      have heq : (2 : Rat) ^ A.ell / 2 * (1 / 2 ^ (k + A.ell)) = 1 / (2 * 2 ^ k) := by
-        rw [pow_add]
-        field_simp
-      rw [heq]
-      exact one_div_le_one_div_of_le hpk (by linarith) }
+      have hstep : |(Q.sub x A.a).val| * (1 / 2 ^ (k + A.ell))
+          ≤ (2 : Rat) ^ A.ell * (1 / 2 ^ (k + A.ell)) :=
+        mul_le_mul_of_nonneg_right hlen (by positivity)
+      refine le_trans hstep (le_of_eq ?_)
+      rw [pow_add]
+      field_simp }
 
+/-- **Conservativity for `E₁`**: every exact `A₁` is an approximating one, via
+the constant family.  `dq := 0` — an exact evaluator has no error for the
+difference quotient to amplify, which is precisely the degeneracy the
+approximating case has to work around, and why `dq` has to depend on the step
+at all. -/
+def A1.toE1 (A : A1) : E1 :=
+  { a := A.a, b := A.b, ev := fun _ x ↦ A.f x, cm := fun _ ↦ 0, ivl := A.ivl,
+    ω := A.ω, δ := A.δ, dq := fun _ _ ↦ 0,
+    conv := by
+      intro k n m _ _ x _ _
+      rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, sub_self, abs_zero, toQ_pow2neg_val]
+      positivity,
+    cont := by
+      intro k n x y _ hax hxb hay hyb hxy
+      have h := A.cont k x y hax hxb hay hyb hxy
+      rw [Q.ltN_eq_one_iff] at h
+      rw [Qle_eq_true_iff]
+      exact le_of_lt h,
+    diff := by
+      obtain ⟨F, hF⟩ := A.diff
+      refine ⟨F, ?_⟩
+      intro k n x h _ hax hxb hha hhb hnum hstep
+      have hd := hF k x h hax hxb hha hhb hnum hstep
+      rw [Q.ltN_eq_one_iff] at hd
+      rw [Qle_eq_true_iff]
+      exact le_of_lt hd }
+
+/-! ### What `∫f` still needs to be an `E₁`
+
+`A0.intE0` puts the integral in `E₀`.  Lifting it to `E₁` needs two things
+this development does not have, and both are about Riemann sums rather than
+about the representation:
+
+* **`cont`** needs `|∫ₐˣ f − ∫ₐʸ f| ≤ M·|x−y|` with an explicit bound `M` on
+  `|f|`.  `M` is computable from `ω` and one sample — step from `a` to `x` in
+  `⌈L·2^ω(0)⌉` moves of size `2⁻ω⁽⁰⁾`, each changing `f` by under `1` — but
+  that construction and its proof are not written.
+* **`diff`** needs approximate additivity, `∫ₐˣ⁺ʰ ≈ ∫ₐˣ + ∫ₓˣ⁺ʰ`.  This is the
+  one real obstacle.  `intEv n` uses a *uniform* grid of `evN n` cells on
+  `[a,x]`, and the grids for `[a,x]` and `[a,x+h]` are incommensurate, so the
+  difference of the two sums is not the sum over `[x, x+h]`.  Concatenating the
+  grids of `[a,x]` and `[x,x+h]` gives a partition of `[a,x+h]` with `x` as a
+  node — but a *non-uniform* one, and `A0.riemann` only knows uniform
+  partitions.  Closing this means generalizing to arbitrary tagged partitions
+  and redoing `riemann_refine_gen` at that generality.
+
+So `eftc1` proves the differentiability content about Riemann sums, `A0.intE0`
+proves the object exists, and "`∫f` is `A₁`-adequate" as one sentence is still
+**not** formalized.  What has changed is the size of the gap: it is now one
+missing lemma about partitions, not a missing notion. -/
+
+#print axioms A1.toE1
 #print axioms A0.toE0
 #print axioms A0.intE0
 

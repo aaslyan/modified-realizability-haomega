@@ -74,6 +74,7 @@ Analysis (2): square-root approximation · uniform continuity.
 | square roots | **done** — a corollary of Sperner 1D, which *is* the discrete IVT; `√2` at `2⁻⁸` returns `181/128`; its bound `K` is now proved, not assumed |
 | uniform continuity | **done** — the extracted realizer *is* the modulus; doubling gives `n+1`, translation `n` |
 | Newton–Leibniz (EFTC2, positive half) | **done** — `eftc2_thm : ∀ A : A1, EFTC2Claim A`; see §7 |
+| Newton–Leibniz (EFTC1, integration direction) | **done** — `eftc1 : ∀ A : A0, EFTC1Claim A`; `δ := ω`, no new data |
 
 **Why the numeric layers are hand-rolled.** Mathlib's `Rat` arithmetic —
 including `Rat.add`, `Rat.mul`, `mkRat`, `Rat.normalize` — depends on
@@ -90,6 +91,7 @@ Listed here so it cannot be missed. Each is flagged in its own source file too.
 | bound `K` in the square-root theorem | `SquareRoot.lean` | **discharged** — `sqrt_premises` (`QAnalysis.lean`) proves both colouring premises for every `q ≥ 0` at every precision |
 | Lipschitz premise of uniform continuity | `UniformContinuity.lean` | **discharged at the three guarded maps**, for all `x`, `y`, `m`; an arbitrary `f` still owes its own |
 | `Lemma1Claim`, `Lemma2Claim`, `EFTC2Claim` | `EFTC.lean` | **proved** — `lemma1`, `lemma2`, `eftc2_thm` in `QAnalysis.lean`, for every `A1`. See §7 for the six construction fixes this required |
+| `EFTC1Claim` | `EFTC.lean` | **proved** — `eftc1`, for every `A0`. The "`∫f` is `A₁`-adequate" phrasing is *not* stated; see §7 for why that is a representation limit |
 | modulus metatheorem (extraction yields a modulus for *every* derivation) | `Modulus.lean` | not proved; two recorded obstructions, see §6 |
 
 The first three rows were all blocked on the same missing thing — an
@@ -358,6 +360,36 @@ the guards run.
 **Cost.** The index fixes double every Riemann sample count relative to the
 original code (`sqEx.intN 8192 → 16384`); the growth rate is unchanged, still
 `2^ω'(m)`, which is §8's optimal-adequacy question rather than this one.
+
+### `EFTC1` — the integration direction
+
+**Proved: `eftc1 : ∀ A : A0, EFTC1Claim A`**, footprint
+`[propext, Classical.choice, Quot.sound]`. Stated in exactly `A1.diff`'s shape,
+with `δ` instantiated to `ω` and the derivative instantiated to the integrand:
+the difference quotients of the Riemann sums of `f` over `[x, x+h]` are within
+`2⁻ᵏ` of `f x` whenever `|h| ≤ 2⁻ω⁽ᵏ⁾`, **uniformly in the subdivision count**
+and consuming only `A₀`-data.
+
+The proof is short because the mathematics is: a difference quotient of a
+Riemann sum is the *average* of `f` at points all within `|h|` of `x`, and an
+average of values each within `2⁻ᵏ` of `f x` is within `2⁻ᵏ` of `f x`. That is
+the whole of the asymmetry — `EFTC2` needed `δ` supplied from outside and, by
+Myhill, could not manufacture it from `A₀`-data; integration needs nothing
+supplied.
+
+Refactor this required: `ivl` and `cont` moved from `A1` to `A0`, where they
+belong — they are conditions on `A₀`'s data alone, and `EFTC1`'s hypothesis is
+an `A₀`. `A1` now adds exactly `δ` and `diff`.
+
+**What is not stated, and why it is a representation limit rather than a proof
+gap.** "`F := ∫f` is `A₁`-adequate" would need `F` as an inhabitant of the
+theory, and `A0.f : Q → Q` is an *exactly rational-valued* evaluator while
+`∫f` is not rational-valued in general. Stating it requires the representation
+to carry approximating evaluators, `Nat → Q → Q` with `|f k x − F x| < 2⁻ᵏ` —
+the standard computable-analysis shape, and a different structure from the one
+this development uses throughout. The differentiability half, which is what
+carries `EFTC1`'s content, is proved; the "`F` exists as an object" half is not
+expressible without that change, and is not claimed.
 
 **Not claimed:** the negative half, `A₀ ⊭ EFTC2`. That is Myhill's theorem, a
 citation here, not a formalization — so "`A₁ ⊨ EFTC2`" is proved and the

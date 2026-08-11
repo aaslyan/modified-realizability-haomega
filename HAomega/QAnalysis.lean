@@ -389,7 +389,7 @@ Four terms of `2⁻⁽ᵏ⁺³⁾` and one of `2⁻⁽ᵏ⁺⁴⁾`, summing to
 steps, so nothing cancels between them directly.  Both are near `F`, and both
 common-step quotients are near `F`, and *those* cancel. -/
 
-theorem cont_val (A : A1) (p : Nat) (u v : Q)
+theorem cont_val (A : A0) (p : Nat) (u v : Q)
     (hua : A.a.val ≤ u.val) (hub : u.val ≤ A.b.val)
     (hva : A.a.val ≤ v.val) (hvb : v.val ≤ A.b.val)
     (h : |u.val - v.val| ≤ 1 / 2 ^ A.ω p) :
@@ -429,12 +429,12 @@ theorem derivEval_uc_of_step (A : A1) {F : Q → Q} (hF : IsDeriv A F) (k : Nat)
   have hwo : (1 : Rat) / 2 ^ A.omega' k ≤ 1 / 2 ^ A.ω (k + 5 + stepIx A k) :=
     inv_pow_le (Nat.le_max_left _ _)
   have hc1 : |(A.f (Q.add x s)).val - (A.f (Q.add y s)).val| < 1 / 2 ^ (k + 5 + stepIx A k) :=
-    cont_val A _ _ _ hxs1 hxs2 hys1 hys2 (by
+    cont_val A.toA0 _ _ _ hxs1 hxs2 hys1 hys2 (by
       rw [Q.val_add, Q.val_add,
         show x.val + s.val - (y.val + s.val) = x.val - y.val by ring]
       exact le_trans hcl hwo)
   have hc2 : |(A.f x).val - (A.f y).val| < 1 / 2 ^ (k + 5 + stepIx A k) :=
-    cont_val A _ _ _ hxa hxb hya hyb (le_trans hcl hwo)
+    cont_val A.toA0 _ _ _ hxa hxb hya hyb (le_trans hcl hwo)
   -- the two common-step quotients agree to `2⁻⁽ᵏ⁺⁴⁾`
   have hquot : |((A.f (Q.add x s)).val - (A.f x).val) / s.val
       - ((A.f (Q.add y s)).val - (A.f y).val) / s.val| < 1 / 2 ^ (k + 4) := by
@@ -658,7 +658,7 @@ assumption: `cont` at every precision forces it, since two points at distance
 `0` are within every `2⁻ω⁽ᵏ⁾`.  It is needed because the sample points are built
 as `a + i·h`, and `a + 0·h` is a *different* `Q` from `a` — the same value in a
 different representation, which `f : Q → Q` could otherwise distinguish. -/
-theorem f_val_congr (A : A1) {u v : Q}
+theorem f_val_congr (A : A0) {u v : Q}
     (hua : A.a.val ≤ u.val) (hub : u.val ≤ A.b.val)
     (hva : A.a.val ≤ v.val) (hvb : v.val ≤ A.b.val)
     (h : u.val = v.val) : (A.f u).val = (A.f v).val := by
@@ -804,11 +804,11 @@ theorem lemma2 (A : A1) : Lemma2Claim A := by
     Finset.sum_range_sub (fun i ↦ (A.f (sampleQ A k i)).val) (A.intN k)
   have hab := le_of_lt A.ivl_val
   have hX0 : (A.f (sampleQ A k 0)).val = (A.f A.a).val := by
-    refine f_val_congr A (sampleQ_mem A k 0 (by omega)).1 (sampleQ_mem A k 0 (by omega)).2
+    refine f_val_congr A.toA0 (sampleQ_mem A k 0 (by omega)).1 (sampleQ_mem A k 0 (by omega)).2
       le_rfl hab ?_
     rw [sampleQ_val]; simp
   have hXN : (A.f (sampleQ A k (A.intN k))).val = (A.f A.b).val := by
-    refine f_val_congr A (sampleQ_mem A k _ le_rfl).1 (sampleQ_mem A k _ le_rfl).2 hab le_rfl ?_
+    refine f_val_congr A.toA0 (sampleQ_mem A k _ le_rfl).1 (sampleQ_mem A k _ le_rfl).2 hab le_rfl ?_
     rw [sampleQ_val, hNhL, intL_val]
     ring
   -- assemble the difference as `h · Σ (DE − DQ)`
@@ -877,6 +877,94 @@ theorem eftc2_thm (A : A1) : EFTC2Claim A := ⟨lemma1 A, lemma2 A⟩
 #print axioms lemma2
 #print axioms eftc2_thm
 
+/-! ## EFTC1
+
+The asymmetry the manifesto's §7.2 describes, formalized at the level this
+embedding can express.  For `EFTC2` the modulus of uniform differentiability
+had to be handed in as `A₁`-data.  Here it is *derived*: the difference
+quotient of a Riemann sum over `[x, x+h]` is the **average** of `f` at points
+all within `|h|` of `x`, so if every one of them is within `2⁻ᵏ` of `f x` — 
+which is exactly what `ω` says once `|h| ≤ 2⁻ω⁽ᵏ⁾` — then so is their average.
+
+`δ := ω`, and only `A₀`-data is consumed. -/
+
+theorem rStep_val (h : Q) {N : Nat} (hN : 0 < N) :
+    (rStep h N).val = h.val / (N : Rat) := by
+  have hnum : (Q.ofNat N).num ≠ 0 := by unfold Q.ofNat; simpa using by omega
+  rw [rStep, Q.val_div _ _ hnum, Q.val_ofNat]
+
+theorem rPt_val (x h : Q) {N : Nat} (hN : 0 < N) (i : Nat) :
+    (rPt x h N i).val = x.val + (i : Rat) / (N : Rat) * h.val := by
+  rw [rPt]
+  simp only [Q.val_add, Q.val_mul, Q.val_ofNat, rStep_val h hN]
+  ring
+
+/-- **EFTC1.**  Every Riemann sum's difference quotient is within `2⁻ᵏ` of the
+integrand, as soon as the step is `2⁻ω⁽ᵏ⁾` — uniformly in the number of
+subdivisions, and with no differentiability data supplied.  The modulus of
+uniform differentiability of the integral **is** `ω`. -/
+theorem eftc1_quotient (A : A0) (k N : Nat) (hN : 0 < N) (x h : Q)
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val)
+    (hha : A.a.val ≤ x.val + h.val) (hhb : x.val + h.val ≤ A.b.val)
+    (hh : h.val ≠ 0) (hsmall : |h.val| ≤ 1 / 2 ^ A.ω k) :
+    |(A.riemann x h N).val / h.val - (A.f x).val| < 1 / 2 ^ k := by
+  have hNR : (0 : Rat) < (N : Rat) := by exact_mod_cast hN
+  -- the quotient is the average of the samples
+  have hval : (A.riemann x h N).val / h.val
+      = (1 / (N : Rat)) * ∑ i ∈ Finset.range N, (A.f (rPt x h N i)).val := by
+    rw [A0.riemann, Q.val_mul, sumQ_val, rStep_val h hN]
+    field_simp
+  -- every sample sits in `[a,b]` and within `|h|` of `x`
+  have hpt : ∀ i ∈ Finset.range N,
+      |(A.f (rPt x h N i)).val - (A.f x).val| < 1 / 2 ^ k := by
+    intro i hi
+    have hlt := Finset.mem_range.mp hi
+    have ht0 : (0 : Rat) ≤ (i : Rat) / (N : Rat) :=
+      div_nonneg (Nat.cast_nonneg i) (le_of_lt hNR)
+    have ht1 : (i : Rat) / (N : Rat) ≤ 1 := by
+      rw [div_le_one hNR]; exact_mod_cast le_of_lt hlt
+    have hmem : A.a.val ≤ (rPt x h N i).val ∧ (rPt x h N i).val ≤ A.b.val := by
+      rw [rPt_val x h hN i]
+      constructor <;> nlinarith
+    refine cont_val A k _ x hmem.1 hmem.2 hxa hxb ?_
+    rw [rPt_val x h hN i, show x.val + (i : Rat) / (N : Rat) * h.val - x.val
+      = (i : Rat) / (N : Rat) * h.val by ring, abs_mul, abs_of_nonneg ht0]
+    calc (i : Rat) / (N : Rat) * |h.val| ≤ 1 * |h.val| := by
+          exact mul_le_mul_of_nonneg_right ht1 (abs_nonneg _)
+      _ = |h.val| := one_mul _
+      _ ≤ 1 / 2 ^ A.ω k := hsmall
+  -- an average of things within `2⁻ᵏ` is within `2⁻ᵏ`
+  have hsum : |∑ i ∈ Finset.range N, ((A.f (rPt x h N i)).val - (A.f x).val)|
+      < (N : Rat) * (1 / 2 ^ k) := by
+    have hne : (Finset.range N).Nonempty := Finset.nonempty_range_iff.mpr (by omega)
+    have h1 := Finset.abs_sum_le_sum_abs
+      (fun i ↦ (A.f (rPt x h N i)).val - (A.f x).val) (Finset.range N)
+    have h2 := Finset.sum_lt_sum_of_nonempty hne hpt
+    rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul] at h2
+    linarith
+  have hrw : (A.riemann x h N).val / h.val - (A.f x).val
+      = (1 / (N : Rat)) * ∑ i ∈ Finset.range N,
+          ((A.f (rPt x h N i)).val - (A.f x).val) := by
+    rw [hval, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+    field_simp
+  rw [hrw, abs_mul, abs_of_nonneg (by positivity : (0 : Rat) ≤ 1 / (N : Rat))]
+  rw [show (1 : Rat) / 2 ^ k = (1 / (N : Rat)) * ((N : Rat) * (1 / 2 ^ k)) by field_simp]
+  exact mul_lt_mul_of_pos_left hsum (by positivity)
+
+/-- **`EFTC1`**, in the form `EFTC.lean` states it: the integral of `f` is
+uniformly differentiable with derivative `f`, at modulus `ω`. -/
+theorem eftc1 (A : A0) : EFTC1Claim A := by
+  intro k N x h hN hxa hxb hha hhb hh hsmall
+  rw [Qle_eq_true_iff] at hxa hxb hha hhb
+  rw [Qle_eq_true_iff, Q.val_abs, toQ_pow2neg_val] at hsmall
+  rw [Q.val_add] at hha hhb
+  rw [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, Q.val_div _ _ hh, toQ_pow2neg_val]
+  exact eftc1_quotient A k N hN x h hxa hxb hha hhb
+    (by unfold Q.val
+        exact div_ne_zero (Int.cast_ne_zero.mpr hh) (ne_of_gt h.den_cast_pos)) hsmall
+
+#print axioms eftc1_quotient
+
 /-! ### What it took
 
 `EFTC2Claim` is now proved for every `A₁`.  Nothing in the *analysis* was
@@ -912,6 +1000,16 @@ there a step lemma is one rewrite.  No `implemented_by`, no trusted swap.
 **Cost.** The two index fixes double every Riemann sample count relative to the
 original code; the growth rate is unchanged (still `2^ω'(m)`, exponential in the
 requested precision), which is the optimal-adequacy question, not this one.
+
+**`EFTC1`** (above) is the integration-direction dual, and it needed none of
+this: `δ := ω`, proved directly.  That contrast *is* the asymmetry the
+manifesto's §7.2 describes — integration hands you the regularity for free,
+differentiation cannot manufacture it.  What `EFTC1` does **not** say here is
+"`∫f` is `A₁`-adequate", and the obstacle is representational rather than a
+proof gap: `A0.f : Q → Q` is an exactly rational-valued evaluator and `∫f` is
+not rational-valued, so stating it needs approximating evaluators
+`Nat → Q → Q`.  The differentiability half is what carries the content, and it
+is what is proved.
 
 **Still out of scope and not claimed:** the negative half, `A₀ ⊭ EFTC2`, which
 is Myhill's theorem and a citation here, not a formalization. -/

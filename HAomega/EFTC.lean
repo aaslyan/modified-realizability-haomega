@@ -48,6 +48,23 @@ this development, and no lemma from `Modulus.lean` transfers. (They would meet
 if reals were represented as `ℕ → ℚ` and `f` were type-2; `f : Q → Q` is
 type-1.)
 
+## `EFTC1`, and what it can and cannot say here
+
+`EFTC1` is proved (`eftc1`, `QAnalysis.lean`): the difference quotients of the
+Riemann sums of `f` converge to `f` itself, uniformly in the subdivision count,
+at modulus `ω` — so the `δ` that `A₁` demands as *extra data* is, in the
+integration direction, already present in the `A₀`-data. That is the asymmetry.
+
+**What is not stated here, and why it is a representation limit rather than a
+proof gap.** "`F := ∫f` is `A₁`-adequate" would need `F` itself as an
+inhabitant of the theory, and `A0.f : Q → Q` is an *exactly rational-valued*
+evaluator, while `∫f` is not rational even for rational-valued `f` (`∫₀¹x² =
+1/3` happens to be; `∫` of most integrands is not). Saying it would require the
+representation to carry approximating evaluators, `Nat → Q → Q` with
+`|f k x − f x| < 2⁻ᵏ`, which is the standard computable-analysis shape and a
+different structure from the one this file uses throughout. The differentiability
+half — the half carrying `EFTC1`'s content — is what is proved.
+
 ## Scope
 
 The negative half — `A₀ ⊭ EFTC2`, Myhill's continuously-differentiable
@@ -123,13 +140,24 @@ def sumQ (g : Nat → Q) (n : Nat) : Q := Id.run do
 
 /-! ## The representations -/
 
-/-- **`A₀`** — a computable `f` on `[a,b]`: an evaluator and a modulus of
-continuity.  `ω k` is meant to satisfy `|x−y| ≤ 2⁻ω⁽ᵏ⁾ → |f x − f y| < 2⁻ᵏ`. -/
+/-- **`A₀`** — a computable `f` on `[a,b]`: an evaluator, a modulus of
+continuity, and the conditions making them mean that.
+
+`ivl` and `cont` live here rather than on `A₁` because they are conditions on
+`A₀`'s data alone; `A₁` adds `δ` and what `δ` asserts, and nothing else.  That
+split is what lets `EFTC1` take an `A₀` as its hypothesis. -/
 structure A0 where
   a : Q
   b : Q
   f : Q → Q
   ω : Nat → Nat
+  /-- the interval is nondegenerate -/
+  ivl : Q.ltN a b = 1
+  /-- `ω` is a modulus of continuity for `f` on `[a,b]` -/
+  cont : ∀ (k : Nat) (x y : Q), Qle a x = true → Qle x b = true →
+      Qle a y = true → Qle y b = true →
+      Qle (Q.abs (Q.sub x y)) (D.toQ (D.pow2neg (ω k))) = true →
+      Q.ltN (Q.abs (Q.sub (f x) (f y))) (D.toQ (D.pow2neg k)) = 1
 
 /-- **`A₁`** — `A₀` plus a modulus of uniform differentiability, **and the
 conditions making `ω` and `δ` moduli of anything**.
@@ -156,13 +184,6 @@ this file keeps its own idiom.  The proofs discharging the fields may of
 course use Mathlib freely; only the statements must not. -/
 structure A1 extends A0 where
   δ : Nat → Nat
-  /-- the interval is nondegenerate -/
-  ivl : Q.ltN a b = 1
-  /-- `ω` is a modulus of continuity for `f` on `[a,b]` -/
-  cont : ∀ (k : Nat) (x y : Q), Qle a x = true → Qle x b = true →
-      Qle a y = true → Qle y b = true →
-      Qle (Q.abs (Q.sub x y)) (D.toQ (D.pow2neg (ω k))) = true →
-      Q.ltN (Q.abs (Q.sub (f x) (f y))) (D.toQ (D.pow2neg k)) = 1
   /-- `δ` is a modulus of uniform differentiability, for *some* derivative -/
   diff : ∃ F : Q → Q, ∀ (k : Nat) (x h : Q),
       Qle a x = true → Qle x b = true →
@@ -269,10 +290,50 @@ def eftc2 (A : A1) : (Nat → Q → Q) × (Nat → Q) := (A.derivEval, A.integra
 
 end A1
 
+/-! ## EFTC1 — the integration direction
+
+`EFTC2` needed `A₁`-data: `δ` had to be supplied from outside.  Integration is
+asymmetric.  The difference quotient of `∫g` over a step `h` is an *average* of
+values of `g` near the point, so how fast it converges to `g x` is governed by
+`g`'s own modulus of continuity — **`δ := ω` works, and nothing new is
+supplied**.  That is the whole content of `EFTC1`, and `eftc1_quotient` in
+`QAnalysis.lean` proves it.
+
+Only `A₀`-data is used below.  The theorem takes an `A₀`, not an `A₁`. -/
+
+/-- The step of an `N`-fold subdivision of `[x, x+h]`. -/
+def rStep (h : Q) (N : Nat) : Q := Q.div h (Q.ofNat N)
+
+/-- The `i`-th sample point of that subdivision. -/
+def rPt (x h : Q) (N i : Nat) : Q := Q.add x (Q.mul (Q.ofNat i) (rStep h N))
+
+/-- The left Riemann sum of `f` over `[x, x+h]` with `N` subdivisions.  Note
+this is the *integral* direction: `f` here is the integrand. -/
+def A0.riemann (A : A0) (x h : Q) (N : Nat) : Q :=
+  Q.mul (rStep h N) (sumQ (fun i ↦ A.f (rPt x h N i)) N)
+
 /-! ## What the constructions are supposed to satisfy
 
 Stated, **not proved**.  Each is an arithmetic claim about `Q` of exactly the
 kind the missing rule base would discharge. -/
+
+/-- **`EFTC1`**, stated in the same shape as `A1.diff`.
+
+Compare the two.  `A1.diff` asserts of *supplied* data `δ` that the difference
+quotients of `f` converge to some `F`.  This asserts the same thing about the
+**integral** of `f`, with `δ` instantiated to `ω` and `F` instantiated to `f`
+itself — i.e. the integral is uniformly differentiable with derivative the
+integrand, at a modulus that came with the `A₀`-data.  Nothing is supplied.
+
+Proved as `eftc1` in `QAnalysis.lean`, for every `A₀` and every subdivision
+count. -/
+def EFTC1Claim (A : A0) : Prop :=
+  ∀ (k N : Nat) (x h : Q), 0 < N →
+    Qle A.a x = true → Qle x A.b = true →
+    Qle A.a (Q.add x h) = true → Qle (Q.add x h) A.b = true →
+    h.num ≠ 0 → Qle (Q.abs h) (D.toQ (D.pow2neg (A.ω k))) = true →
+    Q.ltN (Q.abs (Q.sub (Q.div (A.riemann x h N) h) (A.f x)))
+      (D.toQ (D.pow2neg k)) = 1
 
 /-- Lemma 1's correctness: `derivEval` is uniformly continuous with modulus
 `ω'`.  Proved, as `lemma1` in `QAnalysis.lean`.
@@ -398,6 +459,16 @@ def sqEx : A1 :=
 #guard sqEx.integral 0 == Q.of 524257 524288
 #guard Q.ltN (Q.abs (Q.sub (sqEx.integral 0) (Q.ofNat 1)))
     (D.toQ (D.pow2neg 0)) == 1
+
+-- **EFTC1's construction runs.**  Left Riemann sums of `3x` over `[0,2]` climb
+-- toward the exact `6` — a left sum always underestimates a rising integrand —
+-- and `x²` over `[0,1]` sits below its exact `1/3`.
+#guard (List.range 5).map (fun n ↦ linEx.toA0.riemann (Q.ofNat 0) (Q.ofNat 2) (4 * (n + 1)))
+  == [Q.of 9 2, Q.of 21 4, Q.of 11 2, Q.of 45 8, Q.of 57 10]
+#guard sqEx.toA0.riemann (Q.ofNat 0) (Q.ofNat 1) 8 == Q.of 35 128
+-- and a difference quotient sits inside the bound `eftc1` proves for it
+#guard Q.ltN (Q.abs (Q.sub (Q.div (linEx.toA0.riemann (Q.of 1 2) (Q.of 1 4) 4) (Q.of 1 4))
+    (linEx.f (Q.of 1 2)))) (D.toQ (D.pow2neg 0)) == 1
 
 /-! ### Measured beyond the guards
 

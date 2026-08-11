@@ -381,15 +381,43 @@ Refactor this required: `ivl` and `cont` moved from `A1` to `A0`, where they
 belong — they are conditions on `A₀`'s data alone, and `EFTC1`'s hypothesis is
 an `A₀`. `A1` now adds exactly `δ` and `diff`.
 
-**What is not stated, and why it is a representation limit rather than a proof
-gap.** "`F := ∫f` is `A₁`-adequate" would need `F` as an inhabitant of the
-theory, and `A0.f : Q → Q` is an *exactly rational-valued* evaluator while
-`∫f` is not rational-valued in general. Stating it requires the representation
-to carry approximating evaluators, `Nat → Q → Q` with `|f k x − F x| < 2⁻ᵏ` —
-the standard computable-analysis shape, and a different structure from the one
-this development uses throughout. The differentiability half, which is what
-carries `EFTC1`'s content, is proved; the "`F` exists as an object" half is not
-expressible without that change, and is not claimed.
+### Approximating evaluators
+
+`A0.f : Q → Q` is an *exactly rational-valued* evaluator, and `∫f` is not
+rational-valued — which is why `EFTC1` could prove its differentiability
+content but not say "`∫f` is `A₁`-adequate": `∫f` was not an inhabitant of the
+theory at all. The `E0` layer fixes that.
+
+    structure E0 where a b : Q; ev : Nat → Q → Q; cm : Nat → Nat; ivl; conv
+
+`ev n x` is the `n`-th approximation at `x`. There is no real number here for
+the approximations to converge *to*, so what `conv` asserts is that they
+converge to **each other**: past level `cm k`, successive levels agree to
+`2⁻ᵏ`. That is what "represents a real" means constructively.
+
+**Proved:**
+
+    'HAomega.A0.toE0'   depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.A0.intE0'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+`A0.toE0` is **conservativity** — every exact representation is an
+approximating one (the constant family), so the generalization admits more
+functions and loses none. `A0.intE0` is the payoff: `∫f` *is* an `E0`, with
+`cm k := ω (k + ℓ)` built from `f`'s own modulus of continuity.
+
+**The engine is `riemann_refine`**: doubling a Riemann sum's subdivision count
+moves it by at most `|h|·2⁻ᵏ`. Comparing Riemann sums at *arbitrary* counts
+needs a common refinement and an index bijection; comparing `N` with `2N` needs
+only that the even fine points are the coarse points, which is an induction
+(`sum_range_two_mul`). That is why the evaluator's levels double — the
+indexing is chosen to make the estimate provable. `f_val_congr` is needed again
+here: the even fine points equal the coarse points as *values*, not as terms.
+
+**What is still not done.** The `E₁` layer — modulus of continuity and of
+uniform differentiability stated for approximating evaluators rather than exact
+ones. `eftc1` proves the differentiability content about the Riemann sums and
+`A0.intE0` proves the object exists, but joining them into "`∫f` is
+`A₁`-adequate" needs `E₁`, which is not built. Not claimed.
 
 **Not claimed:** the negative half, `A₀ ⊭ EFTC2`. That is Myhill's theorem, a
 citation here, not a formalization — so "`A₁ ⊨ EFTC2`" is proved and the

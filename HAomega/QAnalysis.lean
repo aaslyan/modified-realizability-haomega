@@ -965,6 +965,216 @@ theorem eftc1 (A : A0) : EFTC1Claim A := by
 
 #print axioms eftc1_quotient
 
+/-! ## Approximating evaluators
+
+`A0.f : Q → Q` is an *exact* evaluator, and that is what stopped `EFTC1` from
+saying "`∫f` is `A₁`-adequate": `∫f` is not rational-valued.  The standard
+computable-analysis shape is an **approximating evaluator** `Nat → Q → Q`, and
+what a representation then has to assert is that successive approximations
+converge — there being no real number here for them to converge *to*.
+
+The technical enabler is comparing two Riemann sums for the same interval.
+Doing that for arbitrary subdivision counts needs a common refinement and an
+index bijection; doing it for a **doubling** needs only that the even-indexed
+fine points are the coarse points, which is an induction.  So the evaluator
+below refines by doubling, and `riemann_refine` is the estimate everything
+else rests on. -/
+
+theorem sum_range_two_mul {M : Type*} [AddCommMonoid M] (g : Nat → M) (N : Nat) :
+    ∑ i ∈ Finset.range (2 * N), g i
+      = ∑ i ∈ Finset.range N, (g (2 * i) + g (2 * i + 1)) := by
+  induction N with
+  | zero => simp
+  | succ n ih =>
+    rw [show 2 * (n + 1) = 2 * n + 1 + 1 by ring, Finset.sum_range_succ,
+      Finset.sum_range_succ, ih, Finset.sum_range_succ]
+    rw [add_assoc]
+
+theorem rPt_mem (A : A0) {x h : Q} {N : Nat} (hN : 0 < N) (i : Nat) (hi : i ≤ N)
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val)
+    (hha : A.a.val ≤ x.val + h.val) (hhb : x.val + h.val ≤ A.b.val) :
+    A.a.val ≤ (rPt x h N i).val ∧ (rPt x h N i).val ≤ A.b.val := by
+  have hNR : (0 : Rat) < (N : Rat) := by exact_mod_cast hN
+  have ht0 : (0 : Rat) ≤ (i : Rat) / (N : Rat) :=
+    div_nonneg (Nat.cast_nonneg i) (le_of_lt hNR)
+  have ht1 : (i : Rat) / (N : Rat) ≤ 1 := by
+    rw [div_le_one hNR]; exact_mod_cast hi
+  rw [rPt_val x h hN i]
+  constructor <;> nlinarith
+
+/-- **Doubling the subdivision moves a Riemann sum by at most `|h|·2⁻ᵏ`.**
+The even-indexed points of the fine grid *are* the coarse points — as values,
+not as terms, which is why `f_val_congr` is needed — so the two sums differ
+term by term only through the odd fine points, each one mesh-step from its
+coarse neighbour. -/
+theorem riemann_refine (A : A0) (k N : Nat) (hN : 0 < N) (x h : Q)
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val)
+    (hha : A.a.val ≤ x.val + h.val) (hhb : x.val + h.val ≤ A.b.val)
+    (hmesh : |h.val| / (N : Rat) ≤ 1 / 2 ^ A.ω k) :
+    |(A.riemann x h (2 * N)).val - (A.riemann x h N).val|
+      ≤ |h.val| / 2 * (1 / 2 ^ k) := by
+  have hNR : (0 : Rat) < (N : Rat) := by exact_mod_cast hN
+  have h2N : 0 < 2 * N := by omega
+  have h2NR : (0 : Rat) < ((2 * N : Nat) : Rat) := by exact_mod_cast h2N
+  -- the two sums, as values
+  have hfine : (A.riemann x h (2 * N)).val
+      = h.val / ((2 * N : Nat) : Rat)
+        * ∑ i ∈ Finset.range (2 * N), (A.f (rPt x h (2 * N) i)).val := by
+    rw [A0.riemann, Q.val_mul, sumQ_val, rStep_val h h2N]
+  have hcoarse : (A.riemann x h N).val
+      = h.val / (N : Rat) * ∑ i ∈ Finset.range N, (A.f (rPt x h N i)).val := by
+    rw [A0.riemann, Q.val_mul, sumQ_val, rStep_val h hN]
+  -- even fine points are coarse points
+  have heven : ∀ i ∈ Finset.range N,
+      (A.f (rPt x h (2 * N) (2 * i))).val = (A.f (rPt x h N i)).val := by
+    intro i hi
+    have hlt := Finset.mem_range.mp hi
+    refine f_val_congr A (rPt_mem A h2N (2 * i) (by omega) hxa hxb hha hhb).1
+      (rPt_mem A h2N (2 * i) (by omega) hxa hxb hha hhb).2
+      (rPt_mem A hN i (le_of_lt hlt) hxa hxb hha hhb).1
+      (rPt_mem A hN i (le_of_lt hlt) hxa hxb hha hhb).2 ?_
+    rw [rPt_val x h h2N, rPt_val x h hN]
+    push_cast
+    field_simp
+  -- odd fine points are one fine step from their coarse neighbour
+  have hodd : ∀ i ∈ Finset.range N,
+      |(A.f (rPt x h (2 * N) (2 * i + 1))).val - (A.f (rPt x h N i)).val| < 1 / 2 ^ k := by
+    intro i hi
+    have hlt := Finset.mem_range.mp hi
+    refine cont_val A k _ _ (rPt_mem A h2N (2 * i + 1) (by omega) hxa hxb hha hhb).1
+      (rPt_mem A h2N (2 * i + 1) (by omega) hxa hxb hha hhb).2
+      (rPt_mem A hN i (le_of_lt hlt) hxa hxb hha hhb).1
+      (rPt_mem A hN i (le_of_lt hlt) hxa hxb hha hhb).2 ?_
+    have hval : (rPt x h (2 * N) (2 * i + 1)).val - (rPt x h N i).val
+        = h.val / ((2 : Rat) * (N : Rat)) := by
+      rw [rPt_val x h h2N, rPt_val x h hN]
+      push_cast
+      field_simp
+      ring
+    rw [hval, abs_div, abs_of_pos (by positivity : (0 : Rat) < 2 * (N : Rat))]
+    calc |h.val| / (2 * (N : Rat)) ≤ |h.val| / (N : Rat) := by
+          apply div_le_div_of_nonneg_left (abs_nonneg _) hNR
+          linarith
+      _ ≤ 1 / 2 ^ A.ω k := hmesh
+  -- assemble
+  have e : ∑ i ∈ Finset.range N,
+      ((A.f (rPt x h (2 * N) (2 * i))).val + (A.f (rPt x h (2 * N) (2 * i + 1))).val)
+      = ∑ i ∈ Finset.range N,
+          ((A.f (rPt x h N i)).val + (A.f (rPt x h (2 * N) (2 * i + 1))).val) :=
+    Finset.sum_congr rfl (fun i hi ↦ by rw [heven i hi])
+  have hkey : (A.riemann x h (2 * N)).val - (A.riemann x h N).val
+      = h.val / (2 * (N : Rat)) * ∑ i ∈ Finset.range N,
+          ((A.f (rPt x h (2 * N) (2 * i + 1))).val - (A.f (rPt x h N i)).val) := by
+    rw [hfine, hcoarse, sum_range_two_mul, e, Finset.sum_add_distrib,
+      Finset.sum_sub_distrib]
+    push_cast
+    field_simp
+    ring
+  have hb : |∑ i ∈ Finset.range N,
+      ((A.f (rPt x h (2 * N) (2 * i + 1))).val - (A.f (rPt x h N i)).val)|
+      ≤ (N : Rat) * (1 / 2 ^ k) := by
+    refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
+    have hle := Finset.sum_le_card_nsmul (Finset.range N)
+      (fun i ↦ |(A.f (rPt x h (2 * N) (2 * i + 1))).val - (A.f (rPt x h N i)).val|)
+      (1 / 2 ^ k) (fun i hi ↦ le_of_lt (hodd i hi))
+    rwa [Finset.card_range, nsmul_eq_mul] at hle
+  rw [hkey, abs_mul, abs_div, abs_of_pos (by positivity : (0 : Rat) < 2 * (N : Rat))]
+  calc |h.val| / (2 * (N : Rat)) * |∑ i ∈ Finset.range N,
+          ((A.f (rPt x h (2 * N) (2 * i + 1))).val - (A.f (rPt x h N i)).val)|
+      ≤ |h.val| / (2 * (N : Rat)) * ((N : Rat) * (1 / 2 ^ k)) :=
+        mul_le_mul_of_nonneg_left hb (by positivity)
+    _ = |h.val| / 2 * (1 / 2 ^ k) := by field_simp
+
+/-! ### The representation, and the integral as an inhabitant of it -/
+
+theorem A0.len_val (A : A0) : A.len.val = A.b.val - A.a.val := Q.val_sub _ _
+
+theorem A0.len_pos (A : A0) : 0 < A.len.val := by
+  rw [A0.len_val]
+  linarith [(Q.ltN_eq_one_iff _ _).mp A.ivl]
+
+theorem A0.evN_pos (A : A0) (n : Nat) : 0 < A.evN n :=
+  Nat.mul_pos (Nat.two_pow_pos n) (lt_of_lt_of_le Nat.zero_lt_one (Nat.le_max_left 1 _))
+
+theorem A0.evN_succ (A : A0) (n : Nat) : A.evN (n + 1) = 2 * A.evN n := by
+  unfold A0.evN
+  rw [pow_succ]
+  ring
+
+theorem A0.evBase_ge (A : A0) : A.len.val ≤ (A.evBase : Rat) := by
+  have h := ceilNatQ_spec A.len
+  have h2 : ((ceilNatQ A.len : Nat) : Rat) ≤ (A.evBase : Rat) := by
+    exact_mod_cast Nat.le_max_right 1 (ceilNatQ A.len)
+  linarith
+
+/-- **Conservativity.**  Every exact representation is an approximating one —
+the constant family, which converges instantly.  So generalizing the evaluator
+loses nothing; it only admits more functions. -/
+def A0.toE0 (A : A0) : E0 :=
+  { a := A.a, b := A.b, ev := fun _ x ↦ A.f x, cm := fun _ ↦ 0, ivl := A.ivl,
+    conv := by
+      intro k n _ x _ _
+      rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, sub_self, abs_zero, toQ_pow2neg_val]
+      positivity }
+
+theorem A0.intEv_mesh (A : A0) (n : Nat) {x : Q}
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val) :
+    |(Q.sub x A.a).val| / (A.evN n : Rat) ≤ 1 / 2 ^ n := by
+  have hbase : (0 : Rat) < (A.evBase : Rat) := by
+    exact_mod_cast lt_of_lt_of_le Nat.zero_lt_one (Nat.le_max_left 1 (ceilNatQ A.len))
+  have hnn : (0 : Rat) ≤ x.val - A.a.val := by linarith
+  have hh : |(Q.sub x A.a).val| ≤ (A.evBase : Rat) := by
+    rw [Q.val_sub, abs_of_nonneg hnn]
+    have := A.evBase_ge
+    rw [A0.len_val] at this
+    linarith
+  have hNv : ((A.evN n : Nat) : Rat) = 2 ^ n * (A.evBase : Rat) := by
+    unfold A0.evN; push_cast; ring
+  rw [hNv, div_le_div_iff₀ (by positivity) (by positivity)]
+  nlinarith [hh, hbase]
+
+/-- **The integral of an `A₀` is an approximating evaluator.**  This is the
+statement `EFTC1` could not make: `∫f` is now an inhabitant of the theory,
+represented by its Riemann sums on the doubling grid, with an explicit modulus
+of convergence built from `f`'s own modulus of continuity. -/
+def A0.intE0 (A : A0) : E0 :=
+  { a := A.a, b := A.b, ev := A.intEv, cm := fun k ↦ A.ω (k + A.ell), ivl := A.ivl,
+    conv := by
+      intro k n hn x hxa hxb
+      rw [Qle_eq_true_iff] at hxa hxb
+      rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val]
+      have hNpos := A.evN_pos n
+      have hxab : A.a.val + (Q.sub x A.a).val = x.val := by rw [Q.val_sub]; ring
+      have hmesh : |(Q.sub x A.a).val| / (A.evN n : Rat) ≤ 1 / 2 ^ A.ω (k + A.ell) :=
+        le_trans (A.intEv_mesh n hxa hxb) (inv_pow_le hn)
+      have href := riemann_refine A (k + A.ell) (A.evN n) hNpos A.a (Q.sub x A.a)
+        le_rfl (le_of_lt ((Q.ltN_eq_one_iff _ _).mp A.ivl))
+        (by rw [hxab]; exact hxa) (by rw [hxab]; exact hxb) hmesh
+      rw [← A.evN_succ] at href
+      rw [abs_sub_comm]
+      refine le_trans href ?_
+      -- `|h|/2 · 2⁻⁽ᵏ⁺ˡ⁾ ≤ 2⁻ᵏ`, since `|h| ≤ len ≤ 2ˡ`
+      have hnn : (0 : Rat) ≤ x.val - A.a.val := by linarith
+      have hlen : |(Q.sub x A.a).val| ≤ 2 ^ A.ell := by
+        rw [Q.val_sub, abs_of_nonneg hnn]
+        have h1 : A.len.val ≤ 2 ^ A.ell := ceilLog2Q_spec A.len
+        rw [A0.len_val] at h1
+        linarith
+      have hpk : (0 : Rat) < 2 ^ k := by positivity
+      have hstep : |(Q.sub x A.a).val| / 2 * (1 / 2 ^ (k + A.ell))
+          ≤ (2 : Rat) ^ A.ell / 2 * (1 / 2 ^ (k + A.ell)) := by
+        refine mul_le_mul_of_nonneg_right ?_ (by positivity)
+        linarith
+      refine le_trans hstep ?_
+      have heq : (2 : Rat) ^ A.ell / 2 * (1 / 2 ^ (k + A.ell)) = 1 / (2 * 2 ^ k) := by
+        rw [pow_add]
+        field_simp
+      rw [heq]
+      exact one_div_le_one_div_of_le hpk (by linarith) }
+
+#print axioms A0.toE0
+#print axioms A0.intE0
+
 /-! ### What it took
 
 `EFTC2Claim` is now proved for every `A₁`.  Nothing in the *analysis* was
@@ -1001,7 +1211,13 @@ there a step lemma is one rewrite.  No `implemented_by`, no trusted swap.
 original code; the growth rate is unchanged (still `2^ω'(m)`, exponential in the
 requested precision), which is the optimal-adequacy question, not this one.
 
-**`EFTC1`** (above) is the integration-direction dual, and it needed none of
+**Approximating evaluators** (below) close the half of `EFTC1` that the exact
+representation could not state: `A0.intE0` makes `∫f` an inhabitant of the
+theory.  What remains for "`∫f` is `A₁`-adequate" as a single sentence is an
+`E₁` layer — continuity and differentiability moduli stated for approximating
+evaluators rather than exact ones.
+
+**`EFTC1`** is the integration-direction dual, and it needed none of
 this: `δ := ω`, proved directly.  That contrast *is* the asymmetry the
 manifesto's §7.2 describes — integration hands you the regularity for free,
 differentiation cannot manufacture it.  What `EFTC1` does **not** say here is

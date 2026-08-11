@@ -55,15 +55,15 @@ Riemann sums of `f` converge to `f` itself, uniformly in the subdivision count,
 at modulus `ω` — so the `δ` that `A₁` demands as *extra data* is, in the
 integration direction, already present in the `A₀`-data. That is the asymmetry.
 
-**What is not stated here, and why it is a representation limit rather than a
-proof gap.** "`F := ∫f` is `A₁`-adequate" would need `F` itself as an
-inhabitant of the theory, and `A0.f : Q → Q` is an *exactly rational-valued*
-evaluator, while `∫f` is not rational even for rational-valued `f` (`∫₀¹x² =
-1/3` happens to be; `∫` of most integrands is not). Saying it would require the
-representation to carry approximating evaluators, `Nat → Q → Q` with
-`|f k x − f x| < 2⁻ᵏ`, which is the standard computable-analysis shape and a
-different structure from the one this file uses throughout. The differentiability
-half — the half carrying `EFTC1`'s content — is what is proved.
+**`∫f` as an object.** `A0.f : Q → Q` is an *exactly rational-valued*
+evaluator, and `∫f` is not rational-valued, so `∫f` is not an `A₀`. The
+approximating-evaluator layer below (`E0`) is what admits it: `A0.intE0` makes
+`∫f` an inhabitant of the theory, represented by its Riemann sums on a doubling
+grid with a modulus of convergence built from `f`'s own `ω`. What is **not**
+done is the `E₁` layer — modulus of continuity and of differentiability stated
+for approximating evaluators — so "`∫f` is `A₁`-adequate" as a single sentence
+is still not formalized. `eftc1` proves its differentiability content about the
+Riemann sums; `A0.intE0` proves the object exists; joining them needs `E₁`.
 
 ## Scope
 
@@ -312,6 +312,54 @@ this is the *integral* direction: `f` here is the integrand. -/
 def A0.riemann (A : A0) (x h : Q) (N : Nat) : Q :=
   Q.mul (rStep h N) (sumQ (fun i ↦ A.f (rPt x h N i)) N)
 
+/-! ## Approximating evaluators
+
+`A0.f : Q → Q` is an **exact** evaluator, and that is a real restriction: it
+forces every represented function to be rational-valued at rational points.
+`∫f` is not, which is exactly why `EFTC1` above could not say "`∫f` is
+`A₁`-adequate".
+
+An **approximating evaluator** is `ev : Nat → Q → Q`, the standard shape in
+computable analysis.  There is no real number in this development for the
+approximations to converge *to*, so what a representation can assert is that
+they converge to **each other**, at a stated rate — which is what "represents
+a real" means constructively.  `cm` is that rate: past level `cm k`,
+consecutive approximations agree to `2⁻ᵏ`. -/
+
+structure E0 where
+  a : Q
+  b : Q
+  /-- `ev n x` — the `n`-th approximation at `x`. -/
+  ev : Nat → Q → Q
+  /-- modulus of convergence: past level `cm k`, successive levels agree to `2⁻ᵏ`. -/
+  cm : Nat → Nat
+  ivl : Q.ltN a b = 1
+  conv : ∀ (k n : Nat), cm k ≤ n → ∀ x : Q, Qle a x = true → Qle x b = true →
+      Qle (Q.abs (Q.sub (ev n x) (ev (n + 1) x))) (D.toQ (D.pow2neg k)) = true
+
+namespace A0
+
+/-- `b − a`. -/
+def len (A : A0) : Q := Q.sub A.b A.a
+
+/-- `ℓ` with `len ≤ 2ˡ`. -/
+def ell (A : A0) : Nat := ceilLog2Q A.len
+
+/-- A subdivision count at level `0` coarse enough to be cheap and fine enough
+that level `n`'s mesh is at most `2⁻ⁿ`. -/
+def evBase (A : A0) : Nat := Nat.max 1 (ceilNatQ A.len)
+
+/-- Level `n` **doubles** level `n`'s subdivision count.  That is the whole
+reason the levels are indexed this way: comparing two Riemann sums in general
+needs a common refinement and an index bijection, whereas comparing `N` with
+`2N` needs only that the even fine points are the coarse points. -/
+def evN (A : A0) (n : Nat) : Nat := 2 ^ n * A.evBase
+
+/-- **The integral as an approximating evaluator**: `intEv n x ≈ ∫ₐˣ f`. -/
+def intEv (A : A0) (n : Nat) (x : Q) : Q := A.riemann A.a (Q.sub x A.a) (A.evN n)
+
+end A0
+
 /-! ## What the constructions are supposed to satisfy
 
 Stated, **not proved**.  Each is an arithmetic claim about `Q` of exactly the
@@ -469,6 +517,13 @@ def sqEx : A1 :=
 -- and a difference quotient sits inside the bound `eftc1` proves for it
 #guard Q.ltN (Q.abs (Q.sub (Q.div (linEx.toA0.riemann (Q.of 1 2) (Q.of 1 4) 4) (Q.of 1 4))
     (linEx.f (Q.of 1 2)))) (D.toQ (D.pow2neg 0)) == 1
+
+-- **The integral as an approximating evaluator converges.**  Successive levels
+-- double the subdivision count; `∫₀² 3x = 6` and `∫₀¹ x² = 1/3` are the limits.
+#guard (List.range 5).map (fun n ↦ linEx.toA0.intEv n (Q.ofNat 2))
+  == [Q.ofNat 3, Q.of 9 2, Q.of 21 4, Q.of 45 8, Q.of 93 16]
+#guard (List.range 5).map (fun n ↦ sqEx.toA0.intEv n (Q.ofNat 1))
+  == [Q.ofNat 0, Q.of 1 8, Q.of 7 32, Q.of 35 128, Q.of 155 512]
 
 /-! ### Measured beyond the guards
 

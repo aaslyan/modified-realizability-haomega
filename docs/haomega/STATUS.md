@@ -471,20 +471,34 @@ merge.
 
 ### What `∫f` still needs to be an `E₁`
 
-Bookkeeping rather than a missing idea, and **not written**:
+Of the three items recorded last round, **two are now done**.
 
-* **The counts** — turning `h/(x−a)` into concrete `N₁, N₂` with matching
-  widths (take `p/q` from `Q.div h (x−a)` and scale until the mesh is fine).
-  Mechanical, but it must handle `h < 0` separately, the interval then being
-  `[x+h, x]`.
-* **`cont`** needs an explicit bound `M` on `|f|`, computable from `ω` and one
-  sample.
-* **Assembly** — instantiating `E1.dq` from the two comparison errors, which is
-  where the `2L·2⁻ᵏ′/|h| ≤ 2⁻ᵏ` choice gets made.
+    'HAomega.split_widths'     depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.split_mesh'       depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.A0.fBound_spec'   depends on axioms: [propext, Classical.choice, Quot.sound]
+
+**The counts.** `splitScale`, `splitLo`, `splitHi` take the numerator `p` and
+denominator `q` of `h/d` and use cells in the ratio `q : p`, scaled until the
+mesh is fine. `split_widths` proves the cell widths agree — which is exactly
+`riemann_split`'s hypothesis — and `split_mesh` proves the mesh target. They
+are **sign-agnostic**: `natAbs` makes them describe the interval of length
+`|h|`, whichever side of the point it lies on, so `h < 0` needs no separate
+construction. What the *assembly* still has to do is orient that interval,
+since `riemann_split` is stated for two lengths laid end to end.
+
+**The bound on `|f|`.** `A0.fBound := |f a| + bnd`, where `bnd` counts
+`2⁻ω⁽⁰⁾`-steps across `[a,b]`. `A0.fBound_spec` proves it bounds `|f x|` at
+every `x ∈ [a,b]`: `ω` says `f` moves by less than `1` per step, and the walk
+from `a` to `x` telescopes.
+
+**What is left is the assembly**, and it is not written: instantiating `E1.cont`
+from `fBound`, and `E1.diff` from `riemann_split` + `riemann_uniform_close` +
+`eftc1_quotient`, with `dq k h` chosen so the two comparison errors survive
+division by `h` — the `2L·2⁻ᵏ′/|h| ≤ 2⁻ᵏ` step.
 
 So `A0.intE0` still stops at `E₀`, and "`∫f` is `A₁`-adequate" as a single
-sentence is still **not formalized**. What changed is that the remaining work
-no longer needs a theory of partitions.
+sentence is still **not formalized**. Every ingredient it needs is now proved;
+none of them has been put together.
 
 **Not claimed:** the negative half, `A₀ ⊭ EFTC2`. That is Myhill's theorem, a
 citation here, not a formalization — so "`A₁ ⊨ EFTC2`" is proved and the

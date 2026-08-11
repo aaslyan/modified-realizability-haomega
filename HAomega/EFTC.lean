@@ -365,6 +365,24 @@ structure E1 extends E0 where
       Qle (Q.abs (Q.sub (Q.div (Q.sub (ev n (Q.add x h)) (ev n x)) h) (F x)))
         (D.toQ (D.pow2neg k)) = true
 
+/-! ### Cell counts that split a grid exactly
+
+`riemann_split` needs two counts whose cell widths agree.  They exist because
+`h/d` is a **ratio of integers** — take its numerator and denominator, and
+scale until the mesh is fine.  Nothing here needs `h > 0`: `natAbs` makes the
+counts describe the interval of length `|h|`, whichever side of the point it
+lies on. -/
+
+/-- The scale factor making the split grid's mesh at most `2⁻ᴷ`. -/
+def splitScale (d h : Q) (K : Nat) : Nat :=
+  Nat.max 1 (ceilNatQ (Q.mul (Q.div d (Q.ofNat (Q.div h d).den)) (twoPowQ K)))
+
+/-- Cells for the length-`d` piece. -/
+def splitLo (d h : Q) (K : Nat) : Nat := (Q.div h d).den * splitScale d h K
+
+/-- Cells for the length-`|h|` piece. -/
+def splitHi (d h : Q) (K : Nat) : Nat := (Q.div h d).num.natAbs * splitScale d h K
+
 namespace A0
 
 /-- `b − a`. -/
@@ -382,6 +400,14 @@ reason the levels are indexed this way: comparing two Riemann sums in general
 needs a common refinement and an index bijection, whereas comparing `N` with
 `2N` needs only that the even fine points are the coarse points. -/
 def evN (A : A0) (n : Nat) : Nat := 2 ^ n * A.evBase
+
+/-- How many `2⁻ω⁽⁰⁾`-steps span `[a,b]`. -/
+def bnd (A : A0) : Nat := Nat.max 1 (ceilNatQ (Q.mul A.len (twoPowQ (A.ω 0))))
+
+/-- **An explicit bound on `|f|`**, computable from `ω` and the single sample
+`f a`: walk from `a` to `x` in `bnd` steps of size `2⁻ω⁽⁰⁾`, each of which moves
+`f` by less than `1`. -/
+def fBound (A : A0) : Q := Q.add (Q.abs (A.f A.a)) (Q.ofNat A.bnd)
 
 /-- **The integral as an approximating evaluator**: `intEv n x ≈ ∫ₐˣ f`. -/
 def intEv (A : A0) (n : Nat) (x : Q) : Q := A.riemann A.a (Q.sub x A.a) (A.evN n)

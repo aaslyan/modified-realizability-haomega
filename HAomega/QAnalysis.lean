@@ -1201,7 +1201,7 @@ that ratio make the concatenation uniform again.  A uniform grid of `[x, x+h₁+
 with `N₁+N₂` cells splits *exactly* at `x+h₁` whenever the two cell widths
 agree — no tagged partitions, no common refinement of unequal grids. -/
 
-theorem riemann_split (A : A0) (k : Nat) (x h₁ h₂ : Q) (N₁ N₂ : Nat)
+theorem riemann_split (A : A0) (x h₁ h₂ : Q) (N₁ N₂ : Nat)
     (hN₁ : 0 < N₁) (hN₂ : 0 < N₂)
     (hw : h₁.val / (N₁ : Rat) = h₂.val / (N₂ : Rat))
     (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val)
@@ -1375,6 +1375,184 @@ def A0.intE0 (A : A0) : E0 :=
       rw [pow_add]
       field_simp }
 
+/-! ### The counts
+
+Concretely: `h/d` has numerator `p` and denominator `q`, and cells in the ratio
+`q : p` have equal widths.  `splitScale` then scales both until the mesh meets
+the target. -/
+
+theorem splitScale_pos (d h : Q) (K : Nat) : 0 < splitScale d h K :=
+  lt_of_lt_of_le Nat.zero_lt_one (Nat.le_max_left _ _)
+
+theorem splitLo_pos (d h : Q) (K : Nat) : 0 < splitLo d h K :=
+  Nat.mul_pos (Nat.pos_of_ne_zero (Q.div h d).den_ne_zero) (splitScale_pos d h K)
+
+theorem splitHi_pos (d h : Q) (K : Nat) (hd : d.num ≠ 0) (hh : h.num ≠ 0) :
+    0 < splitHi d h K := by
+  have hdv : d.val ≠ 0 := by
+    unfold Q.val
+    exact div_ne_zero (Int.cast_ne_zero.mpr hd) (ne_of_gt d.den_cast_pos)
+  have hhv : h.val ≠ 0 := by
+    unfold Q.val
+    exact div_ne_zero (Int.cast_ne_zero.mpr hh) (ne_of_gt h.den_cast_pos)
+  have hr : (Q.div h d).val ≠ 0 := by
+    rw [Q.val_div _ _ hd]
+    exact div_ne_zero hhv hdv
+  exact Nat.mul_pos (Int.natAbs_pos.mpr (Q.num_ne_zero_of_val_ne_zero hr))
+    (splitScale_pos d h K)
+
+/-- **The two counts have equal cell widths** — which is `riemann_split`'s
+hypothesis, and the only reason a uniform grid can be made to land on the
+split point. -/
+theorem split_widths (d h : Q) (K : Nat) (hd : 0 < d.val) (hh : h.num ≠ 0) :
+    d.val / (splitLo d h K : Rat) = |h.val| / (splitHi d h K : Rat) := by
+  have hdn : d.num ≠ 0 := Q.num_ne_zero_of_val_ne_zero (ne_of_gt hd)
+  have hs := splitScale_pos d h K
+  have hsR : (0 : Rat) < (splitScale d h K : Rat) := by exact_mod_cast hs
+  have hqR : (0 : Rat) < ((Q.div h d).den : Rat) := (Q.div h d).den_cast_pos
+  have hhv : h.val ≠ 0 := by
+    unfold Q.val
+    exact div_ne_zero (Int.cast_ne_zero.mpr hh) (ne_of_gt h.den_cast_pos)
+  have hpNat : 0 < (Q.div h d).num.natAbs := by
+    refine Int.natAbs_pos.mpr (Q.num_ne_zero_of_val_ne_zero ?_)
+    rw [Q.val_div _ _ hdn]
+    exact div_ne_zero hhv (ne_of_gt hd)
+  have hpR : (0 : Rat) < (((Q.div h d).num.natAbs : Nat) : Rat) := by exact_mod_cast hpNat
+  -- `|h|/d = p/q`
+  have hkey : |h.val| * ((Q.div h d).den : Rat)
+      = d.val * (((Q.div h d).num.natAbs : Nat) : Rat) := by
+    have hrv : (Q.div h d).val = h.val / d.val := Q.val_div _ _ hdn
+    have hrv2 : (Q.div h d).val
+        = ((Q.div h d).num : Rat) / ((Q.div h d).den : Rat) := rfl
+    have habs : (((Q.div h d).num.natAbs : Nat) : Rat) = |((Q.div h d).num : Rat)| :=
+      natAbs_cast_rat _
+    rw [habs]
+    have h1 : |h.val| / d.val = |((Q.div h d).num : Rat)| / ((Q.div h d).den : Rat) := by
+      rw [← abs_of_pos hqR, ← abs_div, ← hrv2, hrv, abs_div, abs_of_pos hd]
+    rw [div_eq_div_iff (ne_of_gt hd) (ne_of_gt hqR)] at h1
+    linarith
+  unfold splitLo splitHi
+  push_cast
+  rw [div_eq_div_iff (by positivity) (by positivity)]
+  calc d.val * ((((Q.div h d).num.natAbs : Nat) : Rat) * (splitScale d h K : Rat))
+      = (d.val * (((Q.div h d).num.natAbs : Nat) : Rat)) * (splitScale d h K : Rat) := by ring
+    _ = (|h.val| * ((Q.div h d).den : Rat)) * (splitScale d h K : Rat) := by rw [hkey]
+    _ = |h.val| * (((Q.div h d).den : Rat) * (splitScale d h K : Rat)) := by ring
+
+/-- **And the mesh meets the target.** -/
+theorem split_mesh (d h : Q) (K : Nat) (hd : 0 < d.val) :
+    d.val / (splitLo d h K : Rat) ≤ 1 / 2 ^ K := by
+  have hqR : (0 : Rat) < ((Q.div h d).den : Rat) := (Q.div h d).den_cast_pos
+  have hqn : (Q.ofNat (Q.div h d).den).num ≠ 0 := by
+    have := (Q.div h d).den_ne_zero
+    unfold Q.ofNat; simpa using by omega
+  have h1 := ceilNatQ_spec (Q.mul (Q.div d (Q.ofNat (Q.div h d).den)) (twoPowQ K))
+  rw [Q.val_mul, twoPowQ_val, Q.val_div _ _ hqn, Q.val_ofNat] at h1
+  have h2 : ((ceilNatQ (Q.mul (Q.div d (Q.ofNat (Q.div h d).den)) (twoPowQ K)) : Nat) : Rat)
+      ≤ (splitScale d h K : Rat) := by
+    exact_mod_cast Nat.le_max_right 1 _
+  have hsR : (0 : Rat) < (splitScale d h K : Rat) :=
+    by exact_mod_cast splitScale_pos d h K
+  have h3 : d.val / ((Q.div h d).den : Rat) * 2 ^ K ≤ (splitScale d h K : Rat) :=
+    le_trans h1 h2
+  rw [div_mul_eq_mul_div, div_le_iff₀ hqR] at h3
+  have h4 : d.val * 2 ^ K ≤ ((Q.div h d).den : Rat) * (splitScale d h K : Rat) := by
+    rw [mul_comm ((Q.div h d).den : Rat)]
+    exact h3
+  unfold splitLo
+  push_cast
+  rw [div_le_div_iff₀ (by positivity) (by positivity)]
+  linarith
+
+#print axioms split_widths
+#print axioms split_mesh
+
+/-! ### The bound on `|f|`
+
+`cont` for the integral needs `|∫ₐˣ f − ∫ₐʸ f| ≤ M·|x−y|`, and `M` has to be
+produced from the `A₀`-data.  It is: `ω` says `f` moves by less than `1` across
+any step of `2⁻ω⁽⁰⁾`, and `bnd` such steps span the interval, so `f` cannot get
+further than `bnd` from `f a`. -/
+
+theorem A0.bnd_pos (A : A0) : 0 < A.bnd :=
+  lt_of_lt_of_le Nat.zero_lt_one (Nat.le_max_left _ _)
+
+theorem A0.fBound_spec (A : A0) {x : Q}
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val) :
+    |(A.f x).val| ≤ (A.fBound).val := by
+  have hn := A.bnd_pos
+  have hnR : (0 : Rat) < (A.bnd : Rat) := by exact_mod_cast hn
+  have hab := le_of_lt ((Q.ltN_eq_one_iff _ _).mp A.ivl)
+  have hxab : A.a.val + (Q.sub x A.a).val = x.val := by rw [Q.val_sub]; ring
+  have hpow : (0 : Rat) < 2 ^ A.ω 0 := by positivity
+  -- the walk is fine enough
+  have hmesh : |(Q.sub x A.a).val| / (A.bnd : Rat) ≤ 1 / 2 ^ A.ω 0 := by
+    have h1 := ceilNatQ_spec (Q.mul A.len (twoPowQ (A.ω 0)))
+    rw [Q.val_mul, twoPowQ_val, A0.len_val] at h1
+    have h2 : ((ceilNatQ (Q.mul A.len (twoPowQ (A.ω 0))) : Nat) : Rat) ≤ (A.bnd : Rat) := by
+      exact_mod_cast Nat.le_max_right 1 (ceilNatQ (Q.mul A.len (twoPowQ (A.ω 0))))
+    have h3 : |(Q.sub x A.a).val| ≤ A.b.val - A.a.val := by
+      rw [Q.val_sub, abs_of_nonneg (by linarith)]; linarith
+    rw [div_le_div_iff₀ hnR (by positivity)]
+    nlinarith [mul_le_mul_of_nonneg_right h3 (le_of_lt hpow)]
+  -- each step moves `f` by less than 1
+  have hstep : ∀ i ∈ Finset.range A.bnd,
+      |(A.f (rPt A.a (Q.sub x A.a) A.bnd (i + 1))).val
+        - (A.f (rPt A.a (Q.sub x A.a) A.bnd i)).val| < 1 := by
+    intro i hi
+    have hlt := Finset.mem_range.mp hi
+    have m1 := rPt_mem A hn (i + 1) (by omega) le_rfl hab
+      (by rw [hxab]; exact hxa) (by rw [hxab]; exact hxb)
+    have m2 := rPt_mem A hn i (by omega) le_rfl hab
+      (by rw [hxab]; exact hxa) (by rw [hxab]; exact hxb)
+    have hd : (rPt A.a (Q.sub x A.a) A.bnd (i + 1)).val
+        - (rPt A.a (Q.sub x A.a) A.bnd i).val = (Q.sub x A.a).val / (A.bnd : Rat) := by
+      rw [rPt_val _ _ hn, rPt_val _ _ hn]
+      push_cast
+      field_simp
+      ring
+    have hc := cont_val A 0 _ _ m1.1 m1.2 m2.1 m2.2
+      (by rw [hd, abs_div, abs_of_pos hnR]; exact hmesh)
+    simpa using hc
+  -- telescope
+  have htel : ∑ i ∈ Finset.range A.bnd,
+      ((A.f (rPt A.a (Q.sub x A.a) A.bnd (i + 1))).val
+        - (A.f (rPt A.a (Q.sub x A.a) A.bnd i)).val)
+      = (A.f (rPt A.a (Q.sub x A.a) A.bnd A.bnd)).val
+        - (A.f (rPt A.a (Q.sub x A.a) A.bnd 0)).val :=
+    Finset.sum_range_sub (fun i ↦ (A.f (rPt A.a (Q.sub x A.a) A.bnd i)).val) A.bnd
+  have hsum : |(A.f (rPt A.a (Q.sub x A.a) A.bnd A.bnd)).val
+      - (A.f (rPt A.a (Q.sub x A.a) A.bnd 0)).val| ≤ (A.bnd : Rat) := by
+    rw [← htel]
+    refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
+    have hle := Finset.sum_le_card_nsmul (Finset.range A.bnd)
+      (fun i ↦ |(A.f (rPt A.a (Q.sub x A.a) A.bnd (i + 1))).val
+        - (A.f (rPt A.a (Q.sub x A.a) A.bnd i)).val|)
+      1 (fun i hi ↦ le_of_lt (hstep i hi))
+    rwa [Finset.card_range, nsmul_eq_mul, mul_one] at hle
+  -- endpoints
+  have h0 : (A.f (rPt A.a (Q.sub x A.a) A.bnd 0)).val = (A.f A.a).val := by
+    refine f_val_congr A (rPt_mem A hn 0 (by omega) le_rfl hab
+      (by rw [hxab]; exact hxa) (by rw [hxab]; exact hxb)).1
+      (rPt_mem A hn 0 (by omega) le_rfl hab
+      (by rw [hxab]; exact hxa) (by rw [hxab]; exact hxb)).2 le_rfl hab ?_
+    rw [rPt_val _ _ hn]; simp
+  have hN : (A.f (rPt A.a (Q.sub x A.a) A.bnd A.bnd)).val = (A.f x).val := by
+    refine f_val_congr A (rPt_mem A hn A.bnd le_rfl le_rfl hab
+      (by rw [hxab]; exact hxa) (by rw [hxab]; exact hxb)).1
+      (rPt_mem A hn A.bnd le_rfl le_rfl hab
+      (by rw [hxab]; exact hxa) (by rw [hxab]; exact hxb)).2 hxa hxb ?_
+    rw [rPt_val _ _ hn, Q.val_sub, div_self (ne_of_gt hnR)]
+    ring
+  rw [h0, hN] at hsum
+  have htri : |(A.f x).val| ≤ |(A.f x).val - (A.f A.a).val| + |(A.f A.a).val| := by
+    have h := abs_sub_le (A.f x).val (A.f A.a).val 0
+    rwa [sub_zero, sub_zero] at h
+  rw [A0.fBound, Q.val_add, Q.val_abs, Q.val_ofNat]
+  linarith
+
+#print axioms A0.fBound_spec
+
 /-- **Conservativity for `E₁`**: every exact `A₁` is an approximating one, via
 the constant family.  `dq := 0` — an exact evaluator has no error for the
 difference quotient to amplify, which is precisely the degeneracy the
@@ -1404,31 +1582,25 @@ def A1.toE1 (A : A1) : E1 :=
 
 /-! ### What `∫f` still needs to be an `E₁`
 
-The obstacle recorded earlier was additivity, and the plan was tagged
-partitions.  **They turned out not to be needed.**  The split point is a
-*rational*, so `h/(x−a)` is a ratio of integers, and cell counts in that ratio
-make the concatenated grid uniform again — `riemann_split` gives **exact**
-additivity for uniform grids whose cell widths agree, and
-`riemann_uniform_close` gives grid independence.  Between them they do what a
-common refinement of two arbitrary partitions would have done, with no
-partition objects, no sortedness, and no merge.
+Of the three items recorded last round, two are now done.
 
-What is left is bookkeeping rather than a missing idea, and it is **not
-written**:
+* **The counts** — `splitScale`/`splitLo`/`splitHi`, with `split_widths` (the
+  cell widths agree, which is `riemann_split`'s hypothesis) and `split_mesh`
+  (the mesh meets its target).  These are sign-agnostic: `natAbs` makes them
+  describe the interval of length `|h|`, whichever side of the point it lies
+  on.  What the *assembly* still has to do is orient that interval — feed
+  `riemann_split` the piece as a positive length — since `riemann_split` is
+  stated for `h₁, h₂` laid end to end.
+* **The bound on `|f|`** — `A0.fBound` and `A0.fBound_spec`.
 
-* **The counts.**  Turning `h/(x−a)` into a concrete `N₁, N₂` with matching
-  widths — take `p/q` from the numerator and denominator of `Q.div h (x−a)`
-  and scale until the mesh is fine.  Mechanical, and it has to handle `h < 0`
-  as a separate case, since the interval is then `[x+h, x]`.
-* **`cont`** needs an explicit bound `M` on `|f|`, computable from `ω` and one
-  sample: step from `a` to `x` in `⌈L·2^ω(0)⌉` moves of size `2⁻ω⁽⁰⁾`, each
-  changing `f` by under `1`.
-* **Assembly** — instantiating `E1`'s `dq` from the two comparison errors,
-  which is where the `2L·2⁻ᵏ′/|h| ≤ 2⁻ᵏ` choice is made.
+What is left is the **assembly**, and it is not written: instantiating `E1`'s
+`cont` from `fBound`, and `E1.diff` from `riemann_split` +
+`riemann_uniform_close` + `eftc1_quotient`, with `dq k h` chosen so the two
+comparison errors survive division by `h` — the `2L·2⁻ᵏ′/|h| ≤ 2⁻ᵏ` step.
 
-So `A0.intE0` still stops at `E₀`, and "`∫f` is `A₁`-adequate" as a single
-sentence is still not formalized.  What changed this round is that the
-remaining work no longer needs a theory of partitions. -/
+So `A0.intE0` still stops at `E₀` and "`∫f` is `A₁`-adequate" as a single
+sentence is still not formalized.  Every ingredient it needs is now proved;
+none of them has been put together. -/
 
 #print axioms A1.toE1
 #print axioms A0.toE0

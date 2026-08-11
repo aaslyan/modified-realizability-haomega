@@ -73,7 +73,7 @@ Analysis (2): square-root approximation · uniform continuity.
 | 0. numeric base types | **done** — `rat` (states) and `dyad` (computes), both hand-rolled, with the bridge `dtoq` |
 | square roots | **done** — a corollary of Sperner 1D, which *is* the discrete IVT; `√2` at `2⁻⁸` returns `181/128`; its bound `K` is now proved, not assumed |
 | uniform continuity | **done** — the extracted realizer *is* the modulus; doubling gives `n+1`, translation `n` |
-| Newton–Leibniz (EFTC2, positive half) | **constructions only, and the correctness claims are refuted as stated** — see §7 |
+| Newton–Leibniz (EFTC2, positive half) | **done** — `eftc2_thm : ∀ A : A1, EFTC2Claim A`; see §7 |
 
 **Why the numeric layers are hand-rolled.** Mathlib's `Rat` arithmetic —
 including `Rat.add`, `Rat.mul`, `mkRat`, `Rat.normalize` — depends on
@@ -89,8 +89,7 @@ Listed here so it cannot be missed. Each is flagged in its own source file too.
 |---|---|---|
 | bound `K` in the square-root theorem | `SquareRoot.lean` | **discharged** — `sqrt_premises` (`QAnalysis.lean`) proves both colouring premises for every `q ≥ 0` at every precision |
 | Lipschitz premise of uniform continuity | `UniformContinuity.lean` | **discharged at the three guarded maps**, for all `x`, `y`, `m`; an arbitrary `f` still owes its own |
-| `Lemma1Claim` | `EFTC.lean` | **proved** — `lemma1` in `QAnalysis.lean`, for every `A1`, both halves |
-| `Lemma2Claim`, `EFTC2Claim` | `EFTC.lean` | **stated, unproved.** Lemma 2 needs a discrete substitute for classical FTC2 that this embedding does not have — see §7 |
+| `Lemma1Claim`, `Lemma2Claim`, `EFTC2Claim` | `EFTC.lean` | **proved** — `lemma1`, `lemma2`, `eftc2_thm` in `QAnalysis.lean`, for every `A1`. See §7 for the six construction fixes this required |
 | modulus metatheorem (extraction yields a modulus for *every* derivation) | `Modulus.lean` | not proved; two recorded obstructions, see §6 |
 
 The first three rows were all blocked on the same missing thing — an
@@ -308,50 +307,61 @@ constant factors, not in the growth rate, which is still `2^ω'(m)`. Guards
 updated: `sqEx.derivEval 8` now lands within `2⁻¹²`, `sqEx.integral 0` is
 `524257/524288` (error `31/524288`), `linEx.integral 0..3` still exactly `6`.
 
-**Lemma 1 is proved, both halves:**
+**`EFTC2Claim` is proved for every `A₁`:**
 
-    'HAomega.derivEval_approx'              depends on axioms: [propext, Classical.choice, Quot.sound]
-    'HAomega.derivEval_approx_of_diff'      depends on axioms: [propext, Classical.choice, Quot.sound]
-    'HAomega.derivEval_uniformly_continuous' depends on axioms: [propext, Classical.choice, Quot.sound]
-    'HAomega.lemma1'                        depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.lemma1'     depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.lemma2'     depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.eftc2_thm'  depends on axioms: [propext, Classical.choice, Quot.sound]
 
-`derivEval` computes the derivative to `2⁻⁽ᵏ⁺³⁾` at every point of `[a,b]`,
-with a single `F` drawn from `diff` uniformly in `k` and `x`; and it is
-uniformly continuous with modulus `ω'`, which is `Lemma1Claim`'s content.
-`lemma1 : ∀ A : A1, Lemma1Claim A`.
+Lemma 1: `derivEval` computes the derivative to `2⁻⁽ᵏ⁺³⁾` on `[a,b]`, with one
+`F` drawn from `diff` uniformly in `k` and `x`, and is uniformly continuous
+with modulus `ω'`. Lemma 2: the Riemann sums built *from `derivEval`* converge
+to `f b − f a` at the stated rate.
 
-**Two further corrections were needed to get there**, both to constructions
-rather than to the analysis, and both found by the proof failing:
+**Nothing in the analysis was missing. Six things in the constructions and
+statements were**, each found by a proof failing rather than by inspection:
 
-* **`etaAux` returned `0` on fuel exhaustion** — a value that does *not*
-  satisfy `2⁻ᵑ ≤ L/2`, the property it is searching for, so a caller past the
-  fuel received a confident wrong answer rather than a detectable one. With a
-  fixed fuel of `64` that happened for any interval shorter than about
-  `2⁻⁶³`. It now returns the accumulator, and `eta2`'s fuel is taken from the
-  data (`L.den + 2`), which provably cannot exhaust since `η = L.den+1`
-  already works. `eta2_spec` proves the property outright. The returned values
-  for both instances are unchanged (`0` for `[0,2]`, `1` for `[0,1]`), so no
-  guard moved. `ceilLog2Aux` still has the same bug; it is on Lemma 2's path,
-  not Lemma 1's, and was left alone.
-* **`Lemma1Claim` was missing its interval premises.** As stated it ranged
-  over all `x y : Q`, including points outside `[a,b]` where `cont` and `diff`
-  say nothing about `f` — false for reasons unrelated to the difference
-  quotient. The manifesto's Lemma 1 restricts to the interval (`x + s·h₀`,
-  `y + s·h₀ ∈ [a,b]`); the restriction was lost in transcription. Restored.
+1. **`omega'` was too small.** The Lemma 1 estimate divides by
+   `h₀ = min(2⁻ᵟ⁽ᵏ⁺³⁾, (b−a)/4)`; when the second term is the minimum the
+   factor is `4/(b−a)`, which a `δ`-only index cannot bound. It now carries
+   `max(δ(k+3), η₂+1)`.
+2. **`A1` carried no hypotheses**, so `ω` and `δ` were moduli of nothing and
+   the claims were refutable. `ivl`, `cont`, `diff` are now fields, stated in
+   `Q`'s own vocabulary so `A1`'s *type* stays free of `Rat`'s order instances
+   — with `Q.val` in the field types, every construction taking an `A1` reports
+   `Classical.choice`. Measured, and reverted.
+3. **`etaAux` returned `0` on fuel exhaustion** — precisely a value failing the
+   property it searches for, wrong for any interval shorter than about `2⁻⁶³`.
+   Fixed, with data-derived fuel; `ceilLog2Aux` likewise, since Lemma 2 needs
+   `L ≤ 2ˡ`. `eta2_spec` and `ceilLog2Q_spec` now prove both outright.
+4. **`Lemma1Claim` was missing its interval premises**, so it ranged over
+   points where `A1` says nothing about `f`.
+5. **`intN` fixed the mesh by `ω'` alone.** That is right for the classical
+   argument — Riemann sum against `∫f'` — and wrong here. With no `∫` in a
+   shallow embedding, what is available is the *exact* telescoping
+   `f b − f a = Σᵢ (f xᵢ₊₁ − f xᵢ) = h·Σᵢ DQ_h(xᵢ)`, and that needs the **mesh
+   itself** to be an admissible `δ`-step. Hence `intN`'s new `δ` term. This is
+   the substantive mathematical difference between §5.2's Lemma 2 and the one
+   proved here.
+6. **`sqEx.δ` was off by one.**
 
-**The mathematical content of the proof** is that `derivEval` picks its step
-*pointwise*, so `DE(x)` and `DE(y)` may use opposite steps and nothing cancels
-between them directly. The proof routes through `F`: both `DE`s are near `F`
-(`derivEval_approx`), both *common-step* quotients are near `F` (`diff`), and
-those cancel. The common step exists by `common_step` — if `|x−y| ≤ (b−a)/2`
-and `h₀ ≤ (b−a)/4` then one of `±h₀` keeps both points inside `[a,b]`. Four
-terms of `2⁻⁽ᵏ⁺³⁾` and one of `2⁻⁽ᵏ⁺⁴⁾` sum to `2⁻⁽ᵏ⁺¹⁾ + 2⁻⁽ᵏ⁺⁴⁾ < 2⁻ᵏ`.
+**Two enabling facts.** `f` must not distinguish two `Q`s denoting the same
+rational — samples are `a + i·h`, and `a + 0·h` is a different `Q` from `a` —
+and `f_val_congr` *derives* this from `cont` at every precision rather than
+assuming it. And `sumQ`, the `do`-loop chosen because a structural recursion
+exhausts the interpreter stack at `4096` (measured), had to be reasoned about:
+it does not reduce in the kernel, so `decide` is unavailable, but it unfolds to
+a `foldl` over `List.range'` and a step lemma is one rewrite from there. **No
+`implemented_by`, no trusted swap** — the theorems are about the same `sumQ`
+the guards run.
 
-**Lemma 2 is still open**, and is a different problem: §5.2 imports
-`∫f' = f(b)−f(a)` from classical FTC2, and there is no real integral here for
-that to be imported into. The mesh `L/N` and the step `h₀` are unrelated, so
-no discrete telescoping replaces it, and nothing about `integral` can be
-settled by computation inside a proof (the `sumQ` kernel wall, §6).
+**Cost.** The index fixes double every Riemann sample count relative to the
+original code (`sqEx.intN 8192 → 16384`); the growth rate is unchanged, still
+`2^ω'(m)`, which is §8's optimal-adequacy question rather than this one.
+
+**Not claimed:** the negative half, `A₀ ⊭ EFTC2`. That is Myhill's theorem, a
+citation here, not a formalization — so "`A₁ ⊨ EFTC2`" is proved and the
+*separation* between `A₀` and `A₁` is not.
 
 ### What has still not moved
 

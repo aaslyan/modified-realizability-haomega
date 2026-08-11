@@ -87,12 +87,15 @@ def ceilNatQ (q : Q) : Nat :=
   if q.num ≤ 0 then 0
   else (Int.tdiv (Int.add q.num (Int.ofNat (q.den - 1))) (Int.ofNat q.den)).toNat
 
-/-- Least `ℓ ≤ fuel` with `L ≤ 2ˡ`. -/
+/-- Least `ℓ` in `[acc, acc+fuel]` with `L ≤ 2ˡ`.  Exhausted returns `acc`, not
+`0`, for the reason spelled out at `etaAux` below. -/
 def ceilLog2Aux (L : Q) : Nat → Nat → Nat
-  | _, 0 => 0
+  | acc, 0 => acc
   | acc, fuel + 1 => if Qle L (twoPowQ acc) then acc else ceilLog2Aux L (acc + 1) fuel
 
-def ceilLog2Q (L : Q) : Nat := ceilLog2Aux L 0 64
+/-- The fuel is taken from the data: `L ≤ L.num` and `L.num < 2^L.num`, so
+`ℓ = L.num` already works and the search cannot exhaust. -/
+def ceilLog2Q (L : Q) : Nat := ceilLog2Aux L 0 (L.num.toNat + 1)
 
 /-- Least `η` in `[acc, acc+fuel]` with `2⁻ᵑ ≤ L/2`.
 
@@ -232,8 +235,21 @@ contributes at most as much again, for a total below `2⁻ᵏ`. -/
 def intL (A : A1) : Q := Q.sub A.b A.a
 def intEll (A : A1) : Nat := ceilLog2Q A.intL
 def intM (A : A1) (k : Nat) : Nat := k + 2 + A.intEll
+
+/-- The precision at which the *mesh* has to be an admissible difference-quotient
+step.  `intM` is the precision the samples are taken at; this is the one the
+mesh itself must meet. -/
+def intJ (A : A1) (k : Nat) : Nat := k + 5 + A.intEll
+
+/-- `N`, and **why it carries a `δ` term**.  The quadrature identity available
+here is not "Riemann sum ≈ ∫f'" — there is no `∫` — but the exact telescoping
+`f b − f a = Σᵢ (f xᵢ₊₁ − f xᵢ) = h · Σᵢ DQ_h(xᵢ)`.  What that needs is for the
+**mesh itself** to be an admissible step for `diff`, i.e. `h ≤ 2⁻ᵟ⁽ʲ⁾`, and `ω'`
+says nothing about `δ`.  A mesh fixed by `ω'` alone is fine for the classical
+argument and not for this one. -/
 def intN (A : A1) (k : Nat) : Nat :=
-  Nat.max 1 (ceilNatQ (Q.mul A.intL (twoPowQ (A.omega' (A.intM k)))))
+  Nat.max 1 (ceilNatQ (Q.mul A.intL
+    (twoPowQ (Nat.max (A.omega' (A.intM k)) (A.δ (A.intJ k))))))
 
 /-- **The computed integral**: `∫_a^b f'` to precision `2⁻ᵏ`, as a left
 Riemann sum of the *computable derivative*, not of `f`. -/

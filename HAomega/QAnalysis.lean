@@ -522,50 +522,399 @@ theorem lemma1 (A : A1) : Lemma1Claim A := by
 #print axioms derivEval_uniformly_continuous
 #print axioms lemma1
 
-/-! ### Lemma 1 is done; what Lemma 2 still needs
+/-! ## Lemma 2 — the pieces
 
-Both halves of Lemma 1 are proved: `derivEval_approx` (it computes the
-derivative) and `derivEval_uniformly_continuous` / `lemma1` (it does so
-uniformly continuously, with modulus `ω'`).  Getting there needed four
-corrections, all to the *constructions*, none to the arithmetic:
+### The sum
 
-1. **`omega'` was too small.**  The estimate divides by
+`sumQ` is a `do`-loop, chosen so the Riemann sums survive `N = 32768` in the
+interpreter; a structural recursion exhausts the interpreter stack at `4096`,
+measured, so the loop is not a stylistic choice.  It does **not** reduce in the
+kernel, which is why nothing about `integral` can be settled by `decide` — but
+it is perfectly provable: the loop unfolds to a `foldl` over `List.range'`, and
+from there a step lemma is one rewrite. -/
+
+theorem sumQ_eq_foldl (g : Nat → Q) (n : Nat) :
+    sumQ g n = (List.range n).foldl (fun acc i ↦ Q.add acc (g i)) Q.zero := by
+  unfold sumQ
+  simp [Std.Range.forIn_eq_forIn_range', List.range_eq_range']
+
+theorem sumQ_zero (g : Nat → Q) : sumQ g 0 = Q.zero := by
+  rw [sumQ_eq_foldl]; simp
+
+theorem sumQ_succ (g : Nat → Q) (n : Nat) :
+    sumQ g (n + 1) = Q.add (sumQ g n) (g n) := by
+  rw [sumQ_eq_foldl, sumQ_eq_foldl, List.range_succ, List.foldl_append]
+  simp
+
+/-- The sum is **exact** at the value level: `Q.add` normalizes, but `Q.val` of
+a sum is the sum of the values on the nose. -/
+theorem sumQ_val (g : Nat → Q) (n : Nat) :
+    (sumQ g n).val = ∑ i ∈ Finset.range n, (g i).val := by
+  induction n with
+  | zero => rw [sumQ_zero, Q.val_zero]; simp
+  | succ m ih => rw [sumQ_succ, Q.val_add, ih, Finset.sum_range_succ]
+
+/-! ### The two bounded searches -/
+
+theorem twoPowQ_val (e : Nat) : (twoPowQ e).val = 2 ^ e := by
+  unfold twoPowQ
+  rw [Q.val_ofNat, twoPowN_cast]
+
+theorem ceilLog2Aux_spec (L : Q) (fuel : Nat) : ∀ acc : Nat,
+    L.val ≤ (twoPowQ (acc + fuel)).val →
+    L.val ≤ (twoPowQ (ceilLog2Aux L acc fuel)).val := by
+  induction fuel with
+  | zero => intro acc h; simpa using h
+  | succ n ih =>
+    intro acc h
+    simp only [ceilLog2Aux]
+    split
+    · rename_i hc; exact (Qle_eq_true_iff _ _).mp hc
+    · exact ih (acc + 1) (by rw [show acc + 1 + n = acc + (n + 1) by ring]; exact h)
+
+/-- **`ℓ` is what it claims to be**: `L ≤ 2ˡ`. -/
+theorem ceilLog2Q_spec (L : Q) : L.val ≤ 2 ^ ceilLog2Q L := by
+  have hstart : L.val ≤ (twoPowQ (0 + (L.num.toNat + 1))).val := by
+    rw [twoPowQ_val]
+    rcases le_or_gt L.num 0 with hn | hn
+    · have h0 : L.val ≤ 0 := by
+        unfold Q.val
+        exact div_nonpos_iff.mpr (Or.inr ⟨by exact_mod_cast hn, le_of_lt L.den_cast_pos⟩)
+      have : (0 : Rat) < 2 ^ (0 + (L.num.toNat + 1)) := by positivity
+      linarith
+    · have hcast : ((L.num.toNat : Nat) : Rat) = (L.num : Rat) := by
+        have hI : ((L.num.toNat : Nat) : Int) = L.num := Int.toNat_of_nonneg (le_of_lt hn)
+        exact_mod_cast hI
+      have h1 : L.val ≤ (L.num : Rat) := by
+        unfold Q.val
+        exact div_le_self (by exact_mod_cast le_of_lt hn)
+          (by exact_mod_cast Nat.one_le_iff_ne_zero.mpr L.den_ne_zero)
+      have h2 : (L.num : Rat) < 2 ^ L.num.toNat := by
+        rw [← hcast]; exact_mod_cast Nat.lt_two_pow_self
+      have h3 : (2 : Rat) ^ L.num.toNat ≤ 2 ^ (0 + (L.num.toNat + 1)) :=
+        pow_le_pow_right₀ (by norm_num) (by omega)
+      linarith
+  have := ceilLog2Aux_spec L (L.num.toNat + 1) 0 hstart
+  rwa [twoPowQ_val] at this
+
+/-- **`ceilNatQ` really is a ceiling.** -/
+theorem ceilNatQ_spec (q : Q) : q.val ≤ (ceilNatQ q : Rat) := by
+  unfold ceilNatQ
+  split
+  · rename_i hn
+    have h0 : q.val ≤ 0 := by
+      unfold Q.val
+      exact div_nonpos_iff.mpr (Or.inr ⟨by exact_mod_cast hn, le_of_lt q.den_cast_pos⟩)
+    simpa using h0
+  · rename_i hn
+    push_neg at hn
+    simp only [intAdd_eq, Int.ofNat_eq_natCast]
+    have hdpos : (0 : Int) < (q.den : Int) := by
+      exact_mod_cast Nat.pos_of_ne_zero q.den_ne_zero
+    have hden1 : ((q.den - 1 : Nat) : Int) = (q.den : Int) - 1 := by
+      have h1 := Nat.one_le_iff_ne_zero.mpr q.den_ne_zero
+      omega
+    have hnn : (0 : Int) ≤ q.num + ((q.den - 1 : Nat) : Int) := by
+      have h0 : (0 : Int) ≤ ((q.den - 1 : Nat) : Int) := Int.natCast_nonneg _
+      omega
+    rw [Int.tdiv_eq_ediv_of_nonneg hnn]
+    set c : Int := (q.num + ((q.den - 1 : Nat) : Int)) / (q.den : Int) with hc
+    have hcnn : (0 : Int) ≤ c := Int.ediv_nonneg hnn (le_of_lt hdpos)
+    have hmod : (0 : Int) ≤ (q.num + ((q.den - 1 : Nat) : Int)) % (q.den : Int) :=
+      Int.emod_nonneg _ (ne_of_gt hdpos)
+    have hmodlt : (q.num + ((q.den - 1 : Nat) : Int)) % (q.den : Int) < (q.den : Int) :=
+      Int.emod_lt_of_pos _ hdpos
+    have hdiv := Int.mul_ediv_add_emod (q.num + ((q.den - 1 : Nat) : Int)) (q.den : Int)
+    rw [← hc] at hdiv
+    have hcm : c * (q.den : Int) = (q.den : Int) * c := mul_comm _ _
+    have hkey : q.num ≤ c * (q.den : Int) := by linarith
+    have hcast : ((c.toNat : Nat) : Rat) = (c : Rat) := by
+      have hI : ((c.toNat : Nat) : Int) = c := Int.toNat_of_nonneg hcnn
+      exact_mod_cast hI
+    rw [hcast]
+    unfold Q.val
+    rw [div_le_iff₀ q.den_cast_pos]
+    exact_mod_cast hkey
+
+/-! ### The mesh, and `f`'s indifference to representation -/
+
+theorem Q.add_congr_val {a b c d : Q} (hv : a.val + b.val = c.val + d.val) :
+    Q.add a b = Q.add c d := by
+  refine Q.of_inj_val (Nat.mul_ne_zero a.den_ne_zero b.den_ne_zero)
+    (Nat.mul_ne_zero c.den_ne_zero d.den_ne_zero) ?_
+  rw [show Q.of _ _ = Q.add a b from rfl, show Q.of _ _ = Q.add c d from rfl,
+    Q.val_add, Q.val_add]
+  exact hv
+
+theorem intL_val (A : A1) : A.intL.val = A.b.val - A.a.val := Q.val_sub _ _
+
+theorem intL_pos (A : A1) : 0 < A.intL.val := by rw [intL_val]; linarith [A.ivl_val]
+
+theorem intN_pos (A : A1) (k : Nat) : 0 < A.intN k :=
+  lt_of_lt_of_le Nat.zero_lt_one (Nat.le_max_left _ _)
+
+/-- **`f` cannot tell two representations of the same rational apart.**  Not an
+assumption: `cont` at every precision forces it, since two points at distance
+`0` are within every `2⁻ω⁽ᵏ⁾`.  It is needed because the sample points are built
+as `a + i·h`, and `a + 0·h` is a *different* `Q` from `a` — the same value in a
+different representation, which `f : Q → Q` could otherwise distinguish. -/
+theorem f_val_congr (A : A1) {u v : Q}
+    (hua : A.a.val ≤ u.val) (hub : u.val ≤ A.b.val)
+    (hva : A.a.val ≤ v.val) (hvb : v.val ≤ A.b.val)
+    (h : u.val = v.val) : (A.f u).val = (A.f v).val := by
+  by_contra hne
+  have hpos : 0 < |(A.f u).val - (A.f v).val| := abs_pos.mpr (sub_ne_zero.mpr hne)
+  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hpos (by norm_num : (1 : Rat) / 2 < 1)
+  rw [div_pow, one_pow] at hn
+  have hc := cont_val A n u v hua hub hva hvb (by rw [h]; simp)
+  linarith
+
+/-- The precision the mesh meets. -/
+abbrev meshIx (A : A1) (k : Nat) : Nat := Nat.max (A.omega' (A.intM k)) (A.δ (A.intJ k))
+
+theorem mesh_le (A : A1) (k : Nat) :
+    (Q.div A.intL (Q.ofNat (A.intN k))).val ≤ 1 / 2 ^ meshIx A k := by
+  have hNpos : (0 : Rat) < (A.intN k : Rat) := by exact_mod_cast intN_pos A k
+  have hnum : (Q.ofNat (A.intN k)).num ≠ 0 := by
+    have := intN_pos A k
+    unfold Q.ofNat
+    simpa using by omega
+  have hN : A.intL.val * 2 ^ meshIx A k ≤ (A.intN k : Rat) := by
+    have h1 := ceilNatQ_spec (Q.mul A.intL (twoPowQ (meshIx A k)))
+    rw [Q.val_mul, twoPowQ_val] at h1
+    have h2 : ((ceilNatQ (Q.mul A.intL (twoPowQ (meshIx A k))) : Nat) : Rat)
+        ≤ (A.intN k : Rat) := by
+      have : ceilNatQ (Q.mul A.intL (twoPowQ (meshIx A k))) ≤ A.intN k :=
+        Nat.le_max_right _ _
+      exact_mod_cast this
+    linarith
+  rw [Q.val_div _ _ hnum, Q.val_ofNat, div_le_div_iff₀ hNpos (by positivity)]
+  linarith
+
+/-! ### Lemma 2
+
+`f b − f a = Σᵢ (f xᵢ₊₁ − f xᵢ)` is **exact** — no integral, no limit, just a
+telescoping sum — and each term is `h` times a difference quotient *at the
+mesh*.  So the quadrature error is not "Riemann sum versus integral" but
+"`derivEval` at `xᵢ` versus the difference quotient at `xᵢ`", and both of those
+are near `F`.  That is what replaces the classical FTC step, and it is why the
+mesh had to become an admissible `δ`-step. -/
+
+/-- The mesh. -/
+def meshQ (A : A1) (k : Nat) : Q := Q.div A.intL (Q.ofNat (A.intN k))
+
+/-- The sample points `a + i·h`. -/
+def sampleQ (A : A1) (k i : Nat) : Q := Q.add A.a (Q.mul (Q.ofNat i) (meshQ A k))
+
+theorem integral_eq (A : A1) (k : Nat) :
+    A.integral k = Q.mul (meshQ A k)
+      (sumQ (fun i ↦ A.derivEval (A.intM k) (sampleQ A k i)) (A.intN k)) := rfl
+
+theorem meshQ_val (A : A1) (k : Nat) : (meshQ A k).val = A.intL.val / (A.intN k : Rat) := by
+  have hnum : (Q.ofNat (A.intN k)).num ≠ 0 := by
+    have := intN_pos A k
+    unfold Q.ofNat; simpa using by omega
+  rw [meshQ, Q.val_div _ _ hnum, Q.val_ofNat]
+
+theorem meshQ_pos (A : A1) (k : Nat) : 0 < (meshQ A k).val := by
+  rw [meshQ_val]
+  exact div_pos (intL_pos A) (by exact_mod_cast intN_pos A k)
+
+theorem meshQ_mul (A : A1) (k : Nat) :
+    (A.intN k : Rat) * (meshQ A k).val = A.intL.val := by
+  have hNposR : (0 : Rat) < (A.intN k : Rat) := by exact_mod_cast intN_pos A k
+  have hNne : ((A.intN k : Nat) : Rat) ≠ 0 := ne_of_gt hNposR
+  rw [meshQ_val]
+  field_simp
+
+theorem sampleQ_val (A : A1) (k i : Nat) :
+    (sampleQ A k i).val = A.a.val + i * (meshQ A k).val := by
+  rw [sampleQ]
+  simp only [Q.val_add, Q.val_mul, Q.val_ofNat]
+
+theorem sampleQ_step (A : A1) (k i : Nat) :
+    Q.add (sampleQ A k i) (meshQ A k) = sampleQ A k (i + 1) := by
+  show Q.add (sampleQ A k i) (meshQ A k) = Q.add A.a (Q.mul (Q.ofNat (i + 1)) (meshQ A k))
+  refine Q.add_congr_val ?_
+  rw [sampleQ_val]
+  simp only [Q.val_mul, Q.val_ofNat]
+  push_cast
+  ring
+
+theorem sampleQ_mem (A : A1) (k i : Nat) (hi : i ≤ A.intN k) :
+    A.a.val ≤ (sampleQ A k i).val ∧ (sampleQ A k i).val ≤ A.b.val := by
+  have hNhL := meshQ_mul A k
+  have hpos := meshQ_pos A k
+  have hiR : (i : Rat) ≤ (A.intN k : Rat) := by exact_mod_cast hi
+  have hiN : (0 : Rat) ≤ (i : Rat) := Nat.cast_nonneg i
+  have hL := intL_val A
+  rw [sampleQ_val]
+  have hnn : (0 : Rat) ≤ (i : Rat) * (meshQ A k).val := mul_nonneg hiN (le_of_lt hpos)
+  refine ⟨by linarith, ?_⟩
+  have hmul : (i : Rat) * (meshQ A k).val ≤ (A.intN k : Rat) * (meshQ A k).val :=
+    mul_le_mul_of_nonneg_right hiR (le_of_lt hpos)
+  linarith
+
+theorem lemma2 (A : A1) : Lemma2Claim A := by
+  intro k
+  rw [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, Q.val_sub, toQ_pow2neg_val]
+  obtain ⟨F, hF⟩ := A.diff
+  have hNpos := intN_pos A k
+  have hpos := meshQ_pos A k
+  have hnum : (meshQ A k).num ≠ 0 := Q.num_ne_zero_of_val_ne_zero (ne_of_gt hpos)
+  have hNhL := meshQ_mul A k
+  have hmesh : |(meshQ A k).val| ≤ 1 / 2 ^ A.δ (A.intJ k) := by
+    rw [abs_of_pos hpos]
+    exact le_trans (mesh_le A k) (inv_pow_le (Nat.le_max_right _ _))
+  have hMJ : A.intM k + 3 = A.intJ k := by unfold A1.intM A1.intJ; ring
+  -- per-sample: the extracted derivative and the mesh difference quotient agree
+  have hper : ∀ i ∈ Finset.range (A.intN k),
+      |(A.derivEval (A.intM k) (sampleQ A k i)).val
+        - ((A.f (sampleQ A k (i + 1))).val - (A.f (sampleQ A k i)).val)
+            / (meshQ A k).val| < 2 * (1 / 2 ^ A.intJ k) := by
+    intro i hi
+    have hlt := Finset.mem_range.mp hi
+    have hxi := sampleQ_mem A k i (le_of_lt hlt)
+    have hxi1 := sampleQ_mem A k (i + 1) hlt
+    have h1 := derivEval_approx A hF (A.intM k) (sampleQ A k i) hxi.1 hxi.2
+    rw [hMJ] at h1
+    have h2 := diff_val A hF (A.intJ k) (sampleQ A k i) (meshQ A k) hxi.1 hxi.2
+      (by rw [sampleQ_step]; exact hxi1.1) (by rw [sampleQ_step]; exact hxi1.2) hnum hmesh
+    rw [sampleQ_step] at h2
+    have t : |(A.derivEval (A.intM k) (sampleQ A k i)).val
+          - ((A.f (sampleQ A k (i + 1))).val - (A.f (sampleQ A k i)).val) / (meshQ A k).val|
+        ≤ |(A.derivEval (A.intM k) (sampleQ A k i)).val - (F (sampleQ A k i)).val|
+          + |(F (sampleQ A k i)).val
+              - ((A.f (sampleQ A k (i + 1))).val - (A.f (sampleQ A k i)).val)
+                  / (meshQ A k).val| := abs_sub_le _ _ _
+    rw [abs_sub_comm (F (sampleQ A k i)).val] at t
+    linarith
+  -- sum the per-sample bounds
+  have hne : (Finset.range (A.intN k)).Nonempty := Finset.nonempty_range_iff.mpr (by omega)
+  have hsum : ∑ i ∈ Finset.range (A.intN k),
+      |(A.derivEval (A.intM k) (sampleQ A k i)).val
+        - ((A.f (sampleQ A k (i + 1))).val - (A.f (sampleQ A k i)).val)
+            / (meshQ A k).val| < (A.intN k : Rat) * (2 * (1 / 2 ^ A.intJ k)) := by
+    have h := Finset.sum_lt_sum_of_nonempty hne hper
+    rwa [Finset.sum_const, Finset.card_range, nsmul_eq_mul] at h
+  -- telescoping: this is the step that replaces classical FTC
+  have htel : ∑ i ∈ Finset.range (A.intN k),
+      ((A.f (sampleQ A k (i + 1))).val - (A.f (sampleQ A k i)).val)
+      = (A.f (sampleQ A k (A.intN k))).val - (A.f (sampleQ A k 0)).val :=
+    Finset.sum_range_sub (fun i ↦ (A.f (sampleQ A k i)).val) (A.intN k)
+  have hab := le_of_lt A.ivl_val
+  have hX0 : (A.f (sampleQ A k 0)).val = (A.f A.a).val := by
+    refine f_val_congr A (sampleQ_mem A k 0 (by omega)).1 (sampleQ_mem A k 0 (by omega)).2
+      le_rfl hab ?_
+    rw [sampleQ_val]; simp
+  have hXN : (A.f (sampleQ A k (A.intN k))).val = (A.f A.b).val := by
+    refine f_val_congr A (sampleQ_mem A k _ le_rfl).1 (sampleQ_mem A k _ le_rfl).2 hab le_rfl ?_
+    rw [sampleQ_val, hNhL, intL_val]
+    ring
+  -- assemble the difference as `h · Σ (DE − DQ)`
+  have hint : (A.integral k).val
+      = (meshQ A k).val * ∑ i ∈ Finset.range (A.intN k),
+          (A.derivEval (A.intM k) (sampleQ A k i)).val := by
+    rw [integral_eq, Q.val_mul, sumQ_val]
+  have e2 : (meshQ A k).val * ∑ i ∈ Finset.range (A.intN k),
+      (((A.f (sampleQ A k (i + 1))).val - (A.f (sampleQ A k i)).val) / (meshQ A k).val)
+      = (A.f A.b).val - (A.f A.a).val := by
+    rw [Finset.mul_sum]
+    have hterm : ∀ i ∈ Finset.range (A.intN k),
+        (meshQ A k).val * (((A.f (sampleQ A k (i + 1))).val - (A.f (sampleQ A k i)).val)
+          / (meshQ A k).val)
+        = (A.f (sampleQ A k (i + 1))).val - (A.f (sampleQ A k i)).val := by
+      intro i _
+      field_simp
+    rw [Finset.sum_congr rfl hterm, htel, hX0, hXN]
+  have hgap : (A.integral k).val - ((A.f A.b).val - (A.f A.a).val)
+      = (meshQ A k).val * ∑ i ∈ Finset.range (A.intN k),
+          ((A.derivEval (A.intM k) (sampleQ A k i)).val
+            - ((A.f (sampleQ A k (i + 1))).val - (A.f (sampleQ A k i)).val)
+                / (meshQ A k).val) := by
+    rw [Finset.sum_sub_distrib, mul_sub, e2, hint]
+  rw [hgap, abs_mul, abs_of_pos hpos]
+  -- and bound it
+  have habs := Finset.abs_sum_le_sum_abs
+    (fun i ↦ (A.derivEval (A.intM k) (sampleQ A k i)).val
+      - ((A.f (sampleQ A k (i + 1))).val - (A.f (sampleQ A k i)).val) / (meshQ A k).val)
+    (Finset.range (A.intN k))
+  have hstep : (meshQ A k).val * |∑ i ∈ Finset.range (A.intN k),
+      ((A.derivEval (A.intM k) (sampleQ A k i)).val
+        - ((A.f (sampleQ A k (i + 1))).val - (A.f (sampleQ A k i)).val) / (meshQ A k).val)|
+      < (meshQ A k).val * ((A.intN k : Rat) * (2 * (1 / 2 ^ A.intJ k))) := by
+    apply mul_lt_mul_of_pos_left _ hpos
+    linarith
+  have hrw : (meshQ A k).val * ((A.intN k : Rat) * (2 * (1 / 2 ^ A.intJ k)))
+      = A.intL.val * (2 * (1 / 2 ^ A.intJ k)) := by rw [← hNhL]; ring
+  -- `L ≤ 2ˡ` turns the sum's length into the target
+  have hEll : A.intL.val ≤ 2 ^ A.intEll := ceilLog2Q_spec A.intL
+  have hJ : A.intJ k = k + 5 + A.intEll := rfl
+  have hfin : A.intL.val * (2 * (1 / 2 ^ A.intJ k)) ≤ 1 / 2 ^ (k + 4) := by
+    rw [hJ, pow_add]
+    have h1 : (0 : Rat) < 2 ^ A.intEll := by positivity
+    have h2 : (0 : Rat) < 2 ^ (k + 5) := by positivity
+    have key : A.intL.val * (2 * (1 / (2 ^ (k + 5) * 2 ^ A.intEll)))
+        ≤ (2 : Rat) ^ A.intEll * (2 * (1 / (2 ^ (k + 5) * 2 ^ A.intEll))) :=
+      mul_le_mul_of_nonneg_right hEll (by positivity)
+    have heq : (2 : Rat) ^ A.intEll * (2 * (1 / (2 ^ (k + 5) * 2 ^ A.intEll)))
+        = 1 / 2 ^ (k + 4) := by
+      rw [show (2 : Rat) ^ (k + 5) = 2 ^ (k + 4) * 2 by
+        rw [show k + 5 = k + 4 + 1 by ring, pow_succ]]
+      field_simp
+    linarith
+  have hlast : (1 : Rat) / 2 ^ (k + 4) < 1 / 2 ^ k := by
+    apply one_div_lt_one_div_of_lt (by positivity)
+    exact pow_lt_pow_right₀ (by norm_num) (by omega)
+  linarith
+
+/-- **Theorem 2 — `A₁ ⊨ EFTC2`.**  Both conjuncts, for every `A₁`
+representation: `derivEval` represents the derivative and is uniformly
+continuous with modulus `ω'`, and the Riemann sums built *from it* converge to
+`f b − f a` at the stated rate. -/
+theorem eftc2_thm (A : A1) : EFTC2Claim A := ⟨lemma1 A, lemma2 A⟩
+
+#print axioms lemma2
+#print axioms eftc2_thm
+
+/-! ### What it took
+
+`EFTC2Claim` is now proved for every `A₁`.  Nothing in the *analysis* was
+missing; six things in the **constructions and statements** were, and each was
+found by a proof failing rather than by reading the code:
+
+1. **`omega'` was too small.**  The Lemma 1 estimate divides by
    `h₀ = min(2⁻ᵟ⁽ᵏ⁺³⁾, (b−a)/4)`, and when the second term is the minimum the
-   factor is `4/(b−a)`, which a `δ`-only index cannot bound.  `omega'` now
-   carries `max(δ(k+3), η₂+1)`.
-2. **`etaAux` returned `0` when out of fuel** — a value that does not satisfy
-   the property being searched for, so a caller past the fuel got a confident
-   wrong answer.  It now returns the accumulator, and `eta2`'s fuel is taken
-   from the data (`L.den + 2`), which provably cannot exhaust.
-3. **`Lemma1Claim` was missing its interval premises**, so it ranged over
-   points where `A1` says nothing about `f`.
-4. **`sqEx.δ` was off by one** — caught by having to discharge `diff`.
+   factor is `4/(b−a)`, which a `δ`-only index cannot bound.  It now carries
+   `max(δ(k+3), η₂+1)`.
+2. **`A1` carried no hypotheses at all** — `ω` and `δ` were moduli of nothing,
+   and the claims were refutable.  `ivl`, `cont`, `diff` are now fields.
+3. **`etaAux` returned `0` when out of fuel**, which is exactly a value failing
+   the property it searches for.  Fixed, with data-derived fuel; `ceilLog2Aux`
+   likewise, since Lemma 2 needs `L ≤ 2ˡ`.
+4. **`Lemma1Claim` was missing its interval premises.**
+5. **`intN` fixed the mesh by `ω'` alone.**  That is right for the classical
+   argument — Riemann sum against `∫f'` — and wrong here.  What is available in
+   a shallow embedding with no `∫` is the *exact* telescoping
+   `f b − f a = Σᵢ (f xᵢ₊₁ − f xᵢ) = h·Σᵢ DQ_h(xᵢ)`, and that needs the **mesh
+   itself** to be an admissible `δ`-step.  Hence the `δ` term in `intN`.
+6. **`sqEx.δ` was off by one.**
 
-The one mathematical subtlety is that `derivEval` picks its step *pointwise*,
-so `DE(x)` and `DE(y)` may use opposite steps and nothing cancels between them
-directly.  The proof therefore goes through `F`: both `DE`s are near `F` by
-`derivEval_approx`, both *common-step* quotients are near `F` by `diff`, and
-those two cancel.  The common step exists by `common_step` — if `|x−y| ≤
-(b−a)/2` and `h₀ ≤ (b−a)/4` then one of `±h₀` keeps both points inside.
+Two facts were needed that look like technicalities and are not.  `f` must not
+distinguish two `Q`s denoting the same rational — the samples are `a + i·h`,
+and `a + 0·h` is a different `Q` from `a` — and `f_val_congr` derives that from
+`cont` at every precision rather than assuming it.  And `sumQ`, the `do`-loop
+chosen because a structural recursion exhausts the interpreter stack at `4096`
+(measured), had to be reasoned about: it does not reduce in the kernel, so
+`decide` is unavailable, but it unfolds to a `foldl` over `List.range'` and from
+there a step lemma is one rewrite.  No `implemented_by`, no trusted swap.
 
-**Lemma 2 is a different problem and is still open.**  §5.2 gets
-`∫ f' = f(b) − f(a)` from *classical* FTC2 and then estimates the quadrature.
-There is no real integral in this shallow embedding, so the classical step has
-nothing to be imported into: the only available route is a discrete
-telescoping argument, and the Riemann mesh `L/N` and the difference-quotient
-step `h₀` are unrelated quantities here, so the sum does not telescope.  On top
-of that, nothing about `integral` can be settled by computation inside a proof:
-`sumQ` is a `do`-loop and **does not reduce in the kernel**, measured on the
-smallest instance —
+**Cost.** The two index fixes double every Riemann sample count relative to the
+original code; the growth rate is unchanged (still `2^ω'(m)`, exponential in the
+requested precision), which is the optimal-adequacy question, not this one.
 
-    example : sumQ (fun _ ↦ Q.ofNat 1) 2 = Q.ofNat 2 := by rfl   -- fails
-
-the `WellFounded.fix` wall the first-order development records for its own
-value-level recursions, reached from the opposite direction: the loop was
-chosen so the sums survive `N = 32768` in the *interpreter*, and the cost is
-that the kernel can no longer see through it.  `ceilLog2Aux`, which Lemma 2's
-`ℓ` comes from, still has the fuel-exhaustion bug fixed in `etaAux` at (2)
-above; it is not on Lemma 1's path, and has been left alone. -/
+**Still out of scope and not claimed:** the negative half, `A₀ ⊭ EFTC2`, which
+is Myhill's theorem and a citation here, not a formalization. -/
 
 #print axioms doubling_lipschitz
 #print axioms translation_lipschitz

@@ -217,6 +217,91 @@ theorem Q.add_neg (a : Q) : Q.add a (Q.neg a) = Q.zero := by
 
 theorem Q.sub_self (a : Q) : Q.sub a a = Q.zero := Q.add_neg a
 
+/-! ## The order bridge
+
+`Q.ltN` is a `0`/`1` numeral, not a `Prop`, because the object language has no
+propositions to return.  Characterizing it through `Q.val` is what turns every
+order obligation in the analysis files into an inequality between Mathlib
+rationals, where `linarith`/`nlinarith` apply.  Without this the error
+estimates have to be done by hand on cross-multiplied integers. -/
+
+theorem Q.den_cast_pos (q : Q) : (0 : Rat) < (q.den : Rat) := by
+  exact_mod_cast Nat.pos_of_ne_zero q.den_ne_zero
+
+theorem Q.val_lt_iff (a b : Q) :
+    a.val < b.val ↔ a.num * (b.den : Int) < b.num * (a.den : Int) := by
+  unfold Q.val
+  rw [div_lt_div_iff₀ a.den_cast_pos b.den_cast_pos]
+  constructor <;> intro h <;> exact_mod_cast h
+
+theorem Q.ltN_eq_one_iff (a b : Q) : Q.ltN a b = 1 ↔ a.val < b.val := by
+  rw [Q.val_lt_iff]
+  unfold Q.ltN
+  simp only [intMul_eq, Int.ofNat_eq_natCast]
+  split <;> simp_all
+
+theorem Q.ltN_eq_zero_iff (a b : Q) : Q.ltN a b = 0 ↔ b.val ≤ a.val := by
+  rw [← not_lt, ← Q.ltN_eq_one_iff]
+  unfold Q.ltN
+  split <;> simp_all
+
+/-- `Q.ltN` is `0` or `1` and nothing else. -/
+theorem Q.ltN_eq_zero_or_one (a b : Q) : Q.ltN a b = 0 ∨ Q.ltN a b = 1 := by
+  unfold Q.ltN; split <;> simp
+
+theorem Q.val_abs (a : Q) : (Q.abs a).val = |a.val| := by
+  have hd := a.den_cast_pos
+  unfold Q.abs
+  split
+  · rename_i h
+    have hn : (a.num : Rat) < 0 := by exact_mod_cast h
+    have hlt : a.val < 0 := by unfold Q.val; exact div_neg_of_neg_of_pos hn hd
+    rw [Q.val_neg, abs_of_neg hlt]
+  · rename_i h
+    have hn : (0 : Rat) ≤ (a.num : Rat) := by exact_mod_cast Int.not_lt.mp h
+    have hge : 0 ≤ a.val := by unfold Q.val; exact div_nonneg hn (le_of_lt hd)
+    rw [abs_of_nonneg hge]
+
+theorem Q.val_ofNat (n : Nat) : (Q.ofNat n).val = (n : Rat) := by
+  unfold Q.ofNat Q.val Q.den
+  simp
+
+theorem Q.val_ofInt (n : Int) : (Q.ofInt n).val = (n : Rat) := by
+  unfold Q.ofInt Q.val Q.den
+  simp
+
+theorem natAbs_cast_rat (n : Int) : ((n.natAbs : Nat) : Rat) = |(n : Rat)| := by
+  simp [Int.cast_abs]
+
+theorem Q.val_div (a b : Q) (hb : b.num ≠ 0) :
+    (Q.div a b).val = a.val / b.val := by
+  have hbn : b.num.natAbs ≠ 0 := Int.natAbs_ne_zero.mpr hb
+  have hden : a.den * b.num.natAbs ≠ 0 := Nat.mul_ne_zero a.den_ne_zero hbn
+  have ha0 := ne_of_gt a.den_cast_pos
+  have hb0 := ne_of_gt b.den_cast_pos
+  have hn0 : (b.num : Rat) ≠ 0 := Int.cast_ne_zero.mpr hb
+  unfold Q.div
+  rw [if_neg hb]
+  rcases lt_or_ge b.num 0 with h | h
+  · rw [if_pos h, Q.val_neg, Q.val_of _ _ hden]
+    have hR : (b.num : Rat) < 0 := by exact_mod_cast h
+    have habs : ((b.num.natAbs : Nat) : Rat) = -(b.num : Rat) := by
+      rw [natAbs_cast_rat, abs_of_neg hR]
+    unfold Q.val
+    simp only [intMul_eq, Int.ofNat_eq_natCast]
+    push_cast
+    rw [habs]
+    field_simp
+  · rw [if_neg (Int.not_lt.mpr h), Q.val_of _ _ hden]
+    have hR : (0 : Rat) ≤ (b.num : Rat) := by exact_mod_cast h
+    have habs : ((b.num.natAbs : Nat) : Rat) = (b.num : Rat) := by
+      rw [natAbs_cast_rat, abs_of_nonneg hR]
+    unfold Q.val
+    simp only [intMul_eq, Int.ofNat_eq_natCast]
+    push_cast
+    rw [habs]
+    field_simp
+
 /-! ## Where the refactor stops: the identity laws
 
 `den+1` made positivity structural.  It did **not** make *coprimality*

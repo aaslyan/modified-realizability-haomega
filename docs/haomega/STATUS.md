@@ -71,9 +71,9 @@ Analysis (2): square-root approximation · uniform continuity.
 | phase | state |
 |---|---|
 | 0. numeric base types | **done** — `rat` (states) and `dyad` (computes), both hand-rolled, with the bridge `dtoq` |
-| square roots | **done** — a corollary of Sperner 1D, which *is* the discrete IVT; `√2` at `2⁻⁸` returns `181/128` |
+| square roots | **done** — a corollary of Sperner 1D, which *is* the discrete IVT; `√2` at `2⁻⁸` returns `181/128`; its bound `K` is now proved, not assumed |
 | uniform continuity | **done** — the extracted realizer *is* the modulus; doubling gives `n+1`, translation `n` |
-| Newton–Leibniz (EFTC2, positive half) | **constructions only** — see §5 |
+| Newton–Leibniz (EFTC2, positive half) | **constructions only, and the correctness claims are refuted as stated** — see §7 |
 
 **Why the numeric layers are hand-rolled.** Mathlib's `Rat` arithmetic —
 including `Rat.add`, `Rat.mul`, `mkRat`, `Rat.normalize` — depends on
@@ -87,21 +87,31 @@ Listed here so it cannot be missed. Each is flagged in its own source file too.
 
 | claim | file | status |
 |---|---|---|
-| `Lemma1Claim`, `Lemma2Claim`, `EFTC2Claim` | `EFTC.lean` | **stated, unproved.** The constructions run and are guarded at instances; the error analyses are not derived |
-| Lipschitz premise of uniform continuity | `UniformContinuity.lean` | hypothesis, discharged by the caller — guarded by computation |
-| bound `K` in the square-root theorem | `SquareRoot.lean` | hypothesis, discharged by the caller — guarded by computation |
+| bound `K` in the square-root theorem | `SquareRoot.lean` | **discharged** — `sqrt_premises` (`QAnalysis.lean`) proves both colouring premises for every `q ≥ 0` at every precision |
+| Lipschitz premise of uniform continuity | `UniformContinuity.lean` | **discharged at the three guarded maps**, for all `x`, `y`, `m`; an arbitrary `f` still owes its own |
+| `Lemma1Claim`, `Lemma2Claim`, `EFTC2Claim` | `EFTC.lean` | **refuted as stated** — see §7. Repaired statements exist; one half of Lemma 1 is proved, the rest is not |
 | modulus metatheorem (extraction yields a modulus for *every* derivation) | `Modulus.lean` | not proved; two recorded obstructions, see §6 |
 
-**One cause underlies the first three: there is no arithmetic rule base for
-`Q`.** `Deriv` has no conversion equations for the numeric operations. The
-value layer now *does* have ring theory (§7) — that half is done — but no law
-has been lifted to a rule, so all three rows are unchanged.
+The first three rows were all blocked on the same missing thing — an
+arithmetic rule base for `Q` — and that is what §7 records the resolution of.
+Two of them moved. The third turned out not to be blocked on arithmetic at
+all.
 
 ## 6. Known limits, with reasons
 
-* **No arithmetic rule base for `Q`** — the value-level ring laws are now
-  proved unconditionally, but none has been added to `Deriv` as a conversion
-  rule, so the object language still cannot compute with `Q`. See §7.
+* **No arithmetic rule base for `Q` at the object level.** The value-level
+  ring *and order* laws are now proved unconditionally (§7), and they were
+  enough to discharge two of §5's rows. But no law has been added to `Deriv`
+  as a conversion rule, so the object language still cannot compute with `Q`;
+  everything in `QAnalysis.lean` is meta-level Lean.
+* **Nothing about `A1.integral` can be proved by computation.** `sumQ` is a
+  `do`-loop — chosen so the Riemann sums survive `N = 32768` in the
+  interpreter — and the loop **does not reduce in the kernel**. Measured on
+  the smallest instance: `sumQ (fun _ ↦ Q.ofNat 1) 2 = Q.ofNat 2` fails by
+  `rfl`. So `decide` is unavailable for any statement mentioning `integral`,
+  and the `Lemma2Claim` refutation is evaluator-checked rather than a
+  theorem. Same `WellFounded.fix` wall the first-order development records
+  for its value-level recursions, reached from the opposite direction.
 * **No modulus metatheorem.** At arrow types a single numeric bound does not
   suffice (one needs a modulus whose *type* is computed from the finite type,
   i.e. a Kleene associate — exactly what the continuity proof exists to
@@ -213,16 +223,95 @@ Closing that gap means a subtype carrying a coprimality proof, or a quotient —
 a change of a different size from `den+1`, and one that has to keep the proof
 component out of `Tm.eval`'s axiom footprint. **Not attempted.**
 
+### The order bridge, and what it unblocked
+
+Ring laws alone were not enough: every obligation in the analysis files is an
+*inequality*, and `Q.ltN` is a `0`/`1` numeral rather than a `Prop`. The
+bridge `Q.ltN_eq_one_iff : Q.ltN a b = 1 ↔ a.val < b.val` (with the `= 0`
+companion, `Q.val_abs`, `Q.val_div`, `Q.val_ofNat`) turns each one into an
+inequality between Mathlib rationals, where `linarith`/`nlinarith` apply.
+That is what made the two discharges below mechanical rather than manual
+cross-multiplication.
+
+All of it lives in `QAnalysis.lean`, a **leaf** module importing the analysis
+chain rather than sitting inside it, so no certified module changed shape and
+`Mathlib` stays out of `Tm.eval`'s import graph.
+
+### Step 4: what the payoff actually reached
+
+**Square-root bound `K` — discharged.** `sqrtBound q n := (⌊q⌋+1)·2ⁿ`, with
+`sqrt_lower_premise` and `sqrt_upper_premise` proving both of `sqrtApproxD`'s
+hypotheses for every `q ≥ 0` at every precision. `#guard`s confirm the
+extracted search run at the computed bound returns the same roots the
+hand-picked bounds gave. `q ≥ 0` is genuinely necessary, not an artefact.
+
+**Lipschitz premise — discharged for the guarded maps.** `doubling_lipschitz`,
+`translation_lipschitz`, `quadrupling_lipschitz`, each for *all* `x`, `y`, `m`
+rather than at sampled points. Stated precisely: the *general* theorem
+`uniContD` was already proved; what these close is the side condition at each
+instance. A caller supplying some other `f` still owes the obligation for that
+`f`, and there is no general theorem that every definable `f` contracts —
+that is false.
+
+**EFTC — refuted as stated, not proved.** This is the result that did not go
+as planned, and the reason has nothing to do with arithmetic. `A1` is a bare
+structure — `a`, `b`, `f`, `ω`, `δ` with **no fields relating them**. Nothing
+says `ω` is a modulus of continuity, nothing says `δ` is a modulus of uniform
+differentiability, nothing says `a < b`. Those conditions live in the
+docstrings and in the manifesto's definition of `A₁`, not in the type, and
+`Lemma1Claim`/`Lemma2Claim` quantify over an arbitrary `A : A1`. So they are
+false:
+
+    'HAomega.Lemma1Claim_false'  does not depend on any axioms
+    'HAomega.EFTC2Claim_false'   depends on axioms: [propext, Quot.sound]
+
+The witness `lyingEx` is `sqEx` — `x²` on `[0,1]`, where the constructions are
+guarded and correct — with `ω` and `δ` replaced by the constant `0`. Then `ω'`
+collapses to the constant `1`, `intN k = 2` at every precision, `integral k`
+is stuck at `3/4`, and Lemma 1 fails already at `k = 0`, `x = 0`, `y = 1/2`
+(quotients `1/4` and `5/4`, gap `1`, target `1`). Both are checked by the
+kernel except the `Lemma2Claim` half, for the `sumQ` reason in §6.
+
+`IsA1` supplies the missing hypotheses — including the **interval
+restriction**, which `Lemma1Claim` also drops and the manifesto's Lemma 1 has.
+Under it, **Lemma 1's computable half is proved**:
+
+    'HAomega.derivEval_approx'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+i.e. `|derivEval k x − f' x| < 2⁻⁽ᵏ⁺³⁾` at every `x ∈ [a,b]` — the fact that
+makes the `EFTC2` witness a statement about `f'` rather than about the numeral
+`f b − f a`. The endpoint-safe sign is what the proof spends its effort on.
+
+**The rest of Lemma 1 is not proved, and the §5.2 argument does not give it.**
+Three obstructions, each found by attempting the proof and each recorded in
+`QAnalysis.lean` so it can be checked: (1) §5.2's cancellation needs `x` and
+`y` to use the *same* step, but `stepRight` picks the sign pointwise, so
+points either side of the midpoint use opposite steps and nothing cancels;
+(2) when `(b−a)/4` is the smaller half of `h₀`, the estimate divides by
+`4/(b−a)` and `ω'` contains no term bounding it — so `omega'` **as
+implemented** is not large enough in general, a statement about the code, not
+the proof; (3) the repaired route needs `ω` at `k+4+δ(k+4)` where the
+construction supplies `k+5+δ(k+3)`, and nothing requires `ω`, `δ` monotone.
+**Lemma 2 is further off**: §5.2 imports `∫f' = f(b)−f(a)` from classical
+FTC2, and there is no real integral here for that to be imported into; the
+mesh `L/N` and the step `h₀` are unrelated, so no discrete telescoping
+replaces it.
+
 ### What has still not moved
 
-**None of §5's rows has changed state.** `SquareRoot`'s `K`,
-`UniformContinuity`'s Lipschitz premise and `EFTC`'s three claims are still
-hypothesis-discharged-by-caller or stated-unproved. What changed is the
-blocker beneath them: there is now a hypothesis-free law suite to build object
-rules from, where before there was none. Turning these lemmas into `Deriv`
-rules — which needs conversion equations in `Syntax.lean` and cases in
-`extract`/`soundness`/`eval_tracked`/`hsOf` per the per-rule discipline — is
-the next step and is not done.
+Turning any of these lemmas into `Deriv` rules — conversion equations in
+`Syntax.lean` plus cases in `extract`/`soundness`/`eval_tracked`/`hsOf` per
+the per-rule discipline — is **not done**; everything above is meta-level.
+`EFTC`'s claims are refuted rather than proved, and repairing them needs
+changes to `A1` and to `omega'`, not more arithmetic. The `Modulus.lean` row
+of §5 is untouched.
+
+*Audit note:* the site list this document previously gave for the `den`
+refactor (`ceilNatQ`, `Dyadics.toQ`, "the guards") was not accurate.
+A repo-wide `grep` for `.num`/`.den` finds readers in exactly four files —
+`Rationals.lean`, `QArith.lean`, `EFTC.lean` (`ceilNatQ`), and
+`UniformContinuity.lean` (`closeVal`). `Dyadics.toQ` does **not** read either
+field; it calls `Q.of`, so it was never a touch point.
 
 *Cost note:* `QArith.lean` imports `Mathlib` wholesale — narrower imports were
 tried and the module paths do not exist in the pinned version. Since the file

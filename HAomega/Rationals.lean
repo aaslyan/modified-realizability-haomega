@@ -56,16 +56,28 @@ because Mathlib's rational arithmetic is not.
 namespace HAomega
 
 /-- A rational: numerator, and a denominator kept positive and coprime to it
-by `Q.of`. -/
+by `Q.of`.
+
+The denominator is stored as its **predecessor**, so positivity is structural:
+there is no `Q` whose denominator is zero, and hence no degenerate value for
+the arithmetic laws to exclude.  That matters because the object language's
+`∀x^rat` ranges over *every* inhabitant of this type — with a bare `den : Nat`
+it would range over `⟨5,0⟩` too, and every ring law would need a side
+condition. -/
 structure Q where
   num : Int
-  den : Nat
+  denPred : Nat
   deriving DecidableEq, Repr, BEq
 
 namespace Q
 
+/-- The denominator.  Positive by construction. -/
+def den (q : Q) : Nat := q.denPred + 1
+
+@[simp] theorem den_ne_zero (q : Q) : q.den ≠ 0 := Nat.succ_ne_zero _
+
 /-- Zero, and the canonical shape of every degenerate case. -/
-def zero : Q := ⟨0, 1⟩
+def zero : Q := ⟨0, 0⟩
 
 /-- The one representation, and hence the meaning of structural equality.
 Named `of` rather than `mk`, which the structure already claims. -/
@@ -73,16 +85,16 @@ def of (n : Int) (d : Nat) : Q :=
   if d = 0 then zero
   else
     let g := Nat.gcd n.natAbs d
-    if g = 0 then zero else ⟨Int.tdiv n (Int.ofNat g), d / g⟩
+    if g = 0 then zero else ⟨Int.tdiv n (Int.ofNat g), d / g - 1⟩
 
-def ofInt (n : Int) : Q := ⟨n, 1⟩
-def ofNat (n : Nat) : Q := ⟨Int.ofNat n, 1⟩
+def ofInt (n : Int) : Q := ⟨n, 0⟩
+def ofNat (n : Nat) : Q := ⟨Int.ofNat n, 0⟩
 
 def add (a b : Q) : Q :=
   of (Int.add (Int.mul a.num (Int.ofNat b.den)) (Int.mul b.num (Int.ofNat a.den)))
      (a.den * b.den)
 
-def neg (a : Q) : Q := ⟨Int.neg a.num, a.den⟩
+def neg (a : Q) : Q := ⟨Int.neg a.num, a.denPred⟩
 
 def sub (a b : Q) : Q := add a (neg b)
 

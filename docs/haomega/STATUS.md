@@ -1,6 +1,6 @@
 # HA^ω status
 
-**As of 2026-08-10, commit `ac56b0e`.** 761 jobs green, zero warnings, zero
+**As of 2026-08-10, commit `b259874`+.** 761 jobs green, zero warnings, zero
 `sorry`/`admit`. 9,894 lines across 44 files in `HAomega/`, 45 inference
 rules, 15 extracted realizers rendered in `EXTRACTED_HAOMEGA.md`.
 
@@ -93,13 +93,15 @@ Listed here so it cannot be missed. Each is flagged in its own source file too.
 | modulus metatheorem (extraction yields a modulus for *every* derivation) | `Modulus.lean` | not proved; two recorded obstructions, see §6 |
 
 **One cause underlies the first three: there is no arithmetic rule base for
-`Q`.** `Deriv` has no conversion equations for the numeric operations, and
-the value layer has no ring or order theory. Three independent pieces of work
-have now hit it.
+`Q`.** `Deriv` has no conversion equations for the numeric operations. The
+value layer now *does* have ring theory (§7) — that half is done — but no law
+has been lifted to a rule, so all three rows are unchanged.
 
 ## 6. Known limits, with reasons
 
-* **No arithmetic rule base for `Q`** — the live blocker. See §7.
+* **No arithmetic rule base for `Q`** — the value-level ring laws are now
+  proved unconditionally, but none has been added to `Deriv` as a conversion
+  rule, so the object language still cannot compute with `Q`. See §7.
 * **No modulus metatheorem.** At arrow types a single numeric bound does not
   suffice (one needs a modulus whose *type* is computed from the finite type,
   i.e. a Kleene associate — exactly what the continuity proof exists to
@@ -118,7 +120,7 @@ have now hit it.
 * Coded hydra extracts still overflow at codes 4 and 7. That is the
   measurement their typed twins are measured against, not an unrepaired bug.
 
-## 7. The arithmetic rule base for `Q` — partially unblocked
+## 7. The arithmetic rule base for `Q` — laws proved, rules not yet added
 
 **The quotient re-representation was planned, measured, and then abandoned as
 unnecessary.** What follows is what happened, not what was intended.
@@ -159,25 +161,72 @@ the lemmas had to be choice-free too — was simply wrong.
 All `[propext, Classical.choice, Quot.sound]`, which is harmless here for the
 reason above.
 
-### What did **not** land, and why
+### The `den+1` refactor: the laws are now unconditional
 
-**The laws carry a `den ≠ 0` hypothesis, so they are not yet `Deriv` rules.**
-`Q`'s denominator is a bare `Nat`, so `⟨5,0⟩` inhabits `Q` and the object
-language's `∀x^rat` ranges over it. Removing the hypothesis needs positivity
-made structural — store `den : Nat` meaning `den+1` — which ripples through
-every site reading `.num`/`.den` (`EFTC.lean`'s `ceilNatQ`, `Dyadics.toQ`,
-the guards). That refactor is the next step and is **not done**.
+`Q`'s denominator field stores its **predecessor**, so `den = denPred + 1` and
+there is no inhabitant with denominator zero. Before that, `⟨5, 0⟩` inhabited
+`Q`, the object language's `∀x^rat` ranged over it, and every law carried a
+`den ≠ 0` hypothesis that kept it from being a `Deriv` rule. The refactor
+touched the constructions in `Rationals.lean` only; `EFTC.lean`'s `ceilNatQ`
+and `UniformContinuity.lean`'s `closeVal` read `.num`/`.den` and were unchanged,
+because `den` became a function of the same name.
 
-Consequently **none of §5's rows has moved yet**: `SquareRoot`'s `K`,
-`UniformContinuity`'s Lipschitz premise, and `EFTC`'s three claims are all
-still hypothesis-discharged-by-caller or stated-unproved. The blocker is now
-one concrete refactor rather than an open mathematical question, which is the
-real change.
+What is proved in `QArith.lean`, all with **no side conditions**:
+
+| law | form |
+|---|---|
+| `Q.add_comm`, `Q.mul_comm` | commutativity |
+| `Q.add_assoc`, `Q.mul_assoc` | associativity |
+| `Q.mul_add` | distributivity |
+| `Q.add_neg`, `Q.sub_self` | additive inverse |
+
+The route is one indirection: `Q.val` sends a `Q` to the Mathlib rational it
+denotes, each operation is shown to commute with it (`Q.val_add`, `Q.val_mul`,
+`Q.val_neg`), and `Q.of_inj_val` turns equal values back into equal normal
+forms. Proving the nested laws through `of_eq_of` directly does not work — the
+inner `Q.of` has already normalized, so its numerator is not the
+cross-multiplied one and the identity stops being polynomial.
+
+All report `[propext, Classical.choice, Quot.sound]`, harmless for the reason
+above. The invariants are unmoved, reprinted from the build:
+
+    HAomega.Tm.eval    [propext, Quot.sound]
+    HAomega.Q.add      does not depend on any axioms
+    HAomega.Q.mul      does not depend on any axioms
+    HAomega.Q.div      does not depend on any axioms
+
+### What the refactor did **not** buy: the identity laws
+
+Positivity is now structural. **Coprimality is not**, and `x + 0 = x` needs
+it. `⟨2, denPred := 3⟩` — the fraction `2/4` — inhabits `Q`, `Q.of` never
+produces it, and adding zero reduces it:
+
+    Q.add ⟨2,3⟩ Q.zero = ⟨1,1⟩ ≠ ⟨2,3⟩
+
+`Q.add_zero_not_id`, by `decide`. So that law is **false in this model** and
+must not become a `Deriv` rule; its honest form is `Q.add_zero_norm`: adding
+zero normalizes. The dividing line is whether both sides of a law pass through
+`Q.of` — the seven above do, which is why they hold on the nose for every
+inhabitant, and a law with a bare variable on one side does not.
+
+Closing that gap means a subtype carrying a coprimality proof, or a quotient —
+a change of a different size from `den+1`, and one that has to keep the proof
+component out of `Tm.eval`'s axiom footprint. **Not attempted.**
+
+### What has still not moved
+
+**None of §5's rows has changed state.** `SquareRoot`'s `K`,
+`UniformContinuity`'s Lipschitz premise and `EFTC`'s three claims are still
+hypothesis-discharged-by-caller or stated-unproved. What changed is the
+blocker beneath them: there is now a hypothesis-free law suite to build object
+rules from, where before there was none. Turning these lemmas into `Deriv`
+rules — which needs conversion equations in `Syntax.lean` and cases in
+`extract`/`soundness`/`eval_tracked`/`hsOf` per the per-rule discipline — is
+the next step and is not done.
 
 *Cost note:* `QArith.lean` imports `Mathlib` wholesale — narrower imports were
 tried and the module paths do not exist in the pinned version. Since the file
-is proof-side only, the cost is build time (7,849 jobs, ~11 s warm), not
-trust.
+is proof-side only, the cost is build time (7,849 jobs), not trust.
 
 ## 8. Not started
 

@@ -89,7 +89,7 @@ Listed here so it cannot be missed. Each is flagged in its own source file too.
 |---|---|---|
 | bound `K` in the square-root theorem | `SquareRoot.lean` | **discharged** — `sqrt_premises` (`QAnalysis.lean`) proves both colouring premises for every `q ≥ 0` at every precision |
 | Lipschitz premise of uniform continuity | `UniformContinuity.lean` | **discharged at the three guarded maps**, for all `x`, `y`, `m`; an arbitrary `f` still owes its own |
-| `Lemma1Claim`, `Lemma2Claim`, `EFTC2Claim` | `EFTC.lean` | **refuted as stated** — see §7. Repaired statements exist; one half of Lemma 1 is proved, the rest is not |
+| `Lemma1Claim`, `Lemma2Claim`, `EFTC2Claim` | `EFTC.lean` | **still unproved**, but no longer false: `A1` now carries the modulus hypotheses, and `omega'` is fixed. Lemma 1's computable half is proved; its uniform-continuity half and Lemma 2 are not — see §7 |
 | modulus metatheorem (extraction yields a modulus for *every* derivation) | `Modulus.lean` | not proved; two recorded obstructions, see §6 |
 
 The first three rows were all blocked on the same missing thing — an
@@ -253,49 +253,81 @@ instance. A caller supplying some other `f` still owes the obligation for that
 `f`, and there is no general theorem that every definable `f` contracts —
 that is false.
 
-**EFTC — refuted as stated, not proved.** This is the result that did not go
-as planned, and the reason has nothing to do with arithmetic. `A1` is a bare
-structure — `a`, `b`, `f`, `ω`, `δ` with **no fields relating them**. Nothing
-says `ω` is a modulus of continuity, nothing says `δ` is a modulus of uniform
-differentiability, nothing says `a < b`. Those conditions live in the
+**EFTC — the claims were false, and the cause is now fixed in the code.**
+This is the result that did not go as planned. `A1` was a bare structure —
+`a`, `b`, `f`, `ω`, `δ` with **no fields relating them**. Nothing said `ω` was
+a modulus of continuity, nothing said `δ` was a modulus of uniform
+differentiability, nothing said `a < b`. Those conditions lived in the
 docstrings and in the manifesto's definition of `A₁`, not in the type, and
-`Lemma1Claim`/`Lemma2Claim` quantify over an arbitrary `A : A1`. So they are
-false:
+`Lemma1Claim`/`Lemma2Claim` quantified over an arbitrary `A : A1`. So they
+were refutable, and were refuted: `sqEx` (`x²` on `[0,1]`, where the
+constructions are correct) with `ω` and `δ` replaced by the constant `0` makes
+`ω'` collapse to `1`, `intN k = 2` at every precision, `integral k` stick at
+`3/4`, and Lemma 1 fail already at `k = 0`, `x = 0`, `y = 1/2` — quotients
+`1/4` and `5/4`, gap `1`, target `1`.
 
-    'HAomega.Lemma1Claim_false'  does not depend on any axioms
-    'HAomega.EFTC2Claim_false'   depends on axioms: [propext, Quot.sound]
+**Both fixes are now in.** `A1` carries `ivl`, `cont` and `diff`, so that
+counterexample **can no longer be constructed** and the refutation theorems are
+gone — their absence is the deliverable. Two design points are load-bearing:
 
-The witness `lyingEx` is `sqEx` — `x²` on `[0,1]`, where the constructions are
-guarded and correct — with `ω` and `δ` replaced by the constant `0`. Then `ω'`
-collapses to the constant `1`, `intN k = 2` at every precision, `integral k`
-is stuck at `3/4`, and Lemma 1 fails already at `k = 0`, `x = 0`, `y = 1/2`
-(quotients `1/4` and `5/4`, gap `1`, target `1`). Both are checked by the
-kernel except the `Lemma2Claim` half, for the `sumQ` reason in §6.
+* `diff` is **existential** (`∃ F : Q → Q, …`). Putting `f'` in as *data*
+  would be a different representation, one that hands the derivative over for
+  free, and would trivialise the theorem the file exists to state.
+* All three fields are written in `Q`'s own vocabulary (`Qle`, `Q.ltN`,
+  dyadic `2⁻ᵏ`), not through `Q.val`. That is not style: stating them with
+  `Q.val` puts `Rat`'s order instances into `A1`'s *type*, and then every
+  construction taking an `A1` reports `Classical.choice`. Measured, and
+  reverted. The footprints are unchanged from before the hypotheses existed:
 
-`IsA1` supplies the missing hypotheses — including the **interval
-restriction**, which `Lemma1Claim` also drops and the manifesto's Lemma 1 has.
-Under it, **Lemma 1's computable half is proved**:
+      'HAomega.A1.derivEval'  does not depend on any axioms
+      'HAomega.A1.omega''     does not depend on any axioms
+      'HAomega.A1.integral'   depends on axioms: [propext, Quot.sound]
+      'HAomega.A1.eftc2'      depends on axioms: [propext, Quot.sound]
 
-    'HAomega.derivEval_approx'  depends on axioms: [propext, Classical.choice, Quot.sound]
+**`omega'` is fixed.** It was `max(ω(k+5+δ(k+3)), η₂)`; it is now
 
-i.e. `|derivEval k x − f' x| < 2⁻⁽ᵏ⁺³⁾` at every `x ∈ [a,b]` — the fact that
-makes the `EFTC2` witness a statement about `f'` rather than about the numeral
-`f b − f a`. The endpoint-safe sign is what the proof spends its effort on.
+    max(ω(k + 5 + max(δ(k+3), η₂+1)), η₂)
 
-**The rest of Lemma 1 is not proved, and the §5.2 argument does not give it.**
-Three obstructions, each found by attempting the proof and each recorded in
-`QAnalysis.lean` so it can be checked: (1) §5.2's cancellation needs `x` and
-`y` to use the *same* step, but `stepRight` picks the sign pointwise, so
-points either side of the midpoint use opposite steps and nothing cancels;
-(2) when `(b−a)/4` is the smaller half of `h₀`, the estimate divides by
-`4/(b−a)` and `ω'` contains no term bounding it — so `omega'` **as
-implemented** is not large enough in general, a statement about the code, not
-the proof; (3) the repaired route needs `ω` at `k+4+δ(k+4)` where the
-construction supplies `k+5+δ(k+3)`, and nothing requires `ω`, `δ` monotone.
-**Lemma 2 is further off**: §5.2 imports `∫f' = f(b)−f(a)` from classical
-FTC2, and there is no real integral here for that to be imported into; the
-mesh `L/N` and the step `h₀` are unrelated, so no discrete telescoping
-replaces it.
+The estimate divides by `h₀ = min(2⁻ᵟ⁽ᵏ⁺³⁾, (b−a)/4)`, so it multiplies by
+`1/h₀`, and when the *second* term is the minimum that factor is `4/(b−a)`,
+which a `δ`-only index cannot see. Since `2⁻ᵑ² ≤ (b−a)/2`, the added
+`max(…, η₂+1)` bounds it in both branches.
+
+**Two things the proof obligations caught.** `sqEx`'s `δ` was off by one:
+the difference quotient for `x²` is `2x + h`, so its error *is* `|h|`, and
+`|h| ≤ 2⁻ᵟ⁽ᵏ⁾` has to give `|h| < 2⁻ᵏ` **strictly** — with `δ k = k` the
+admissible step `|h| = 2⁻ᵏ` meets the bound with equality and misses. It is
+now `k+1`. (`sqEx`'s `ω k = k+1` checks out as it stood: `x + y < 2` strictly
+whenever `x ≠ y` in `[0,1]`, so the estimate is strict.) `linEx` needed no
+change.
+
+**Cost of the two fixes:** every Riemann sample count doubles —
+`sqEx.intN` `8192 → 16384`, `linEx.intN` `2048 → 4096` at `k = 0` — paid in
+constant factors, not in the growth rate, which is still `2^ω'(m)`. Guards
+updated: `sqEx.derivEval 8` now lands within `2⁻¹²`, `sqEx.integral 0` is
+`524257/524288` (error `31/524288`), `linEx.integral 0..3` still exactly `6`.
+
+**What is proved under the new hypotheses:** Lemma 1's computable half,
+
+    'HAomega.derivEval_approx'          depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.derivEval_approx_of_diff'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+`|derivEval k x − F x| < 2⁻⁽ᵏ⁺³⁾` at every `x ∈ [a,b]`, with a single `F`
+drawn from `diff`, uniformly in `k` and `x`. The endpoint-safe sign is what
+the proof spends its effort on.
+
+**What is still not proved.** Lemma 1's uniform-continuity half. Of the three
+obstructions recorded earlier, two are gone: the reciprocal step (fixed by
+`omega'` above) and the index mismatch (an artefact of routing through `f'` at
+`k+4` — taken at `k+3`, the precision `stepSize` itself uses, the bookkeeping
+closes with room to spare). What remains is the *common step*: `stepRight`
+picks the sign pointwise, so two points either side of the midpoint use
+opposite steps and the cancellation does not happen for them; routing through
+`F` avoids it but needs a pigeonhole (`|x−y| ≤ (b−a)/2` and `h₀ ≤ (b−a)/4`
+imply one of `±h₀` is admissible for both). **The arithmetic closes; the Lean
+proof of that half is not written.** Lemma 2 is further off — §5.2 imports
+`∫f' = f(b)−f(a)` from classical FTC2, and there is no real integral here for
+that to be imported into.
 
 ### What has still not moved
 

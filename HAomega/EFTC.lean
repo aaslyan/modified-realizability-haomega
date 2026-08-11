@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ara Aslyan
 -/
 import HAomega.UniformContinuity
+import HAomega.QOrder
 
 /-!
 # The positive half of Newton–Leibniz adequacy: `A₁ ⊨ EFTC2`
@@ -64,6 +65,20 @@ def Qle (x y : Q) : Bool := Q.ltN y x == 0
 def Qmin (x y : Q) : Q := if Qle x y then x else y
 def Qmax (x y : Q) : Q := if Qle x y then y else x
 
+theorem Qle_eq_true_iff (x y : Q) : Qle x y = true ↔ x.val ≤ y.val := by
+  unfold Qle
+  simp only [beq_iff_eq]
+  exact Q.ltN_eq_zero_iff y x
+
+theorem Qmin_val (x y : Q) : (Qmin x y).val = min x.val y.val := by
+  unfold Qmin
+  split
+  · rename_i h
+    exact (min_eq_left ((Qle_eq_true_iff x y).mp h)).symm
+  · rename_i h
+    have hx : ¬ (x.val ≤ y.val) := fun hc ↦ h ((Qle_eq_true_iff x y).mpr hc)
+    exact (min_eq_right (le_of_not_ge hx)).symm
+
 /-- `2ᵉ` as a rational. -/
 def twoPowQ (e : Nat) : Q := Q.ofNat (twoPowN e)
 
@@ -106,9 +121,45 @@ structure A0 where
   f : Q → Q
   ω : Nat → Nat
 
-/-- **`A₁`** — `A₀` plus a modulus of uniform differentiability. -/
+/-- **`A₁`** — `A₀` plus a modulus of uniform differentiability, **and the
+conditions making `ω` and `δ` moduli of anything**.
+
+The three `Prop` fields are not decoration.  Without them `A1` is five
+unrelated pieces of data, `∀ A : A1` ranges over data where `ω` and `δ` are
+arbitrary functions, and the correctness claims at the bottom of this file are
+false — refuted, at one point, by taking the `x²` instance below and replacing
+its moduli with the constant `0`.  The conditions were always in the
+docstrings; they are now in the type.
+
+`diff` is stated **existentially**.  Putting `f'` in as *data* would be a
+different representation — one that hands the derivative over for free — and
+would trivialise the theorem this file exists to state.  As a `Prop` the
+witness is not computationally available, which is exactly the point: `f'`
+exists, and the content of Lemma 1 is that `δ` lets you *compute* it.
+
+All three are written in `Q`'s own vocabulary (`Qle`, `Q.ltN`, `2⁻ᵏ` as a
+dyadic) rather than through the Mathlib rational a `Q` denotes.  That is not a
+style choice: field types stated with `Q.val` put `Rat`'s order instances into
+`A1`'s type, and then *every* construction taking an `A1` — `derivEval`,
+`integral`, `eftc2` — reports `Classical.choice`.  Measured, and the reason
+this file keeps its own idiom.  The proofs discharging the fields may of
+course use Mathlib freely; only the statements must not. -/
 structure A1 extends A0 where
   δ : Nat → Nat
+  /-- the interval is nondegenerate -/
+  ivl : Q.ltN a b = 1
+  /-- `ω` is a modulus of continuity for `f` on `[a,b]` -/
+  cont : ∀ (k : Nat) (x y : Q), Qle a x = true → Qle x b = true →
+      Qle a y = true → Qle y b = true →
+      Qle (Q.abs (Q.sub x y)) (D.toQ (D.pow2neg (ω k))) = true →
+      Q.ltN (Q.abs (Q.sub (f x) (f y))) (D.toQ (D.pow2neg k)) = 1
+  /-- `δ` is a modulus of uniform differentiability, for *some* derivative -/
+  diff : ∃ F : Q → Q, ∀ (k : Nat) (x h : Q),
+      Qle a x = true → Qle x b = true →
+      Qle a (Q.add x h) = true → Qle (Q.add x h) b = true →
+      h.num ≠ 0 → Qle (Q.abs h) (D.toQ (D.pow2neg (δ k))) = true →
+      Q.ltN (Q.abs (Q.sub (Q.div (Q.sub (f (Q.add x h)) (f x)) h) (F x)))
+        (D.toQ (D.pow2neg k)) = 1
 
 namespace A1
 
@@ -141,11 +192,20 @@ def derivEval (A : A1) (k : Nat) (x : Q) : Q :=
 /-- `η₂` — a fixed constant with `2⁻ᵑ² ≤ (b−a)/2`. -/
 def eta2 (A : A1) : Nat := etaAux (Q.sub A.b A.a) 0 64
 
-/-- **The modulus of continuity of `f'`.**  `ω(k+5+δ(k+3))` handles the two
-evaluations of `f` inside the difference quotient at the shrunk step; `η₂`
-enforces the proximity that makes a common sign available. -/
+/-- **The modulus of continuity of `f'`.**  The two evaluations of `f` inside
+the difference quotient are divided by the step, so the estimate multiplies by
+`1/h₀`, and
+
+    h₀ = min(2⁻ᵟ⁽ᵏ⁺³⁾, (b−a)/4)   so   1/h₀ ≤ max(2^δ(k+3), 2^(η₂+1))
+
+using `2⁻ᵑ² ≤ (b−a)/2`.  **The second alternative is why `δ(k+3)` alone is not
+enough**: when the interval is short compared with `2⁻ᵟ`, the minimum is
+`(b−a)/4` and the reciprocal step is governed by `η₂`, which a `δ`-only index
+does not see.  Hence the `max` inside `ω`'s argument.  `η₂` appears a second
+time, at the outside, for the proximity that makes a common step admissible
+for both points. -/
 def omega' (A : A1) (k : Nat) : Nat :=
-  Nat.max (A.ω (k + 5 + A.δ (k + 3))) A.eta2
+  Nat.max (A.ω (k + 5 + Nat.max (A.δ (k + 3)) (A.eta2 + 1))) A.eta2
 
 /-! ## Lemma 2 — integrate `f'` by a Riemann sum
 
@@ -210,25 +270,93 @@ half of the bargain, exactly as in `UniformContinuity.lean`).
 
 def linEx : A1 :=
   { a := Q.ofNat 0, b := Q.ofNat 2, f := fun x ↦ Q.mul (Q.ofNat 3) x,
-    ω := fun k ↦ k + 2, δ := fun _ ↦ 0 }
+    ω := fun k ↦ k + 2, δ := fun _ ↦ 0,
+    ivl := by rw [Q.ltN_eq_one_iff, Q.val_ofNat, Q.val_ofNat]; norm_num,
+    cont := by
+      intro k x y _ _ _ _ h
+      rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val] at h
+      rw [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val]
+      simp only [Q.val_mul, Q.val_ofNat]
+      push_cast
+      rw [show (3 : Rat) * x.val - 3 * y.val = 3 * (x.val - y.val) by ring, abs_mul,
+        show |(3 : Rat)| = 3 by norm_num]
+      rw [quarter_pow] at h
+      have hp : (0 : Rat) < 1 / 2 ^ k := by positivity
+      linarith,
+    diff := ⟨fun _ ↦ Q.ofNat 3, by
+      intro k x h _ _ _ _ hh _
+      rw [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, Q.val_div _ _ hh, Q.val_sub,
+        toQ_pow2neg_val]
+      simp only [Q.val_mul, Q.val_ofNat, Q.val_add]
+      push_cast
+      have hv : h.val ≠ 0 := by
+        unfold Q.val
+        exact div_ne_zero (Int.cast_ne_zero.mpr hh) (ne_of_gt h.den_cast_pos)
+      rw [show (3 : Rat) * (x.val + h.val) - 3 * x.val = 3 * h.val by ring,
+        mul_div_assoc, div_self hv, mul_one, sub_self, abs_zero]
+      positivity⟩ }
 
+/-- `x²` on `[0,1]`.  Note `δ k = k+1`, not `k`: the difference quotient is
+`2x + h`, so its error *is* `|h|`, and `|h| ≤ 2⁻ᵟ⁽ᵏ⁾` has to give `|h| < 2⁻ᵏ`
+strictly.  With `δ k = k` the admissible step `|h| = 2⁻ᵏ` meets the bound with
+equality and misses.  The old value was off by one — the kind of thing only a
+field with a proof obligation catches. -/
 def sqEx : A1 :=
   { a := Q.ofNat 0, b := Q.ofNat 1, f := fun x ↦ Q.mul x x,
-    ω := fun k ↦ k + 1, δ := fun k ↦ k }
+    ω := fun k ↦ k + 1, δ := fun k ↦ k + 1,
+    ivl := by rw [Q.ltN_eq_one_iff, Q.val_ofNat, Q.val_ofNat]; norm_num,
+    cont := by
+      intro k x y hax hxb hay hyb h
+      rw [Qle_eq_true_iff, Q.val_ofNat] at hax hay
+      rw [Qle_eq_true_iff, Q.val_ofNat] at hxb hyb
+      rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val] at h
+      rw [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val]
+      push_cast at hax hay hxb hyb
+      simp only [Q.val_mul]
+      rw [halve_pow] at h
+      have hp : (0 : Rat) < 1 / 2 ^ k := by positivity
+      rcases eq_or_ne x.val y.val with he | he
+      · rw [he, sub_self, abs_zero]; exact hp
+      · have hd : 0 < |x.val - y.val| := abs_pos.mpr (sub_ne_zero.mpr he)
+        have hs : x.val + y.val < 2 := by
+          by_contra hc
+          push_neg at hc
+          exact he (by linarith)
+        rw [show x.val * x.val - y.val * y.val = (x.val + y.val) * (x.val - y.val) by ring,
+          abs_mul, abs_of_nonneg (by linarith : (0 : Rat) ≤ x.val + y.val)]
+        have := mul_lt_mul_of_pos_right hs hd
+        linarith,
+    diff := ⟨fun x ↦ Q.mul (Q.ofNat 2) x, by
+      intro k x h _ _ _ _ hh hb
+      rw [Qle_eq_true_iff, Q.val_abs, toQ_pow2neg_val] at hb
+      rw [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, Q.val_div _ _ hh, Q.val_sub,
+        toQ_pow2neg_val]
+      simp only [Q.val_mul, Q.val_ofNat, Q.val_add]
+      push_cast
+      have hv : h.val ≠ 0 := by
+        unfold Q.val
+        exact div_ne_zero (Int.cast_ne_zero.mpr hh) (ne_of_gt h.den_cast_pos)
+      rw [show (x.val + h.val) * (x.val + h.val) - x.val * x.val
+            = (2 * x.val + h.val) * h.val by ring,
+        mul_div_assoc, div_self hv, mul_one,
+        show 2 * x.val + h.val - 2 * x.val = h.val by ring]
+      rw [halve_pow] at hb
+      have hp : (0 : Rat) < 1 / 2 ^ k := by positivity
+      linarith [abs_nonneg h.val]⟩ }
 
 -- **Lemma 1's construction is right at instances.**  `f' = 3` exactly for the
--- linear case; for `x²` the quotient lands within `2⁻¹¹` of `2x` at `k = 8`.
+-- linear case; for `x²` the quotient lands within `2⁻¹²` of `2x` at `k = 8`.
 #guard linEx.derivEval 5 (Q.of 1 2) == Q.ofNat 3
 #guard linEx.derivEval 5 (Q.of 7 4) == Q.ofNat 3
-#guard sqEx.derivEval 8 (Q.of 1 2) == Q.of 2049 2048
-#guard sqEx.derivEval 8 (Q.ofNat 0) == Q.of 1 2048
+#guard sqEx.derivEval 8 (Q.of 1 2) == Q.of 4097 4096
+#guard sqEx.derivEval 8 (Q.ofNat 0) == Q.of 1 4096
 -- the endpoint-safe sign really does flip past the midpoint
 #guard (linEx.stepRight (Q.of 1 2), linEx.stepRight (Q.of 7 4)) == (true, false)
 
 -- **Lemma 2's construction is right at instances.**  Exact for the linear
 -- case; for `x²` the error is inside `2⁻ᵏ` with room to spare.
 #guard linEx.integral 0 == Q.ofNat 6
-#guard sqEx.integral 0 == Q.of 131057 131072
+#guard sqEx.integral 0 == Q.of 524257 524288
 #guard Q.ltN (Q.abs (Q.sub (sqEx.integral 0) (Q.ofNat 1)))
     (D.toQ (D.pow2neg 0)) == 1
 
@@ -239,10 +367,16 @@ is exponential in the requested precision even for these easy functions.  The
 following were run rather than guarded, since `#guard` would evaluate them at
 elaboration time:
 
-    sqEx.integral 0   N =   8192   error 15/131072      ≈ 1.1e-4
-    sqEx.integral 1   N =  32768   error 31/1048576     ≈ 3.0e-5
-    sqEx.integral 2   N = 131072   error 63/8388608     ≈ 7.5e-6
-    linEx.integral 0..3   N = 2048..16384   value 6 exactly
+    sqEx.integral 0   N =  16384   error 31/524288      ≈ 5.9e-5
+    sqEx.integral 1   N =  65536   error 63/4194304     ≈ 1.5e-5
+    sqEx.integral 2   N = 262144   (sample count computed, value not re-run)
+    linEx.integral 0..3   N = 4096..32768   value 6 exactly
+
+Every sample count above is **twice** what it was before `omega'` gained its
+`η₂` term and `sqEx.δ` was corrected.  That is the price of the two fixes, and
+it is paid in constant factors rather than in the growth rate: the count is
+still `2^ω'(m)`, exponential in the requested precision, which is §8's
+optimal-adequacy question and not something either fix was aimed at.
 
 Two honest remarks.  The errors are far *inside* the targets, which says the
 bookkeeping is very conservative, not that it is wrong.  And `sumQ` is written

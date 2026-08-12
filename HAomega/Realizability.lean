@@ -259,6 +259,12 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
   -- single-symbol imports of the first-order D5 design (`ordBump`,
   -- `ordPredLt`, `bumpNeZero`), each discharged in soundness by exactly one
   -- `OrdinalAssignment` theorem.  No congruence rules: Leibniz covers them.
+  /-- `t − t = 0` on the rationals — the fragment's first arithmetic conversion
+  rule for `Q`.  It is here and the ring laws are not because its soundness
+  needs no normal-form theory: the numerator collapses to `0` before `Q.of`
+  reaches a gcd.  See `Q.sub_self`. -/
+  | convQSubSelf {Γ as} {Δ : Ctx Γ as} (t : Tm Γ .rat) :
+      Deriv Δ (.eq (.qsub t t) (.qnat .zero))
   | convPredZero {Γ as} {Δ : Ctx Γ as} : Deriv Δ (.eq (.pred .zero) .zero)
   | convPredSucc {Γ as} {Δ : Ctx Γ as} (t : Tm Γ .nat) :
       Deriv Δ (.eq (.pred (.succ t)) t)

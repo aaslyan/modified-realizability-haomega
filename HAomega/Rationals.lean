@@ -116,6 +116,34 @@ matching `prec` and `olte`. -/
 def ltN (a b : Q) : Nat :=
   if Int.mul a.num (Int.ofNat b.den) < Int.mul b.num (Int.ofNat a.den) then 1 else 0
 
+/-! ## The one arithmetic law provable without a gcd theory
+
+`sub a a = zero` needs **no** normalization reasoning: the numerator collapses
+to `0` before `of` ever looks at a gcd, and `Nat.gcd 0 d = d` then short-circuits
+the whole normalization.  So this law — unlike the ring laws, which genuinely
+need uniqueness of normal forms — is provable here, in the core, with no
+Mathlib and no gcd machinery. -/
+
+theorem sub_self (a : Q) : sub a a = zero := by
+  have hd : a.den * a.den ≠ 0 := Nat.mul_ne_zero a.den_ne_zero a.den_ne_zero
+  have hnum : Int.add (Int.mul a.num (Int.ofNat a.den))
+      (Int.mul (Int.neg a.num) (Int.ofNat a.den)) = 0 := by
+    show a.num * (Int.ofNat a.den) + (-a.num) * (Int.ofNat a.den) = 0
+    rw [Int.neg_mul, Int.add_right_neg]
+  show of (Int.add (Int.mul a.num (Int.ofNat a.den))
+      (Int.mul (Int.neg a.num) (Int.ofNat a.den))) (a.den * a.den) = zero
+  rw [hnum]
+  unfold of
+  rw [if_neg hd]
+  simp only [Int.natAbs_zero, Nat.gcd_zero_left]
+  rw [if_neg hd, Nat.div_self (Nat.pos_of_ne_zero hd)]
+  have htd : Int.tdiv 0 (Int.ofNat (a.den * a.den)) = 0 := by
+    simp [Int.tdiv, Nat.zero_div]
+  rw [htd]
+  rfl
+
+#print axioms sub_self
+
 /-- Equality test, as a numeral. -/
 def eqN (a b : Q) : Nat := if a = b then 1 else 0
 

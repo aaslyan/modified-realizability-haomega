@@ -544,28 +544,64 @@ them down to the value layer — **`HAomega`'s first use of `soundness` to obtai
 an analytic fact**, and the join between the object language and the `E₀`/`E₁`
 machinery.
 
-### The fork this exposes, recorded not chosen
+### The fork this exposes — option 2 measured, and it splits
 
-Nothing about a real can be *derived* inside `Deriv`, because there are still
-no conversion rules for `Q` — not even `qsub t t = 0`, so the constant real is
-out of reach. The cost is now measured and it is small in the wrong place: a
-`Q` conversion rule needs **three** sites (a `Deriv` constructor, a `.star`
-case in `extract`, a case in `soundness`), since `eval_tracked` and `hsOf`
-match on `Tm` rather than `Deriv`. The obstacle is the third: `soundness` wants
-the value-level law, and those live in `QArith.lean`, which imports Mathlib,
-while `Realizability.lean` and `Soundness.lean` import neither.
+Three options were on record for giving `Deriv` arithmetic rules for `Q`:
+Mathlib in the core, hand-rolled choice-free laws, or conversion-by-evaluation.
+Option 2 has now been measured against a concrete target — `qsub t t = 0`, the
+first thing the constant real needs — rather than estimated.
 
-* **Mathlib in the core** — cheapest to write; every module downstream of
-  `Soundness` rebuilds against it. No axiom consequence, a large build-time one.
-* **Hand-roll the laws choice-free** — needs the `gcd` theory this development
-  has avoided because Mathlib's is choice-dependent.
-* **Conversion by evaluation** — one constructor taking `∀ e, s.eval e = t.eval e`.
-  Sound, no core imports, three lines. Also the one to be careful about: it
-  makes every semantically true equation derivable from a meta-level proof, so
-  a derivation stops being a finite syntactic object and the proof-as-program
-  reading weakens. That is a decision about what this development *is*.
+**The finding: option 2 is not one size.** It splits, and the dividing line is
+the same one the `den+1` refactor found: *whether both sides feed `Q.of`
+arguments that already agree.*
 
-Not taken. See `QAnalysis.lean` for the same note at the source.
+**Cheap — no normal-form theory at all.** Measured, in the core, with no
+Mathlib:
+
+    'HAomega.Q.sub_self'  depends on axioms: [propext]
+
+`sub a a = zero` needs no gcd reasoning because the numerator collapses to `0`
+*before* `Q.of` reaches a gcd, and `Nat.gcd 0 d = d` then short-circuits the
+normalization. Four lines. The same holds for anything where the two sides give
+`Q.of` equal arguments up to `Int`/`Nat` commutativity — probed, not assumed:
+
+    Q.add_comm  (congr + Int.add_comm + Nat.mul_comm)   [propext]
+    Q.mul_comm  (congr + Int.mul_comm + Nat.mul_comm)   [propext]
+    Q.ltN_self  (Int.lt_irrefl)                         [propext]
+
+**Not cheap — unchanged in size.** Associativity and distributivity are *not*
+in that class and gain nothing from this route. There an inner operation's
+output is fed to an outer one, so the inner `Q.of` has already normalized, and
+relating the results needs uniqueness of normal forms — `Q.of_eq_of`, which is
+exactly where the gcd theory lives. That is the original quotient-plan-sized
+work, undiminished.
+
+So option 2 buys a characterizable class of laws very cheaply and does not
+scale past it. It is not a path to a general arithmetic rule base; it is a way
+to add particular rules when the identity degenerates.
+
+**What landed.** One rule, at the three sites a `Deriv` rule needs:
+
+    Realizability.lean   | convQSubSelf (t : Tm Γ .rat) : Deriv Δ (.eq (.qsub t t) (.qnat .zero))
+    Extraction.lean      | .convQSubSelf _ => .star
+    Soundness.lean       | convQSubSelf t => … exact Q.sub_self _
+
+Invariants unmoved, reprinted from the build:
+
+    'HAomega.extract'    does not depend on any axioms
+    'HAomega.soundness'  depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.Tm.eval'    depends on axioms: [propext, Quot.sound]
+
+**What this does *not* unblock, stated plainly.** The constant real is still
+not derivable. Its Cauchy proof is `q − q = 0 < eps`, and the new rule supplies
+only the first step; `0 < eps` is an *order* fact about a particular bound, not
+an identity, so nothing in the cheap class reaches it. That needs either a rule
+carrying a positivity hypothesis or one about a specific bound term — neither
+measured here, since the brief was to work backward from `qsub t t = 0` and no
+further.
+
+Options 1 and 3 remain open and untouched; the choice between them is not
+defaulted into.
 
 ### The negative half — not formalizable here, and the reason is measurable
 

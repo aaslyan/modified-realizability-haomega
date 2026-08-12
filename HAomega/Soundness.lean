@@ -272,6 +272,7 @@ theorem soundness : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {
       exact Realizability.oltN_eq_one_iff.mpr
         (olt_ordOfHydraN_playAt (p.eval e) (n.eval e) (c.eval e)
           (fun h0 ↦ hz () h0))
+  | convQSubSelf t => intro e ε h; exact Q.sub_self _
   | convPredZero => intro e ε h; rfl
   | convPredSucc t => intro e ε h; rfl
   | convGoodZero s => intro e ε h; rfl

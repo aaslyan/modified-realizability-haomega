@@ -215,7 +215,6 @@ theorem Q.add_neg (a : Q) : Q.add a (Q.neg a) = Q.zero := by
     simp
   rw [h]; rfl
 
-theorem Q.sub_self (a : Q) : Q.sub a a = Q.zero := Q.add_neg a
 
 /-! ## The order bridge
 

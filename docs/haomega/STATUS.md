@@ -491,14 +491,39 @@ since `riemann_split` is stated for two lengths laid end to end.
 every `x ∈ [a,b]`: `ω` says `f` moves by less than `1` per step, and the walk
 from `a` to `x` telescopes.
 
-**What is left is the assembly**, and it is not written: instantiating `E1.cont`
-from `fBound`, and `E1.diff` from `riemann_split` + `riemann_uniform_close` +
-`eftc1_quotient`, with `dq k h` chosen so the two comparison errors survive
-division by `h` — the `2L·2⁻ᵏ′/|h| ≤ 2⁻ᵏ` step.
+**The assembly, half done.**
 
-So `A0.intE0` still stops at `E₀`, and "`∫f` is `A₁`-adequate" as a single
-sentence is still **not formalized**. Every ingredient it needs is now proved;
-none of them has been put together.
+    'HAomega.A0.intEv_cont'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+`E1.cont` for the integral is proved, with modulus `A0.intOmega`, and it holds
+at *every* level — no condition on `n`. The estimate splits
+
+    (u/N)·ΣF − (v/N)·ΣG  =  ((u−v)/N)·ΣF + (v/N)·Σ(F−G)
+
+so that `fBound_spec` bounds the first term by `M·|x−y|` and `cont` bounds the
+second by `|v|·2⁻ᵏ`; `intOmega` carries one term for each.
+
+**`E1.diff` is not done.** Every ingredient it needs is proved and the chain is
+written down in `QAnalysis.lean`:
+
+    intEv n (x+h) − intEv n x   ≈  riemann a (x−a+h) (N₁+N₂) − riemann a (x−a) N₁
+                                =  riemann (a+(x−a)) h N₂
+                                ≈  h · f x
+
+using `riemann_uniform_close` twice, then `riemann_split` (via `split_widths`
+and `split_mesh`), then `eftc1_quotient`. The two approximations cost `2L·2⁻ᴷ`
+each, and dividing by `h` makes that `4L·2⁻ᴷ/|h|` — which is exactly what
+`E1.dq` exists to absorb.
+
+Two pieces of that chain are still unwritten: a **congruence** lemma (the two
+sides produce `riemann` at equal-valued but distinct `Q` terms, which must be
+reconciled through `f_val_congr`), and the **`h < 0` orientation** (`riemann_split`
+lays two lengths end to end and its width hypothesis forces a common sign, so a
+negative step splits `[a,x]` as `[a,x+h] ++ [x+h,x]`, and the quotient is then
+moved from `f (x+h)` to `f x` by one more use of `cont`).
+
+So `A0.intE0` still stops at `E₀`, and the one-sentence `A₁`-adequacy of the
+integral is still **not formalized**.
 
 **Not claimed:** the negative half, `A₀ ⊭ EFTC2`. That is Myhill's theorem, a
 citation here, not a formalization — so "`A₁ ⊨ EFTC2`" is proved and the

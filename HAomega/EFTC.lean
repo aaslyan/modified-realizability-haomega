@@ -409,6 +409,15 @@ def bnd (A : A0) : Nat := Nat.max 1 (ceilNatQ (Q.mul A.len (twoPowQ (A.ω 0))))
 `f` by less than `1`. -/
 def fBound (A : A0) : Q := Q.add (Q.abs (A.f A.a)) (Q.ofNat A.bnd)
 
+/-- `⌈log₂ M⌉` for the bound `M = fBound` on `|f|`. -/
+def mLog (A : A0) : Nat := ceilLog2Q A.fBound
+
+/-- **The modulus of continuity of `∫f`.**  Two terms, for the two halves of
+the estimate: `ℓ` pays for the tail of the sum, `mLog` for the Lipschitz factor
+`M`, since `|∫ₐˣ − ∫ₐʸ| ≲ M·|x−y|`. -/
+def intOmega (A : A0) (k : Nat) : Nat :=
+  Nat.max (A.ω (k + 1 + A.ell)) (k + 1 + A.mLog)
+
 /-- **The integral as an approximating evaluator**: `intEv n x ≈ ∫ₐˣ f`. -/
 def intEv (A : A0) (n : Nat) (x : Q) : Q := A.riemann A.a (Q.sub x A.a) (A.evN n)
 

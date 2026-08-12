@@ -288,6 +288,9 @@ satisfies `2⁻ᵑ² ≤ (b−a)/2`, a *lower* bound on the step (the reciprocal
 the estimate multiplies by), and a step admissible for **both** points. -/
 
 /-- `2⁻ᵐ ≤ 2⁻ⁿ` when `n ≤ m`. -/
+theorem abs_add_le' (a b : Rat) : |a + b| ≤ |a| + |b| := by
+  simpa using abs_sub_le a 0 (-b)
+
 theorem inv_pow_le {m n : Nat} (h : n ≤ m) : (1 : Rat) / 2 ^ m ≤ 1 / 2 ^ n := by
   apply one_div_le_one_div_of_le (by positivity)
   exact pow_le_pow_right₀ (by norm_num) h
@@ -1553,6 +1556,141 @@ theorem A0.fBound_spec (A : A0) {x : Q}
 
 #print axioms A0.fBound_spec
 
+/-! ### `cont` for the integral
+
+`|∫ₐˣ f − ∫ₐʸ f| ≲ M·|x−y|`, at the level of the approximants.  Splitting
+
+    (u/N)·ΣF − (v/N)·ΣG  =  ((u−v)/N)·ΣF + (v/N)·Σ(F−G)
+
+puts the two halves of the estimate on the two terms: the first is bounded by
+`|x−y|·M` using `fBound_spec`, the second by `|v|·2⁻ᵏ` using `cont` on each
+sample.  Note it holds at **every** level, with no condition on `n`. -/
+
+theorem A0.intEv_cont (A : A0) (k n : Nat) (x y : Q)
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val)
+    (hya : A.a.val ≤ y.val) (hyb : y.val ≤ A.b.val)
+    (hxy : |x.val - y.val| ≤ 1 / 2 ^ A.intOmega k) :
+    |(A.intEv n x).val - (A.intEv n y).val| ≤ 1 / 2 ^ k := by
+  have hN := A.evN_pos n
+  have hNR : (0 : Rat) < (A.evN n : Rat) := by exact_mod_cast hN
+  have hab := le_of_lt ((Q.ltN_eq_one_iff _ _).mp A.ivl)
+  have hxab : A.a.val + (Q.sub x A.a).val = x.val := by rw [Q.val_sub]; ring
+  have hyab : A.a.val + (Q.sub y A.a).val = y.val := by rw [Q.val_sub]; ring
+  have hEx : (A.intEv n x).val
+      = (Q.sub x A.a).val / (A.evN n : Rat) * ∑ i ∈ Finset.range (A.evN n),
+          (A.f (rPt A.a (Q.sub x A.a) (A.evN n) i)).val := by
+    rw [A0.intEv, A0.riemann, Q.val_mul, sumQ_val, rStep_val _ hN]
+  have hEy : (A.intEv n y).val
+      = (Q.sub y A.a).val / (A.evN n : Rat) * ∑ i ∈ Finset.range (A.evN n),
+          (A.f (rPt A.a (Q.sub y A.a) (A.evN n) i)).val := by
+    rw [A0.intEv, A0.riemann, Q.val_mul, sumQ_val, rStep_val _ hN]
+  -- membership of every sample
+  have hmx : ∀ i, i ≤ A.evN n → A.a.val ≤ (rPt A.a (Q.sub x A.a) (A.evN n) i).val
+      ∧ (rPt A.a (Q.sub x A.a) (A.evN n) i).val ≤ A.b.val := fun i hi ↦
+    rPt_mem A hN i hi le_rfl hab (by rw [hxab]; exact hxa) (by rw [hxab]; exact hxb)
+  have hmy : ∀ i, i ≤ A.evN n → A.a.val ≤ (rPt A.a (Q.sub y A.a) (A.evN n) i).val
+      ∧ (rPt A.a (Q.sub y A.a) (A.evN n) i).val ≤ A.b.val := fun i hi ↦
+    rPt_mem A hN i hi le_rfl hab (by rw [hyab]; exact hya) (by rw [hyab]; exact hyb)
+  -- first half: `|ΣF| ≤ N·M`
+  have hSF : |∑ i ∈ Finset.range (A.evN n),
+      (A.f (rPt A.a (Q.sub x A.a) (A.evN n) i)).val| ≤ (A.evN n : Rat) * A.fBound.val := by
+    refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
+    have hle := Finset.sum_le_card_nsmul (Finset.range (A.evN n))
+      (fun i ↦ |(A.f (rPt A.a (Q.sub x A.a) (A.evN n) i)).val|) A.fBound.val
+      (fun i hi ↦ A.fBound_spec (hmx i (le_of_lt (Finset.mem_range.mp hi))).1
+        (hmx i (le_of_lt (Finset.mem_range.mp hi))).2)
+    rwa [Finset.card_range, nsmul_eq_mul] at hle
+  -- second half: samples at matching indices are close
+  have hFG : ∀ i ∈ Finset.range (A.evN n),
+      |(A.f (rPt A.a (Q.sub x A.a) (A.evN n) i)).val
+        - (A.f (rPt A.a (Q.sub y A.a) (A.evN n) i)).val| < 1 / 2 ^ (k + 1 + A.ell) := by
+    intro i hi
+    have hlt := Finset.mem_range.mp hi
+    refine cont_val A _ _ _ (hmx i (le_of_lt hlt)).1 (hmx i (le_of_lt hlt)).2
+      (hmy i (le_of_lt hlt)).1 (hmy i (le_of_lt hlt)).2 ?_
+    have hd : (rPt A.a (Q.sub x A.a) (A.evN n) i).val
+        - (rPt A.a (Q.sub y A.a) (A.evN n) i).val
+        = (i : Rat) / (A.evN n : Rat) * (x.val - y.val) := by
+      rw [rPt_val _ _ hN, rPt_val _ _ hN, Q.val_sub, Q.val_sub]
+      ring
+    have ht0 : (0 : Rat) ≤ (i : Rat) / (A.evN n : Rat) :=
+      div_nonneg (Nat.cast_nonneg i) (le_of_lt hNR)
+    have ht1 : (i : Rat) / (A.evN n : Rat) ≤ 1 := by
+      rw [div_le_one hNR]; exact_mod_cast le_of_lt hlt
+    rw [hd, abs_mul, abs_of_nonneg ht0]
+    calc (i : Rat) / (A.evN n : Rat) * |x.val - y.val| ≤ 1 * |x.val - y.val| :=
+          mul_le_mul_of_nonneg_right ht1 (abs_nonneg _)
+      _ = |x.val - y.val| := one_mul _
+      _ ≤ 1 / 2 ^ A.intOmega k := hxy
+      _ ≤ 1 / 2 ^ A.ω (k + 1 + A.ell) := inv_pow_le (Nat.le_max_left _ _)
+  have hSFG : |∑ i ∈ Finset.range (A.evN n),
+      ((A.f (rPt A.a (Q.sub x A.a) (A.evN n) i)).val
+        - (A.f (rPt A.a (Q.sub y A.a) (A.evN n) i)).val)|
+      ≤ (A.evN n : Rat) * (1 / 2 ^ (k + 1 + A.ell)) := by
+    refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
+    have hle := Finset.sum_le_card_nsmul (Finset.range (A.evN n))
+      (fun i ↦ |(A.f (rPt A.a (Q.sub x A.a) (A.evN n) i)).val
+        - (A.f (rPt A.a (Q.sub y A.a) (A.evN n) i)).val|)
+      (1 / 2 ^ (k + 1 + A.ell)) (fun i hi ↦ le_of_lt (hFG i hi))
+    rwa [Finset.card_range, nsmul_eq_mul] at hle
+  -- assemble
+  set SF := ∑ i ∈ Finset.range (A.evN n),
+    (A.f (rPt A.a (Q.sub x A.a) (A.evN n) i)).val with hSFdef
+  set SG := ∑ i ∈ Finset.range (A.evN n),
+    (A.f (rPt A.a (Q.sub y A.a) (A.evN n) i)).val with hSGdef
+  have hSFG' : |SF - SG| ≤ (A.evN n : Rat) * (1 / 2 ^ (k + 1 + A.ell)) := by
+    rw [hSFdef, hSGdef, ← Finset.sum_sub_distrib]
+    exact hSFG
+  have hdec : (A.intEv n x).val - (A.intEv n y).val
+      = ((Q.sub x A.a).val - (Q.sub y A.a).val) / (A.evN n : Rat) * SF
+        + (Q.sub y A.a).val / (A.evN n : Rat) * (SF - SG) := by
+    rw [hEx, hEy]; ring
+  have huv : (Q.sub x A.a).val - (Q.sub y A.a).val = x.val - y.val := by
+    rw [Q.val_sub, Q.val_sub]; ring
+  have hM : A.fBound.val ≤ 2 ^ A.mLog := ceilLog2Q_spec A.fBound
+  have hMpos : (0 : Rat) ≤ A.fBound.val :=
+    le_trans (abs_nonneg _) (A.fBound_spec hxa hxb)
+  have hvL : |(Q.sub y A.a).val| ≤ 2 ^ A.ell := by
+    rw [Q.val_sub, abs_of_nonneg (by linarith)]
+    have h1 : A.len.val ≤ 2 ^ A.ell := ceilLog2Q_spec A.len
+    rw [A0.len_val] at h1
+    linarith
+  have b1 : |((Q.sub x A.a).val - (Q.sub y A.a).val) / (A.evN n : Rat) * SF|
+      ≤ |x.val - y.val| * A.fBound.val := by
+    rw [abs_mul, abs_div, abs_of_pos hNR, huv]
+    calc |x.val - y.val| / (A.evN n : Rat) * |SF|
+        ≤ |x.val - y.val| / (A.evN n : Rat) * ((A.evN n : Rat) * A.fBound.val) :=
+          mul_le_mul_of_nonneg_left hSF (by positivity)
+      _ = |x.val - y.val| * A.fBound.val := by field_simp
+  have b2 : |(Q.sub y A.a).val / (A.evN n : Rat) * (SF - SG)|
+      ≤ (2 : Rat) ^ A.ell * (1 / 2 ^ (k + 1 + A.ell)) := by
+    rw [abs_mul, abs_div, abs_of_pos hNR]
+    calc |(Q.sub y A.a).val| / (A.evN n : Rat) * |SF - SG|
+        ≤ |(Q.sub y A.a).val| / (A.evN n : Rat)
+            * ((A.evN n : Rat) * (1 / 2 ^ (k + 1 + A.ell))) :=
+          mul_le_mul_of_nonneg_left hSFG' (by positivity)
+      _ = |(Q.sub y A.a).val| * (1 / 2 ^ (k + 1 + A.ell)) := by field_simp
+      _ ≤ (2 : Rat) ^ A.ell * (1 / 2 ^ (k + 1 + A.ell)) :=
+          mul_le_mul_of_nonneg_right hvL (by positivity)
+  have e1 : |x.val - y.val| * A.fBound.val ≤ 1 / 2 ^ (k + 1) := by
+    have hxyM : |x.val - y.val| ≤ 1 / 2 ^ (k + 1 + A.mLog) :=
+      le_trans hxy (inv_pow_le (Nat.le_max_right _ _))
+    have h1 : |x.val - y.val| * A.fBound.val
+        ≤ (1 / 2 ^ (k + 1 + A.mLog)) * 2 ^ A.mLog :=
+      mul_le_mul hxyM hM hMpos (by positivity)
+    have h2 : (1 : Rat) / 2 ^ (k + 1 + A.mLog) * 2 ^ A.mLog = 1 / 2 ^ (k + 1) := by
+      rw [pow_add]; field_simp
+    linarith
+  have e2 : (2 : Rat) ^ A.ell * (1 / 2 ^ (k + 1 + A.ell)) = 1 / 2 ^ (k + 1) := by
+    rw [pow_add]; field_simp
+  have e3 : (1 : Rat) / 2 ^ (k + 1) + 1 / 2 ^ (k + 1) = 1 / 2 ^ k := by
+    rw [pow_succ]; field_simp; ring
+  rw [hdec]
+  refine le_trans (abs_add_le' _ _) ?_
+  linarith
+
+#print axioms A0.intEv_cont
+
 /-- **Conservativity for `E₁`**: every exact `A₁` is an approximating one, via
 the constant family.  `dq := 0` — an exact evaluator has no error for the
 difference quotient to amplify, which is precisely the degeneracy the
@@ -1582,25 +1720,33 @@ def A1.toE1 (A : A1) : E1 :=
 
 /-! ### What `∫f` still needs to be an `E₁`
 
-Of the three items recorded last round, two are now done.
+**`E1.cont` is done** — `A0.intEv_cont`, with modulus `A0.intOmega`, and it
+holds at *every* level, needing no condition on `n`.
 
-* **The counts** — `splitScale`/`splitLo`/`splitHi`, with `split_widths` (the
-  cell widths agree, which is `riemann_split`'s hypothesis) and `split_mesh`
-  (the mesh meets its target).  These are sign-agnostic: `natAbs` makes them
-  describe the interval of length `|h|`, whichever side of the point it lies
-  on.  What the *assembly* still has to do is orient that interval — feed
-  `riemann_split` the piece as a positive length — since `riemann_split` is
-  stated for `h₁, h₂` laid end to end.
-* **The bound on `|f|`** — `A0.fBound` and `A0.fBound_spec`.
+**`E1.diff` is not.**  The chain is set out and every ingredient is proved;
+what is missing is the chain itself:
 
-What is left is the **assembly**, and it is not written: instantiating `E1`'s
-`cont` from `fBound`, and `E1.diff` from `riemann_split` +
-`riemann_uniform_close` + `eftc1_quotient`, with `dq k h` chosen so the two
-comparison errors survive division by `h` — the `2L·2⁻ᵏ′/|h| ≤ 2⁻ᵏ` step.
+    intEv n (x+h) − intEv n x                            two grids of `evN n` cells
+      ≈ riemann a (x−a+h) (N₁+N₂) − riemann a (x−a) N₁    riemann_uniform_close, twice
+      = riemann (a+(x−a)) h N₂                            riemann_split, via split_widths
+      ≈ h · f x                                           eftc1_quotient
 
-So `A0.intE0` still stops at `E₀` and "`∫f` is `A₁`-adequate" as a single
-sentence is still not formalized.  Every ingredient it needs is now proved;
-none of them has been put together. -/
+with `N₁ = splitLo`, `N₂ = splitHi` and `split_mesh` supplying the meshes.  The
+two `≈`s each cost `2L·2⁻ᴷ`, and dividing by `h` turns that into `4L·2⁻ᴷ/|h|`,
+which is what `dq k h` has to absorb — take `K` past `k+3+ℓ+⌈log₂(1/|h|)⌉`.
+
+Two things the chain still needs written:
+
+* a **congruence** lemma — `intEv n (x+h)` is `riemann a (Q.sub (Q.add x h) A.a)`
+  while `riemann_split` produces `riemann a (Q.add (Q.sub x A.a) h)`, equal in
+  value but different terms, so the sums must be shown equal through
+  `f_val_congr`, as everywhere else in this file;
+* the **`h < 0` orientation** — `riemann_split` lays two lengths end to end and
+  its width hypothesis forces them to share a sign, so a negative step splits
+  `[a,x]` as `[a,x+h] ++ [x+h,x]` instead, and the quotient is compared to
+  `f (x+h)` and then moved to `f x` by one more use of `cont`.
+
+So `A0.intE0` still stops at `E₀`. -/
 
 #print axioms A1.toE1
 #print axioms A0.toE0

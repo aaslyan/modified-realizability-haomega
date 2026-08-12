@@ -528,6 +528,45 @@ with `riemann_uniform_close` twice, `riemann_split` via `split_widths` and
 dependence on `h` is the one field `A₁` had no analogue of, and this is where
 it earns its place.
 
+### Reals in the object language
+
+A real is a Cauchy family of rationals with a rate, and the object language
+**already has the type**: `Ty` is closed under `→`, so a real is a term of type
+`nat → rat`. No new base type, no new rule.
+
+    'HAomega.realCauchy_sound'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+`realUpperF`/`realLowerF` are the Cauchy formulas (two one-sided `qlt` bounds
+rather than an absolute value, so no `recNat`-defined `abs` is involved; the
+bound is a parameter, and the gap `d` is quantified instead of `m ≥ n`, so no
+order on `nat` is needed). `realCauchy_sound` carries a closed derivation of
+them down to the value layer — **`HAomega`'s first use of `soundness` to obtain
+an analytic fact**, and the join between the object language and the `E₀`/`E₁`
+machinery.
+
+### The fork this exposes, recorded not chosen
+
+Nothing about a real can be *derived* inside `Deriv`, because there are still
+no conversion rules for `Q` — not even `qsub t t = 0`, so the constant real is
+out of reach. The cost is now measured and it is small in the wrong place: a
+`Q` conversion rule needs **three** sites (a `Deriv` constructor, a `.star`
+case in `extract`, a case in `soundness`), since `eval_tracked` and `hsOf`
+match on `Tm` rather than `Deriv`. The obstacle is the third: `soundness` wants
+the value-level law, and those live in `QArith.lean`, which imports Mathlib,
+while `Realizability.lean` and `Soundness.lean` import neither.
+
+* **Mathlib in the core** — cheapest to write; every module downstream of
+  `Soundness` rebuilds against it. No axiom consequence, a large build-time one.
+* **Hand-roll the laws choice-free** — needs the `gcd` theory this development
+  has avoided because Mathlib's is choice-dependent.
+* **Conversion by evaluation** — one constructor taking `∀ e, s.eval e = t.eval e`.
+  Sound, no core imports, three lines. Also the one to be careful about: it
+  makes every semantically true equation derivable from a meta-level proof, so
+  a derivation stops being a finite syntactic object and the proof-as-program
+  reading weakens. That is a decision about what this development *is*.
+
+Not taken. See `QAnalysis.lean` for the same note at the source.
+
 ### The negative half — not formalizable here, and the reason is measurable
 
 `A₀ ⊭ EFTC2` (Myhill: a computable `C¹` function with non-computable

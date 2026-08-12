@@ -1556,6 +1556,104 @@ theorem A0.fBound_spec (A : A0) {x : Q}
 
 #print axioms A0.fBound_spec
 
+/-! ## Reals in the object language
+
+A real is a Cauchy family of rationals with an explicit rate, and the object
+language **already has the type**: `Ty` is closed under `→`, so a real is a
+term of type `nat → rat`.  No new base type is needed and no new rule — what is
+new is the *formula* saying such a term is Cauchy, and the bridge carrying a
+derivation of it down to the value layer, where the `E₀`/`E₁` machinery lives.
+
+The bound is a parameter rather than `2⁻ⁿ` baked in.  That keeps the formula
+free of any commitment about how the rate is computed, and it is what makes the
+bridge below a statement about *any* derivation rather than about one term.
+
+The gap `d` is quantified instead of `m ≥ n`, so no order on `nat` is required —
+the same device `StrongInduction` uses in the first-order development. -/
+
+/-- A real, as an object-language term. -/
+abbrev RealTm (Γ : List Ty) : Type := Tm Γ (.arrow .nat .rat)
+
+/-- `∀n ∀d. x n − x (n+d) < eps n` -/
+def realUpperF {Γ : List Ty} (x eps : RealTm Γ) :
+    Formula Γ (.arrow .nat (.arrow .nat .unit)) :=
+  .all .nat (.all .nat
+    (.eq (.qlt (.qsub (.app (x.wk.wk) (.var (.there .here)))
+          (.app (x.wk.wk) (.add (.var (.there .here)) (.var .here))))
+        (.app (eps.wk.wk) (.var (.there .here))))
+      (.succ .zero)))
+
+/-- `∀n ∀d. x (n+d) − x n < eps n` -/
+def realLowerF {Γ : List Ty} (x eps : RealTm Γ) :
+    Formula Γ (.arrow .nat (.arrow .nat .unit)) :=
+  .all .nat (.all .nat
+    (.eq (.qlt (.qsub (.app (x.wk.wk) (.add (.var (.there .here)) (.var .here)))
+          (.app (x.wk.wk) (.var (.there .here))))
+        (.app (eps.wk.wk) (.var (.there .here))))
+      (.succ .zero)))
+
+theorem realizes_nil : Realizes (Ctx.nil (Γ := [])) Env.nil Env.nil := by
+  intro τ v; cases v
+
+/-- A closed term does not see its environment —  is a subsingleton. -/
+theorem eval_closed_env {τ : Ty} (t : Tm [] τ) (E : Env []) :
+    Tm.eval t E = Tm.eval t Env.nil := by
+  have h : E = Env.nil := by funext σ v; cases v
+  rw [h]
+
+/-- **The bridge.**  A closed derivation that a term is Cauchy yields the
+value-level Cauchy property of the function it denotes — `HAomega`'s first use
+of `soundness` to obtain an analytic fact, and the join between the object
+language and the `E₀` layer. -/
+theorem realCauchy_sound {x eps : RealTm []}
+    (Du : Deriv Ctx.nil (realUpperF x eps)) (Dl : Deriv Ctx.nil (realLowerF x eps))
+    (n d : Nat) :
+    |(Tm.eval x Env.nil n).val - (Tm.eval x Env.nil (n + d)).val|
+      < (Tm.eval eps Env.nil n).val := by
+  have hu := soundness Du Env.nil Env.nil realizes_nil n d
+  have hl := soundness Dl Env.nil Env.nil realizes_nil n d
+  simp only [MR, Tm.eval, Tm.wk, Tm.eval_rename, Env.cons] at hu hl
+  rw [eval_closed_env x, eval_closed_env eps] at hu hl
+  rw [Q.ltN_eq_one_iff, Q.val_sub] at hu hl
+  rw [abs_lt]
+  exact ⟨by linarith, by linarith⟩
+
+#print axioms realCauchy_sound
+
+/-! ### What reals in the object language still cannot do
+
+The layer above is definitional plus one bridge.  **Nothing about a real can be
+*derived* inside `Deriv`**, because the object language still has no conversion
+rules for `Q`: not `qsub t t = 0`, not commutativity, nothing.  Even the
+constant real — `fun _ ↦ q`, whose Cauchy proof is `q − q = 0 < eps` — is out
+of reach.
+
+The cost of fixing that is now measured, and it is small in the wrong place.  A
+`Q` conversion rule needs **three** sites, not the seven a term-level symbol
+needs: a `Deriv` constructor, a `.star` case in `extract`, and a case in
+`soundness`.  `eval_tracked` and `hsOf` match on `Tm`, not `Deriv`, so they are
+untouched.  The obstacle is the third site: `soundness`'s case wants the
+value-level law — `Q.add_comm`, `Q.add_assoc`, … — and those live in
+`QArith.lean`, which imports `Mathlib`, whereas `Realizability.lean` and
+`Soundness.lean` import neither.  So the fork is architectural, not laborious:
+
+* **Mathlib in the core.**  Cheapest to write, and every module downstream of
+  `Soundness` then rebuilds against it.  No axiom consequence — `soundness`
+  already reports `Classical.choice` — but a large build-time commitment for
+  what is currently a leaf-only dependency.
+* **Hand-roll the laws choice-free** in `Rationals.lean`, which means a `gcd`
+  theory this development has so far avoided precisely because Mathlib's is
+  choice-dependent.
+* **A conversion-by-evaluation rule** — one constructor `(h : ∀ e, s.eval e =
+  t.eval e) → Deriv Δ (.eq s t)` — which is sound, needs no core imports, and
+  is three lines.  It is also the one to be most careful about: it makes *every
+  semantically true equation* derivable from a meta-level proof, so a
+  derivation stops being a finite syntactic object and the proof-as-program
+  reading weakens.  That is a decision about what this development *is*, not an
+  optimization, and it is not mine to take silently.
+
+Recorded rather than chosen. -/
+
 /-! ## The negative half, and why it is not here
 
 `A₀ ⊭ EFTC2` — Myhill's theorem: a computable `C¹` function whose derivative is

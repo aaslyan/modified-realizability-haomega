@@ -1556,6 +1556,53 @@ theorem A0.fBound_spec (A : A0) {x : Q}
 
 #print axioms A0.fBound_spec
 
+/-! ## The negative half, and why it is not here
+
+`A₀ ⊭ EFTC2` — Myhill's theorem: a computable `C¹` function whose derivative is
+not computable, so no procedure recovers `f'` from `A₀`-data.  It is a citation
+in this development, and the reason is not that the construction is long.
+
+**The statement is not expressible here, and as phrased it is false.**  `A₀ ⊭
+EFTC2` quantifies over *procedures*; this development has no notion of one at
+the analysis layer.  `A0.f : Q → Q` is an arbitrary Lean function, and `A1`'s
+extra content over `A0` is the single datum `δ` plus a `Prop`.  So whenever the
+analytic content holds — `f` really is uniformly differentiable — classical
+logic hands over `δ` and the `A₁` is built.  `A0.toA1` does exactly that, and
+`eftc2_of_unifDeriv` then applies `eftc2_thm` to it:
+
+**the `A₀`/`A₁` separation collapses in this model.**  That is not a defect
+being confessed; it is the precise content of the negative half.  The
+separation is a *computability* phenomenon, and a model with no computability
+predicate cannot see it. `A0.toA1` is the proof that it cannot.
+
+**What formalizing it would take**, so the size is on the record: a model of
+computation attached to the analysis layer — either computable analysis in
+Mathlib, which does not exist there, or real functions represented inside this
+development's own object language, where `extract` would supply the notion of
+procedure.  The second is the one that fits the project, and it is a programme:
+`Deriv` currently has no reals, and Myhill's `f` is built from a
+computably-enumerable non-computable set, which the object language has no way
+to name.  Neither is a session's work, and neither is started. -/
+
+/-- **Every uniformly differentiable `A₀` is an `A₁`.**  Classically: `δ` is
+chosen, not computed.  This is why the negative half cannot be stated here. -/
+noncomputable def A0.toA1 (A : A0) (h : HasUnifDeriv A) : A1 :=
+  { toA0 := A
+    δ := h.choose
+    diff := h.choose_spec }
+
+/-- **`A₀ ⊨ EFTC2` in this model** — the opposite of the negative half, and
+provable, because `A0.toA1` supplies the missing datum by choice. -/
+theorem A0.eftc2_of_unifDeriv (A : A0) (h : HasUnifDeriv A) :
+    EFTC2Claim (A.toA1 h) := eftc2_thm _
+
+/-- The `A₀`-part is untouched: the `A₁` above represents the same `f`, `ω` and
+interval.  Without this the collapse above would be about different data. -/
+theorem A0.toA1_toA0 (A : A0) (h : HasUnifDeriv A) : (A.toA1 h).toA0 = A := rfl
+
+#print axioms A0.toA1
+#print axioms A0.eftc2_of_unifDeriv
+
 /-! ### Congruence: equal values, different terms
 
 Everywhere in this file a `Q` carries more information than the rational it

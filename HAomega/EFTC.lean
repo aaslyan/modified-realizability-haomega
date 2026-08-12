@@ -418,6 +418,16 @@ the estimate: `ℓ` pays for the tail of the sum, `mLog` for the Lipschitz facto
 def intOmega (A : A0) (k : Nat) : Nat :=
   Nat.max (A.ω (k + 1 + A.ell)) (k + 1 + A.mLog)
 
+/-- `A₀`-data that happens to be uniformly differentiable — `A1.diff` with the
+modulus existentially quantified rather than supplied. -/
+def HasUnifDeriv (A : A0) : Prop :=
+  ∃ δ : Nat → Nat, ∃ F : Q → Q, ∀ (k : Nat) (x h : Q),
+    Qle A.a x = true → Qle x A.b = true →
+    Qle A.a (Q.add x h) = true → Qle (Q.add x h) A.b = true →
+    h.num ≠ 0 → Qle (Q.abs h) (D.toQ (D.pow2neg (δ k))) = true →
+    Q.ltN (Q.abs (Q.sub (Q.div (Q.sub (A.f (Q.add x h)) (A.f x)) h) (F x)))
+      (D.toQ (D.pow2neg k)) = 1
+
 /-- The step modulus of `∫f`.  By `EFTC1` this is `ω` itself; the shifts pay
 for the triangle inequality in the negative-step case. -/
 def intDelta (A : A0) (k : Nat) : Nat := Nat.max (A.ω (k + 1)) (A.ω (k + 2))

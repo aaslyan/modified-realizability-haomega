@@ -528,9 +528,41 @@ with `riemann_uniform_close` twice, `riemann_split` via `split_widths` and
 dependence on `h` is the one field `A₁` had no analogue of, and this is where
 it earns its place.
 
-**Not claimed:** the negative half, `A₀ ⊭ EFTC2`. That is Myhill's theorem, a
-citation here, not a formalization — so "`A₁ ⊨ EFTC2`" is proved and the
-*separation* between `A₀` and `A₁` is not.
+### The negative half — not formalizable here, and the reason is measurable
+
+`A₀ ⊭ EFTC2` (Myhill: a computable `C¹` function with non-computable
+derivative) has been a citation throughout. Looking at it directly gives a
+sharper answer than "not attempted":
+
+**As it would be phrased here, the statement is false**, and that is proved:
+
+    'HAomega.A0.toA1'               depends on axioms: [Classical.choice]
+    'HAomega.A0.eftc2_of_unifDeriv' depends on axioms: [propext, Classical.choice, Quot.sound]
+
+`A₀ ⊭ EFTC2` quantifies over *procedures*, and this development has no notion
+of one at the analysis layer: `A0.f : Q → Q` is an arbitrary Lean function, and
+`A1`'s only content over `A0` is the datum `δ` plus a `Prop`. So whenever the
+analytic content holds — `f` genuinely uniformly differentiable —
+`A0.toA1` builds the `A₁`, and `eftc2_of_unifDeriv` applies `eftc2_thm` to it.
+`A0.toA1_toA0` confirms the `A₀`-part is untouched, so this is a collapse of
+the separation on the *same* data, not a change of subject.
+
+The footprint of `A0.toA1` is exactly `[Classical.choice]` — nothing else. That
+is the negative half's content stated in the one language this development can
+state it in: **the `A₀`/`A₁` separation is a computability phenomenon, and a
+model with no computability predicate cannot see it.**
+
+**What formalizing it would take**, on the record: a model of computation
+attached to the analysis layer. Either computable analysis in Mathlib, which
+does not exist there, or real functions represented inside this development's
+own object language, where `extract` would supply the notion of procedure. The
+second fits the project but is a programme, not a task: `Deriv` has no reals,
+and Myhill's `f` is built from a computably-enumerable non-computable set that
+the object language cannot name. Neither is started.
+
+So the boxed asymmetry in the manifesto's §5 still rests on a citation for its
+lower half, and now the repository says precisely why.
+
 
 ### What has still not moved
 

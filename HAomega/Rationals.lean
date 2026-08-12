@@ -142,6 +142,33 @@ theorem sub_self (a : Q) : sub a a = zero := by
   rw [htd]
   rfl
 
+/-- `1/(m+1)` in normal form.  Degenerate for the same reason as `sub_self`,
+one step later: the gcd is `Nat.gcd 1 _`, which is `1`, so `of` normalizes by
+dividing through by `1`. -/
+theorem recip_eq (m : Nat) : div (ofNat 1) (ofNat (m + 1)) = ⟨1, m⟩ := by
+  have hne : Int.ofNat (m + 1) ≠ 0 := fun h ↦ Nat.succ_ne_zero m (Int.ofNat.inj h)
+  have hnn : ¬ (Int.ofNat (m + 1) < 0) := Int.not_lt.mpr (Int.natCast_nonneg _)
+  have habs : (Int.ofNat (m + 1)).natAbs = m + 1 := rfl
+  have hmul : (Int.ofNat 1).mul (Int.ofNat (0 + 1)) = Int.ofNat 1 := rfl
+  have habs1 : (Int.ofNat 1).natAbs = 1 := rfl
+  simp only [div, ofNat, den, of, if_neg hne, if_neg hnn, habs, hmul, habs1,
+    Nat.zero_add, Nat.one_mul, Nat.gcd_one_left, Nat.div_one]
+  rw [if_neg (Nat.succ_ne_zero m), if_neg (by decide : ¬ ((1 : Nat) = 0))]
+  congr 1
+
+/-- **`0 < 1/(m+1)`** — the positivity the constant real's Cauchy bound needs.
+Only the *sign* of the numerator matters, so this needs no more normalization
+than `recip_eq` already gives. -/
+theorem ltN_zero_recip (m : Nat) :
+    ltN (ofNat 0) (div (ofNat 1) (ofNat (m + 1))) = 1 := by
+  rw [recip_eq]
+  unfold ltN
+  have h1 : Int.mul (ofNat 0).num (Int.ofNat (Q.mk 1 m).den) = 0 := Int.zero_mul _
+  have h2 : Int.mul (Q.mk 1 m).num (Int.ofNat (ofNat 0).den) = 1 := Int.one_mul _
+  rw [h1, h2, if_pos (by decide : (0 : Int) < 1)]
+
+#print axioms recip_eq
+#print axioms ltN_zero_recip
 #print axioms sub_self
 
 /-- Equality test, as a numeral. -/

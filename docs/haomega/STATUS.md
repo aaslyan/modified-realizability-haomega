@@ -592,13 +592,35 @@ Invariants unmoved, reprinted from the build:
     'HAomega.soundness'  depends on axioms: [propext, Classical.choice, Quot.sound]
     'HAomega.Tm.eval'    depends on axioms: [propext, Quot.sound]
 
-**What this does *not* unblock, stated plainly.** The constant real is still
-not derivable. Its Cauchy proof is `q − q = 0 < eps`, and the new rule supplies
-only the first step; `0 < eps` is an *order* fact about a particular bound, not
-an identity, so nothing in the cheap class reaches it. That needs either a rule
-carrying a positivity hypothesis or one about a specific bound term — neither
-measured here, since the brief was to work backward from `qsub t t = 0` and no
-further.
+**The positivity rule, added second.** `0 < eps` is an *order* fact about a
+particular bound rather than an identity, so it needed its own rule. The bound
+chosen is `1/(t+1)`, not `2⁻ᵗ`, for two reasons: it is built only from
+constructors the core already has (`qnat`, `qdiv`, `succ`), whereas `2⁻ᵗ` would
+need a `recNat` term added to the core; and its normalization degenerates the
+same way `sub_self`'s does, one step later — the gcd is `Nat.gcd 1 _`, so `of`
+divides through by `1`. `1/(t+1) → 0`, so it is a genuine Cauchy rate.
+
+    'HAomega.Q.recip_eq'        depends on axioms: [propext]
+    'HAomega.Q.ltN_zero_recip'  depends on axioms: [propext]
+
+    Realizability.lean   | convQPosRecip (t : Tm Γ .nat) :
+                             Deriv Δ (.eq (.qlt (.qnat .zero)
+                               (.qdiv (.qnat (.succ .zero)) (.qnat (.succ t)))) (.succ .zero))
+    Extraction.lean      | .convQPosRecip _ => .star
+    Soundness.lean       | convQPosRecip t => … exact Q.ltN_zero_recip _
+
+Invariants unmoved: `extract` *does not depend on any axioms*, `soundness`
+`[propext, Classical.choice, Quot.sound]`, `Tm.eval` `[propext, Quot.sound]`.
+
+Note the same degeneracy is doing the work a third time — this route reaches
+exactly the identities and order facts whose normalization collapses, and no
+further. It is still not a general arithmetic rule base.
+
+**Not verified: that these two rules suffice.** The constant real's Cauchy
+proof should now be `convBeta` to reduce `(fun _ ↦ q) n` to `q`, `convQSubSelf`
+for `q − q = 0`, `convQPosRecip` for `0 < 1/(n+1)`, and `eqSubst` to chain
+them. That derivation is **not written**, so "the constant real is now
+derivable" is a plausible reading of what landed, not a checked one.
 
 Options 1 and 3 remain open and untouched; the choice between them is not
 defaulted into.

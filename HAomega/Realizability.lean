@@ -265,6 +265,14 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
   reaches a gcd.  See `Q.sub_self`. -/
   | convQSubSelf {Γ as} {Δ : Ctx Γ as} (t : Tm Γ .rat) :
       Deriv Δ (.eq (.qsub t t) (.qnat .zero))
+  /-- `0 < 1/(t+1)` — the positivity a Cauchy bound needs.  The bound is a
+  reciprocal rather than `2⁻ᵗ` because `1/(t+1)` is built from constructors the
+  core already has, and because its normalization degenerates (`gcd 1 d = 1`);
+  `2⁻ᵗ` would need a `recNat` term in the core and dyadic normal-form
+  reasoning.  See `Q.ltN_zero_recip`. -/
+  | convQPosRecip {Γ as} {Δ : Ctx Γ as} (t : Tm Γ .nat) :
+      Deriv Δ (.eq (.qlt (.qnat .zero)
+        (.qdiv (.qnat (.succ .zero)) (.qnat (.succ t)))) (.succ .zero))
   | convPredZero {Γ as} {Δ : Ctx Γ as} : Deriv Δ (.eq (.pred .zero) .zero)
   | convPredSucc {Γ as} {Δ : Ctx Γ as} (t : Tm Γ .nat) :
       Deriv Δ (.eq (.pred (.succ t)) t)

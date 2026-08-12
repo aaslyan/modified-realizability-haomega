@@ -1556,6 +1556,48 @@ theorem A0.fBound_spec (A : A0) {x : Q}
 
 #print axioms A0.fBound_spec
 
+/-! ### Congruence: equal values, different terms
+
+Everywhere in this file a `Q` carries more information than the rational it
+denotes, and `f : Q → Q` could in principle see it — `f_val_congr` is what says
+it cannot.  The `diff` chain needs the same fact one level up: `riemann` at
+equal-valued base points and lengths gives equal-valued sums, because every
+sample point is determined by those values. -/
+
+theorem riemann_zero_len (A : A0) (x h : Q) (N : Nat) (hN : 0 < N) (hh : h.val = 0) :
+    (A.riemann x h N).val = 0 := by
+  rw [A0.riemann, Q.val_mul, rStep_val _ hN, hh]
+  simp
+
+theorem riemann_val_congr (A : A0) (x₁ x₂ h₁ h₂ : Q) (N : Nat) (hN : 0 < N)
+    (hx : x₁.val = x₂.val) (hh : h₁.val = h₂.val)
+    (hxa : A.a.val ≤ x₁.val) (hxb : x₁.val ≤ A.b.val)
+    (hha : A.a.val ≤ x₁.val + h₁.val) (hhb : x₁.val + h₁.val ≤ A.b.val) :
+    (A.riemann x₁ h₁ N).val = (A.riemann x₂ h₂ N).val := by
+  have m2a : A.a.val ≤ x₂.val := by rw [← hx]; exact hxa
+  have m2b : x₂.val ≤ A.b.val := by rw [← hx]; exact hxb
+  have m2c : A.a.val ≤ x₂.val + h₂.val := by rw [← hx, ← hh]; exact hha
+  have m2d : x₂.val + h₂.val ≤ A.b.val := by rw [← hx, ← hh]; exact hhb
+  have e : ∀ i ∈ Finset.range N,
+      (A.f (rPt x₁ h₁ N i)).val = (A.f (rPt x₂ h₂ N i)).val := by
+    intro i hi
+    have hlt := Finset.mem_range.mp hi
+    refine f_val_congr A (rPt_mem A hN i (le_of_lt hlt) hxa hxb hha hhb).1
+      (rPt_mem A hN i (le_of_lt hlt) hxa hxb hha hhb).2
+      (rPt_mem A hN i (le_of_lt hlt) m2a m2b m2c m2d).1
+      (rPt_mem A hN i (le_of_lt hlt) m2a m2b m2c m2d).2 ?_
+    rw [rPt_val _ _ hN, rPt_val _ _ hN, hx, hh]
+  rw [A0.riemann, A0.riemann, Q.val_mul, Q.val_mul, sumQ_val, sumQ_val,
+    rStep_val _ hN, rStep_val _ hN, Finset.sum_congr rfl e, hh]
+
+theorem A0.intEv_val_congr (A : A0) (n : Nat) (x y : Q) (hxy : x.val = y.val)
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val) :
+    (A.intEv n x).val = (A.intEv n y).val := by
+  have hab := le_of_lt ((Q.ltN_eq_one_iff _ _).mp A.ivl)
+  exact riemann_val_congr A A.a A.a (Q.sub x A.a) (Q.sub y A.a) (A.evN n) (A.evN_pos n)
+    rfl (by rw [Q.val_sub, Q.val_sub, hxy]) le_rfl hab
+    (by rw [Q.val_sub]; linarith) (by rw [Q.val_sub]; linarith)
+
 /-! ### `cont` for the integral
 
 `|∫ₐˣ f − ∫ₐʸ f| ≲ M·|x−y|`, at the level of the approximants.  Splitting
@@ -1718,35 +1760,311 @@ def A1.toE1 (A : A1) : E1 :=
       rw [Qle_eq_true_iff]
       exact le_of_lt hd }
 
-/-! ### What `∫f` still needs to be an `E₁`
+/-! ### The split comparison
 
-**`E1.cont` is done** — `A0.intEv_cont`, with modulus `A0.intOmega`, and it
-holds at *every* level, needing no condition on `n`.
+The heart of `diff`: the evaluator's difference over `[p, p+w]` is, up to
+`4L·2⁻ᴷ`, a Riemann sum over that interval alone.  `M` is produced rather than
+named because the degenerate case `p = a` needs a different count — there the
+lower piece is empty and `splitHi` would be `0`. -/
 
-**`E1.diff` is not.**  The chain is set out and every ingredient is proved;
-what is missing is the chain itself:
+theorem A0.intEv_split_close (A : A0) (K n : Nat) (p w : Q) (hw : 0 < w.val)
+    (hpa : A.a.val ≤ p.val) (hpb : p.val ≤ A.b.val)
+    (hqa : A.a.val ≤ p.val + w.val) (hqb : p.val + w.val ≤ A.b.val)
+    (hn : A.ω K ≤ n) :
+    ∃ M : Nat, 0 < M ∧ |w.val| / (M : Rat) ≤ 1 / 2 ^ A.ω K ∧
+      |(A.intEv n (Q.add p w)).val - (A.intEv n p).val - (A.riemann p w M).val|
+        ≤ 4 * A.len.val * (1 / 2 ^ K) := by
+  have hab := le_of_lt ((Q.ltN_eq_one_iff _ _).mp A.ivl)
+  have hN := A.evN_pos n
+  have hLval : A.len.val = A.b.val - A.a.val := A0.len_val A
+  have hLpos : 0 < A.len.val := by rw [hLval]; linarith
+  have hdval : (Q.sub p A.a).val = p.val - A.a.val := Q.val_sub _ _
+  have hpw : (Q.add p w).val = p.val + w.val := Q.val_add _ _
+  have hmeshEv : ∀ y : Q, A.a.val ≤ y.val → y.val ≤ A.b.val →
+      |(Q.sub y A.a).val| / (A.evN n : Rat) ≤ 1 / 2 ^ A.ω K := fun y h1 h2 ↦
+    le_trans (A.intEv_mesh n h1 h2) (inv_pow_le hn)
+  rcases eq_or_lt_of_le hpa with hp0 | hp0
+  · -- `p = a`: the lower piece is empty and the evaluator's own grid serves
+    refine ⟨A.evN n, hN, ?_, ?_⟩
+    · have h1 := hmeshEv (Q.add p w) (by rw [hpw]; linarith) (by rw [hpw]; linarith)
+      rw [Q.val_sub, hpw, ← hp0] at h1
+      simpa using h1
+    · have hzero : (A.intEv n p).val = 0 := by
+        rw [A0.intEv]
+        exact riemann_zero_len A A.a (Q.sub p A.a) (A.evN n) hN (by rw [hdval, ← hp0]; ring)
+      have hcong : (A.intEv n (Q.add p w)).val = (A.riemann p w (A.evN n)).val := by
+        rw [A0.intEv]
+        refine riemann_val_congr A A.a p (Q.sub (Q.add p w) A.a) w (A.evN n) hN
+          hp0 (by rw [Q.val_sub, hpw, ← hp0]; ring) le_rfl hab ?_ ?_
+        · rw [Q.val_sub, hpw]; linarith
+        · rw [Q.val_sub, hpw]; linarith
+      rw [hzero, hcong]
+      simp
+      positivity
+  · -- `a < p`: split the grid at `p`
+    have hdpos : 0 < (Q.sub p A.a).val := by rw [hdval]; linarith
+    have hdn : (Q.sub p A.a).num ≠ 0 := Q.num_ne_zero_of_val_ne_zero (ne_of_gt hdpos)
+    have hwn : w.num ≠ 0 := Q.num_ne_zero_of_val_ne_zero (ne_of_gt hw)
+    have hN₁ := splitLo_pos (Q.sub p A.a) w (A.ω K)
+    have hN₂ := splitHi_pos (Q.sub p A.a) w (A.ω K) hdn hwn
+    have hN₁R : (0 : Rat) < (splitLo (Q.sub p A.a) w (A.ω K) : Rat) := by exact_mod_cast hN₁
+    have hN₂R : (0 : Rat) < (splitHi (Q.sub p A.a) w (A.ω K) : Rat) := by exact_mod_cast hN₂
+    have hwid := split_widths (Q.sub p A.a) w (A.ω K) hdpos hwn
+    rw [abs_of_pos hw] at hwid
+    have hmesh1 := split_mesh (Q.sub p A.a) w (A.ω K) hdpos
+    refine ⟨splitHi (Q.sub p A.a) w (A.ω K), hN₂, ?_, ?_⟩
+    · rw [abs_of_pos hw, ← hwid]; exact hmesh1
+    · -- the common width, and the sum count
+      have hNs : 0 < splitLo (Q.sub p A.a) w (A.ω K) + splitHi (Q.sub p A.a) w (A.ω K) := by
+        omega
+      have hcastS : ((splitLo (Q.sub p A.a) w (A.ω K)
+            + splitHi (Q.sub p A.a) w (A.ω K) : Nat) : Rat)
+          = (splitLo (Q.sub p A.a) w (A.ω K) : Rat)
+            + (splitHi (Q.sub p A.a) w (A.ω K) : Rat) := by push_cast; ring
+      have hdw : (Q.add (Q.sub p A.a) w).val = (Q.sub p A.a).val + w.val := Q.val_add _ _
+      have hwidS : (Q.add (Q.sub p A.a) w).val
+          / ((splitLo (Q.sub p A.a) w (A.ω K)
+              + splitHi (Q.sub p A.a) w (A.ω K) : Nat) : Rat)
+          = (Q.sub p A.a).val / (splitLo (Q.sub p A.a) w (A.ω K) : Rat) := by
+        rw [hdw, hcastS]
+        field_simp at hwid ⊢
+        linarith
+      -- the two comparisons
+      have c1 := riemann_uniform_close A K (A.evN n)
+        (splitLo (Q.sub p A.a) w (A.ω K) + splitHi (Q.sub p A.a) w (A.ω K)) hN hNs
+        A.a (Q.add (Q.sub p A.a) w) le_rfl hab
+        (by rw [hdw]; linarith) (by rw [hdw]; linarith)
+        (by
+          have h1 := hmeshEv (Q.add p w) (by rw [hpw]; linarith) (by rw [hpw]; linarith)
+          rw [Q.val_sub, hpw] at h1
+          rw [abs_of_nonneg (by rw [hdw]; linarith)]
+          rw [abs_of_nonneg (by linarith)] at h1
+          rw [hdw, hdval, show p.val - A.a.val + w.val = p.val + w.val - A.a.val by ring]
+          exact h1)
+        (by
+          rw [abs_of_nonneg (by rw [hdw]; linarith), hwidS]
+          exact hmesh1)
+      have c2 := riemann_uniform_close A K (A.evN n)
+        (splitLo (Q.sub p A.a) w (A.ω K)) hN hN₁ A.a (Q.sub p A.a) le_rfl hab
+        (by linarith) (by linarith)
+        (by
+          have h1 := hmeshEv p hpa hpb
+          rw [abs_of_nonneg (le_of_lt hdpos)] at h1 ⊢
+          exact h1)
+        (by rw [abs_of_nonneg (le_of_lt hdpos)]; exact hmesh1)
+      -- the exact split
+      have hsplit := riemann_split A A.a (Q.sub p A.a) w
+        (splitLo (Q.sub p A.a) w (A.ω K)) (splitHi (Q.sub p A.a) w (A.ω K)) hN₁ hN₂
+        hwid le_rfl hab (by linarith) (by linarith) (by linarith) (by linarith)
+      -- align the terms
+      have a1 : (A.intEv n (Q.add p w)).val
+          = (A.riemann A.a (Q.add (Q.sub p A.a) w) (A.evN n)).val := by
+        rw [A0.intEv]
+        refine riemann_val_congr A A.a A.a (Q.sub (Q.add p w) A.a)
+          (Q.add (Q.sub p A.a) w) (A.evN n) hN rfl
+          (by simp only [Q.val_sub, Q.val_add]; ring)
+          le_rfl hab ?_ ?_
+        · rw [Q.val_sub, hpw]; linarith
+        · rw [Q.val_sub, hpw]; linarith
+      have a2 : (A.intEv n p).val = (A.riemann A.a (Q.sub p A.a) (A.evN n)).val := rfl
+      have a3 : (A.riemann (Q.add A.a (Q.sub p A.a)) w
+            (splitHi (Q.sub p A.a) w (A.ω K))).val
+          = (A.riemann p w (splitHi (Q.sub p A.a) w (A.ω K))).val := by
+        refine riemann_val_congr A (Q.add A.a (Q.sub p A.a)) p w w
+          (splitHi (Q.sub p A.a) w (A.ω K)) hN₂ (by rw [Q.val_add, hdval]; ring) rfl
+          (by rw [Q.val_add, hdval]; linarith) (by rw [Q.val_add, hdval]; linarith)
+          (by rw [Q.val_add, hdval]; linarith) (by rw [Q.val_add, hdval]; linarith)
+      -- bound the two lengths by `L`
+      have b1 : |(Q.add (Q.sub p A.a) w).val| ≤ A.len.val := by
+        rw [abs_of_nonneg (by rw [hdw]; linarith), hdw, hLval]; linarith
+      have b2 : |(Q.sub p A.a).val| ≤ A.len.val := by
+        rw [abs_of_nonneg (le_of_lt hdpos), hdval, hLval]; linarith
+      have hp2 : (0 : Rat) < 1 / 2 ^ K := by positivity
+      rw [a1, a2, ← a3]
+      have hchain : |(A.riemann A.a (Q.add (Q.sub p A.a) w) (A.evN n)).val
+          - (A.riemann A.a (Q.sub p A.a) (A.evN n)).val
+          - (A.riemann (Q.add A.a (Q.sub p A.a)) w
+              (splitHi (Q.sub p A.a) w (A.ω K))).val|
+          ≤ |(A.riemann A.a (Q.add (Q.sub p A.a) w) (A.evN n)).val
+              - (A.riemann A.a (Q.add (Q.sub p A.a) w)
+                  (splitLo (Q.sub p A.a) w (A.ω K)
+                    + splitHi (Q.sub p A.a) w (A.ω K))).val|
+            + |(A.riemann A.a (Q.sub p A.a)
+                  (splitLo (Q.sub p A.a) w (A.ω K))).val
+                - (A.riemann A.a (Q.sub p A.a) (A.evN n)).val| := by
+        have e : (A.riemann A.a (Q.add (Q.sub p A.a) w) (A.evN n)).val
+            - (A.riemann A.a (Q.sub p A.a) (A.evN n)).val
+            - (A.riemann (Q.add A.a (Q.sub p A.a)) w
+                (splitHi (Q.sub p A.a) w (A.ω K))).val
+            = ((A.riemann A.a (Q.add (Q.sub p A.a) w) (A.evN n)).val
+                - (A.riemann A.a (Q.add (Q.sub p A.a) w)
+                    (splitLo (Q.sub p A.a) w (A.ω K)
+                      + splitHi (Q.sub p A.a) w (A.ω K))).val)
+              + ((A.riemann A.a (Q.sub p A.a)
+                    (splitLo (Q.sub p A.a) w (A.ω K))).val
+                  - (A.riemann A.a (Q.sub p A.a) (A.evN n)).val) := by
+          rw [hsplit]; ring
+        rw [e]
+        exact abs_add_le' _ _
+      have c2' : |(A.riemann A.a (Q.sub p A.a)
+            (splitLo (Q.sub p A.a) w (A.ω K))).val
+          - (A.riemann A.a (Q.sub p A.a) (A.evN n)).val|
+          ≤ 2 * (|(Q.sub p A.a).val| * (1 / 2 ^ K)) := by
+        rw [abs_sub_comm]; exact c2
+      have hb1 : |(Q.add (Q.sub p A.a) w).val| * (1 / 2 ^ K) ≤ A.len.val * (1 / 2 ^ K) :=
+        mul_le_mul_of_nonneg_right b1 (le_of_lt hp2)
+      have hb2 : |(Q.sub p A.a).val| * (1 / 2 ^ K) ≤ A.len.val * (1 / 2 ^ K) :=
+        mul_le_mul_of_nonneg_right b2 (le_of_lt hp2)
+      linarith
 
-    intEv n (x+h) − intEv n x                            two grids of `evN n` cells
-      ≈ riemann a (x−a+h) (N₁+N₂) − riemann a (x−a) N₁    riemann_uniform_close, twice
-      = riemann (a+(x−a)) h N₂                            riemann_split, via split_widths
-      ≈ h · f x                                           eftc1_quotient
+/-! ### `diff` for the integral
 
-with `N₁ = splitLo`, `N₂ = splitHi` and `split_mesh` supplying the meshes.  The
-two `≈`s each cost `2L·2⁻ᴷ`, and dividing by `h` turns that into `4L·2⁻ᴷ/|h|`,
-which is what `dq k h` has to absorb — take `K` past `k+3+ℓ+⌈log₂(1/|h|)⌉`.
+Both orientations.  A positive step splits `[a, x+h]` at `x`; a negative one
+splits `[a, x]` at `x+h` and then moves the quotient from `f (x+h)` to `f x`
+with one more use of `cont`, which is the only asymmetry between the cases. -/
 
-Two things the chain still needs written:
+theorem A0.intEv_diff (A : A0) (k n : Nat) (x h : Q) (hh : h.num ≠ 0)
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val)
+    (hqa : A.a.val ≤ x.val + h.val) (hqb : x.val + h.val ≤ A.b.val)
+    (hstep : |h.val| ≤ 1 / 2 ^ A.intDelta k)
+    (hn : A.intDq k h ≤ n) :
+    |((A.intEv n (Q.add x h)).val - (A.intEv n x).val) / h.val - (A.f x).val|
+      ≤ 1 / 2 ^ k := by
+  have hab := le_of_lt ((Q.ltN_eq_one_iff _ _).mp A.ivl)
+  have hhv : h.val ≠ 0 := by
+    unfold Q.val
+    exact div_ne_zero (Int.cast_ne_zero.mpr hh) (ne_of_gt h.den_cast_pos)
+  have habs : (0 : Rat) < |h.val| := abs_pos.mpr hhv
+  have hpw : (Q.add x h).val = x.val + h.val := Q.val_add _ _
+  set hInv := ceilLog2Q (Q.div (Q.ofNat 1) (Q.abs h)) with hInvDef
+  have hAbsNum : (Q.abs h).num ≠ 0 :=
+    Q.num_ne_zero_of_val_ne_zero (by rw [Q.val_abs]; exact ne_of_gt habs)
+  have hinv : 1 / |h.val| ≤ 2 ^ hInv := by
+    have h1 : (Q.div (Q.ofNat 1) (Q.abs h)).val ≤ 2 ^ hInv := ceilLog2Q_spec _
+    rwa [Q.val_div _ _ hAbsNum, Q.val_ofNat, Q.val_abs, Nat.cast_one] at h1
+  have hL2 : A.len.val ≤ 2 ^ A.ell := ceilLog2Q_spec A.len
+  have hstrict := (Q.ltN_eq_one_iff _ _).mp A.ivl
+  have hLpos : 0 < A.len.val := by rw [A0.len_val]; linarith
+  -- the error survives division by `h`
+  have hKb : 4 * A.len.val * (1 / 2 ^ (k + 4 + A.ell + hInv))
+      ≤ |h.val| * (1 / 2 ^ (k + 2)) := by
+    have hPl : (0 : Rat) < 2 ^ A.ell := by positivity
+    have hPh : (0 : Rat) < 2 ^ hInv := by positivity
+    have hP : (0 : Rat) < 2 ^ (k + 2) := by positivity
+    have hsplit : (2 : Rat) ^ (k + 4 + A.ell + hInv)
+        = 2 ^ (k + 2) * (4 * (2 ^ A.ell * 2 ^ hInv)) := by
+      rw [show k + 4 + A.ell + hInv = (k + 2) + (2 + (A.ell + hInv)) by ring,
+        pow_add, pow_add, pow_add]
+      norm_num
+      ring
+    have h1 : (1 : Rat) ≤ |h.val| * 2 ^ hInv := by
+      rw [div_le_iff₀ habs] at hinv
+      nlinarith [hinv]
+    have key : A.len.val ≤ |h.val| * (2 ^ A.ell * 2 ^ hInv) := by nlinarith [hL2, hPl, h1]
+    rw [mul_one_div, mul_one_div, div_le_div_iff₀ (by positivity) (by positivity), hsplit]
+    nlinarith [key, hP]
+  rcases lt_or_gt_of_ne hhv with hneg | hpos
+  · -- negative step: split `[a,x]` at `x+h`
+    have hwv : (Q.neg h).val = -h.val := Q.val_neg _
+    have hwpos : 0 < (Q.neg h).val := by rw [hwv]; linarith
+    obtain ⟨M, hM, hmesh, hbound⟩ := A.intEv_split_close
+      (k + 4 + A.ell + hInv) n (Q.add x h) (Q.neg h) hwpos
+      (by rw [hpw]; exact hqa) (by rw [hpw]; exact hqb)
+      (by rw [hpw, hwv]; linarith) (by rw [hpw, hwv]; linarith) hn
+    have hxx : (Q.add (Q.add x h) (Q.neg h)).val = x.val := by
+      rw [Q.val_add, hpw, hwv]; ring
+    have hcong : (A.intEv n (Q.add (Q.add x h) (Q.neg h))).val = (A.intEv n x).val :=
+      A.intEv_val_congr n _ x hxx (by rw [hxx]; exact hxa) (by rw [hxx]; exact hxb)
+    rw [hcong] at hbound
+    have hq := eftc1_quotient A (k + 2) M hM (Q.add x h) (Q.neg h)
+      (by rw [hpw]; exact hqa) (by rw [hpw]; exact hqb)
+      (by rw [hpw, hwv]; linarith) (by rw [hpw, hwv]; linarith)
+      (ne_of_gt hwpos)
+      (by rw [abs_of_pos hwpos, hwv]
+          refine le_trans ?_ (inv_pow_le (Nat.le_max_right (A.ω (k+1)) (A.ω (k+2))))
+          rw [← abs_of_neg hneg]; exact hstep)
+    have hfc := cont_val A (k + 2) (Q.add x h) x (by rw [hpw]; exact hqa)
+      (by rw [hpw]; exact hqb) hxa hxb
+      (by rw [hpw, show x.val + h.val - x.val = h.val by ring]
+          refine le_trans hstep (inv_pow_le (Nat.le_max_right (A.ω (k+1)) (A.ω (k+2)))))
+    -- the quotient, reoriented
+    have hrw : ((A.intEv n (Q.add x h)).val - (A.intEv n x).val) / h.val
+        = ((A.intEv n x).val - (A.intEv n (Q.add x h)).val) / (Q.neg h).val := by
+      rw [hwv, div_neg]; ring
+    rw [hrw]
+    have hdq : |((A.intEv n x).val - (A.intEv n (Q.add x h)).val) / (Q.neg h).val
+        - (A.riemann (Q.add x h) (Q.neg h) M).val / (Q.neg h).val|
+        ≤ 1 / 2 ^ (k + 2) := by
+      rw [div_sub_div_same, abs_div, abs_of_pos hwpos, div_le_iff₀ hwpos, hwv]
+      calc |(A.intEv n x).val - (A.intEv n (Q.add x h)).val
+              - (A.riemann (Q.add x h) (Q.neg h) M).val|
+          ≤ 4 * A.len.val * (1 / 2 ^ (k + 4 + A.ell + hInv)) := hbound
+        _ ≤ |h.val| * (1 / 2 ^ (k + 2)) := hKb
+        _ = 1 / 2 ^ (k + 2) * -h.val := by rw [abs_of_neg hneg]; ring
+    have hp2 : (0 : Rat) < 1 / 2 ^ (k + 2) := by positivity
+    have hsum : (1 : Rat) / 2 ^ (k + 2) + 1 / 2 ^ (k + 2) + 1 / 2 ^ (k + 2) ≤ 1 / 2 ^ k := by
+      rw [quarter_pow]
+      have hpk : (0 : Rat) < 1 / 2 ^ k := by positivity
+      linarith
+    have t1 : |((A.intEv n x).val - (A.intEv n (Q.add x h)).val) / (Q.neg h).val
+        - (A.f x).val|
+        ≤ |((A.intEv n x).val - (A.intEv n (Q.add x h)).val) / (Q.neg h).val
+            - (A.riemann (Q.add x h) (Q.neg h) M).val / (Q.neg h).val|
+          + |(A.riemann (Q.add x h) (Q.neg h) M).val / (Q.neg h).val - (A.f x).val| :=
+      abs_sub_le _ _ _
+    have t2 : |(A.riemann (Q.add x h) (Q.neg h) M).val / (Q.neg h).val - (A.f x).val|
+        ≤ |(A.riemann (Q.add x h) (Q.neg h) M).val / (Q.neg h).val
+            - (A.f (Q.add x h)).val|
+          + |(A.f (Q.add x h)).val - (A.f x).val| := abs_sub_le _ _ _
+    linarith
+  · -- positive step: split `[a, x+h]` at `x`
+    obtain ⟨M, hM, hmesh, hbound⟩ := A.intEv_split_close
+      (k + 4 + A.ell + hInv) n x h hpos hxa hxb hqa hqb hn
+    have hq := eftc1_quotient A (k + 1) M hM x h hxa hxb hqa hqb hhv
+      (by refine le_trans hstep (inv_pow_le (Nat.le_max_left (A.ω (k+1)) (A.ω (k+2)))))
+    have hdq : |((A.intEv n (Q.add x h)).val - (A.intEv n x).val) / h.val
+        - (A.riemann x h M).val / h.val| ≤ 1 / 2 ^ (k + 2) := by
+      rw [div_sub_div_same, abs_div, abs_of_pos hpos, div_le_iff₀ hpos]
+      calc |(A.intEv n (Q.add x h)).val - (A.intEv n x).val - (A.riemann x h M).val|
+          ≤ 4 * A.len.val * (1 / 2 ^ (k + 4 + A.ell + hInv)) := hbound
+        _ ≤ |h.val| * (1 / 2 ^ (k + 2)) := hKb
+        _ = 1 / 2 ^ (k + 2) * h.val := by rw [abs_of_pos hpos]; ring
+    have t1 : |((A.intEv n (Q.add x h)).val - (A.intEv n x).val) / h.val - (A.f x).val|
+        ≤ |((A.intEv n (Q.add x h)).val - (A.intEv n x).val) / h.val
+            - (A.riemann x h M).val / h.val|
+          + |(A.riemann x h M).val / h.val - (A.f x).val| := abs_sub_le _ _ _
+    have hsum : (1 : Rat) / 2 ^ (k + 2) + 1 / 2 ^ (k + 1) ≤ 1 / 2 ^ k := by
+      rw [quarter_pow, halve_pow]
+      have hpk : (0 : Rat) < 1 / 2 ^ k := by positivity
+      linarith
+    linarith
 
-* a **congruence** lemma — `intEv n (x+h)` is `riemann a (Q.sub (Q.add x h) A.a)`
-  while `riemann_split` produces `riemann a (Q.add (Q.sub x A.a) h)`, equal in
-  value but different terms, so the sums must be shown equal through
-  `f_val_congr`, as everywhere else in this file;
-* the **`h < 0` orientation** — `riemann_split` lays two lengths end to end and
-  its width hypothesis forces them to share a sign, so a negative step splits
-  `[a,x]` as `[a,x+h] ++ [x+h,x]` instead, and the quotient is compared to
-  `f (x+h)` and then moved to `f x` by one more use of `cont`.
+/-- **`∫f` is `E₁`-adequate.**  The integral of an `A₀` is an approximating
+evaluator carrying a modulus of continuity and a modulus of uniform
+differentiability — with the derivative being `f` itself, and with `δ` and `ω`
+both built from the `A₀`-data alone.  This is `EFTC1` as one statement: nothing
+is supplied that was not already there. -/
+def A0.intE1 (A : A0) : E1 :=
+  { toE0 := A.intE0
+    ω := A.intOmega
+    δ := A.intDelta
+    dq := A.intDq
+    cont := by
+      intro k n x y _ hax hxb hay hyb hxy
+      rw [Qle_eq_true_iff] at hax hxb hay hyb
+      rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val] at hxy
+      rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val]
+      exact A.intEv_cont k n x y hax hxb hay hyb hxy
+    diff := ⟨A.f, by
+      intro k n x h hdq hax hxb hha hhb hnum hstep
+      rw [Qle_eq_true_iff] at hax hxb hha hhb
+      rw [Q.val_add] at hha hhb
+      rw [Qle_eq_true_iff, Q.val_abs, toQ_pow2neg_val] at hstep
+      rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, Q.val_div _ _ hnum, Q.val_sub,
+        toQ_pow2neg_val]
+      exact A.intEv_diff k n x h hnum hax hxb hha hhb hstep hdq⟩ }
 
-So `A0.intE0` still stops at `E₀`. -/
+#print axioms A0.intE1
 
 #print axioms A1.toE1
 #print axioms A0.toE0
@@ -1803,6 +2121,11 @@ proof gap: `A0.f : Q → Q` is an exactly rational-valued evaluator and `∫f` i
 not rational-valued, so stating it needs approximating evaluators
 `Nat → Q → Q`.  The differentiability half is what carries the content, and it
 is what is proved.
+
+**`∫f` is now `E₁`-adequate** — `A0.intE1`.  The gap first recorded when
+`EFTC1` landed is closed: the integral is an inhabitant of a representation
+carrying both moduli, with the derivative being `f` and nothing supplied that
+the `A₀`-data did not already contain.
 
 **Still out of scope and not claimed:** the negative half, `A₀ ⊭ EFTC2`, which
 is Myhill's theorem and a citation here, not a formalization. -/

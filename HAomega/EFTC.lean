@@ -418,6 +418,16 @@ the estimate: `ℓ` pays for the tail of the sum, `mLog` for the Lipschitz facto
 def intOmega (A : A0) (k : Nat) : Nat :=
   Nat.max (A.ω (k + 1 + A.ell)) (k + 1 + A.mLog)
 
+/-- The step modulus of `∫f`.  By `EFTC1` this is `ω` itself; the shifts pay
+for the triangle inequality in the negative-step case. -/
+def intDelta (A : A0) (k : Nat) : Nat := Nat.max (A.ω (k + 1)) (A.ω (k + 2))
+
+/-- **The level a difference quotient at step `h` needs.**  Dividing by `h`
+amplifies the evaluator's error by `1/|h|`, so the level has to grow as `h`
+shrinks — this is the field `A₁` had no analogue of. -/
+def intDq (A : A0) (k : Nat) (h : Q) : Nat :=
+  A.ω (k + 4 + A.ell + ceilLog2Q (Q.div (Q.ofNat 1) (Q.abs h)))
+
 /-- **The integral as an approximating evaluator**: `intEv n x ≈ ∫ₐˣ f`. -/
 def intEv (A : A0) (n : Nat) (x : Q) : Q := A.riemann A.a (Q.sub x A.a) (A.evN n)
 

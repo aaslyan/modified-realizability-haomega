@@ -491,39 +491,42 @@ since `riemann_split` is stated for two lengths laid end to end.
 every `x ∈ [a,b]`: `ω` says `f` moves by less than `1` per step, and the walk
 from `a` to `x` telescopes.
 
-**The assembly, half done.**
+**The assembly is done.**
 
     'HAomega.A0.intEv_cont'  depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.A0.intEv_diff'  depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.A0.intE1'       depends on axioms: [propext, Classical.choice, Quot.sound]
 
-`E1.cont` for the integral is proved, with modulus `A0.intOmega`, and it holds
-at *every* level — no condition on `n`. The estimate splits
+**`A0.intE1 : A0 → E1`** — the integral of an `A₀` is an approximating
+evaluator carrying a modulus of continuity *and* a modulus of uniform
+differentiability, with the derivative being `f` itself and both moduli built
+from the `A₀`-data alone. That is `EFTC1` as a single statement: integration
+upgrades `A₀` to `A₁` and nothing is supplied that was not already there.
 
-    (u/N)·ΣF − (v/N)·ΣG  =  ((u−v)/N)·ΣF + (v/N)·Σ(F−G)
+`cont` is `intEv_cont` (§ above). `diff` is `intEv_diff`, which chains
 
-so that `fBound_spec` bounds the first term by `M·|x−y|` and `cont` bounds the
-second by `|v|·2⁻ᵏ`; `intOmega` carries one term for each.
+    intEv n (x+h) − intEv n x  ≈  riemann a (x−a+h) (N₁+N₂) − riemann a (x−a) N₁
+                               =  riemann x h N₂
+                               ≈  h · f x
 
-**`E1.diff` is not done.** Every ingredient it needs is proved and the chain is
-written down in `QAnalysis.lean`:
+with `riemann_uniform_close` twice, `riemann_split` via `split_widths` and
+`split_mesh`, and `eftc1_quotient`. Three things the chain needed:
 
-    intEv n (x+h) − intEv n x   ≈  riemann a (x−a+h) (N₁+N₂) − riemann a (x−a) N₁
-                                =  riemann (a+(x−a)) h N₂
-                                ≈  h · f x
+* `A0.intEv_split_close` produces its cell count rather than naming it, because
+  the degenerate case `x = a` has an empty lower piece where `splitHi` would be
+  `0` and the evaluator's own grid serves instead.
+* Both **orientations**. A negative step splits `[a,x]` at `x+h` and the
+  quotient is then moved from `f (x+h)` to `f x` by one more use of `cont` —
+  the only asymmetry between the cases.
+* **Congruence** — `riemann_val_congr` and `A0.intEv_val_congr`, since the two
+  sides of the chain produce `riemann` at equal-valued but distinct `Q` terms.
+  This is `f_val_congr` one level up, and it is needed because a `Q` carries
+  more than the rational it denotes.
 
-using `riemann_uniform_close` twice, then `riemann_split` (via `split_widths`
-and `split_mesh`), then `eftc1_quotient`. The two approximations cost `2L·2⁻ᴷ`
-each, and dividing by `h` makes that `4L·2⁻ᴷ/|h|` — which is exactly what
-`E1.dq` exists to absorb.
-
-Two pieces of that chain are still unwritten: a **congruence** lemma (the two
-sides produce `riemann` at equal-valued but distinct `Q` terms, which must be
-reconciled through `f_val_congr`), and the **`h < 0` orientation** (`riemann_split`
-lays two lengths end to end and its width hypothesis forces a common sign, so a
-negative step splits `[a,x]` as `[a,x+h] ++ [x+h,x]`, and the quotient is then
-moved from `f (x+h)` to `f x` by one more use of `cont`).
-
-So `A0.intE0` still stops at `E₀`, and the one-sentence `A₁`-adequacy of the
-integral is still **not formalized**.
+`E1.dq` is what absorbs the `4L·2⁻ᴷ/|h|` that dividing by `h` costs:
+`A0.intDq k h = ω(k+4+ℓ+⌈log₂(1/|h|)⌉)`, growing as the step shrinks. That
+dependence on `h` is the one field `A₁` had no analogue of, and this is where
+it earns its place.
 
 **Not claimed:** the negative half, `A₀ ⊭ EFTC2`. That is Myhill's theorem, a
 citation here, not a formalization — so "`A₁ ⊨ EFTC2`" is proved and the

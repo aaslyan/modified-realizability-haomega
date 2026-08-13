@@ -633,6 +633,27 @@ reciprocal is rewritten into its application, `0` into `0 − 0`, and each `0`
 into the beta-redex that produced it, with `convBeta` supplying the redexes and
 `convQSubSelf` the middle step.
 
+**A non-constant term, and the boundary it marks.**
+
+    'HAomega.diffReal_upper'   depends on axioms: [propext, Quot.sound]
+    'HAomega.diffReal_cauchy'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+`fun n ↦ n − n` is genuinely non-constant *as a term* — its body mentions the
+bound variable, so `convBeta` yields a different term at each index — and its
+derivation does more work: two extra `convQSubSelf` steps, at `n` and at `n+d`,
+before the constant-real chain starts.
+
+It is also, denotationally, the constant real `0`, and **that is the
+measurement**. With `qsub t t = 0` and `0 < 1/(t+1)` as the only arithmetic in
+`Deriv`, the Cauchy body `|x n − x (n+d)| < eps n` is derivable exactly when
+the difference *reduces to zero*; nothing in the rule set bounds a difference
+that does not. So the reachable class is: terms of any shape, denoting a
+constant real. A genuinely varying real — `fun n ↦ 1/(n+1)`, which is Cauchy at
+this very rate — is **not** derivable, because bounding
+`1/(n+1) − 1/(n+d+1)` needs order arithmetic on reciprocals, and that is not a
+degenerate normalization: it is the associativity/distributivity side of the
+option-2 split, not the cheap side.
+
 **The derivation was harder than the rules.** The rules were three sites each;
 this needed the weakenings normalized by hand (`simp only [Tm.wk, Tm.rename,
 Ren.ext]`) before `convBeta` would unify, explicit context annotations at every

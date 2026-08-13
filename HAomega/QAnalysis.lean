@@ -1726,6 +1726,129 @@ theorem constReal_cauchy (n d : Nat) :
 #print axioms constReal_upper
 #print axioms constReal_cauchy
 
+/-! ### A non-constant term, and the boundary it marks
+
+`fun n ↦ n − n` is not a constant term: its body mentions the bound variable,
+and `convBeta` produces a *different* term at each index.  Its Cauchy proof
+therefore does real work — two extra `convQSubSelf` steps, at `n` and at `n+d`,
+before the constant-real chain can start.
+
+It is also, denotationally, the constant real `0`, and that is the point.  With
+`qsub t t = 0` and `0 < 1/(t+1)` as the only arithmetic in `Deriv`, the Cauchy
+body `|x n − x (n+d)| < eps n` is derivable exactly when the difference
+*reduces to zero*; nothing in the rule set bounds a difference that does not.
+So this is the widest class currently reachable, and a genuinely varying real —
+`fun n ↦ 1/(n+1)`, say, which is Cauchy at this very rate — is not, because
+bounding `1/(n+1) − 1/(n+d+1)` needs order arithmetic on reciprocals that no
+degenerate-normalization rule supplies. -/
+
+abbrev diffReal : RealTm [] := .lam (.qsub (.qnat (.var .here)) (.qnat (.var .here)))
+
+def diffReal_upper :
+    Deriv (Ctx.nil (Γ := [])) (realUpperF diffReal recipEps) := by
+  refine Deriv.allI (Deriv.allI ?_)
+  simp only [Tm.wk, Tm.rename, Ren.ext]
+  deriv_norm
+  have hA0 := Deriv.convBeta (Δ := (Ctx.nil (Γ := [])).wk.wk)
+    ((.qsub (.qnat (.var .here)) (.qnat (.var .here))) :
+      Tm (.nat :: .nat :: .nat :: []) .rat) (.var (.there .here))
+  have hB0 := Deriv.convBeta (Δ := (Ctx.nil (Γ := [])).wk.wk)
+    ((.qsub (.qnat (.var .here)) (.qnat (.var .here))) :
+      Tm (.nat :: .nat :: .nat :: []) .rat)
+    (.add (.var (.there .here)) (.var .here))
+  have hC := Deriv.convBeta (Δ := (Ctx.nil (Γ := [])).wk.wk)
+    ((.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here)))) :
+      Tm (.nat :: .nat :: .nat :: []) .rat) (.var (.there .here))
+  deriv_norm at hA0 hB0 hC
+  -- the two extra steps: each beta result is itself a `t − t`
+  have hA := Deriv.transE hA0
+    (Deriv.convQSubSelf (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+      (.qnat (.var (.there .here))))
+  have hB := Deriv.transE hB0
+    (Deriv.convQSubSelf (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+      (.qnat (.add (.var (.there .here)) (.var .here))))
+  have hpos := Deriv.convQPosRecip (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.var (.there .here) : Tm (.nat :: .nat :: []) .nat)
+  have hsub := Deriv.convQSubSelf (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.qnat (.zero : Tm (.nat :: .nat :: []) .nat))
+  have s1 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.qnat .zero) (.var .here)) (.succ .zero)) (Deriv.symmE hC) hpos
+  deriv_norm at s1
+  have s2 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.var .here)
+      ((Tm.lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))).app
+        (.var (.there (.there .here))))) (.succ .zero)) (Deriv.symmE hsub) s1
+  deriv_norm at s2
+  have s3 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.qsub (.var .here) (.qnat .zero))
+      ((Tm.lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))).app
+        (.var (.there (.there .here))))) (.succ .zero)) (Deriv.symmE hA) s2
+  deriv_norm at s3
+  have s4 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.qsub ((Tm.lam (.qsub (.qnat (.var .here)) (.qnat (.var .here)))).app
+        (.var (.there (.there .here)))) (.var .here))
+      ((Tm.lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))).app
+        (.var (.there (.there .here))))) (.succ .zero)) (Deriv.symmE hB) s3
+  deriv_norm at s4
+  exact s4
+
+def diffReal_lower :
+    Deriv (Ctx.nil (Γ := [])) (realLowerF diffReal recipEps) := by
+  refine Deriv.allI (Deriv.allI ?_)
+  simp only [Tm.wk, Tm.rename, Ren.ext]
+  deriv_norm
+  have hA0 := Deriv.convBeta (Δ := (Ctx.nil (Γ := [])).wk.wk)
+    ((.qsub (.qnat (.var .here)) (.qnat (.var .here))) :
+      Tm (.nat :: .nat :: .nat :: []) .rat) (.var (.there .here))
+  have hB0 := Deriv.convBeta (Δ := (Ctx.nil (Γ := [])).wk.wk)
+    ((.qsub (.qnat (.var .here)) (.qnat (.var .here))) :
+      Tm (.nat :: .nat :: .nat :: []) .rat)
+    (.add (.var (.there .here)) (.var .here))
+  have hC := Deriv.convBeta (Δ := (Ctx.nil (Γ := [])).wk.wk)
+    ((.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here)))) :
+      Tm (.nat :: .nat :: .nat :: []) .rat) (.var (.there .here))
+  deriv_norm at hA0 hB0 hC
+  have hA := Deriv.transE hA0
+    (Deriv.convQSubSelf (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+      (.qnat (.var (.there .here))))
+  have hB := Deriv.transE hB0
+    (Deriv.convQSubSelf (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+      (.qnat (.add (.var (.there .here)) (.var .here))))
+  have hpos := Deriv.convQPosRecip (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.var (.there .here) : Tm (.nat :: .nat :: []) .nat)
+  have hsub := Deriv.convQSubSelf (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.qnat (.zero : Tm (.nat :: .nat :: []) .nat))
+  have s1 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.qnat .zero) (.var .here)) (.succ .zero)) (Deriv.symmE hC) hpos
+  deriv_norm at s1
+  have s2 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.var .here)
+      ((Tm.lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))).app
+        (.var (.there (.there .here))))) (.succ .zero)) (Deriv.symmE hsub) s1
+  deriv_norm at s2
+  have s3 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.qsub (.var .here) (.qnat .zero))
+      ((Tm.lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))).app
+        (.var (.there (.there .here))))) (.succ .zero)) (Deriv.symmE hB) s2
+  deriv_norm at s3
+  have s4 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.qsub ((Tm.lam (.qsub (.qnat (.var .here)) (.qnat (.var .here)))).app
+        (.add (.var (.there (.there .here))) (.var (.there .here))))
+        (.var .here))
+      ((Tm.lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))).app
+        (.var (.there (.there .here))))) (.succ .zero)) (Deriv.symmE hA) s3
+  deriv_norm at s4
+  exact s4
+
+/-- The non-constant term's Cauchy property, at the value layer. -/
+theorem diffReal_cauchy (n d : Nat) :
+    |(Tm.eval diffReal Env.nil n).val - (Tm.eval diffReal Env.nil (n + d)).val|
+      < (Tm.eval recipEps Env.nil n).val :=
+  realCauchy_sound diffReal_upper diffReal_lower n d
+
+#print axioms diffReal_upper
+#print axioms diffReal_cauchy
+
 /-! ### What reals in the object language still cannot do
 
 The layer above is definitional plus one bridge.  **Nothing about a real can be

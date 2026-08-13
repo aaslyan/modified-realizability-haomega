@@ -1443,12 +1443,12 @@ theorem split_widths (d h : Q) (K : Nat) (hd : 0 < d.val) (hh : h.num ≠ 0) :
     _ = |h.val| * (((Q.div h d).den : Rat) * (splitScale d h K : Rat)) := by ring
 
 /-- **And the mesh meets the target.** -/
-theorem split_mesh (d h : Q) (K : Nat) (hd : 0 < d.val) :
+theorem split_mesh (d h : Q) (K : Nat) (_hd : 0 < d.val) :
     d.val / (splitLo d h K : Rat) ≤ 1 / 2 ^ K := by
   have hqR : (0 : Rat) < ((Q.div h d).den : Rat) := (Q.div h d).den_cast_pos
   have hqn : (Q.ofNat (Q.div h d).den).num ≠ 0 := by
     have := (Q.div h d).den_ne_zero
-    unfold Q.ofNat; simpa using by omega
+    unfold Q.ofNat; exact Nat.cast_ne_zero.mpr (by omega)
   have h1 := ceilNatQ_spec (Q.mul (Q.div d (Q.ofNat (Q.div h d).den)) (twoPowQ K))
   rw [Q.val_mul, twoPowQ_val, Q.val_div _ _ hqn, Q.val_ofNat] at h1
   have h2 : ((ceilNatQ (Q.mul (Q.div d (Q.ofNat (Q.div h d).den)) (twoPowQ K)) : Nat) : Rat)
@@ -2009,7 +2009,7 @@ def CompData.comp (C : CompData) : A0 :=
 
 #print axioms CompData.comp
 
-/-! ### `A₁` under composition: what it needs, and what is not written
+/-! ### `A₁` under composition: proved
 
 The estimate works out, and no new field is required beyond the range condition
 above.  Writing `u = g(x)`, `Δ = g(x+h) − g(x)`:
@@ -2019,26 +2019,255 @@ above.  Writing `u = g(x)`, `Δ = g(x+h) − g(x)`:
                              =  f'(u)g'(x) + f'(u)e₂ + e₁g'(x) + e₁e₂
 
 with `|e₁| < 2⁻ʲ¹` from `F.diff` at step `Δ` and `|e₂| < 2⁻ʲ²` from `G.diff` at
-step `h`.  Three things make it go through, each already available:
+step `h`.  Three things make it go through:
 
 * `Δ` is forced small by `G`'s *continuity* modulus — `|h| ≤ 2⁻ω_G(j)` gives
   `|Δ| < 2⁻ʲ` — so `F.diff` applies at the moving point;
-* the degenerate case `Δ = 0` is fine rather than fatal: the quotient is `0`,
+* the degenerate case `Δ = 0` is handled cleanly: the quotient is `0`,
   and `Δ = 0` forces `|g'(x)| < 2⁻ʲ²`, so the target `f'(u)g'(x)` is itself
   small;
-* the cross terms need **bounds on `|f'|` and `|g'|`**, and those are
-  computable from `A₁`-data: `derivEval_approx` puts `f'` within `2⁻⁽ᵏ⁺³⁾` of a
-  difference quotient, and that quotient is bounded by `2·fBound/h₀` with
-  `h₀ = stepSize` a concrete rational.
+* the cross terms use **bounds on `|f'|` and `|g'|`**, computable from `A₁`-data:
+  `derivEval_approx` puts `f'` within `2⁻⁽ᵏ⁺³⁾` of a difference quotient, and
+  that quotient is bounded by `2·fBound/h₀` with `h₀ = stepSize 0`. -/
 
-So the composed modulus is `δ_{f∘g}(k) = max(δ_G(j₂), ω_G(δ_F(j₁)))` with `j₁`,
-`j₂` chosen from `k` and those two bounds.
+/-- Uniform bound on the derivative: a rational bounding `|F' x|`. -/
+def A1.derivBoundQ (A : A1) : Q :=
+  Q.add (Q.div (Q.mul (Q.ofNat 2) A.fBound) (A.stepSize 0)) (Q.ofNat 1)
 
-**Not proved.** The Lean estimate is `Lemma 1`-sized — four error terms, a case
-split on `Δ = 0`, and a derivative-bound lemma that does not yet exist — and it
-was not attempted rather than attempted and rushed.  The item asked what data
-composition needs beyond `A₁`; the answer is *none*, plus the range condition,
-and that answer is what landed. -/
+/-- Power of 2 bounding `|F' x|`. -/
+def A1.derivBoundLog (A : A1) : Nat :=
+  ceilLog2Q A.derivBoundQ
+
+/-- **The derivative of an `A₁` is uniformly bounded on `[a,b]`.** -/
+theorem A1.deriv_bound (A : A1) {F : Q → Q} (hF : IsDeriv A F) (x : Q)
+    (hxa : A.a.val ≤ x.val) (hxb : x.val ≤ A.b.val) :
+    |(F x).val| ≤ 2 ^ A.derivBoundLog := by
+  have hab := A.ivl_val
+  have hs := stepSize_pos A 0
+  have hmin2 : (A.stepSize 0).val ≤ (A.b.val - A.a.val) / 4 := by
+    rw [stepSize_val]; exact min_le_right _ _
+  have hne : (A.stepSize 0).val ≠ 0 := ne_of_gt hs
+  have hnum : (A.stepSize 0).num ≠ 0 := Q.num_ne_zero_of_val_ne_zero hne
+  have hDE := derivEval_approx A hF 0 x hxa hxb
+  have hDE_bound : |(A.derivEval 0 x).val| ≤ (2 * A.fBound.val) / (A.stepSize 0).val := by
+    cases hr : A.stepRight x
+    · have hxm : ¬ (x.val ≤ (A.a.val + A.b.val) / 2) := by
+        rw [← stepRight_iff]; simp [hr]
+      have hnegv : (Q.neg (A.stepSize 0)).val = -(A.stepSize 0).val := Q.val_neg _
+      have hne' : (Q.neg (A.stepSize 0)).val ≠ 0 := by rw [hnegv]; linarith
+      have hnum' : (Q.neg (A.stepSize 0)).num ≠ 0 := Q.num_ne_zero_of_val_ne_zero hne'
+      have hin1 : A.a.val ≤ (Q.add x (Q.neg (A.stepSize 0))).val := by
+        rw [Q.val_add, hnegv]; push_neg at hxm; linarith
+      have hin2 : (Q.add x (Q.neg (A.stepSize 0))).val ≤ A.b.val := by
+        rw [Q.val_add, hnegv]; linarith
+      simp only [A1.derivEval, hr, Bool.false_eq_true, if_false]
+      rw [Q.val_div _ _ hnum', Q.val_sub, hnegv]
+      have hfb1 := A.fBound_spec hin1 hin2
+      have hfb2 := A.fBound_spec hxa hxb
+      have hsub : |(A.f (Q.add x (Q.neg (A.stepSize 0)))).val - (A.f x).val| ≤ 2 * A.fBound.val := by
+        have := abs_sub_le (A.f (Q.add x (Q.neg (A.stepSize 0)))).val 0 (A.f x).val
+        rw [sub_zero, zero_sub, abs_neg] at this
+        linarith
+      rw [abs_div, abs_neg, abs_of_pos hs]
+      exact div_le_div_of_nonneg_right hsub (le_of_lt hs)
+    · have hxm : x.val ≤ (A.a.val + A.b.val) / 2 := (stepRight_iff A x).mp hr
+      have hin1 : A.a.val ≤ (Q.add x (A.stepSize 0)).val := by
+        rw [Q.val_add]; linarith
+      have hin2 : (Q.add x (A.stepSize 0)).val ≤ A.b.val := by
+        rw [Q.val_add]; linarith
+      simp only [A1.derivEval, hr, if_true]
+      rw [Q.val_div _ _ hnum, Q.val_sub]
+      have hfb1 := A.fBound_spec hin1 hin2
+      have hfb2 := A.fBound_spec hxa hxb
+      have hsub : |(A.f (Q.add x (A.stepSize 0))).val - (A.f x).val| ≤ 2 * A.fBound.val := by
+        have := abs_sub_le (A.f (Q.add x (A.stepSize 0))).val 0 (A.f x).val
+        rw [sub_zero, zero_sub, abs_neg] at this
+        linarith
+      rw [abs_div, abs_of_pos hs]
+      exact div_le_div_of_nonneg_right hsub (le_of_lt hs)
+  have hF_bound : |(F x).val| ≤ (2 * A.fBound.val) / (A.stepSize 0).val + 1 := by
+    have t : |(F x).val| ≤ |(A.derivEval 0 x).val| + |(F x).val - (A.derivEval 0 x).val| := by
+      have := abs_add_le (A.derivEval 0 x).val ((F x).val - (A.derivEval 0 x).val)
+      rw [add_sub_cancel] at this
+      linarith
+    have hDE_sub : |(F x).val - (A.derivEval 0 x).val| < 1 := by
+      rw [abs_sub_comm]
+      have : (1 : Rat) / 2 ^ (0 + 3) ≤ 1 := by norm_num
+      linarith
+    linarith
+  have hQ_val : (A.derivBoundQ).val = (2 * A.fBound.val) / (A.stepSize 0).val + 1 := by
+    unfold A1.derivBoundQ
+    rw [Q.val_add, Q.val_div _ _ hnum, Q.val_mul, Q.val_ofNat, Q.val_ofNat]
+    norm_num
+  have hLog := ceilLog2Q_spec A.derivBoundQ
+  exact le_trans (by linarith [hQ_val, hF_bound]) hLog
+
+/-- Two `A₁`s, with `g`'s range inside `f`'s domain. -/
+structure CompData1 where
+  F : A1
+  G : A1
+  range : ∀ x : Q, Qle G.a x = true → Qle x G.b = true →
+    Qle F.a (G.f x) = true ∧ Qle (G.f x) F.b = true
+
+/-- Forget differentiability data to get `CompData`. -/
+def CompData1.toCompData (C : CompData1) : CompData :=
+  { F := C.F.toA0, G := C.G.toA0, range := C.range }
+
+/-- **The modulus of uniform differentiability for `f ∘ g`.** -/
+def CompData1.δ (C : CompData1) (k : Nat) : Nat :=
+  Nat.max (C.G.δ (k + 3 + C.F.derivBoundLog))
+    (C.G.ω (C.F.δ (k + 3 + C.G.derivBoundLog)))
+
+/-- **`A₁` is closed under composition.** -/
+def CompData1.comp (C : CompData1) : A1 :=
+  { toA0 := C.toCompData.comp
+    δ := C.δ
+    diff := by
+      obtain ⟨F', hF⟩ := C.F.diff
+      obtain ⟨G', hG⟩ := C.G.diff
+      refine ⟨fun x ↦ Q.mul (F' (C.G.f x)) (G' x), ?_⟩
+      intro k x h hxa hxb hxha hxhb hnum habs
+      have hxa' : C.G.a.val ≤ x.val := (Qle_eq_true_iff _ _).mp hxa
+      have hxb' : x.val ≤ C.G.b.val := (Qle_eq_true_iff _ _).mp hxb
+      have hxha' : C.G.a.val ≤ (Q.add x h).val := (Qle_eq_true_iff _ _).mp hxha
+      have hxhb' : (Q.add x h).val ≤ C.G.b.val := (Qle_eq_true_iff _ _).mp hxhb
+      have hrx := C.range x hxa hxb
+      have hrxh := C.range (Q.add x h) hxha hxhb
+      have hua : C.F.a.val ≤ (C.G.f x).val := (Qle_eq_true_iff _ _).mp hrx.1
+      have hub : (C.G.f x).val ≤ C.F.b.val := (Qle_eq_true_iff _ _).mp hrx.2
+      have hupha : C.F.a.val ≤ (C.G.f (Q.add x h)).val := (Qle_eq_true_iff _ _).mp hrxh.1
+      have huphb : (C.G.f (Q.add x h)).val ≤ C.F.b.val := (Qle_eq_true_iff _ _).mp hrxh.2
+      set MF := C.F.derivBoundLog with hMFDef
+      set MG := C.G.derivBoundLog with hMGDef
+      set j2 := k + 3 + MF with hj2Def
+      set j1 := k + 3 + MG with hj1Def
+      have habs_val : |h.val| ≤ 1 / 2 ^ C.δ k := by
+        have := (Qle_eq_true_iff _ _).mp habs
+        rwa [Q.val_abs, toQ_pow2neg_val] at this
+      have hdel_j2 : C.G.δ j2 ≤ C.δ k := Nat.le_max_left _ _
+      have hdel_j1 : C.G.ω (C.F.δ j1) ≤ C.δ k := Nat.le_max_right _ _
+      have habs_j2 : |h.val| ≤ 1 / 2 ^ C.G.δ j2 :=
+        le_trans habs_val (inv_pow_le hdel_j2)
+      have habs_j1 : |h.val| ≤ 1 / 2 ^ C.G.ω (C.F.δ j1) :=
+        le_trans habs_val (inv_pow_le hdel_j1)
+      have hG_eval := hG j2 x h hxa hxb hxha hxhb hnum
+        ((Qle_eq_true_iff _ _).mpr (by rw [Q.val_abs, toQ_pow2neg_val]; exact habs_j2))
+      rw [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, Q.val_div _ _ hnum, Q.val_sub, toQ_pow2neg_val] at hG_eval
+      set Δ := Q.sub (C.G.f (Q.add x h)) (C.G.f x) with hΔDef
+      have hΔ_val : Δ.val = (C.G.f (Q.add x h)).val - (C.G.f x).val := Q.val_sub _ _
+      have hΔ_cont : |Δ.val| < 1 / 2 ^ C.F.δ j1 := by
+        rw [hΔ_val]
+        have := C.G.cont (C.F.δ j1) (Q.add x h) x hxha hxhb hxa hxb
+          ((Qle_eq_true_iff _ _).mpr (by
+            rw [Q.val_abs, Q.val_sub, toQ_pow2neg_val]
+            have : (Q.add x h).val - x.val = h.val := by rw [Q.val_add]; ring
+            rw [this]; exact habs_j1))
+        rwa [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val] at this
+      have hF_bound := C.F.deriv_bound hF (C.G.f x) hua hub
+      have hG_bound := C.G.deriv_bound hG x hxa' hxb'
+      rw [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, Q.val_div _ _ hnum, Q.val_sub, Q.val_mul, toQ_pow2neg_val]
+      change |((C.F.f (C.G.f (Q.add x h))).val - (C.F.f (C.G.f x)).val) / h.val - (F' (C.G.f x)).val * (G' x).val| < 1 / 2 ^ k
+      by_cases hΔ0 : Δ.val = 0
+      · have hsame : (C.G.f (Q.add x h)).val = (C.G.f x).val := by linarith [hΔ_val]
+        have hFsame : (C.F.f (C.G.f (Q.add x h))).val = (C.F.f (C.G.f x)).val :=
+          f_val_congr C.F.toA0 hupha huphb hua hub hsame
+        have hG0 : |(G' x).val| < 1 / 2 ^ j2 := by
+          have : ((C.G.f (Q.add x h)).val - (C.G.f x).val) / h.val = 0 := by
+            rw [show (C.G.f (Q.add x h)).val - (C.G.f x).val = 0 by linarith [hΔ_val], zero_div]
+          rw [this, zero_sub, abs_neg] at hG_eval
+          exact hG_eval
+        have hmul_bound : |(F' (C.G.f x)).val * (G' x).val| < 1 / 2 ^ (k + 3) := by
+          rw [abs_mul]
+          have h1 : |(F' (C.G.f x)).val| * |(G' x).val| ≤ (2 : Rat) ^ MF * |(G' x).val| :=
+            mul_le_mul_of_nonneg_right hF_bound (abs_nonneg _)
+          have h2 : (2 : Rat) ^ MF * |(G' x).val| < (2 : Rat) ^ MF * (1 / 2 ^ j2) :=
+            mul_lt_mul_of_pos_left hG0 (by positivity)
+          have h3 : (2 : Rat) ^ MF * (1 / 2 ^ j2) = 1 / 2 ^ (k + 3) := by
+            rw [hj2Def, show k + 3 + MF = (k + 3) + MF by rfl, pow_add]
+            have : (0 : Rat) < 2 ^ (k + 3) := by positivity
+            have : (0 : Rat) < 2 ^ MF := by positivity
+            field_simp
+          linarith [h1, h2, h3]
+        have : ((C.F.f (C.G.f (Q.add x h))).val - (C.F.f (C.G.f x)).val) / h.val = 0 := by
+          rw [show (C.F.f (C.G.f (Q.add x h))).val - (C.F.f (C.G.f x)).val = 0 from sub_eq_zero.mpr hFsame, zero_div]
+        rw [this, zero_sub, abs_neg]
+        have : (1 : Rat) / 2 ^ (k + 3) ≤ 1 / 2 ^ k := inv_pow_le (by omega)
+        linarith
+      · have hΔnum : Δ.num ≠ 0 := Q.num_ne_zero_of_val_ne_zero hΔ0
+        have hu_add : C.F.a.val ≤ (Q.add (C.G.f x) Δ).val := by
+          rw [Q.val_add, hΔ_val]; linarith
+        have hu_add_b : (Q.add (C.G.f x) Δ).val ≤ C.F.b.val := by
+          rw [Q.val_add, hΔ_val]; linarith
+        have hF_congr : (C.F.f (Q.add (C.G.f x) Δ)).val = (C.F.f (C.G.f (Q.add x h))).val :=
+          f_val_congr C.F.toA0 hu_add hu_add_b hupha huphb (by rw [Q.val_add, hΔ_val]; ring)
+        have hF_eval := hF j1 (C.G.f x) Δ hrx.1 hrx.2
+          ((Qle_eq_true_iff _ _).mpr hu_add) ((Qle_eq_true_iff _ _).mpr hu_add_b) hΔnum
+          ((Qle_eq_true_iff _ _).mpr (by rw [Q.val_abs, toQ_pow2neg_val]; exact le_of_lt hΔ_cont))
+        rw [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, Q.val_div _ _ hΔnum, Q.val_sub, toQ_pow2neg_val] at hF_eval
+        rw [hF_congr] at hF_eval
+        set E1 := ((C.F.f (C.G.f (Q.add x h))).val - (C.F.f (C.G.f x)).val) / Δ.val - (F' (C.G.f x)).val
+        set E2 := ((C.G.f (Q.add x h)).val - (C.G.f x).val) / h.val - (G' x).val
+        have hE1 : |E1| < 1 / 2 ^ j1 := hF_eval
+        have hE2 : |E2| < 1 / 2 ^ j2 := hG_eval
+        have h_alg : ((C.F.f (C.G.f (Q.add x h))).val - (C.F.f (C.G.f x)).val) / h.val - (F' (C.G.f x)).val * (G' x).val
+            = (F' (C.G.f x)).val * E2 + (G' x).val * E1 + E1 * E2 := by
+          have h1 : ((C.F.f (C.G.f (Q.add x h))).val - (C.F.f (C.G.f x)).val) / h.val
+              = (((C.F.f (C.G.f (Q.add x h))).val - (C.F.f (C.G.f x)).val) / Δ.val) * (Δ.val / h.val) := by
+            have hd : Δ.val ≠ 0 := hΔ0
+            have : (((C.F.f (C.G.f (Q.add x h))).val - (C.F.f (C.G.f x)).val) / Δ.val) * (Δ.val / h.val)
+                = ((C.F.f (C.G.f (Q.add x h))).val - (C.F.f (C.G.f x)).val) / h.val * (Δ.val / Δ.val) := by ring
+            rw [this, div_self hd, mul_one]
+          have h2 : ((C.F.f (C.G.f (Q.add x h))).val - (C.F.f (C.G.f x)).val) / Δ.val = (F' (C.G.f x)).val + E1 := by
+            dsimp [E1]; ring
+          have h3 : Δ.val / h.val = (G' x).val + E2 := by
+            dsimp [E2]; rw [hΔ_val]; ring
+          rw [h1, h2, h3]; ring
+        rw [h_alg]
+        have ht1 : |(F' (C.G.f x)).val * E2 + (G' x).val * E1 + E1 * E2|
+            ≤ |(F' (C.G.f x)).val * E2| + |(G' x).val * E1| + |E1 * E2| := by
+          have := abs_add_le' ((F' (C.G.f x)).val * E2 + (G' x).val * E1) (E1 * E2)
+          have := abs_add_le' ((F' (C.G.f x)).val * E2) ((G' x).val * E1)
+          linarith
+        rw [abs_mul, abs_mul, abs_mul] at ht1
+        have ht2 : |(F' (C.G.f x)).val| * |E2| < 1 / 2 ^ (k + 3) := by
+          have h1 : |(F' (C.G.f x)).val| * |E2| ≤ (2 : Rat) ^ MF * |E2| :=
+            mul_le_mul_of_nonneg_right hF_bound (abs_nonneg _)
+          have h2 : (2 : Rat) ^ MF * |E2| < (2 : Rat) ^ MF * (1 / 2 ^ j2) :=
+            mul_lt_mul_of_pos_left hE2 (by positivity)
+          have h3 : (2 : Rat) ^ MF * (1 / 2 ^ j2) = 1 / 2 ^ (k + 3) := by
+            rw [hj2Def, show k + 3 + MF = (k + 3) + MF by rfl, pow_add]
+            have : (0 : Rat) < 2 ^ (k + 3) := by positivity
+            have : (0 : Rat) < 2 ^ MF := by positivity
+            field_simp
+          linarith [h1, h2, h3]
+        have ht3 : |(G' x).val| * |E1| < 1 / 2 ^ (k + 3) := by
+          have h1 : |(G' x).val| * |E1| ≤ (2 : Rat) ^ MG * |E1| :=
+            mul_le_mul_of_nonneg_right hG_bound (abs_nonneg _)
+          have h2 : (2 : Rat) ^ MG * |E1| < (2 : Rat) ^ MG * (1 / 2 ^ j1) :=
+            mul_lt_mul_of_pos_left hE1 (by positivity)
+          have h3 : (2 : Rat) ^ MG * (1 / 2 ^ j1) = 1 / 2 ^ (k + 3) := by
+            rw [hj1Def, show k + 3 + MG = (k + 3) + MG by rfl, pow_add]
+            have : (0 : Rat) < 2 ^ (k + 3) := by positivity
+            have : (0 : Rat) < 2 ^ MG := by positivity
+            field_simp
+          linarith [h1, h2, h3]
+        have ht4 : |E1| * |E2| ≤ 1 / 2 ^ (k + 3) := by
+          have h1 : |E1| * |E2| ≤ (1 / 2 ^ j1) * (1 / 2 ^ j2) :=
+            mul_le_mul (le_of_lt hE1) (le_of_lt hE2) (abs_nonneg _) (by positivity)
+          have h2 : (1 / (2 : Rat) ^ j1) * (1 / 2 ^ j2) = 1 / 2 ^ (j1 + j2) := by
+            rw [one_div_mul_one_div, ← pow_add]
+          have h3 : (1 : Rat) / 2 ^ (j1 + j2) ≤ 1 / 2 ^ (k + 3) := inv_pow_le (by omega)
+          linarith [h1, h2, h3]
+        have h_sum : (1 : Rat) / 2 ^ (k + 3) + 1 / 2 ^ (k + 3) + 1 / 2 ^ (k + 3) < 1 / 2 ^ k := by
+          have : (2 : Rat) ^ (k + 3) = 2 ^ k * 8 := by
+            rw [show k + 3 = k + 3 by rfl, pow_add]; norm_num
+          rw [this]
+          have : (0 : Rat) < 2 ^ k := by positivity
+          field_simp
+          linarith
+        linarith [ht1, ht2, ht3, ht4, h_sum] }
+
+#print axioms CompData1.comp
 
 /-! ## A third boundary: limits
 
@@ -2395,7 +2624,7 @@ lower piece is empty and `splitHi` would be `0`. -/
 
 theorem A0.intEv_split_close (A : A0) (K n : Nat) (p w : Q) (hw : 0 < w.val)
     (hpa : A.a.val ≤ p.val) (hpb : p.val ≤ A.b.val)
-    (hqa : A.a.val ≤ p.val + w.val) (hqb : p.val + w.val ≤ A.b.val)
+    (_hqa : A.a.val ≤ p.val + w.val) (hqb : p.val + w.val ≤ A.b.val)
     (hn : A.ω K ≤ n) :
     ∃ M : Nat, 0 < M ∧ |w.val| / (M : Rat) ≤ 1 / 2 ^ A.ω K ∧
       |(A.intEv n (Q.add p w)).val - (A.intEv n p).val - (A.riemann p w M).val|

@@ -90,7 +90,7 @@ the value-layer *theorem proofs*, exactly as in the first-order repo):
 | **Typed ordinal layer**: base type `.ord`, `Eps0` notations, `ordᵒ`/`≺ᵒ`/`tiRecᵒ`, rule `tiEps0O` (`OrdCnf.lean`) | ✅ no coding in any computation |
 | **Typed hydra layer**: base type `.hyd`, trees as values, `cutᴴ`/`deadᴴ?`/`hordᴴ` (measure lands in `.ord`), rule `hordCutLtH` (`HydraTyped.lean`) | ✅ battle at the published length 37, where the coded extract overflows |
 | Formulas indexed by realizer type; equality+conversion at every type | ✅ |
-| `MR`, **45 rules**, extraction (axiom-free), soundness (all cases) | ✅ |
+| `MR`, **55 rules**, extraction (axiom-free), soundness (all cases) | ✅ |
 | Continuity (`Tracked`, `extract_continuous2`) | ✅ choice-free |
 | `tiEps0` + `tiRec` | ✅ used by Goodstein and Hydra |
 | Case studies: Fib, Fib-type-2, Pascal, Hanoi, gcd (full spec), Goodstein, Hydra, **Sperner**, **Hercules (∀-strategy)**, **Hercules (any head)**, **Goodstein on typed ordinals**, **Kirby–Paris on trees**, **Hercules on trees** | ✅ all extracted and running |

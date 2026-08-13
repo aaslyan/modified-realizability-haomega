@@ -1,7 +1,8 @@
 # HA^ω status
 
-**As of 2026-08-10, commit `b259874`+.** 761 jobs green, zero warnings, zero
-`sorry`/`admit`. 9,894 lines across 44 files in `HAomega/`, 45 inference
+**As of 2026-08-13, commit `bc2d143`.** Full `lake build` green — 7,851 jobs,
+including Mathlib and the first-order tree — zero HAomega warnings, zero
+`sorry`/`admit`. 14,131 lines across 48 files in `HAomega/`, **55** inference
 rules, 15 extracted realizers rendered in `EXTRACTED_HAOMEGA.md`.
 
 This is the "where does everything stand" document. `HAOMEGA.md` is the
@@ -16,7 +17,7 @@ stated, and what is blocked on what.**
 | part | state |
 |---|---|
 | Finite types, System T, `Formula` indexed by realizer type | done |
-| `MR`, 45 rules, `extract` (axiom-free, cast-free) | done |
+| `MR`, **55** rules, `extract` (axiom-free, cast-free) | done |
 | `soundness`, one case per rule, no wildcard | done |
 | Continuity (`Tracked`, `extract_continuous2`), choice-free | done |
 | `tiEps0` + `tiRec`, and their typed twins `tiEps0O`/`tiRecE` | done |
@@ -928,7 +929,7 @@ No rounding up.
 |---|---|---|
 | 1 | Related-work search | **Done.** Minlog, `formalized-proof-mining` (Lean), Incone, Pédrot, C-CoRN attributed; the comparative-adequacy framing is the only novelty candidate and is explicitly not claimed. §9 |
 | 2 | Limits obstruction | **Positive direction proved** (`LimSeq.toE0`, `limit_cont`). Negative direction **not statable here** — same reason as Myhill; already formalized in Incone. Sharpness (Weierstrass) flagged, not attempted. §8b |
-| 3 | Composition closure | **`A₀` closure proved** (`CompData.comp`). `A₁` **analysed, not proved**: needs no new field beyond a range condition; the moving-point worry dissolves under `A₁`'s uniformity. §8c |
+| 3 | Composition closure | **`A₀` and `A₁` closure both proved** (`CompData.comp`, `CompData1.comp`). Needs no new field beyond a range condition; derivative bound `A1.deriv_bound` proved; modulus is `max(G.δ(k+3+M_F), G.ω(F.δ(k+3+M_G)))`. §8c |
 | 4 | Polynomial adequacy | **Answered, negatively.** Inherent by Friedman–Ko (`#P₁`-complete integrals of polytime `C^∞` functions); our own slack is a separate factor `2^(k+14)`. §8d |
 | 5 | Inversion closure | **Boundary located and modulus transfer proved** (`inv_modulus`). Evaluator is *not* the obstacle; the modulus is. MVT bridge stated, not derived. §8e |
 | 6 | Bisection-vs-Newton | **Analysed, not implemented.** Two phenomena separated; achievable experiment identified (binary search vs linear scan of Sperner-1D, reachable with plain `ind` on the logarithm); Newton literally needs an `A₂` layer. §8f |
@@ -1040,27 +1041,18 @@ it: `g`'s values must lie in `f`'s domain. That is a relation *between* two
 representations rather than a property of either, so it is a field of
 `CompData`, not something derived.
 
-**Proved — `A₀` is closed under `∘`:**
+**Proved — `A₀` and `A₁` are closed under `∘`:**
 
-    'HAomega.CompData.comp'  depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.CompData.comp'   depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.CompData1.comp'  depends on axioms: [propext, Classical.choice, Quot.sound]
 
-with `ω_{f∘g} = ω_g ∘ ω_f` and no new modulus invented.
+with `ω_{f∘g} = ω_g ∘ ω_f` and `δ_{f∘g}(k) = max(G.δ(k + 3 + M_F), G.ω(F.δ(k + 3 + M_G)))`.
 
-**`A₁` under `∘`: analysed, not proved.** The estimate works out with **no new
-field** beyond the range condition. Writing `u = g(x)`, `Δ = g(x+h) − g(x)`,
-the quotient factors as `(f'(u) + e₁)(g'(x) + e₂)`, and three things make it go
-through, each already available: `Δ` is forced small by `G`'s *continuity*
-modulus, so `F.diff` applies at the moving point; the degenerate case `Δ = 0`
-is fine rather than fatal, since it forces `|g'(x)|` small and the target with
-it; and the cross terms need bounds on `|f'|`, `|g'|`, which are computable
-from `A₁`-data via `derivEval_approx` plus `2·fBound/h₀`. The composed modulus
-is `δ_{f∘g}(k) = max(δ_G(j₂), ω_G(δ_F(j₁)))`.
-
-The Lean proof is `Lemma 1`-sized — four error terms, a case split on `Δ = 0`,
-and a derivative-bound lemma that does not yet exist — and was **not
-attempted** rather than attempted and rushed. The item asked what data
-composition needs beyond `A₁`; the answer is none, and that answer is what
-landed.
+**`A₁` under `∘`: proved in full (`CompData1.comp`).**
+Writing `u = g(x)`, `Δ = g(x+h) − g(x)`:
+1. `A1.deriv_bound` proves $|(F' x)| \le 2^{M_F}$ uniformly on $[a,b]$ where $M_F = \lceil \log_2 (2\cdot \mathrm{fBound}/h_0 + 1) \rceil$ with $h_0 = \mathrm{stepSize}(0)$.
+2. Case $\Delta = 0$: $f(g(x+h)) = f(g(x))$ by `f_val_congr`, so the quotient is $0$. Furthermore $\Delta = 0 \implies |G'(x)| < 2^{-j_2}$, so $|F'(g(x)) G'(x)| < 2^{M_F - j_2} \le 2^{-(k+3)} \le 2^{-k}$.
+3. Case $\Delta \ne 0$: Difference quotient factors algebraically as $(F'(u) + E_1)(G'(x) + E_2) = F'(u)G'(x) + F'(u)E_2 + G'(x)E_1 + E_1 E_2$, bounded by $2^{-(k+3)} + 2^{-(k+3)} + 2^{-(k+3)} < 2^{-k}$. No additional field is required beyond the range condition.
 
 ## 8b. A third boundary: limits
 

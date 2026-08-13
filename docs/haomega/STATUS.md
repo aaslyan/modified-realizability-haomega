@@ -783,6 +783,64 @@ of `A₁ ⊨ EFTC2` gives a polynomial-time-adequate witness without resolving
 recover the `2^(k+14)` slack is worth doing. It would not change the
 complexity class. Recorded, not pursued.
 
+## 8g. `EFTC1` at the `Deriv` level — blocked, and on the excluded decision
+
+Queue item 7. **Not done**, and the reason is a blocker outside the item's own
+scope, recorded per the standing discipline rather than worked around.
+
+**The premise was that `EFTC1` is the smaller target.** It is — no external
+hypothesis, `δ := ω`, one estimate. But smaller in *analysis* is not smaller in
+*arithmetic*, and the arithmetic is what `Deriv` lacks.
+
+**Inventory of what the derivation needs**, worked out rather than guessed:
+
+1. *The Riemann sum as a term* — `Σ_{i<N} f(x + i·(h/N))` via `recNat`.
+   Expressible now; needs no rule.
+2. *The quotient* — `((h/N)·S)/h = S/N`. Needs commutativity and associativity
+   of `·`, and cancellation for `/`.
+3. *The average bound* — `|S/N − f x| ≤ maxᵢ |f xᵢ − f x|`, by induction on `N`.
+   Needs the triangle inequality for `qadd`, monotonicity of `qlt` under `qadd`,
+   and monotonicity under multiplication by positives.
+4. *The hypothesis* — each `|f xᵢ − f x| < 2⁻ᵏ` from `cont`, which at the
+   `Deriv` level is an object-language premise. Fine; no rule needed.
+
+Items 2 and 3 are the ordered-field rule base. Every one of them has an inner
+operation feeding an outer one, which is precisely the **associativity side**
+of the option-2 split measured earlier — the side that needs uniqueness of
+normal forms (`Q.of_eq_of`), i.e. the gcd theory, i.e. **option 1 or option 3**.
+That decision is explicitly out of scope, so the item stops here rather than
+defaulting into it.
+
+**What *is* reachable, and it is thin.** For the **zero integrand** the whole
+estimate degenerates: the sum is `0`, the quotient is `0/h = 0`, and the target
+is `|0 − 0| < eps`. Both new facts needed are in the cheap class —
+`Q.add 0 0 = 0` and `Q.div 0 t = 0` both have numerator `0` before `Q.of`
+reaches a gcd, exactly like `sub_self`. So "`EFTC1` for the zero integrand"
+could be derived with two more rules of the kind already added.
+
+It was **not** implemented. It would need two rules, the Riemann sum as an
+object term, and an induction over `N`, to demonstrate a route the constant-real
+derivation already demonstrates — and the general theorem would be no closer.
+That is effort spent on the appearance of progress.
+
+**So the architectural gap named several turns back stands**: the analysis
+strand remains meta-level Lean, and closing it for even one direction requires
+the Q-arithmetic decision, not more derivation-writing.
+
+## 8h. Overnight queue — where each item landed
+
+No rounding up.
+
+| # | Item | Landed |
+|---|---|---|
+| 1 | Related-work search | **Done.** Minlog, `formalized-proof-mining` (Lean), Incone, Pédrot, C-CoRN attributed; the comparative-adequacy framing is the only novelty candidate and is explicitly not claimed. §9 |
+| 2 | Limits obstruction | **Positive direction proved** (`LimSeq.toE0`, `limit_cont`). Negative direction **not statable here** — same reason as Myhill; already formalized in Incone. Sharpness (Weierstrass) flagged, not attempted. §8b |
+| 3 | Composition closure | **`A₀` closure proved** (`CompData.comp`). `A₁` **analysed, not proved**: needs no new field beyond a range condition; the moving-point worry dissolves under `A₁`'s uniformity. §8c |
+| 4 | Polynomial adequacy | **Answered, negatively.** Inherent by Friedman–Ko (`#P₁`-complete integrals of polytime `C^∞` functions); our own slack is a separate factor `2^(k+14)`. §8d |
+| 5 | Inversion closure | **Boundary located and modulus transfer proved** (`inv_modulus`). Evaluator is *not* the obstacle; the modulus is. MVT bridge stated, not derived. §8e |
+| 6 | Bisection-vs-Newton | **Analysed, not implemented.** Two phenomena separated; achievable experiment identified (binary search vs linear scan of Sperner-1D, reachable with plain `ind` on the logarithm); Newton literally needs an `A₂` layer. §8f |
+| 7 | `EFTC1` at `Deriv` level | **Blocked** on the excluded Q-arithmetic decision. Inventory recorded; only the zero-integrand case is reachable, and was not implemented. §8g |
+
 ## 8f. The bisection-versus-Newton experiment
 
 Queue item 6: what proof structure would actually produce two different

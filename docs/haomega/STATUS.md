@@ -783,6 +783,47 @@ of `A₁ ⊨ EFTC2` gives a polynomial-time-adequate witness without resolving
 recover the `2^(k+14)` slack is worth doing. It would not change the
 complexity class. Recorded, not pursued.
 
+## 8e. Inversion
+
+Queue item 5, run through `EFTC2`'s naming discipline.
+
+**Trap check, and the boundary is not where one first expects.** "`f⁻¹` is
+`A₀`-representable" is not trivially realizable, but the *evaluator* is not the
+obstacle: for strictly monotone continuous `f`, bisecting and comparing `f(m)`
+against `y` always eventually decides, since `f` separates distinct points, so
+`f⁻¹(y)` is computable without extra data. What is not computable is `f⁻¹`'s
+**modulus of continuity**. The pattern is `EFTC1`'s — the object exists, the
+modulus is the content.
+
+**The datum, precisely.** `f⁻¹`'s modulus of continuity *is* `f`'s modulus of
+**strict monotonicity**: a `μ` with `|x−y| ≥ 2⁻ᵏ → |f x − f y| ≥ 2⁻μ⁽ᵏ⁾`. This
+is exactly the item's "explicit non-vanishing bound on `f'`, not merely
+`f' ≠ 0` classically". Knowing `inf|f'| > 0` is a `Σ₁` fact: `inf|f'|` is
+approximable from the data, but no approximation of it certifies positivity, so
+a positive rational lower bound is strictly stronger than the classical
+statement — and it is the datum inversion needs.
+
+**Proved:**
+
+    'HAomega.inv_modulus'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+`IsMonoModulus` names the datum; `inv_modulus` proves that it transfers, by
+contraposition, into a modulus of continuity for any right inverse. One line of
+mathematics, and it is the whole boundary: with `μ` the inverse has a modulus,
+without it there is none to compute.
+
+**At the `A₁` level, one datum covers both.** A positive rational lower bound
+`m ≤ |f'|` yields a monotonicity modulus by the mean value theorem
+(`|f x − f y| ≥ m|x−y|`), and `(f⁻¹)' = 1/f'(f⁻¹ y)` is then bounded. **Not
+formalized**: the MVT is not available in this development, so the implication
+from `m` to `μ` is stated, not derived — `μ` is taken as the primitive datum
+instead, which is the weaker and safer choice.
+
+**Not attempted**: constructing the inverse evaluator itself (a bisection,
+which the Sperner-1D machinery could supply) and assembling a full `A₀` for
+`f⁻¹`. The item asked where the adequate/inadequate boundary falls; that is
+what landed.
+
 ## 8c. Composition
 
 Queue item 3 — the manifesto's named bottleneck for Picard–Lindelöf.

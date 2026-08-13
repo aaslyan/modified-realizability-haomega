@@ -1883,6 +1883,51 @@ value-level law — `Q.add_comm`, `Q.add_assoc`, … — and those live in
 
 Recorded rather than chosen. -/
 
+/-! ## Inversion
+
+The manifesto's second closure operation.  Running `EFTC2`'s naming discipline
+on it first:
+
+**Trap check.** Is "`f⁻¹` is `A₀`-representable" trivially realizable?  No, but
+the boundary is not where one first expects.  The *evaluator* for `f⁻¹` is
+computable without extra data — for strictly monotone continuous `f`, bisecting
+and comparing `f(m)` against `y` always eventually decides, since `f` separates
+distinct points — so producing `f⁻¹(y)` is not the obstacle.  What is not
+computable is `f⁻¹`'s **modulus of continuity**.  The pattern is `EFTC1`'s: the
+object exists, the modulus is the content.
+
+**The datum.** `f⁻¹`'s modulus of continuity *is* `f`'s modulus of **strict
+monotonicity** — a `μ` with `|x−y| ≥ 2⁻ᵏ → |f x − f y| ≥ 2⁻μ⁽ᵏ⁾`.  This is
+exactly the item's "explicit non-vanishing bound, not merely `f' ≠ 0`
+classically": knowing `inf|f'| > 0` is a `Σ₁` fact, and while `inf|f'|` is
+*approximable* from the data, no approximation certifies positivity.  A
+positive rational lower bound is a strictly stronger datum than the classical
+statement, and it is the one inversion needs. -/
+
+/-- A modulus of **strict monotonicity** — the datum inversion needs and `A₀`
+does not carry. -/
+def IsMonoModulus (A : A0) (μ : Nat → Nat) : Prop :=
+  ∀ (k : Nat) (x y : Q), A.a.val ≤ x.val → x.val ≤ A.b.val →
+    A.a.val ≤ y.val → y.val ≤ A.b.val →
+    1 / 2 ^ k ≤ |x.val - y.val| → 1 / 2 ^ μ k ≤ |(A.f x).val - (A.f y).val|
+
+/-- **`f`'s modulus of strict monotonicity is `f⁻¹`'s modulus of continuity.**
+One line of mathematics, and it is the whole boundary: with `μ` the inverse has
+a modulus, without it there is none to compute. -/
+theorem inv_modulus (A : A0) (μ : Nat → Nat) (hμ : IsMonoModulus A μ)
+    (g : Q → Q)
+    (hga : ∀ y : Q, A.a.val ≤ (g y).val) (hgb : ∀ y : Q, (g y).val ≤ A.b.val)
+    (hinv : ∀ y : Q, (A.f (g y)).val = y.val)
+    (k : Nat) (y z : Q) (h : |y.val - z.val| < 1 / 2 ^ μ k) :
+    |(g y).val - (g z).val| < 1 / 2 ^ k := by
+  by_contra hc
+  push_neg at hc
+  have hm := hμ k (g y) (g z) (hga y) (hgb y) (hga z) (hgb z) hc
+  rw [hinv, hinv] at hm
+  linarith
+
+#print axioms inv_modulus
+
 /-! ## Composition
 
 The manifesto names `∘` as the hard closure operation and the bottleneck for

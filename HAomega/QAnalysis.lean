@@ -1620,6 +1620,112 @@ theorem realCauchy_sound {x eps : RealTm []}
 
 #print axioms realCauchy_sound
 
+/-! ### A real, derived
+
+The constant real `fun _ ↦ 0`, with Cauchy rate `1/(n+1)`, derived **inside**
+`Deriv` — the first object-language derivation about a real in this
+development, and what the two `Q` conversion rules were added for.
+
+The shape is four `eqSubst` rewrites run backwards from `convQPosRecip`: the
+reciprocal is rewritten into its application, `0` into `0 − 0`, and each `0`
+into the beta-redex that produced it.  `convBeta` supplies the redexes and
+`convQSubSelf` the middle step. -/
+
+abbrev constReal : RealTm [] := .lam (.qnat .zero)
+
+abbrev recipEps : RealTm [] :=
+  .lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))
+
+def constReal_upper :
+    Deriv (Ctx.nil (Γ := [])) (realUpperF constReal recipEps) := by
+  refine Deriv.allI (Deriv.allI ?_)
+  simp only [Tm.wk, Tm.rename, Ren.ext]
+  deriv_norm
+  have hA := Deriv.convBeta (Δ := (Ctx.nil (Γ := [])).wk.wk)
+    (.qnat (.zero : Tm (.nat :: .nat :: .nat :: []) .nat)) (.var (.there .here))
+  have hB := Deriv.convBeta (Δ := (Ctx.nil (Γ := [])).wk.wk)
+    (.qnat (.zero : Tm (.nat :: .nat :: .nat :: []) .nat))
+    (.add (.var (.there .here)) (.var .here))
+  have hC := Deriv.convBeta (Δ := (Ctx.nil (Γ := [])).wk.wk)
+    ((.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here)))) :
+      Tm (.nat :: .nat :: .nat :: []) .rat) (.var (.there .here))
+  deriv_norm at hA hB hC
+  have hpos := Deriv.convQPosRecip (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.var (.there .here) : Tm (.nat :: .nat :: []) .nat)
+  have hsub := Deriv.convQSubSelf (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.qnat (.zero : Tm (.nat :: .nat :: []) .nat))
+  have s1 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.qnat .zero) (.var .here)) (.succ .zero)) (Deriv.symmE hC) hpos
+  deriv_norm at s1
+  have s2 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.var .here)
+      ((Tm.lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))).app
+        (.var (.there (.there .here))))) (.succ .zero)) (Deriv.symmE hsub) s1
+  deriv_norm at s2
+  have s3 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.qsub (.var .here) (.qnat .zero))
+      ((Tm.lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))).app
+        (.var (.there (.there .here))))) (.succ .zero)) (Deriv.symmE hA) s2
+  deriv_norm at s3
+  have s4 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.qsub ((Tm.lam (.qnat .zero)).app (.var (.there (.there .here))))
+        (.var .here))
+      ((Tm.lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))).app
+        (.var (.there (.there .here))))) (.succ .zero)) (Deriv.symmE hB) s3
+  deriv_norm at s4
+  exact s4
+
+def constReal_lower :
+    Deriv (Ctx.nil (Γ := [])) (realLowerF constReal recipEps) := by
+  refine Deriv.allI (Deriv.allI ?_)
+  simp only [Tm.wk, Tm.rename, Ren.ext]
+  deriv_norm
+  have hA := Deriv.convBeta (Δ := (Ctx.nil (Γ := [])).wk.wk)
+    (.qnat (.zero : Tm (.nat :: .nat :: .nat :: []) .nat)) (.var (.there .here))
+  have hB := Deriv.convBeta (Δ := (Ctx.nil (Γ := [])).wk.wk)
+    (.qnat (.zero : Tm (.nat :: .nat :: .nat :: []) .nat))
+    (.add (.var (.there .here)) (.var .here))
+  have hC := Deriv.convBeta (Δ := (Ctx.nil (Γ := [])).wk.wk)
+    ((.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here)))) :
+      Tm (.nat :: .nat :: .nat :: []) .rat) (.var (.there .here))
+  deriv_norm at hA hB hC
+  have hpos := Deriv.convQPosRecip (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.var (.there .here) : Tm (.nat :: .nat :: []) .nat)
+  have hsub := Deriv.convQSubSelf (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.qnat (.zero : Tm (.nat :: .nat :: []) .nat))
+  have s1 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.qnat .zero) (.var .here)) (.succ .zero)) (Deriv.symmE hC) hpos
+  deriv_norm at s1
+  have s2 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.var .here)
+      ((Tm.lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))).app
+        (.var (.there (.there .here))))) (.succ .zero)) (Deriv.symmE hsub) s1
+  deriv_norm at s2
+  have s3 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.qsub (.var .here) (.qnat .zero))
+      ((Tm.lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))).app
+        (.var (.there (.there .here))))) (.succ .zero)) (Deriv.symmE hB) s2
+  deriv_norm at s3
+  have s4 := Deriv.eqSubst (Δ := (Ctx.nil : Ctx [.nat, .nat] []))
+    (.eq (.qlt (.qsub ((Tm.lam (.qnat .zero)).app
+        (.add (.var (.there (.there .here))) (.var (.there .here))))
+        (.var .here))
+      ((Tm.lam (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.var .here))))).app
+        (.var (.there (.there .here))))) (.succ .zero)) (Deriv.symmE hA) s3
+  deriv_norm at s4
+  exact s4
+
+/-- **The object-language derivation, carried to the value layer.**  A real
+derived inside `Deriv`, and `realCauchy_sound` turning that derivation into the
+analytic statement. -/
+theorem constReal_cauchy (n d : Nat) :
+    |(Tm.eval constReal Env.nil n).val - (Tm.eval constReal Env.nil (n + d)).val|
+      < (Tm.eval recipEps Env.nil n).val :=
+  realCauchy_sound constReal_upper constReal_lower n d
+
+#print axioms constReal_upper
+#print axioms constReal_cauchy
+
 /-! ### What reals in the object language still cannot do
 
 The layer above is definitional plus one bridge.  **Nothing about a real can be

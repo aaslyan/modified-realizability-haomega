@@ -616,11 +616,31 @@ Note the same degeneracy is doing the work a third time — this route reaches
 exactly the identities and order facts whose normalization collapses, and no
 further. It is still not a general arithmetic rule base.
 
-**Not verified: that these two rules suffice.** The constant real's Cauchy
-proof should now be `convBeta` to reduce `(fun _ ↦ q) n` to `q`, `convQSubSelf`
-for `q − q = 0`, `convQPosRecip` for `0 < 1/(n+1)`, and `eqSubst` to chain
-them. That derivation is **not written**, so "the constant real is now
-derivable" is a plausible reading of what landed, not a checked one.
+**The two rules do suffice — now checked, not predicted.**
+
+    'HAomega.constReal_upper'   depends on axioms: [propext, Quot.sound]
+    'HAomega.constReal_cauchy'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+`constReal_upper`/`constReal_lower` derive, **inside `Deriv`**, that
+`fun _ ↦ 0` is Cauchy with rate `1/(n+1)`. The footprint is the one every
+derivation in this development reports, `[propext, Quot.sound]` — this is a
+derivation, not a meta-level proof about one. `constReal_cauchy` then runs it
+through `realCauchy_sound` to the value layer, picking up `Classical.choice`
+from `soundness` as every use of soundness does.
+
+The shape is four `eqSubst` rewrites run *backwards* from `convQPosRecip`: the
+reciprocal is rewritten into its application, `0` into `0 − 0`, and each `0`
+into the beta-redex that produced it, with `convBeta` supplying the redexes and
+`convQSubSelf` the middle step.
+
+**The derivation was harder than the rules.** The rules were three sites each;
+this needed the weakenings normalized by hand (`simp only [Tm.wk, Tm.rename,
+Ren.ext]`) before `convBeta` would unify, explicit context annotations at every
+step because `Ctx.nil`'s object context is not inferable from the goal, and a
+`deriv_norm` after each rewrite because `Formula.subst1` of a weakened term is
+only *propositionally* equal to the term — `eqSubst` chains cleanly only once
+both sides are in normal form. Worth recording, since it is the cost of every
+future object-language derivation about reals, not a one-off.
 
 Options 1 and 3 remain open and untouched; the choice between them is not
 defaulted into.

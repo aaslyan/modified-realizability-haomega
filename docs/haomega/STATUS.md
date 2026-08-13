@@ -783,6 +783,55 @@ of `A₁ ⊨ EFTC2` gives a polynomial-time-adequate witness without resolving
 recover the `2^(k+14)` slack is worth doing. It would not change the
 complexity class. Recorded, not pursued.
 
+## 8f. The bisection-versus-Newton experiment
+
+Queue item 6: what proof structure would actually produce two different
+extracted algorithms for the same theorem? No Lean changes; this is the
+analysis the item asked for.
+
+**First, the phrase conflates two different phenomena**, and separating them is
+most of the answer:
+
+* **Different witness.** Two proofs of the same `∃`-statement extract programs
+  that return *different* answers. Observable by comparing outputs.
+* **Same witness, different cost.** Two proofs extract programs returning the
+  *same* answer by different routes. Observable only by measuring work, never
+  by comparing outputs.
+
+Bisection-versus-Newton is the second kind. The existing square-root theorem
+exhibits neither, for the reason already recorded: its colouring is monotone,
+so first and last crossing coincide.
+
+**The achievable experiment is binary search versus linear scan of Sperner-1D.**
+`spernerD` is proved by a forward scan and extracts to one. A binary-search
+proof of the *same* statement — split the interval, test the midpoint, recurse
+on the side whose endpoints disagree — extracts to a different program. On a
+monotone colouring the two return the same crossing at different cost (the
+second kind); on an oscillating colouring they return different crossings (the
+first). One experiment, both effects.
+
+**Its cost is lower than expected, and this corrects an assumption.** Binary
+search looks like it needs course-of-values induction, which `HAomega` does not
+have — `Deriv` carries `ind`, `tiEps0` and `tiEps0O`, and the first-order
+development's `StrongInduction` was a phase of its own. But it does **not**:
+generalize to "an interval of length `≤ 2ʲ` with disagreeing endpoints contains
+a crossing" and induct on **`j`**, the logarithm, with ordinary `ind`. The
+halving is in the statement, not the recursion. So no new rule is needed, and
+the blocker is derivation-writing effort, not missing infrastructure.
+
+**Not attempted.** It is a `spernerD`-sized derivation with more index
+arithmetic (`lo + 2ʲ`), and attempting it at the end of a long session would be
+exactly the rushing the item warned against.
+
+**Bisection versus Newton *literally* is a representation question, not an
+algorithmic one** — the sharper finding. Newton's convergence proof needs a
+bound on `f''` (or a Lipschitz modulus for `f'`), which `A₁` does not carry, on
+top of item 5's positive lower bound on `|f'|`. So the manifesto's literal
+experiment cannot be run at `A₁` at all: it needs an `A₂` layer first, and the
+"two algorithms for one theorem" difference is downstream of a difference in
+what data each proof consumes. That is the framework's own thesis applying to
+its own experiment.
+
 ## 8e. Inversion
 
 Queue item 5, run through `EFTC2`'s naming discipline.

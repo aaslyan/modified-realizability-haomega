@@ -1883,6 +1883,101 @@ value-level law — `Q.add_comm`, `Q.add_assoc`, … — and those live in
 
 Recorded rather than chosen. -/
 
+/-! ## A third boundary: limits
+
+`EFTC2` is about differentiation, `EFTC1` about integration.  This is about
+**limits**, and it is the effective analogue of Specker's example — a computable
+monotone bounded sequence of rationals whose limit is not a computable real.
+
+## Two checks before any proof, in the order `EFTC2`'s own history says to run
+them
+
+**1. Is the naive statement trivially realizable?**  No, and for a different
+reason than `EFTC2`'s trap.  "Given `A₀`-data for each `fₙ`, produce `A₀`-data
+for the limit" asks for an evaluator, and an evaluator for the limit genuinely
+is *not* computable from the `fₙ` alone: with no rate of convergence there is
+no point at which the answer may be read off.  So there is no numeral shortcut
+here of the kind `f b − f a` was.
+
+**2. Is it statable here?**  The *positive* direction is.  The *negative*
+direction is **not**, for exactly the reason recorded at the negative half of
+`EFTC2` (§ below): "the limit is not `A₀`-representable" quantifies over
+procedures, and this model has no computability predicate.  Specker's theorem
+is therefore a citation here, as Myhill's is.
+
+That is worth stating precisely because the negative direction *is* already
+formalized elsewhere — Incone (Steinberg–Théry–Thies) proves in Coq that taking
+the limit of a converging sequence of reals is discontinuous, in a setting
+built to express exactly what this one cannot.  This section does not compete
+with that; it does the positive half.
+
+There is also a second limit here, before the computability one: the limit
+function is not rational-valued, so it is not an `A₀` at all — the same
+representational obstacle `EFTC1` hit.  `E₀` is what it lands in. -/
+
+/-- A sequence of `A₀`-style evaluators on a common interval, each with its own
+modulus of continuity, **together with an explicit modulus of uniform
+convergence**.  The last field is the one Specker's example says cannot be
+manufactured. -/
+structure LimSeq where
+  a : Q
+  b : Q
+  fs : Nat → Q → Q
+  /-- `ωs n` is a modulus of continuity for `fs n`. -/
+  ωs : Nat → Nat → Nat
+  /-- modulus of uniform convergence. -/
+  c : Nat → Nat
+  ivl : Q.ltN a b = 1
+  cont : ∀ (n k : Nat) (x y : Q), Qle a x = true → Qle x b = true →
+      Qle a y = true → Qle y b = true →
+      Qle (Q.abs (Q.sub x y)) (D.toQ (D.pow2neg (ωs n k))) = true →
+      Q.ltN (Q.abs (Q.sub (fs n x) (fs n y))) (D.toQ (D.pow2neg k)) = 1
+  conv : ∀ (k n m : Nat), c k ≤ n → n ≤ m → ∀ x : Q,
+      Qle a x = true → Qle x b = true →
+      Qle (Q.abs (Q.sub (fs n x) (fs m x))) (D.toQ (D.pow2neg k)) = true
+
+/-- **The limit is `E₀`-adequate.**  The `conv` field *is* `E₀`'s requirement,
+once the index is shifted — which is the honest content of the positive half:
+supplying a modulus of uniform convergence is exactly supplying the `E₀`. -/
+def LimSeq.toE0 (L : LimSeq) : E0 :=
+  { a := L.a, b := L.b, ev := L.fs, cm := fun k ↦ L.c (k + 2), ivl := L.ivl,
+    conv := by
+      intro k n m hn hnm x hxa hxb
+      have h := L.conv (k + 2) n m hn hnm x hxa hxb
+      rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val] at h ⊢
+      exact le_trans h (inv_pow_le (by omega)) }
+
+/-- **And it carries a modulus of continuity** — `Ω k = ω_{c(k+2)}(k+2)`, a
+*single* modulus valid at every index past `c(k+2)`, which no individual `ωs n`
+gives.  The three-ε argument through a fixed index is what produces it. -/
+theorem LimSeq.limit_cont (L : LimSeq) (k n : Nat) (x y : Q)
+    (hn : L.c (k + 2) ≤ n)
+    (hxa : Qle L.a x = true) (hxb : Qle x L.b = true)
+    (hya : Qle L.a y = true) (hyb : Qle y L.b = true)
+    (hxy : |x.val - y.val| ≤ 1 / 2 ^ (L.ωs (L.c (k + 2)) (k + 2))) :
+    |(L.fs n x).val - (L.fs n y).val| < 1 / 2 ^ k := by
+  have hNx := L.conv (k + 2) (L.c (k + 2)) n le_rfl hn x hxa hxb
+  have hNy := L.conv (k + 2) (L.c (k + 2)) n le_rfl hn y hya hyb
+  rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val] at hNx hNy
+  have hmid := L.cont (L.c (k + 2)) (k + 2) x y hxa hxb hya hyb
+    (by rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val]; exact hxy)
+  rw [Q.ltN_eq_one_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val] at hmid
+  have t1 : |(L.fs n x).val - (L.fs n y).val|
+      ≤ |(L.fs n x).val - (L.fs (L.c (k + 2)) x).val|
+        + |(L.fs (L.c (k + 2)) x).val - (L.fs n y).val| := abs_sub_le _ _ _
+  have t2 : |(L.fs (L.c (k + 2)) x).val - (L.fs n y).val|
+      ≤ |(L.fs (L.c (k + 2)) x).val - (L.fs (L.c (k + 2)) y).val|
+        + |(L.fs (L.c (k + 2)) y).val - (L.fs n y).val| := abs_sub_le _ _ _
+  rw [abs_sub_comm] at hNx
+  have e : (1 : Rat) / 2 ^ (k + 2) + 1 / 2 ^ (k + 2) + 1 / 2 ^ (k + 2) < 1 / 2 ^ k := by
+    rw [quarter_pow]
+    have hp : (0 : Rat) < 1 / 2 ^ k := by positivity
+    linarith
+  linarith
+
+#print axioms LimSeq.toE0
+#print axioms LimSeq.limit_cont
+
 /-! ## The negative half, and why it is not here
 
 `A₀ ⊭ EFTC2` — Myhill's theorem: a computable `C¹` function whose derivative is

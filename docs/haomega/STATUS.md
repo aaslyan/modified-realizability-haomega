@@ -735,6 +735,51 @@ is proof-side only, the cost is build time (7,849 jobs), not trust.
 * Case Study II (Browder–Goehde–Kirk / Banach) — deliberately not begun.
 
 
+## 8b. A third boundary: limits
+
+Queue item 2. `EFTC2` is differentiation, `EFTC1` integration; this is limits —
+the effective analogue of Specker's example (a computable monotone bounded
+sequence of rationals with non-computable limit).
+
+**Trap check first, per `EFTC2`'s own history.** The naive statement is *not*
+trivially realizable, and for a different reason than `EFTC2`'s was: an
+evaluator for the limit genuinely is not computable from the `fₙ` alone, since
+with no rate there is no point at which an answer may be read off. There is no
+numeral shortcut here of the kind `f b − f a` was.
+
+**Statability check second, and this is the finding.** The *negative* direction
+is **not statable here**, for exactly the reason recorded for Myhill in §7:
+"the limit is not `A₀`-representable" quantifies over procedures and this model
+has no computability predicate. Specker is a citation, as Myhill is. Worth
+being exact about the cost: the negative direction is *already formalized
+elsewhere* — Incone proves in Coq that taking the limit of a converging
+sequence of reals is discontinuous, in a setting built to express what this one
+cannot. This section does not compete with that.
+
+There is also a second, representational limit before the computability one:
+the limit function is not rational-valued, so it is not an `A₀` at all — the
+same obstacle `EFTC1` hit. `E₀` is where it lands.
+
+**What is proved — the positive direction:**
+
+    'HAomega.LimSeq.toE0'        depends on axioms: [propext, Classical.choice, Quot.sound]
+    'HAomega.LimSeq.limit_cont'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+`LimSeq` is a sequence of `A₀`-style evaluators on a common interval, each with
+its own modulus of continuity, **plus an explicit modulus of uniform
+convergence** — the field Specker's example says cannot be manufactured.
+`toE0` shows that field *is* `E₀`'s requirement once the index is shifted,
+which is the honest content: supplying the convergence modulus is supplying the
+`E₀`. `limit_cont` is the part with mathematical content — a **single** modulus
+`Ω k = ω_{c(k+2)}(k+2)` valid at every index past `c(k+2)`, which no individual
+`ωs n` provides, obtained by the three-ε argument through a fixed index.
+
+**Sharpness, not formalized.** This lands in `E₀`-plus-a-modulus-of-continuity,
+not `E₁`, and that is not an accident of the proof: uniform limits do **not**
+preserve differentiability (Weierstrass). Stating that here would need a
+counterexample sequence, which is classical analysis this development has no
+route to. Flagged rather than attempted.
+
 ## 9. Related work — searched, and what it costs us
 
 Done as a literature search, not a formalization. **Method and its limits**: an

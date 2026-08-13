@@ -735,6 +735,54 @@ is proof-side only, the cost is build time (7,849 jobs), not trust.
 * Case Study II (Browder–Goehde–Kirk / Banach) — deliberately not begun.
 
 
+## 8d. Polynomial adequacy for `EFTC2` — answered, and it is not our fault
+
+Queue item 4: is the exponential sample count inherent to the
+modulus-of-differentiability route, or would a different proof of the same
+`A₁ ⊨ EFTC2` give a polynomial-time-adequate witness in Ko's sense? No Lean
+changes; this is a measurement plus a literature answer.
+
+**The answer is that it is inherent, and the citation is Friedman–Ko (1982).**
+There are polynomial-time computable **C^∞** functions on `[0,1]` whose
+integrals are `#P₁`-complete; so a polytime-computable integrand need not have
+a polytime integral unless `#P₁ ⊆ FP`. Two things about that are worth being
+precise on:
+
+* It holds already for *smooth* integrands. Having a modulus of
+  differentiability — which is exactly what `A₁` adds over `A₀` — does not
+  evade it. So no rearrangement of *this* proof, and no substitution of a
+  cleverer quadrature rule, reaches polynomial time.
+* Any fixed-order quadrature is exponential anyway: a rule of order `p` needs
+  `N ~ 2^(k/p)` samples for `2⁻ᵏ` accuracy. Higher order buys a constant in the
+  exponent, never the exponent.
+
+**But the two gaps should not be conflated, and one of them *is* ours.**
+
+    measured   sqEx.intN k = 2^(2k+14)     (16384, 65536, 262144 at k = 0,1,2)
+    optimal    left rule on f' = 2x needs  N ≈ 2^k        (1, 2, 4)
+
+So the construction sits a factor of about `2^(k+14)` above what the quadrature
+itself requires. That slack is real and is ours: `ω'(m)` compounds `ω` with `δ`
+— `δ` appears *inside* `ω`'s argument — which doubles the index, and the `+14`
+is the accumulated safety margin of Lemma 1's `k+5`, Lemma 2's `k+2+ℓ`, and the
+`η₂` term added when `omega'` was corrected. This confirms rather than revises
+the existing note that the bookkeeping is very conservative: the measured
+errors land far inside their targets.
+
+**The sharp finding.** `EFTC2`'s `q_k` is required by §5.0 to be computed *from
+`F`*, not from `f`. Computed from `f` it is two evaluations — constant time,
+trivially polytime — and that is precisely the degenerate reading §5.0 exists
+to rule out. So **the definitional choice that makes `EFTC2` non-trivial is the
+same one that makes its witness `#P`-hard**: the adequacy boundary and the
+complexity boundary fall at exactly the same place. That is the answer §8's
+optimal-adequacy question was looking for, and it is a negative one — no proof
+of `A₁ ⊨ EFTC2` gives a polynomial-time-adequate witness without resolving
+`#P₁ ⊆ FP`.
+
+**What remains open, and is a real question**: whether tightening `ω'` to
+recover the `2^(k+14)` slack is worth doing. It would not change the
+complexity class. Recorded, not pursued.
+
 ## 8c. Composition
 
 Queue item 3 — the manifesto's named bottleneck for Picard–Lindelöf.

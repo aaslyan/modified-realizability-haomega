@@ -783,6 +783,46 @@ of `A₁ ⊨ EFTC2` gives a polynomial-time-adequate witness without resolving
 recover the `2^(k+14)` slack is worth doing. It would not change the
 complexity class. Recorded, not pursued.
 
+## 8j. `EFTC1` at the `Deriv` level — the step derived, the sum not
+
+**The rule base works.** Its first use:
+
+    'HAomega.qAddLtAdd'  does not depend on any axioms
+
+`a < c → b < d → a + b < c + d`, derived in the object language from four of
+the eight new rules (`convQAddLt` twice, `convQAddComm` twice, `convQLtTrans`).
+It is cleaner than the other derivations here, which report
+`[propext, Quot.sound]`, because it is a pure term construction with no
+`deriv_norm` in it.
+
+**And it is `EFTC1`'s induction step** — the sum bound is exactly this lemma
+iterated over the summands. So the arithmetic half of §8g's inventory is not
+merely unblocked in principle; the piece that needed it is derived.
+
+**A proof-shape finding worth reusing.** The constant-real chain was built
+*forwards*, with a `deriv_norm` after every `eqSubst`, because the input to
+each rewrite had to match an already-normalized type. This one is built
+*backwards* with `refine`, and the definitional matching goes through unaided:
+the motives are applied to the goal rather than to a derived statement, so
+nothing needs re-normalizing. **Backward is the cheaper idiom whenever the goal
+is concrete**, which corrects the impression left by §8's constant-real note
+that this plumbing is inherently expensive.
+
+**How far `EFTC1` got, exactly.** Not done. Remaining:
+
+* the Riemann sum as a `recNat` term — expressible, not written;
+* the `ind` over `N` — the step is `qAddLtAdd`, the assembly is not written;
+* **the base case, which needs one more rule.** At `N = 0` both sides are `0`
+  and the bound reads `0 < 0`, which is false. Either the statement starts at
+  `N = 1`, or the order is stated non-strictly — and non-strict needs
+  `qlt t t = 0`, i.e. a `convQLtSelf` rule. That fact was already measured in
+  the option-2 pass as `[propext]`-cheap (`Int.lt_irrefl`, four lines), so it is
+  a known small addition, not a new investigation.
+
+So `EFTC1` at the `Deriv` level is now blocked on **derivation-writing effort
+plus one cheap rule**, not on the architectural decision. That is a different
+kind of blocker from §8g's, and the difference is the point of taking option 1.
+
 ## 8i. The `Q` arithmetic rule base — option 1 taken, and measured
 
 The fork recorded in §7 is resolved: **option 1**, Mathlib in the core.

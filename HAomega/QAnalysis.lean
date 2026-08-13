@@ -1726,6 +1726,43 @@ theorem constReal_cauchy (n d : Nat) :
 #print axioms constReal_upper
 #print axioms constReal_cauchy
 
+/-! ### The rule base's first real use
+
+`a < c → b < d → a + b < c + d`, derived in the object language.  It uses four
+of the eight new rules — `convQAddLt` twice, `convQAddComm` twice,
+`convQLtTrans` — and it is **`EFTC1`'s induction step**: the sum bound is this
+lemma iterated over the summands.
+
+Note the proof shape, which differs from the constant real's.  There the chain
+was built *forwards* with a `deriv_norm` after each rewrite, because `eqSubst`'s
+input had to match a normalized type.  Here it is built *backwards* with
+`refine`, and the definitional matching goes through unaided — the motives are
+applied to the goal rather than to an already-derived statement, and nothing
+needs re-normalizing.  Backward is the cheaper idiom when the goal is concrete. -/
+
+def qAddLtAdd {Γ as : List Ty} {Δ : Ctx Γ as} :
+    Deriv Δ (.all .rat (.all .rat (.all .rat (.all .rat
+      (.imp (.eq (.qlt (.var (.there (.there (.there .here)))) (.var (.there .here)))
+              (.succ .zero))
+      (.imp (.eq (.qlt (.var (.there (.there .here))) (.var .here)) (.succ .zero))
+        (.eq (.qlt (.qadd (.var (.there (.there (.there .here))))
+                          (.var (.there (.there .here))))
+                   (.qadd (.var (.there .here)) (.var .here)))
+          (.succ .zero)))))))) := by
+  refine Deriv.allI (Deriv.allI (Deriv.allI (Deriv.allI (Deriv.impI (Deriv.impI ?_)))))
+  refine Deriv.convQLtTrans _ _ _ (Deriv.convQAddLt _ _ _ (Deriv.wk Deriv.ax)) ?_
+  refine Deriv.eqSubst
+    (.eq (.qlt (.qadd (.var (.there (.there .here))) (.var (.there (.there (.there .here)))))
+      (.var .here)) (.succ .zero))
+    (Deriv.convQAddComm (.var .here) (.var (.there .here))) ?_
+  refine Deriv.eqSubst
+    (.eq (.qlt (.var .here) (.qadd (.var (.there .here)) (.var (.there (.there .here)))))
+      (.succ .zero))
+    (Deriv.convQAddComm (.var (.there (.there .here))) (.var (.there .here))) ?_
+  exact Deriv.convQAddLt _ _ _ Deriv.ax
+
+#print axioms qAddLtAdd
+
 /-! ### A non-constant term, and the boundary it marks
 
 `fun n ↦ n − n` is not a constant term: its body mentions the bound variable,

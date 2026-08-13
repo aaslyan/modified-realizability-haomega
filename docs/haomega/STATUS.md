@@ -732,6 +732,78 @@ is proof-side only, the cost is build time (7,849 jobs), not trust.
   square-root theorem does not exhibit it: its colouring is monotone, so first
   and last crossing coincide. It needs a genuinely different *proof*.
 * Automatic associates for extracted type-2 programs (see §6).
-* A related-work / novelty investigation across Coq, Agda, Minlog, Nuprl and
-  Isabelle. Not begun; no priority is claimed anywhere on the basis of the
-  Lean-only search done so far.
+* Case Study II (Browder–Goehde–Kirk / Banach) — deliberately not begun.
+
+
+## 9. Related work — searched, and what it costs us
+
+Done as a literature search, not a formalization. **Method and its limits**: an
+English-language web search of paper abstracts and repository READMEs, not a
+systematic review, and the papers below were not read in full. Claims are at
+the granularity the abstracts support. Absence of a hit is weak evidence.
+
+### Where the machinery is *not* novel
+
+**Minlog** (Schwichtenberg, with Berger, Miyamoto, Seisenberger) is the closest
+system by purpose: program extraction from constructive proofs in TCF, applied
+to analysis for decades. It has extracted an **IVT-based algorithm computing
+approximations of `√2`** — the same theorem-to-algorithm route as this
+repository's Sperner-1D → square-root chain, arrived at first and
+independently. Recent work extracts number-theoretic algorithms (FTA) in the
+same setting. Any claim that "extraction from a constructive proof yields a
+running approximation algorithm" is Minlog's, not ours.
+
+**`hcheval/formalized-proof-mining`** is a **Lean** formalization of Gödel's
+Dialectica plus a Kohlenbach-style proof-mining metatheorem, with the soundness
+theorem proved and Howard-style majorizability. This is the nearest neighbour
+to this repository's machinery layer, in the same proof assistant. Differences,
+stated as differences and not as advantages: Dialectica rather than modified
+realizability; a **shallow** embedding of Gödel's T with HOAS, where this
+repository uses an intrinsically-typed de Bruijn **deep** embedding with
+`Formula` indexed by its realizer type; and it reports no continuity theorem
+and no emission. Its README lists QF-AC and negative translations as future
+work and shows no analysis applications yet.
+
+**Pédrot** gives Dialectica a computational reading as a program
+transformation (thesis *A Materialist Dialectica*), with Coq formalizations of
+the interpretation also on record (Bauer). Formalized functional
+interpretations are established territory.
+
+### Where the *representation* theme is not novel
+
+**Incone** (Steinberg, Théry, Thies) is a Coq library for computable analysis:
+represented spaces, information-theoretic continuity, its equivalence with
+metric continuity, and formalized **discontinuity** results — including that
+taking the limit of a converging sequence of reals is discontinuous. That
+overlaps this repository's `Tracked`/continuity layer and the `E₀`/`E₁`
+approximating-evaluator layer, and on the computable-analysis side it is more
+developed. **Item 2 of the current queue (limits/suprema) should be read
+against Incone first** — the discontinuity of `lim` is already formalized
+there, in Coq.
+
+Constructive FTC is also long formalized: Cruz-Filipe's Bishop-style
+development in Coq (C-CoRN), and FTC via the Lebesgue differentiation theorem
+more recently. `EFTC2`'s *positive* content is not new mathematics.
+
+### What the search did not find
+
+No prior formalization of a **comparative** representation-adequacy statement —
+`A₀ ⊨ φ` versus `A₁ ⊨ φ` proved as a theorem *about the representations*, with
+the boundary itself the object of study. Weihrauch complexity is deliberately
+representation-*invariant* (already recorded in the manifesto §9), and Incone
+formalizes representations without, as far as the abstracts show, an
+adequacy-comparison metatheorem. Nothing resembling "Galois adequacy" surfaced.
+
+**This is not a priority claim.** It is one negative search result, and the
+honest reading is: the machinery is well-trodden, the analysis results are
+classical, and the only candidate for novelty is the comparative framing —
+which is exactly the part that is currently *least* formalized here (the
+`A₀`/`A₁` separation collapses in this model, §7). Before any novelty is
+asserted in writing, the Incone papers and the Lean proof-mining repository
+should be read properly rather than searched.
+
+### Classical results cited, not formalized
+
+Myhill (1971) for the non-computable derivative; Specker for a computable
+monotone bounded sequence with non-computable limit. Both remain citations —
+see §7 for why the first is not statable here.

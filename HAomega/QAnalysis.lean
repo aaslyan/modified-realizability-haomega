@@ -1883,6 +1883,81 @@ value-level law — `Q.add_comm`, `Q.add_assoc`, … — and those live in
 
 Recorded rather than chosen. -/
 
+/-! ## Composition
+
+The manifesto names `∘` as the hard closure operation and the bottleneck for
+Picard–Lindelöf, on the grounds that the chain rule needs `f`'s modulus
+evaluated at the *moving* point `g(x)` rather than a fixed one.
+
+**That worry does not apply to `A₁`, and working out why is the item's answer.**
+`A1.diff`'s modulus is one of *uniform* differentiability: its bound holds at
+every `x` in `[a,b]` with the same `δ`. A moving evaluation point is therefore
+free — uniformity is exactly the property that makes it so. The concern is real
+for *pointwise* differentiability data, which is not what `A₁` carries.
+
+What composition does need, and neither `A₀` carries, is a **range condition**:
+`g`'s values must lie in `f`'s domain. That is genuinely extra — it is a
+relation between two representations, not a property of either — so it appears
+below as its own field rather than being derived. -/
+
+/-- Two `A₀`s, with `g`'s range inside `f`'s domain.  The third field is the
+data composition needs that neither component has. -/
+structure CompData where
+  F : A0
+  G : A0
+  range : ∀ x : Q, Qle G.a x = true → Qle x G.b = true →
+    Qle F.a (G.f x) = true ∧ Qle (G.f x) F.b = true
+
+/-- **`A₀` is closed under composition**, with `ω_{f∘g} = ω_g ∘ ω_f` and no new
+modulus invented. -/
+def CompData.comp (C : CompData) : A0 :=
+  { a := C.G.a, b := C.G.b
+    f := fun x ↦ C.F.f (C.G.f x)
+    ω := fun k ↦ C.G.ω (C.F.ω k)
+    ivl := C.G.ivl
+    cont := by
+      intro k x y hax hxb hay hyb hxy
+      have hg := C.G.cont (C.F.ω k) x y hax hxb hay hyb hxy
+      have hrx := C.range x hax hxb
+      have hry := C.range y hay hyb
+      refine C.F.cont k (C.G.f x) (C.G.f y) hrx.1 hrx.2 hry.1 hry.2 ?_
+      rw [Q.ltN_eq_one_iff] at hg
+      rw [Qle_eq_true_iff]
+      exact le_of_lt hg }
+
+#print axioms CompData.comp
+
+/-! ### `A₁` under composition: what it needs, and what is not written
+
+The estimate works out, and no new field is required beyond the range condition
+above.  Writing `u = g(x)`, `Δ = g(x+h) − g(x)`:
+
+    (f(g(x+h)) − f(g(x)))/h  =  [(f(u+Δ) − f(u))/Δ] · (Δ/h)
+                             =  (f'(u) + e₁)(g'(x) + e₂)
+                             =  f'(u)g'(x) + f'(u)e₂ + e₁g'(x) + e₁e₂
+
+with `|e₁| < 2⁻ʲ¹` from `F.diff` at step `Δ` and `|e₂| < 2⁻ʲ²` from `G.diff` at
+step `h`.  Three things make it go through, each already available:
+
+* `Δ` is forced small by `G`'s *continuity* modulus — `|h| ≤ 2⁻ω_G(j)` gives
+  `|Δ| < 2⁻ʲ` — so `F.diff` applies at the moving point;
+* the degenerate case `Δ = 0` is fine rather than fatal: the quotient is `0`,
+  and `Δ = 0` forces `|g'(x)| < 2⁻ʲ²`, so the target `f'(u)g'(x)` is itself
+  small;
+* the cross terms need **bounds on `|f'|` and `|g'|`**, and those are
+  computable from `A₁`-data: `derivEval_approx` puts `f'` within `2⁻⁽ᵏ⁺³⁾` of a
+  difference quotient, and that quotient is bounded by `2·fBound/h₀` with
+  `h₀ = stepSize` a concrete rational.
+
+So the composed modulus is `δ_{f∘g}(k) = max(δ_G(j₂), ω_G(δ_F(j₁)))` with `j₁`,
+`j₂` chosen from `k` and those two bounds.
+
+**Not proved.** The Lean estimate is `Lemma 1`-sized — four error terms, a case
+split on `Δ = 0`, and a derivative-bound lemma that does not yet exist — and it
+was not attempted rather than attempted and rushed.  The item asked what data
+composition needs beyond `A₁`; the answer is *none*, plus the range condition,
+and that answer is what landed. -/
+
 /-! ## A third boundary: limits
 
 `EFTC2` is about differentiation, `EFTC1` about integration.  This is about

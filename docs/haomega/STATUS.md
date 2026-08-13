@@ -735,6 +735,44 @@ is proof-side only, the cost is build time (7,849 jobs), not trust.
 * Case Study II (Browder–Goehde–Kirk / Banach) — deliberately not begun.
 
 
+## 8c. Composition
+
+Queue item 3 — the manifesto's named bottleneck for Picard–Lindelöf.
+
+**The stated worry does not apply, and that is the item's answer.** The
+manifesto flags `∘` as hard because the chain rule needs `f`'s modulus at the
+*moving* point `g(x)`. But `A1.diff`'s modulus is one of **uniform**
+differentiability — its bound holds at every `x` in `[a,b]` with the same `δ` —
+so a moving evaluation point costs nothing. The concern is real for *pointwise*
+differentiability data, which is not what `A₁` carries.
+
+**What composition does need is a range condition**, and neither `A₀` carries
+it: `g`'s values must lie in `f`'s domain. That is a relation *between* two
+representations rather than a property of either, so it is a field of
+`CompData`, not something derived.
+
+**Proved — `A₀` is closed under `∘`:**
+
+    'HAomega.CompData.comp'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+with `ω_{f∘g} = ω_g ∘ ω_f` and no new modulus invented.
+
+**`A₁` under `∘`: analysed, not proved.** The estimate works out with **no new
+field** beyond the range condition. Writing `u = g(x)`, `Δ = g(x+h) − g(x)`,
+the quotient factors as `(f'(u) + e₁)(g'(x) + e₂)`, and three things make it go
+through, each already available: `Δ` is forced small by `G`'s *continuity*
+modulus, so `F.diff` applies at the moving point; the degenerate case `Δ = 0`
+is fine rather than fatal, since it forces `|g'(x)|` small and the target with
+it; and the cross terms need bounds on `|f'|`, `|g'|`, which are computable
+from `A₁`-data via `derivEval_approx` plus `2·fBound/h₀`. The composed modulus
+is `δ_{f∘g}(k) = max(δ_G(j₂), ω_G(δ_F(j₁)))`.
+
+The Lean proof is `Lemma 1`-sized — four error terms, a case split on `Δ = 0`,
+and a derivative-bound lemma that does not yet exist — and was **not
+attempted** rather than attempted and rushed. The item asked what data
+composition needs beyond `A₁`; the answer is none, and that answer is what
+landed.
+
 ## 8b. A third boundary: limits
 
 Queue item 2. `EFTC2` is differentiation, `EFTC1` integration; this is limits —

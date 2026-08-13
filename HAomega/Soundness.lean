@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ara Aslyan
 -/
 import HAomega.Extraction
+import HAomega.QArith
 
 /-!
 # HA^ω, part 5: soundness
@@ -273,6 +274,16 @@ theorem soundness : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {
         (olt_ordOfHydraN_playAt (p.eval e) (n.eval e) (c.eval e)
           (fun h0 ↦ hz () h0))
   | convQPosRecip t => intro e ε h; exact Q.ltN_zero_recip _
+  | convQAddLt s t v D ih => intro e ε h; exact Q.ltN_add_right _ _ _ (ih e ε h)
+  | convQMulLt s t v D₁ D₂ ih₁ ih₂ =>
+      intro e ε h; exact Q.ltN_mul_right_pos _ _ _ (ih₁ e ε h) (ih₂ e ε h)
+  | convQLtTrans s t v D₁ D₂ ih₁ ih₂ =>
+      intro e ε h; exact Q.ltN_trans _ _ _ (ih₁ e ε h) (ih₂ e ε h)
+  | convQAddComm s t => intro e ε h; exact Q.add_comm _ _
+  | convQAddAssoc s t v => intro e ε h; exact Q.add_assoc _ _ _
+  | convQMulComm s t => intro e ε h; exact Q.mul_comm _ _
+  | convQMulAssoc s t v => intro e ε h; exact Q.mul_assoc _ _ _
+  | convQMulAdd s t v => intro e ε h; exact Q.mul_add _ _ _
   | convQSubSelf t => intro e ε h; exact Q.sub_self _
   | convPredZero => intro e ε h; rfl
   | convPredSucc t => intro e ε h; rfl

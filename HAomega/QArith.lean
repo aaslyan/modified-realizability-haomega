@@ -335,6 +335,32 @@ theorem Q.add_zero_norm (a : Q) : Q.add a Q.zero = Q.of a.num a.den :=
 /-- **`x + 0 = x` is not valid here**, and this is the witness. -/
 theorem Q.add_zero_not_id : Q.add ⟨2, 3⟩ Q.zero ≠ ⟨2, 3⟩ := by decide
 
+/-! ## Order laws — the half the ordered-field rule base needs beyond the ring
+laws.  All three are one `linarith` past the order bridge. -/
+
+theorem Q.ltN_add_right (a b c : Q) (h : Q.ltN a b = 1) :
+    Q.ltN (Q.add a c) (Q.add b c) = 1 := by
+  rw [Q.ltN_eq_one_iff] at h ⊢
+  rw [Q.val_add, Q.val_add]
+  linarith
+
+theorem Q.ltN_mul_right_pos (a b c : Q) (hc : Q.ltN (Q.ofNat 0) c = 1)
+    (h : Q.ltN a b = 1) : Q.ltN (Q.mul a c) (Q.mul b c) = 1 := by
+  rw [Q.ltN_eq_one_iff] at hc h ⊢
+  rw [Q.val_ofNat] at hc
+  rw [Q.val_mul, Q.val_mul]
+  have hcv : (0 : Rat) < c.val := by simpa using hc
+  exact mul_lt_mul_of_pos_right h hcv
+
+theorem Q.ltN_trans (a b c : Q) (h1 : Q.ltN a b = 1) (h2 : Q.ltN b c = 1) :
+    Q.ltN a c = 1 := by
+  rw [Q.ltN_eq_one_iff] at h1 h2 ⊢
+  linarith
+
+#print axioms Q.ltN_add_right
+#print axioms Q.ltN_mul_right_pos
+#print axioms Q.ltN_trans
+
 #print axioms Q.of_eq_mkRat
 #print axioms Q.of_eq_of
 #print axioms Q.add_comm

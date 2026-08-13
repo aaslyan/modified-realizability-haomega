@@ -783,6 +783,59 @@ of `A₁ ⊨ EFTC2` gives a polynomial-time-adequate witness without resolving
 recover the `2^(k+14)` slack is worth doing. It would not change the
 complexity class. Recorded, not pursued.
 
+## 8i. The `Q` arithmetic rule base — option 1 taken, and measured
+
+The fork recorded in §7 is resolved: **option 1**, Mathlib in the core.
+`Soundness.lean` now imports `QArith`, which is the whole import change.
+
+**Measured cost, which was lower than the fork's own estimate.** A full rebuild
+of the affected chain took **≈ 5½ minutes** wall-clock (7,851 jobs, Mathlib
+itself already built). More to the point: **no breakage at all** — no name
+clashes, no simp-set interference with `deriv_norm`, no new warnings. The fork
+warned that the cost "lands on every module downstream of `Soundness.lean`";
+that is true of build time and turned out not to be true of anything else.
+
+**Why the invariants are safe, structurally and not by luck.** `Tm.eval`,
+`extract` and `Deriv` all live *upstream* of `Soundness.lean`, so Mathlib
+cannot reach them. Reprinted from the build after the change:
+
+    'HAomega.extract'    does not depend on any axioms
+    'HAomega.Tm.eval'    depends on axioms: [propext, Quot.sound]
+    'HAomega.soundness'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+and derivations are unmoved — `constReal_upper` and `sqrtApproxD` still report
+`[propext, Quot.sound]`. The rule *statements* stay in `Q`'s own vocabulary, so
+`Deriv`'s type is still free of `Rat`'s instances; only the soundness *proofs*
+see Mathlib.
+
+**Eight rules, 45 → 55.** Each is an axiom schema with a contentless realizer,
+discharged in `soundness` by exactly one value-level theorem — the 1:1
+correspondence the first-order D5 design requires.
+
+    ring   convQAddComm  convQAddAssoc  convQMulComm  convQMulAssoc  convQMulAdd
+    order  convQAddLt    convQMulLt     convQLtTrans
+
+The order half needed three new value lemmas, each one `linarith` past the
+order bridge:
+
+    'HAomega.Q.ltN_add_right'  depends on axioms: [propext, Classical.choice, Quot.sound]
+
+(`Q.ltN_mul_right_pos` and `Q.ltN_trans` likewise.)
+
+**What this unblocks, stated exactly.** Items 2 and 3 of §8g's `EFTC1`
+inventory — the quotient's cancellation and the average bound's
+order-monotonicity — now have their rules. `EFTC1` at the `Deriv` level is
+therefore **no longer blocked on arithmetic**. It is not thereby done: the
+derivation itself, including the Riemann sum as a `recNat` term and the
+induction over `N`, has still to be written, and §8g's estimate of that effort
+stands.
+
+**What is still missing from a full ordered field**: cancellation for `qdiv`
+(`(a·c)/c = a`) is *not* among the eight, because it is false for unreduced
+inhabitants of `Q` — the same `x + 0 = x` failure recorded at the `den+1`
+refactor. Any derivation needing it must route around it, and that is a real
+constraint rather than an oversight.
+
 ## 8g. `EFTC1` at the `Deriv` level — blocked, and on the excluded decision
 
 Queue item 7. **Not done**, and the reason is a blocker outside the item's own

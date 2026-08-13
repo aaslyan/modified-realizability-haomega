@@ -259,6 +259,34 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
   -- single-symbol imports of the first-order D5 design (`ordBump`,
   -- `ordPredLt`, `bumpNeZero`), each discharged in soundness by exactly one
   -- `OrdinalAssignment` theorem.  No congruence rules: Leibniz covers them.
+  -- The `Q` order laws: monotonicity under `+`, under multiplication by a
+  -- positive, and transitivity.  With the ring laws below these are the
+  -- ordered-field base the `EFTC1` inventory named.
+  | convQAddLt {Γ as} {Δ : Ctx Γ as} (s t u : Tm Γ .rat) :
+      Deriv Δ (.eq (.qlt s t) (.succ .zero)) →
+      Deriv Δ (.eq (.qlt (.qadd s u) (.qadd t u)) (.succ .zero))
+  | convQMulLt {Γ as} {Δ : Ctx Γ as} (s t u : Tm Γ .rat) :
+      Deriv Δ (.eq (.qlt (.qnat .zero) u) (.succ .zero)) →
+      Deriv Δ (.eq (.qlt s t) (.succ .zero)) →
+      Deriv Δ (.eq (.qlt (.qmul s u) (.qmul t u)) (.succ .zero))
+  | convQLtTrans {Γ as} {Δ : Ctx Γ as} (s t u : Tm Γ .rat) :
+      Deriv Δ (.eq (.qlt s t) (.succ .zero)) →
+      Deriv Δ (.eq (.qlt t u) (.succ .zero)) →
+      Deriv Δ (.eq (.qlt s u) (.succ .zero))
+  -- The `Q` ring laws.  These are separate from `t − t = 0` below because
+  -- their soundness needs uniqueness of normal forms (`Q.of_eq_of`), which is
+  -- Mathlib-dependent, whereas `sub_self`'s does not.  Admitting them is the
+  -- reason `Soundness.lean` imports `QArith`.
+  | convQAddComm {Γ as} {Δ : Ctx Γ as} (s t : Tm Γ .rat) :
+      Deriv Δ (.eq (.qadd s t) (.qadd t s))
+  | convQAddAssoc {Γ as} {Δ : Ctx Γ as} (s t u : Tm Γ .rat) :
+      Deriv Δ (.eq (.qadd (.qadd s t) u) (.qadd s (.qadd t u)))
+  | convQMulComm {Γ as} {Δ : Ctx Γ as} (s t : Tm Γ .rat) :
+      Deriv Δ (.eq (.qmul s t) (.qmul t s))
+  | convQMulAssoc {Γ as} {Δ : Ctx Γ as} (s t u : Tm Γ .rat) :
+      Deriv Δ (.eq (.qmul (.qmul s t) u) (.qmul s (.qmul t u)))
+  | convQMulAdd {Γ as} {Δ : Ctx Γ as} (s t u : Tm Γ .rat) :
+      Deriv Δ (.eq (.qmul s (.qadd t u)) (.qadd (.qmul s t) (.qmul s u)))
   /-- `t − t = 0` on the rationals — the fragment's first arithmetic conversion
   rule for `Q`.  It is here and the ring laws are not because its soundness
   needs no normal-form theory: the numerator collapses to `0` before `Q.of`

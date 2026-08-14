@@ -1059,3 +1059,136 @@ named**. Category (A) has gained the strongest entry in the repository.
 The paper draft `Aphoristic_Analysis_Universe.md` was also modified in the same
 commit and has not been re-audited here; §1's five findings should be
 re-checked against the current text before it is used.
+
+---
+
+## 12. Fourth check: `CentralAdequacy`, and the P0 items
+
+Three commits (`3415834`, `6157b51`, `7a0ec22`) respond to `PAPER_PLAN.md`.
+Build green, **7,881 jobs**.
+
+### 12.1 `CentralAdequacy.lean` — the right theorem, correctly shaped
+
+This is the MR-to-`Rep` bridge the plan's §5 needed, and it is **not** the
+"assume the conclusion" pattern. It deserves credit precisely.
+
+```lean
+theorem central_adequacy_theorem … (spec : RepAdequacySpec RX RY P Φ)
+    (D : Deriv .nil (ForallExistsFormula σ τ Φ)) :
+    let realizeCode := fun c ↦ ((extractClosed D).eval Env.nil c).1
+    (∀ c1 c2, RX.equiv c1 c2 → RY.equiv (realizeCode c1) (realizeCode c2)) ∧
+    (∀ c k x, RX.approx c (spec.mu k) x →
+       ∃ y, RY.approx (realizeCode c) k y ∧ P x y)
+```
+
+Why it is legitimate: `RepAdequacySpec.sound` and `.equiv_compat` are
+quantified over **any** code `y_code` and realizer `r` with `MR Φ …`. The
+theorem instantiates them at the *extracted* values, and the fact that those
+values realize `Φ` is supplied by `soundnessClosed D` — real content from the
+realizability side, not assumed. The spec is a genuine **user obligation**:
+"your formula `Φ`, read at codes, entails your representation's `approx`". That
+cannot be discharged generically for arbitrary `Φ` and `Rep`, so requiring it is
+correct design, not circularity.
+
+This is the first theorem in any of the new files whose statement is *about*
+`Deriv`, `extractClosed` and `soundness`. §8.2's count of zero no longer holds.
+
+**Measured:** `central_adequacy_theorem` is
+`[propext, Classical.choice, Quot.sound]`.
+
+*A fairness note:* the docstring's "yields an effective, **choice-free**
+representation realizer" is **correct** under this project's own standing
+distinction — the realizer `extractClosed D` is axiom-free even though the
+proof of its adequacy runs through `soundness` and therefore uses choice. That
+is exactly the §1.1 formulation, correctly applied.
+
+### 12.2 The limit on it: an interface with no implementations
+
+```
+RepAdequacySpec constructed anywhere:      never (binder positions only)
+central_adequacy_theorem applied anywhere: never
+central_galois_realizer applied anywhere:  never
+```
+
+All the mathematical content of a *use* of this theorem lives in the
+`RepAdequacySpec` the user must build, and none has been built. Until one
+exists — for a concrete `Φ` against `RepA0`, say — the theorem is scaffolding
+whose usefulness is unexercised. This is the `CauchyRiemannData` test (§7.2(a))
+applied at a much more respectable level: the structure is well-designed, but
+without an instance nothing confirms it is inhabitable in a useful case.
+
+**This is now the single highest-value item in the repository:** build one
+`RepAdequacySpec` and apply `central_adequacy_theorem` to a real derivation.
+`AnalysisDeriv`'s `iterSequenceD` is a closed `∀∃` derivation and is the
+obvious candidate. That one instance would convert the milestone from
+architecture into result.
+
+### 12.3 P0.3 and P1.3 — genuinely done
+
+- **P0.3 (`RepA1`)** — done. `RepA1` exists, and with it two morphisms between
+  *different* representations: `A1_to_A0_morphism` (forgetting derivative data)
+  and `A1_to_E1_morphism`. These are real and new; §8.4(b) is resolved.
+- **P1.3 (`#print axioms`)** — done, three of them, confirming from the build
+  itself:
+  ```
+  'HAomega.iterSequenceD'    does not depend on any axioms
+  'HAomega.doublingRealizer' does not depend on any axioms
+  'HAomega.extractedSqrt2At4' depends on axioms: [propext, Quot.sound]
+  ```
+
+### 12.4 P0.2 — **not done**, despite being marked complete
+
+Commit `3415834` is titled "complete P0.2, P0.3, and P1.3". P0.2 asked for one
+concrete `⪯` between **two different** representations. What exists:
+
+```lean
+theorem A0_retract_self (a b : Q) : (RepA0 a b) ⪯ (RepA0 a b) := RepLe.refl (RepA0 a b)
+theorem A1_retract_self (a b : Q) : (RepA1 a b) ⪯ (RepA1 a b) := RepLe.refl (RepA1 a b)
+theorem E0_retract_self …   theorem E1_retract_self …
+```
+
+These are `RepLe.refl` instantiated at four concrete representations. They
+carry no information beyond `RepLe.refl`, which was already proved for **all**
+`R`. Every `⪯` statement in the file is either abstract (`refl`, `trans`,
+`prod_mono`) or one of these self-relations, and **no `RepRetract` is ever
+constructed between two distinct representations** — the only ones built are
+the identity (in `refl`), the composite (in `trans`) and the pairing (in
+`prod_mono`).
+
+The theorem *names* are honest — they say `_self`. It is the commit message
+that reports the item complete. The hierarchy remains announced, not
+established, exactly as in §8.4(a).
+
+**What is missing is specific and small:** `RepLe` unfolds to
+`Nonempty (RepRetract R1 R2)`, and `RepRetract` needs `iota`, `pi`, and
+`retract_id : ∀ c, R1.equiv (pi.toFun (iota.toFun c)) c`. `A1_to_A0_morphism`
+supplies a `pi` direction. The missing piece is the section back, plus the
+round-trip identity. That is the whole of P0.2.
+
+### 12.5 `FOUNDATIONS_ROADMAP.md` — one claim to correct
+
+The roadmap is well-structured and its six milestones are a reasonable
+programme. Two corrections:
+
+1. **"`soundnessClosed`: Choice-free evaluation in the empty environment."**
+   Measured: `[propext, Classical.choice, Quot.sound]`. It is not choice-free.
+   (The *realizer* is; the lemma is not — §12.1.)
+2. **"`central_adequacy_theorem`: Proves that any HA^ω `∀∃`-derivation yields a
+   representation realizer …"** — omits the hypothesis doing the work. Accurate
+   version: *any `∀∃`-derivation, **together with a `RepAdequacySpec`
+   connecting `Φ` to the representation**, yields …*. With no spec ever
+   constructed (§12.2), the unqualified form overstates what is available.
+
+Milestone 1 is better described as **architecture complete, first instance
+pending** than as done.
+
+### 12.6 Effect on `PAPER_PLAN.md`
+
+- P0.3 ✅, P1.3 ✅, **P0.2 ✗** (still blocking §5 of the paper).
+- A **new P0.4** should be added, ranked above P1: *instantiate
+  `RepAdequacySpec` once and apply `central_adequacy_theorem`.* Without it the
+  paper's strongest structural theorem has no worked example.
+- P0.1 (read the related work) is untouched and remains the gate on any
+  novelty claim. `CentralAdequacy` raises its stakes: an adequacy theorem
+  relating realizability extraction to represented spaces is *precisely* the
+  territory Incone occupies, and must be compared before it is claimed.

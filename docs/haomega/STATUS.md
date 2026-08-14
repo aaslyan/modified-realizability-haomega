@@ -1306,10 +1306,21 @@ see §7 for why the first is not statable here.
     - Proved $[1/1]$ order 2 matching theorem (`pade_exp_11_order2_match`) and $[2/2]$ order 4 matching theorem (`pade_exp_22_order4_match`).
     - Verified kernel `#guard` calculations showing $[2/2](1/2) = 61/37 \approx 1.6486486$ matching $e^{1/2}$ to 4 decimal places.
 
-25. **Manuscript Drafts**:
+25. **`HAomega/DynamicalSystems/` (Nonlinear Dynamical Systems & Visual Differential Equations Suite)**:
+    - **`VanDerPol.lean`**: Relaxation oscillations, stable limit cycle Picard solver in $\mathbb{Q}[t]^2$, and `vanderpol_divergence_trace` ($\nabla \cdot \mathbf{F} = \mu(1-x_1^2)$).
+    - **`LotkaVolterra.lean`**: Predator-prey periodic orbits and `lotka_volterra_invariant_cancel` ($\frac{dH}{dt} = 0$).
+    - **`Duffing.lean`**: Double-well separatrix and `duffing_energy_dissipation_id` ($\frac{dE}{dt} = -\delta x_2^2 \le 0$).
+    - **`Lorenz.lean`**: 3D Butterfly chaotic attractor Picard solver and `lorenz_volume_contraction_rate` ($\nabla \cdot \mathbf{F} = -(\sigma + 1 + \beta)$).
+    - **`Kepler.lean`**: Inverse-square gravitational 2-body orbit Picard solver and `kepler_angular_momentum_conserved` ($\frac{dL}{dt} = 0$, Kepler's 2nd Law).
+
+26. **Visual Assets & LinkedIn Showcase Series**:
+    - `docs/media/`: 5 high-resolution scientific diagrams (`vanderpol_limit_cycle.jpg`, `lotka_volterra_orbits.jpg`, `duffing_double_well.jpg`, `lorenz_butterfly_attractor.jpg`, `kepler_orbit_mechanics.jpg`).
+    - `docs/showcase/`: 5 publication-ready LinkedIn post drafts (`post1_vanderpol.md`, `post2_lotka_volterra.md`, `post3_duffing.md`, `post4_lorenz.md`, `post5_kepler.md`).
+
+27. **Manuscript Drafts**:
     - `docs/papers/Aphoristic_Analysis_Universe.md`: **Masterwork Unified Paper** (*The Aphoristic Universe of Mathematical Analysis: A Closed Constructive Framework of Smooth Integration, Galois Adequacy, and Differential Synthesis*).
     - `docs/papers/PaperA_Galois_Adequacy.md`: Full draft for Paper A (Category $\mathbf{Rep}(X)$, retract preorder $\preceq$, pseudo-truth / unrefutability).
     - `docs/papers/PaperB_Constructive_Analysis_Synthesis.md`: Full draft for Paper B (Newton–Leibniz, Banach, Browder–Göhde–Kirk, IVT, and Picard–Lindelöf synthesis).
 
-* Build status: **7,875 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,880 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 

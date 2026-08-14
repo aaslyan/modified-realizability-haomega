@@ -16,10 +16,81 @@ The files audited are the ten that arrived untracked: `GaloisAdequacy`,
 `PolyRoots` (renamed from `FundamentalTheoremAlgebra`), `IntegrationByParts`
 and `Weierstrass`.
 
-**Read §7 first if you are deciding what to build on.** A green build with no
-`sorry` establishes that those files' theorems are *true*. It does not
-establish that they are the theorems their names claim, and for several of
-them they are not.
+---
+
+## 0. Executive summary — read this first
+
+### 0.1 The results are **not** false
+
+This must not be misread. Across the **18** new files there are **40
+theorems**, **101 `#guard`s**, and **zero** `sorry` or `admit`. Lean has
+verified every one of those theorems. Nothing in this document alleges a false
+theorem, an unsound proof, a hidden axiom, or a broken build. The build is
+green at **7,870 jobs**.
+
+**What is wrong is not the mathematics. It is the labels on it.**
+
+A theorem can be perfectly true and still be misnamed. `2ab − 2ab = 0` is true.
+Calling it `harmonic_energy_conserved` and citing it publicly as "energy
+conservation for the harmonic oscillator" is the error — not the equation.
+
+### 0.2 Three categories
+
+**(A) True, well-named, worth keeping and citing.** `newton_sqrt_quadratic_error`
+(why Newton's method is quadratic), `approx_ivt_thm` (a real approximate IVT for
+`A₀`), `discrete_sign_crossing`, `expPicard_succ`, `linear_root_val`,
+`green_2x2_exact_cancellation`, the `GaloisAdequacy` preorder core (genuinely
+axiom-free), and essentially all **101 `#guard`s** — which compute real values
+in the kernel and are the most reliable content in these files.
+
+**(B) True, but the name claims much more than the statement.** The theorem is
+sound; the name is not a description of it. Examples: `goursat_rect_zero` (is
+`(a−a)·hx·hy = 0`), `taylor_remainder_bound` (is "a product of non-negatives is
+non-negative"), `harmonic_energy_conserved`, `euler_maclaurin_linear_exact`,
+`monomial_ibp_sq_val` (is `1/2 − 1/6 = 1/3`), `pi_endpoint_bracket_width`. **The
+fix is renaming or restating, not reproving.** Several were already fixed this
+way (§9.1), which shows the remedy works.
+
+**(C) Claims *about* the work that are false.** These are the only actual
+falsehoods, and **none of them are in Lean** — they are in prose: the paper
+draft (§1) and the LinkedIn post (§10.1). Specifically:
+
+| Claim | Where | Measured |
+|---|---|---|
+| "0 unproved axioms" / "choice-free" | paper §7, post | Every new analysis theorem is `[propext, Classical.choice, Quot.sound]` |
+| "extraction compiles the proof into a System T `recNat` term" | post | `harmonicPicard` is a plain Lean `def`; no `Deriv`, `extract`, `Tm` or `recNat` in the file |
+| "$E_1 \cong A_1$" | paper §2, §3.1, §5.2 | Not proved; false in the direction that motivates the `E` layer |
+| "7,856" / "7,858" / "7,866 targets" | paper header, paper §7, post | 7,870 |
+| Higher-type moduli support the analysis layer | paper §6 | STATUS §6 records the opposite as a measured negative result |
+
+### 0.3 The one-line verdict
+
+> **Every theorem is true. Many are misnamed. Several public claims about them
+> are false. Nothing needs reproving; some things need renaming, and the
+> outward-facing claims need correcting before publication.**
+
+### 0.4 What to do
+
+1. **Do not publish the LinkedIn draft as written** (§10.1). Four load-bearing
+   claims fail against the build, and it is signed by the author. §10.1
+   contains an honest version that keeps the genuinely nice result.
+2. **Rename the category (B) theorems** by the §7.6 test: *if the headline
+   theorem's statement does not mention the objects in its name, it is
+   misnamed.* Mechanical, seconds per theorem.
+3. **Correct the paper's five claims** (§1), above all the axiom claim — the
+   true statement (`extract` axiom-free, running extracts `[propext,
+   Quot.sound]`, choice only via `soundness`) is *stronger* and defensible.
+4. **Build the one thing that would make the provenance claims true** (§8.6,
+   §10.5): a concrete `⪯` between representations, and a `Deriv` that extracts
+   rather than a `Tm` written by hand.
+
+### 0.5 Reading order
+
+§7 grades batch one, §8 answers "is this grounded in HA^ω", §9 records what was
+fixed in response, §10 covers batch two and the post. §§1–6 audit the paper
+draft and record what the repository actually proves.
+
+---
 
 ---
 

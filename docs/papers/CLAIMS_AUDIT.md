@@ -928,3 +928,126 @@ theorem is a theorem about the object language.
    `Deriv`, not write a `Tm`. `tmPicardIter` shows the emitter works; deriving
    the same term from a proof and running `soundness` on it would be the first
    real instance of this project's actual thesis in the analysis layer.
+
+---
+
+## 11. Third check: the audit was acted on, and the real thing was built
+
+Commit `d788b9a` ("complete remediation of claims audit & add object-level
+`Deriv` extraction") resolves most of §§7–10 and adds the single most important
+file in either batch. Build green, **7,871 jobs**.
+
+### 11.1 `AnalysisDeriv.lean` — the project's actual thesis, demonstrated
+
+This is what §8.6 and §10.5 asked for, and it is correct.
+
+```lean
+def iterSequenceD … : Deriv Δ (.all .nat (iterInv τ Γ)) := by
+  refine Deriv.ind (φ := iterInv τ Γ) ?h0 ?hsucc
+  · exact Deriv.exI y0 (Deriv.eqRefl y0)
+  · refine Deriv.allI (Deriv.impI ?_) ; refine Deriv.exE Deriv.ax ?_ ; …
+
+def doublingDeriv    : Deriv .nil (.all .nat (iterInv .nat [])) := iterSequenceD …
+def doublingRealizer : Tm [] (.arrow .nat (.prod .nat .unit)) := extractClosed doublingDeriv
+
+#guard (doublingRealizer.eval Env.nil 10).1 == 1024
+```
+
+A genuine natural-deduction derivation (`Deriv.ind`, `exI`, `exE`, `allI`,
+`impI`, `ax`, `eqRefl`), `extractClosed` applied to it, and the resulting
+System T term **evaluated in the kernel** to `1, 2, 4, 8, 16, 32, 1024`. The
+`.prod .nat .unit` result type is the `∃`-witness pairing, `.1` the witness.
+
+**This is proof → realizer → running program**, which is the thing this
+repository exists to demonstrate and which §§7–10 recorded as absent from every
+one of the eighteen preceding files.
+
+That the invariant is not vacuous is settled by the `#guard`s themselves: a
+trivial `∃y. y = y` invariant could not yield `2ⁿ`. The witness genuinely
+tracks the doubling recursion.
+
+**Measured footprint — the headline number:**
+
+```
+'HAomega.doublingDeriv'     does not depend on any axioms
+'HAomega.doublingRealizer'  does not depend on any axioms
+'HAomega.iterSequenceD'     does not depend on any axioms
+'HAomega.extractClosed'     does not depend on any axioms
+```
+
+Not `Classical.choice`, not `propext`, not `Quot.sound` — **no axioms at all**,
+end to end from derivation to running realizer. This is the strongest verified
+claim anywhere in the eighteen new files.
+
+*Gap:* `AnalysisDeriv.lean` contains no `#print axioms`. The above was measured
+externally. Given the repository's standing discipline, and given that this is
+its best result, those checks belong in the file.
+
+### 11.2 The LinkedIn post — all four false claims removed
+
+Re-measured against §10.1:
+
+| §10.1 finding | Status |
+|---|---|
+| "realizer extractor" / "extraction compiles the proof into recNat" | **removed** — now "we formulated the closed Picard iterator functional `tmPicardIter` … and compiled it directly to Haskell via our AST emitter". Accurate: *formulated*, not extracted. |
+| "choice-free and with 0 unverified axioms" | **removed** |
+| "7,866 targets green" | **corrected to 7,870** |
+| "operator on exact rational samplers" | **corrected** — now "over exact polynomial coefficient lists in ℚ", which is what it is |
+| `harmonic_energy_conserved` cited as energy conservation | **removed** |
+
+The error figures were also tightened and both check out: sine
+`|0.47942708 − 0.47942554| ≈ 1.54·10⁻⁶` against a claimed `< 1.6·10⁻⁶`; cosine
+`≈ 2.16·10⁻⁵` against a claimed `< 2.2·10⁻⁵`. The remaining numbers —
+`337/384`, `1841/3840`, "100+ kernel guards", "0 sorry" — are all correct.
+
+**The post is now honest.** One trivial staleness: it says 7,870 and the build
+is 7,871, because `AnalysisDeriv.lean` landed after it was written.
+
+**But it now *undersells*.** The post carefully avoids claiming extraction —
+correctly, for `harmonicPicard`. Meanwhile `doublingRealizer` in the same
+commit *is* a realizer extracted from a proof, it runs, and it is **axiom-free**.
+The claim the earlier draft made falsely is now true of a different object in
+the same repository, and goes unmentioned. That is the one edit worth making:
+state the `Deriv → extractClosed → eval` chain, with its measured empty axiom
+footprint, as a separate and stronger point.
+
+### 11.3 Category (B) renames — all done
+
+Every §0.2(B) theorem named in this document has been renamed to describe its
+statement:
+
+```
+harmonic_energy_conserved     → harmonic_energy_deriv_cancel
+taylor_remainder_bound        → taylor_remainder_pos_scale
+euler_maclaurin_linear_exact  → linear_sum_formula_id
+goursat_rect_zero             → cr_rect_integrand_cancel
+cr_jacobian_eq_complex_mul    → cr_jacobian_algebra
+```
+
+Each now names the algebraic operation it performs rather than the classical
+theorem it evokes. Combined with §9.1's four renames and two file renames, the
+§7.6 rule has been applied across both batches.
+
+### 11.4 What remains
+
+- **No concrete `⪯`** between representations; `GaloisAdequacy` still untouched
+  since §8.4(a). Still the highest-value open item for the paper's novelty
+  claim.
+- **`RepA1` still does not exist**, so the `A₀`/`A₁` computability gap remains
+  outside the framework (§8.4(b)).
+- `AnalysisDeriv.lean` should carry `#print axioms` (§11.1).
+- The extraction demonstrated is `2ⁿ` — a first instance, not yet the analysis
+  content. Deriving the *Picard* operator in `Deriv` rather than writing
+  `tmPicardIter` by hand is the natural continuation, and would make the
+  post's original framing true as stated.
+
+### 11.5 Revised assessment
+
+§0's three categories now read differently. Category (C) — false claims about
+the work — is **empty for the LinkedIn post**, whose claims were all either
+removed or corrected. Category (B) is **empty for every theorem this document
+named**. Category (A) has gained the strongest entry in the repository.
+
+The paper draft `Aphoristic_Analysis_Universe.md` was also modified in the same
+commit and has not been re-audited here; §1's five findings should be
+re-checked against the current text before it is used.

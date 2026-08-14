@@ -699,3 +699,161 @@ two `GaloisAdequacy` gaps, which are the ones that matter most for the paper:
 representation-adequacy framing — the project's only novelty candidate per
 STATUS §9 — is still announced rather than established. §8.6's next step is
 unchanged and is now the highest-value remaining item.
+
+---
+
+## 10. Second batch: eight more files, and an outward-facing post
+
+Eight further Lean files arrived (`DerivFTC`, `Taylor`, `HarmonicODE`,
+`ODEExtraction`, `NewtonRaphson`, `EulerMaclaurin`, `Fourier`,
+`GreenDivergence`), plus `docs/media/harmonic_picard_extraction.jpg`,
+`docs/papers/ODEExtracted.hs`, and
+`docs/papers/linkedin_harmonic_picard_post.md`. Build green, **7,870 jobs**.
+
+### 10.1 ⚠️ The LinkedIn draft must not be published as written
+
+This is the most serious item in this document, because unlike everything else
+it is addressed to the public and written for the repository's author to post
+under their own name. Its central claim is false.
+
+**Claimed:** "When this proof is executed by the realizer extractor, the Picard
+operator compiles into a recursive term in Gödel's System T:
+`recNat P₀ (λn P. …) N`" and "Gödel's modified realizability extraction
+compiles the proof into a pure System T recursor term (recNat)" and "Running
+this extracted term in the Lean 4 kernel synthesizes the … Taylor polynomials".
+
+**Measured:** `harmonicPicard` is an ordinary Lean recursive definition on
+`List Q × List Q`:
+
+```lean
+def harmonicPicard : Nat → List Q × List Q
+  | 0     => ⟨[Q.zero], [Q.ofNat 1]⟩
+  | n + 1 => harmonicPicardStep (harmonicPicard n)
+```
+
+`HarmonicODE.lean` contains **no** occurrence of `Deriv`, `extract`, `Tm`,
+`soundness` or `recNat`. There is no proof, no derivation, no realizer and no
+extraction anywhere in the file. The `#guard`s quoted in the post evaluate this
+plain Lean function. Nothing was extracted from anything.
+
+**Claimed:** "choice-free and with 0 unverified axioms!" and "without Choice or
+classical axioms!"
+
+**Measured:**
+
+```
+'HAomega.harmonic_energy_conserved' depends on axioms:
+    [propext, Classical.choice, Quot.sound]
+```
+
+The one theorem the post cites depends on `Classical.choice`. So does every
+other theorem in the eight new files.
+
+**Claimed:** "7,866 targets green". **Measured: 7,870.** This is now the third
+distinct build figure in circulation (cf. §1.4).
+
+**Claimed:** "The Picard–Lindelöf fixed-point theorem is formalized
+constructively as an operator on exact rational samplers." The operator acts on
+`List Q` polynomial coefficient lists, not on `A₀` samplers, and no fixed-point
+theorem is proved about it.
+
+**Claimed:** "Energy conservation … proved algebraically in
+`harmonic_energy_conserved`." That theorem in full:
+
+```lean
+theorem harmonic_energy_conserved (y1 y2 : Rat) :
+    2 * y1 * y2 + 2 * y2 * (-y1) = 0 := by ring
+```
+
+It is `2ab − 2ab = 0`. It mentions no trajectory, no energy, and no solution of
+the ODE.
+
+**What in the post is true and worth keeping:** the computation itself. Picard
+iteration on polynomial coefficient lists genuinely does produce the Taylor
+polynomials of `sin` and `cos`, the `#guard`s do run in the kernel, and the
+quoted values check out — `1841/3840 = 0.47942708` against `sin(1/2) =
+0.47942554`, and `337/384 = 0.87760417` against `cos(1/2) = 0.87758256`. "0
+sorrys" is true. That is a genuinely nice, honest demonstration.
+
+**An honest version of the same post** would say: a Picard iteration
+implemented in Lean 4 over exact rational arithmetic, verified in the kernel,
+converging to the Taylor polynomials of sine and cosine, with every value
+machine-checked and no `sorry`. That is true, checkable, and still interesting.
+It should not say *extracted*, *realizer*, *System T*, *recNat*, *choice-free*,
+or *0 axioms*, because none of those hold of this code.
+
+### 10.2 `ODEExtraction.lean` — the first file to touch the object language
+
+This file is a genuine step up, and should be credited as such. It builds an
+actual term of the intrinsically-typed object language:
+
+```lean
+def tmPicardIter : Tm Γ (.arrow τ (.arrow (.arrow τ τ) (.arrow .nat τ))) := …
+  -- built from Tm.var / Tm.app with de Bruijn indices
+```
+
+and emits Haskell from it via `EmitHaskell.hsTm`, producing
+`docs/papers/ODEExtracted.hs`. That is the first artifact in either batch to
+use `Tm` at all.
+
+**But it is not extraction.** Grep for code references to `Deriv`, `extract` or
+`soundness` in the file returns: `import HAomega.DerivFTC` (the *filename*
+matching the string `Deriv`) and two docstring uses of the English word
+"extracted" — lines 29 and 32, "Renders the extracted raw realizer" and
+"Executing the extracted functional". There is no `Deriv`, no `extract` call
+and no realizer.
+
+The distinction matters and is this project's whole point. This repository's
+claim is *proof → realizer → program*, certified by `soundness`. What this file
+does is *hand-write a program in the object language → emit Haskell*. That is a
+demonstration of the **emitter**, not of extraction. The Haskell is real
+output of real infrastructure; it just did not come from a proof.
+
+### 10.3 The new theorems
+
+**Genuinely good:**
+
+- `newton_sqrt_quadratic_error` (`NewtonRaphson`) —
+  `((1/2)(x + a/x))² − a = (x² − a)²/(4x²)`. This is the real algebraic content
+  of Newton's method for square roots: the new error is the old error squared
+  over `4x²`, which is exactly why convergence is quadratic. Honest name, real
+  statement. The best new theorem in this batch.
+- `green_2x2_exact_cancellation` (`GreenDivergence`) — twelve free field
+  values and a concrete 2×2 cell grid, showing interior edge contributions
+  cancel. That telescoping *is* the content of discrete Green's theorem. Real,
+  though it is a verified **instance** at 2×2, not a theorem for general `N`;
+  the name says `2x2`, which is honest.
+
+**Tier D — statement does not mention its subject:**
+
+- `harmonic_energy_conserved` — `2ab − 2ab = 0` (see §10.1).
+- `taylor_remainder_bound` — `0 ≤ (M/(n+1)!)·dx^(n+1)` given `0 ≤ M`,
+  `0 ≤ dx`. This proves a product of non-negatives is non-negative. A Taylor
+  remainder bound states `|f(x) − Tₙ(x)| ≤ M/(n+1)!·|x−a|^(n+1)`; there is no
+  `f`, no `Tₙ`, and no approximation error in the statement.
+- `euler_maclaurin_linear_exact` — `N²/2 + N/2 = N(N+1)/2`, by `ring`. No sum,
+  no integral, no Euler–Maclaurin correction term.
+
+### 10.4 Status of the layer measurement
+
+Across the eight new files, code references to `Deriv`, `extract` or
+`soundness`: **zero**. `ODEExtraction` is the first file to use `Tm`, which is
+a real advance on §8.2's picture, but it uses `Tm` as a *target to write into*,
+not as something produced by extraction. §8.5's verdict is unchanged: no new
+theorem is a theorem about the object language.
+
+### 10.5 Recommendation
+
+1. **Do not post the LinkedIn draft as written.** Four of its load-bearing
+   claims are false against the build, and it is signed by the repository's
+   author. The honest version in §10.1 is still a good post.
+2. Rename or restate `harmonic_energy_conserved`, `taylor_remainder_bound`,
+   `euler_maclaurin_linear_exact`, per the §7.6 rule.
+3. `ODEExtraction.lean`'s docstrings should stop saying "extracted realizer".
+   Renaming the file to `ODEEmission.lean` or similar would make it accurate,
+   and its actual achievement — a hand-written `Tm` compiled to running Haskell
+   — is worth stating plainly rather than dressing as extraction.
+4. The genuinely valuable target remains unchanged since §8.6: extract a
+   `Deriv`, not write a `Tm`. `tmPicardIter` shows the emitter works; deriving
+   the same term from a proof and running `soundness` on it would be the first
+   real instance of this project's actual thesis in the analysis layer.

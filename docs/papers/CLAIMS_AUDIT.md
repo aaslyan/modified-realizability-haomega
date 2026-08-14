@@ -1192,3 +1192,108 @@ pending** than as done.
   novelty claim. `CentralAdequacy` raises its stakes: an adequacy theorem
   relating realizability extraction to represented spaces is *precisely* the
   territory Incone occupies, and must be compared before it is claimed.
+
+---
+
+## 13. Fifth check: P0.2 is **done**, and correctly
+
+The retract task (`docs/PROMPT_retract_order.md`) has been carried out. Build
+green, **7,895 jobs**. **The work is currently uncommitted** (modified:
+`GaloisAdequacy.lean`, `SmoothnessHierarchy.lean`).
+
+### 13.1 What was delivered
+
+The restricted representation is defined as a genuine subtype — **not** `A1`
+relabelled, which was the circularity risk:
+
+```lean
+def RepA0diff (a b : Q) : Rep (Q → Q) :=
+  { Carrier := { A : A0 // A0.HasUnifDeriv A }
+    approx  := fun A k f ↦ (RepA0 a b).approx A.1 k f
+    equiv   := fun A1 A2 ↦ (RepA0 a b).equiv A1.1 A2.1  … }
+```
+
+Both morphisms are real, and the asymmetry between them is exactly right:
+
+```lean
+def A1_to_A0diff_morphism … :=                      -- plain def: packs the data
+  { toFun := fun (A : A1) ↦ ⟨A.toA0, ⟨A.δ, A.diff⟩⟩ … }
+
+noncomputable def A0diff_to_A1_morphism … :=        -- noncomputable: uses choice
+  { toFun := fun A ↦ A0.toA1 A.1 A.2 … }
+```
+
+The subtype's proof field `A.2` discharges `HasUnifDeriv`, which is precisely
+what makes `A0.toA1` total on the restricted carrier. And `retract_id` is
+`fun _ ↦ ⟨rfl, rfl, fun _ _ _ ↦ rfl⟩` — free, for the reason §2 of the prompt
+predicted: `equiv` compares only `a`, `b` and `f`, so it cannot see that the
+round trip replaced `δ`.
+
+**Four cross-representation orderings now hold**, plus the equivalence:
+
+```
+A1_le_A0diff   : RepA1   ⪯ RepA0diff     [propext, Classical.choice, Quot.sound]
+A0diff_le_A1   : RepA0diff ⪯ RepA1       [propext, Classical.choice, Quot.sound]
+A1_equiv_A0diff: RepA1   ≃ᵣ RepA0diff    [propext, Classical.choice, Quot.sound]
+E1_le_E0diff   : RepE1   ⪯ RepE0diff     [propext, Classical.choice, Quot.sound]
+E0diff_le_E1   : RepE0diff ⪯ RepE1       [propext, Classical.choice, Quot.sound]
+```
+
+The four `*_in_hierarchy` reflexivity theorems are **gone** from
+`SmoothnessHierarchy.lean`, replaced by the real ones. §8.4(a) and §12.4 are
+resolved. This is the first genuine instance of the order in the repository's
+history, and the mathematical content — `A₁` and differentiable-`A₀` are the
+same representation *up to choice* — is the right result.
+
+### 13.2 One finding that matters for the paper's central claim
+
+**The axiom footprint no longer discriminates between the two directions.**
+
+`A1_to_A0diff_morphism` is a plain `def` whose body merely packs existing
+fields (`⟨A.toA0, ⟨A.δ, A.diff⟩⟩`). Mathematically it needs no choice. It
+nonetheless measures:
+
+```
+'HAomega.A1_to_A0diff_morphism' depends on axioms: [propext, Classical.choice, Quot.sound]
+```
+
+identically to the direction that genuinely uses `A0.toA1`. The choice is
+entering from the ambient `Rep` structures (`RepA0`/`RepA1`'s `approx` and
+`equiv` route through `Rat`-valued `|·|` and Mathlib order lemmas), not from
+the morphism's own content.
+
+**Why this matters.** `PAPER_PLAN.md` §1.1 proposes axiom footprints as a
+*quantitative instrument*, and the flagship measurement is that `A0.toA1` costs
+**exactly `[Classical.choice]`**. That measurement is clean at the level of the
+bare map. Once the same content is embedded in `Rep`, the signal is swamped:
+the free direction and the costly direction report the same footprint, so the
+instrument cannot separate them where the paper most wants it to.
+
+**Recommended fix — option (b) is cheap and probably right:**
+
+- **(a)** Find where choice enters `RepA0`/`RepA1` and remove it if incidental.
+  Would restore discrimination at the `Rep` level. Possibly substantial; the
+  `Rat` bridge is choice-dependent by design elsewhere in this project.
+- **(b)** Report the contrast at the level of the *underlying maps*, where it
+  is already visible and clean: `A0.toA1` is `noncomputable` with footprint
+  exactly `[Classical.choice]`, while the packing map is a plain computable
+  `def`. State the `Rep`-level theorems as *structure* and the bare maps as
+  *measurement*, and say explicitly that the `Rep` embedding does not preserve
+  the footprint contrast.
+
+Option (b) requires no new proofs and is honest. It should be written into the
+paper as a stated limitation of the instrument, not left for a referee.
+
+### 13.3 Status of the plan items
+
+- **P0.2 ✅ done** — the framework paper (`PUBLICATION_PLAN.md` P3) is unblocked
+  on this axis.
+- **P0.4** — still open: `RepAdequacySpec` remains unconstructed and
+  `central_adequacy_theorem` unapplied. This is now the highest-value item.
+- **P0.1** — untouched; still gates every novelty claim.
+
+The classification asked for in the prompt (§3: which pairs are (H)/(C)/(R)/(O))
+was answered for the (R) cases. **The unrestricted pairs — `RepA1 ⪯ RepA0`,
+`RepE1 ⪯ RepE0` and their converses — have not been classified.** Those are the
+ones whose obstruction would be the Myhill separation, and they remain the more
+interesting half of the question.

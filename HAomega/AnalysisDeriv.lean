@@ -109,4 +109,9 @@ def extractedSqrt2At4 : Nat :=
 -- The extracted program computes the exact integer crossing 22 (representing 22/16 = 11/8 = 1.375 ≈ √2):
 #guard extractedSqrt2At4 == 22
 
+#print axioms iterSequenceD
+#print axioms doublingRealizer
+#print axioms extractedSqrt2At4
+
 end HAomega
+

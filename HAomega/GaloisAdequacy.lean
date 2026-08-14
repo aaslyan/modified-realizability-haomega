@@ -25,19 +25,16 @@ This module formalizes the core theoretical architecture of Paper A:
      and a retraction $\pi : R_2 \to R_1$ such that $\pi \circ \iota \sim \mathrm{id}_{R_1}$.
    - We prove that $\preceq$ is a preorder (reflexive and transitive).
 
-3. **Galois Adequacy for Mathematical Operations**:
-   A pair of representations $(R_X, R_Y)$ is **Galois adequate** for an operation $\mathcal{F} : X \to Y$
-   if there exists an extracted algorithm $\widetilde{\mathcal{F}} : R_X.\mathrm{Carrier} \to R_Y.\mathrm{Carrier}$
-   with a resource/modulus translation function $\mu : \mathbb{N} \to \mathbb{N}$ tracking precision.
+3. **The Representation Ladder ($A_0, A_1, E_0, E_1$)**:
+   - Exact continuous functions: `RepA0`.
+   - Exact differentiable functions: `RepA1`.
+   - Approximating continuous functions: `RepE0`.
+   - Approximating differentiable functions: `RepE1`.
+   - Morphisms connecting the levels: $A_1 \to A_0$, $A_0 \to E_0$, $A_1 \to E_1$, $E_1 \to E_0$.
 
-4. **Symmetric Monoidal Structure**:
-   - Tensor product of representations $R_1 \otimes R_2 \in \mathbf{Rep}(X \times Y)$.
-   - Monotonicity of $\preceq$ under tensor product: $R_1 \preceq R_2 \land S_1 \preceq S_2 \implies R_1 \otimes S_1 \preceq R_2 \otimes S_2$.
-
-5. **The Adequacy Hierarchy of Calculus and Fixed-Point Analysis**:
-   - Conservativity / Retract: $A_0 \preceq E_0$ via `A0.toE0`.
-   - Regularity Retract: $E_0 \preceq E_1$ via `E1.toE0`.
-   - Galois Adequacy of Integration ($\mathrm{EFTC1}$): $(A_0, E_1) \models \int$ via `A0.intE1`.
+4. **Commuting Ladder Square Theorem (`ladder_square_commutes`)**:
+   The diagram of representation morphisms commutes on all codes:
+   $$\begin{array}{ccc} A_1 & \xrightarrow{A_1 \to E_1} & E_1 \\ \downarrow & & \downarrow \\ A_0 & \xrightarrow{A_0 \to E_0} & E_0 \end{array}$$
 -/
 
 namespace HAomega
@@ -205,6 +202,34 @@ def RepA0 (a b : Q) : Rep (Q → Q) :=
         rw [h_val]
         exact hx }
 
+/-- Representation for exact differentiable functions on $[a, b]$ via $A_1$. -/
+def RepA1 (a b : Q) : Rep (Q → Q) :=
+  { Carrier := A1
+    approx := fun A k f ↦ A.a = a ∧ A.b = b ∧ ∀ x : Q, Qle a x = true → Qle x b = true → |(A.f x).val - (f x).val| ≤ 1 / 2 ^ k
+    equiv := fun A1 A2 ↦ A1.a = A2.a ∧ A1.b = A2.b ∧ ∀ x : Q, Qle A1.a x = true → Qle x A1.b = true → (A1.f x).val = (A2.f x).val
+    equiv_refl := fun A ↦ ⟨rfl, rfl, fun _ _ _ ↦ rfl⟩
+    equiv_symm := fun _ _ h ↦ ⟨h.1.symm, h.2.1.symm, fun x hxa hxb ↦ (h.2.2 x (by rwa [h.1]) (by rwa [h.2.1])).symm⟩
+    equiv_trans := fun A B C hAB hBC ↦
+      ⟨hAB.1.trans hBC.1, hAB.2.1.trans hBC.2.1, fun x hxa hxb ↦ by
+        have h1 := hAB.2.2 x hxa hxb
+        have h2 := hBC.2.2 x (by rwa [← hAB.1]) (by rwa [← hAB.2.1])
+        exact h1.trans h2⟩
+    approx_congr := by
+      intro A1 A2 k f h_eq
+      constructor
+      · intro h1
+        refine ⟨h_eq.1 ▸ h1.1, h_eq.2.1 ▸ h1.2.1, fun x hxa hxb ↦ ?_⟩
+        have hx := h1.2.2 x hxa hxb
+        have h_val := h_eq.2.2 x (by rwa [h1.1]) (by rwa [h1.2.1])
+        rw [← h_val]
+        exact hx
+      · intro h2
+        refine ⟨h_eq.1 ▸ h2.1, h_eq.2.1 ▸ h2.2.1, fun x hxa hxb ↦ ?_⟩
+        have hx := h2.2.2 x hxa hxb
+        have h_val := h_eq.2.2 x (by rwa [h_eq.1, h2.1]) (by rwa [h_eq.2.1, h2.2.1])
+        rw [h_val]
+        exact hx }
+
 /-- Representation for approximating continuous functions on $[a, b]$ via $E_0$. -/
 def RepE0 (a b : Q) : Rep (Q → Q) :=
   { Carrier := E0
@@ -261,21 +286,45 @@ def RepE1 (a b : Q) : Rep (Q → Q) :=
         rw [h_val]
         exact hx }
 
-/-- **Conservativity Retract**: $A_0 \preceq E_0$.
-    Every exact continuous function $A_0$ is an approximating evaluator $E_0$ via `A0.toE0`. -/
+/-! ## 5. Morphisms Connecting the Representation Ladder -/
+
+/-- Forgetting derivative data: $A_1 \to A_0$. -/
+def A1_to_A0_morphism (a b : Q) : RepMorphism (RepA1 a b) (RepA0 a b) :=
+  { toFun := fun (A : A1) ↦ A.toA0
+    map_equiv := fun _ _ h ↦ h
+    shift := fun k ↦ k
+    map_approx := fun _ _ _ h ↦ h }
+
+/-- Conservativity morphism: $A_0 \to E_0$. -/
 def A0_to_E0_morphism (a b : Q) : RepMorphism (RepA0 a b) (RepE0 a b) :=
   { toFun := fun (A : A0) ↦ A.toE0
     map_equiv := fun _ _ h ↦ ⟨h.1, h.2.1, fun _ x hxa hxb ↦ h.2.2 x hxa hxb⟩
     shift := fun k ↦ k
     map_approx := fun _ _ _ h ↦ ⟨h.1, h.2.1, fun x hxa hxb ↦ h.2.2 x hxa hxb⟩ }
 
-/-- **Regularity Retract**: $E_0 \preceq E_1$.
-    $E_1$ carries additional differentiability data and retracts to $E_0$ via `E1.toE0`. -/
+/-- Conservativity morphism: $A_1 \to E_1$. -/
+def A1_to_E1_morphism (a b : Q) : RepMorphism (RepA1 a b) (RepE1 a b) :=
+  { toFun := fun (A : A1) ↦ A.toE1
+    map_equiv := fun _ _ h ↦ ⟨h.1, h.2.1, fun _ x hxa hxb ↦ h.2.2 x hxa hxb⟩
+    shift := fun k ↦ k
+    map_approx := fun _ _ _ h ↦ ⟨h.1, h.2.1, fun x hxa hxb ↦ h.2.2 x hxa hxb⟩ }
+
+/-- Forgetting derivative data: $E_1 \to E_0$. -/
 def E1_to_E0_morphism (a b : Q) : RepMorphism (RepE1 a b) (RepE0 a b) :=
   { toFun := fun (E : E1) ↦ E.toE0
     map_equiv := fun _ _ h ↦ h
     shift := fun k ↦ k
     map_approx := fun _ _ _ h ↦ h }
+
+/-- **Theorem (Ladder Commuting Square)**:
+    The representation morphism square commutes identically on all codes:
+    $E1\_to\_E0 \circ A1\_to\_E1 = A0\_to\_E0 \circ A1\_to\_A0$. -/
+theorem ladder_square_commutes (a b : Q) (A : A1) :
+    (E1_to_E0_morphism a b).toFun ((A1_to_E1_morphism a b).toFun A) =
+    (A0_to_E0_morphism a b).toFun ((A1_to_A0_morphism a b).toFun A) := by
+  rfl
+
+#print axioms ladder_square_commutes
 
 /-- **Galois Adequacy of Newton–Leibniz Integration ($\mathrm{EFTC1}$)**:
     The integration operator maps an exact continuous function $A_0$ to an
@@ -284,7 +333,7 @@ def EFTC1_Adequate (a b : Q) (_ivl : Q.ltN a b = 1) :
     A0 → E1 :=
   fun A ↦ A.intE1
 
-/-! ## 5. Monoidal Product Structure on $\mathbf{Rep}$ -/
+/-! ## 6. Monoidal Product Structure on $\mathbf{Rep}$ -/
 
 /-- Terminal representation for the unit space `Unit`. -/
 def Rep.unit : Rep Unit :=
@@ -337,11 +386,40 @@ theorem RepLe.prod_mono_id {X Y : Type} {R1 R2 : Rep X} {S1 S2 : Rep Y}
             pi := RepMorphism.prod_eq_shift retR.pi retS.pi h_pi
             retract_id := fun (c, d) ↦ ⟨retR.retract_id c, retS.retract_id d⟩ }⟩
 
+/-! ## 7. Concrete Retract Instances on Function Spaces -/
+
+/-- Concrete retract of $A_0$ into itself. -/
+theorem A0_retract_self (a b : Q) : (RepA0 a b) ⪯ (RepA0 a b) :=
+  RepLe.refl (RepA0 a b)
+
+/-- Concrete retract of $A_1$ into itself. -/
+theorem A1_retract_self (a b : Q) : (RepA1 a b) ⪯ (RepA1 a b) :=
+  RepLe.refl (RepA1 a b)
+
+/-- Concrete retract of $E_0$ into itself. -/
+theorem E0_retract_self (a b : Q) : (RepE0 a b) ⪯ (RepE0 a b) :=
+  RepLe.refl (RepE0 a b)
+
+/-- Concrete retract of $E_1$ into itself. -/
+theorem E1_retract_self (a b : Q) : (RepE1 a b) ⪯ (RepE1 a b) :=
+  RepLe.refl (RepE1 a b)
+
+/-- Concrete product retraction on $A_0 \times A_0$. -/
+theorem A0_prod_retract (a b : Q) :
+    ((RepA0 a b) ⊗ᵣ (RepA0 a b)) ⪯ ((RepA0 a b) ⊗ᵣ (RepA0 a b)) :=
+  RepLe.refl _
+
 #print axioms RepLe.refl
 #print axioms RepLe.trans
 #print axioms RepLe.prod_mono_id
+#print axioms A0_retract_self
+#print axioms A1_retract_self
+#print axioms E0_retract_self
+#print axioms E1_retract_self
 #print axioms GaloisAdequate.comp
+#print axioms A1_to_A0_morphism
 #print axioms A0_to_E0_morphism
+#print axioms A1_to_E1_morphism
 #print axioms E1_to_E0_morphism
 
 end HAomega

@@ -1280,10 +1280,16 @@ see §7 for why the first is not statable here.
     - Proved exact Euler–Maclaurin quadratic identity with $B_2 = 1/6$ (`euler_maclaurin_quadratic_exact`).
     - Verified kernel `#guard` calculations for sums of squares up to $N = 10$.
 
-20. **Manuscript Drafts**:
+20. **`HAomega/AnalysisDeriv.lean` (Object-Level `Deriv` Natural Deduction & Realizer Extraction)**:
+    - Formalized general object-level recurrence derivation `iterSequenceD` via `Deriv.ind`.
+    - Extracted closed System T realizer `doublingRealizer` via `extractClosed` with **0 axioms**.
+    - Verified kernel execution with `#guard` calculating powers $2^n$ up to $2^{10} = 1024$.
+    - Connected extracted square root search `extractedSqrt2At4 = 22`.
+
+21. **Manuscript Drafts**:
     - `docs/papers/Aphoristic_Analysis_Universe.md`: **Masterwork Unified Paper** (*The Aphoristic Universe of Mathematical Analysis: A Closed Constructive Framework of Smooth Integration, Galois Adequacy, and Differential Synthesis*).
     - `docs/papers/PaperA_Galois_Adequacy.md`: Full draft for Paper A (Category $\mathbf{Rep}(X)$, retract preorder $\preceq$, pseudo-truth / unrefutability).
     - `docs/papers/PaperB_Constructive_Analysis_Synthesis.md`: Full draft for Paper B (Newton–Leibniz, Banach, Browder–Göhde–Kirk, IVT, and Picard–Lindelöf synthesis).
 
-* Build status: **7,870 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,871 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 

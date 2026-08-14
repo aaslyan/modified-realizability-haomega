@@ -11,7 +11,7 @@ import HAomega.IVT
 import HAomega.ModulusClosure
 
 /-!
-# Gaussian Rationals $\mathbb{Q}(i)$ and Cauchy–Riemann Algebra
+# Gaussian Rationals $\mathbb{Q}(i)$ and Cauchy–Riemann Differential Algebra
 
 This module formalizes Gaussian rationals and Cauchy–Riemann differential algebra:
 
@@ -19,20 +19,19 @@ This module formalizes Gaussian rationals and Cauchy–Riemann differential alge
    Complex numbers $z = x + i y$ with rational parts $x, y \in \mathbb{Q}$, equipped with
    the rational $L_1$ norm $|z|_1 = |x| + |y|$ and verified triangle inequality (`norm1_add_le`).
 
-2. **Cauchy–Riemann Differential Data**:
-   The partial derivative data satisfying $u_x = v_y$ and $u_y = -v_x$.
-   Instantiated on explicit holomorphic maps:
+2. **Cauchy–Riemann Differential Data (`CauchyRiemannData`)**:
+   Partial derivative data satisfying $u_x = v_y$ and $u_y = -v_x$.
+   Instantiated on explicit non-trivial holomorphic models:
    - Identity map $f(z) = z$ (`idCR`)
    - Monomial squaring $f(z) = z^2$ (`sqCR`)
 
-3. **Jacobian Action as Complex Multiplication (`cr_jacobian_eq_complex_mul`)**:
-   The action of the 2D Jacobian matrix $\begin{pmatrix} u_x & u_y \\ v_x & v_y \end{pmatrix}$
-   on a displacement vector $(\Delta x, \Delta y)$ is identically equal to complex multiplication
-   by $f'(z) = u_x + i v_x$.
+3. **Jacobian Action via CR (`cr_jacobian_algebra`)**:
+   Applying the real 2D Jacobian matrix $\begin{pmatrix} u_x & u_y \\ v_x & v_y \end{pmatrix}$
+   equals $u_x \Delta x - v_x \Delta y + i(v_x \Delta x + u_x \Delta y)$ under CR equations.
 
-4. **Curvature Residual Vanishing (`goursat_rect_zero`)**:
-   The rectangular divergence/curl integrand residual $(u_x - v_y)\Delta x \Delta y + i(v_x + u_y)\Delta x \Delta y$
-   vanishes algebraically under the Cauchy–Riemann equations.
+4. **Rectangular Integrand Residual Cancellation (`cr_rect_integrand_cancel`)**:
+   The expression $(u_x - v_y)\Delta x \Delta y + i(v_x + u_y)\Delta x \Delta y$ cancels identically
+   to 0 under the Cauchy–Riemann equations.
 -/
 
 namespace HAomega
@@ -115,11 +114,10 @@ def sqCR (x y : Rat) : CauchyRiemannData :=
     cr1 := rfl,
     cr2 := by ring }
 
-/-- **Theorem (Jacobian Action as Complex Multiplication)**:
+/-- **Theorem (Jacobian Action via Cauchy–Riemann)**:
     Applying the real 2D Jacobian matrix $\begin{pmatrix} u_x & u_y \\ v_x & v_y \end{pmatrix}$
-    to a displacement $(\Delta x, \Delta y)$ is identical to complex multiplication
-    by $f'(z) = u_x + i v_x$. -/
-theorem cr_jacobian_eq_complex_mul (CR : CauchyRiemannData) (dx dy : Rat) :
+    to a displacement $(\Delta x, \Delta y)$ satisfies the CR substitution identities. -/
+theorem cr_jacobian_algebra (CR : CauchyRiemannData) (dx dy : Rat) :
     CR.ux * dx + CR.uy * dy = CR.ux * dx - CR.vx * dy ∧
     CR.vx * dx + CR.vy * dy = CR.vx * dx + CR.ux * dy := by
   constructor
@@ -127,12 +125,12 @@ theorem cr_jacobian_eq_complex_mul (CR : CauchyRiemannData) (dx dy : Rat) :
     ring
   · rw [CR.cr1]
 
-#print axioms cr_jacobian_eq_complex_mul
+#print axioms cr_jacobian_algebra
 
 /-! ## 3. Integrand Residual for Rectangular Loops -/
 
-/-- Exact rectangular divergence/curl residual vanishes identically for Cauchy–Riemann fields. -/
-theorem goursat_rect_zero (CR : CauchyRiemannData) (hx hy : Rat) :
+/-- Rectangular divergence/curl residual vanishes identically for Cauchy–Riemann fields. -/
+theorem cr_rect_integrand_cancel (CR : CauchyRiemannData) (hx hy : Rat) :
     (CR.ux - CR.vy) * hx * hy = 0 ∧ (CR.vx + CR.uy) * hx * hy = 0 := by
   constructor
   · rw [CR.cr1]
@@ -140,7 +138,7 @@ theorem goursat_rect_zero (CR : CauchyRiemannData) (hx hy : Rat) :
   · rw [CR.cr2]
     ring
 
-#print axioms goursat_rect_zero
+#print axioms cr_rect_integrand_cancel
 
 /-! ## 4. Verified Kernel Computations in $\mathbb{Q}(i)$ -/
 

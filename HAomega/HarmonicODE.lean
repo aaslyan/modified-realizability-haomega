@@ -63,17 +63,16 @@ def evalRealPoly (p : List Q) (x : Q) : Q :=
     let term := Q.mul c (qpow x j)
     Q.add acc term) Q.zero
 
-/-! ## 2. Harmonic Energy Conservation Identity -/
+/-! ## 2. Harmonic Energy Derivative Cancellation Identity -/
 
-/-- **Theorem (Energy Conservation Derivative Identity)**:
-    For any differentiable vector field satisfying $y_1' = y_2$ and $y_2' = -y_1$,
-    the time derivative of the energy $E = y_1^2 + y_2^2$ vanishes identically:
-    $\frac{d}{dt}(y_1^2 + y_2^2) = 2 y_1 y_1' + 2 y_2 y_2' = 2 y_1 y_2 + 2 y_2 (-y_1) = 0$. -/
-theorem harmonic_energy_conserved (y1 y2 : Rat) :
+/-- **Theorem (Harmonic Energy Derivative Cancellation Identity)**:
+    For components satisfying $y_1' = y_2$ and $y_2' = -y_1$, the algebraic derivative
+    expression $2 y_1 y_1' + 2 y_2 y_2' = 2 y_1 y_2 + 2 y_2 (-y_1)$ cancels identically to 0. -/
+theorem harmonic_energy_deriv_cancel (y1 y2 : Rat) :
     2 * y1 * y2 + 2 * y2 * (-y1) = 0 := by
   ring
 
-#print axioms harmonic_energy_conserved
+#print axioms harmonic_energy_deriv_cancel
 
 /-! ## 3. Verified Kernel Computations for Sine and Cosine -/
 

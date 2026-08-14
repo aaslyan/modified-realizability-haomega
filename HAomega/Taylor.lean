@@ -12,22 +12,22 @@ import HAomega.ModulusClosure
 import HAomega.ODEDemo
 
 /-!
-# Taylor's Expansion Theorem with Exact Remainder Bounds
+# Taylor's Expansion and Remainder Positivity Scaling
 
 This module formalizes constructive **Taylor polynomial expansions** and their
-quantitative remainder bounds:
+scaling properties:
 
 1. **Taylor Polynomial Operator (`taylorEval`)**:
    For derivatives $f^{(0)}(a), f^{(1)}(a), \dots, f^{(n)}(a)$, the $n$-th Taylor polynomial is:
    $$T_n(x) = \sum_{j=0}^n \frac{f^{(j)}(a)}{j!} (x - a)^j$$
 
-2. **The Quantitative Remainder Bound Theorem (`taylor_remainder_bound`)**:
-   If $|f^{(n+1)}(t)| \le M_{n+1}$ on $[a, x]$, the remainder satisfies:
-   $$|R_n(x)| = |f(x) - T_n(x)| \le \frac{M_{n+1}}{(n+1)!} |x - a|^{n+1}$$
+2. **The Positivity Scaling Lemma (`taylor_remainder_pos_scale`)**:
+   For non-negative bound $M \ge 0$ and displacement $\Delta x \ge 0$, the product
+   $\frac{M}{(n+1)!} \Delta x^{n+1}$ is non-negative.
 
 3. **Kernel-Verified Computations**:
    Verified `#guard` calculations computing Taylor expansions of $e^x$ at $a = 0$
-   evaluated at $x = 1/2$ with certified remainder bounds.
+   evaluated at $x = 1/2$.
 -/
 
 namespace HAomega
@@ -49,12 +49,12 @@ def taylorEval (derivs : List Q) (a x : Q) : Q :=
     let term := Q.mul coeff (qpow dx j)
     Q.add acc term) Q.zero
 
-/-! ## 2. The Quantitative Remainder Bound -/
+/-! ## 2. The Positivity Scaling Lemma -/
 
-/-- **Theorem (Taylor Remainder Scaling Bound)**:
-    For derivative bound $M$ and displacement $\Delta x$, the product bound
-    $\frac{M}{(n+1)!} \Delta x^{n+1}$ decreases super-exponentially with $n$. -/
-theorem taylor_remainder_bound (M : Rat) (dx : Rat) (n : Nat)
+/-- **Lemma (Taylor Remainder Factor Positivity)**:
+    For non-negative derivative bound $M \ge 0$ and non-negative displacement $\Delta x \ge 0$,
+    the expression $\frac{M}{(n+1)!} \Delta x^{n+1}$ is non-negative. -/
+theorem taylor_remainder_pos_scale (M : Rat) (dx : Rat) (n : Nat)
     (hM : 0 ≤ M) (hdx : 0 ≤ dx) :
     0 ≤ (M / (fact (n + 1) : Rat)) * (dx ^ (n + 1)) := by
   have h_fact : (0 : Rat) < (fact (n + 1) : Rat) := by
@@ -63,7 +63,7 @@ theorem taylor_remainder_bound (M : Rat) (dx : Rat) (n : Nat)
   have h_pow : 0 ≤ dx ^ (n + 1) := by positivity
   exact mul_nonneg h_frac h_pow
 
-#print axioms taylor_remainder_bound
+#print axioms taylor_remainder_pos_scale
 
 /-! ## 3. Verified Kernel Computations for Taylor Expansions -/
 

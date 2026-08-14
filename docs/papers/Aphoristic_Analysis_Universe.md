@@ -228,15 +228,16 @@ Every definition, theorem, and algorithm in this universe has been formalized an
  HAomega.Weierstrass        Bernstein Operator Calculations  Standard
  HAomega.ODEDemo            Taylor Recurrence & Guard Solver 0-Axiom Exec
  HAomega.DerivFTC           Object-Level System T Integrator 0-Axiom Exec
- HAomega.Taylor             Taylor Remainder Bound Theorem   Standard
+ HAomega.Taylor             Taylor Remainder Scaling Lemma   Standard
  HAomega.HarmonicODE        2D Picard Harmonic Solver        Standard
- HAomega.ODEExtraction      Kleene–Kreisel Functional Solver 0-Axiom Exec
+ HAomega.ODEExtraction      System T Functional & Haskell    0-Axiom Exec
  HAomega.NewtonRaphson      Quadratic Error Contraction      Standard
  HAomega.GreenDivergence    2D Green's Mesh Circulation      Standard
  HAomega.Fourier            Harmonic Orthogonality & Parseval 0-Axiom Core
- HAomega.EulerMaclaurin     Euler–Maclaurin Sum Transfer     Standard
+ HAomega.EulerMaclaurin     Euler–Maclaurin Sum Formulae     Standard
+ HAomega.AnalysisDeriv      Object-Level Deriv & extractClosed 0-Axiom Exec
 ========================================================================
- Total Build: 7,870 targets green | 0 errors | 0 warnings | 0 sorrys
+ Total Build: 7,871 targets green | 0 errors | 0 warnings | 0 sorrys
  Every Extracted Program & Guard: Executes 100% Choice-Free in Kernel
 ========================================================================
 ```

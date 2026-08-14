@@ -1360,11 +1360,14 @@ see §7 for why the first is not statable here.
     - **`banach_fixed_point_existence`**: Abstract Banach fixed-point existence.
     - **`contraction_comp_ratio`**: Composition of contractions preserves ratio bound (0-axiom).
 
-33. **Manuscript Drafts & Roadmap**:
-    - `docs/papers/Aphoristic_Analysis_Universe.md`: **Masterwork Unified Paper**.
-    - `docs/papers/PaperA_Galois_Adequacy.md`: Paper A draft.
-    - `docs/papers/PaperB_Constructive_Analysis_Synthesis.md`: Paper B draft.
-    - `docs/papers/FOUNDATIONS_ROADMAP.md`: Complete 6-milestone research roadmap.
+34. **`HAomega/BanachInstance.lean` (Concrete End-to-End Banach Engine Instance: $y' = y$)**:
+    - **`expVectorField`**: Exact identity vector field $f(t, y) = y$ with $L=0$ ($2^0=1$) on $[0, 1/4]$.
+    - **`exp_initial_step_bound`**: Proved initial step bound $\|P_0 - T(P_0)\|_\infty \le 1/4$ ($M=0$).
+    - **`expConvergenceRate`**: Proved rate of convergence $\Phi(k) = (k+2)/2$ with monotonicity (`expConvergenceRate_mono`).
+    - **`picard_taylor_identity`**: Proved exact equivalence between Picard integral recurrence and Taylor series.
+    - **`exp_geometric_convergence`**: Verified geometric convergence $2/4^n$ in Lean's kernel.
+    - **Kernel `#guard` Checks**: Exact rational partial sums verified up to $P_6(1/4) = 757349/589824 \approx 1.28402540$ (error $< 10^{-7}$).
 
-* Build status: **7,886 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,887 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+
 

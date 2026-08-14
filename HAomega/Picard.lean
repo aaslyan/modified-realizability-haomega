@@ -152,7 +152,7 @@ theorem ContractionOp.telescope_step {a b : Q} (C : ContractionOp a b) (n d : Na
       rw [this]
       exact mul_le_mul_of_nonneg_left h_pow_le (by positivity)
     have hM1 : (2 : Rat) ^ (C.M + 1) = 2 ^ C.M * 2 := by
-      rw [show C.M + 1 = C.M + 1 by rfl, pow_add]; norm_num; ring
+      rw [show C.M + 1 = C.M + 1 by rfl, pow_add]; norm_num
     have hd1 : (1 : Rat) / 2 ^ (d + 1) = (1 / 2 ^ d) * (1 / 2) := by
       rw [show d + 1 = d + 1 by rfl, pow_add]; ring
     have h_alg : ((2 : Rat) ^ (C.M + 1) / 2 ^ (C.p * n)) * (1 - 1 / 2 ^ d)
@@ -161,7 +161,7 @@ theorem ContractionOp.telescope_step {a b : Q} (C : ContractionOp a b) (n d : Na
       rw [hM1, hd1]
       have : (0 : Rat) < 2 ^ (C.p * n) := by positivity
       have : (0 : Rat) < 2 ^ d := by positivity
-      field_simp
+      field_simp; ring
     have h_goal : |(C.iter n x).val - (C.iter (n + d + 1) x).val|
         ≤ ((2 : Rat) ^ (C.M + 1) / 2 ^ (C.p * n)) * (1 - 1 / 2 ^ (d + 1)) := by
       linarith [h_tri, h_ih, h_step, h_step_bound, h_alg]
@@ -210,7 +210,7 @@ theorem ContractionOp.cauchy {a b : Q} (C : ContractionOp a b) (k n m : Nat)
     rw [h_pow]
     have : (0 : Rat) < 2 ^ (C.M + 1) := by positivity
     have : (0 : Rat) < 2 ^ (C.p * n - (C.M + 1)) := by positivity
-    field_simp; ring
+    field_simp
   rw [h_div] at h_dist
   have h_inv : (1 : Rat) / 2 ^ (C.p * n - (C.M + 1)) ≤ 1 / 2 ^ k := inv_pow_le (by omega)
   linarith

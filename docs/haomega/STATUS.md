@@ -1317,10 +1317,16 @@ see §7 for why the first is not statable here.
     - `docs/media/`: 5 high-resolution scientific diagrams (`vanderpol_limit_cycle.jpg`, `lotka_volterra_orbits.jpg`, `duffing_double_well.jpg`, `lorenz_butterfly_attractor.jpg`, `kepler_orbit_mechanics.jpg`).
     - `docs/showcase/`: 5 publication-ready LinkedIn post drafts (`post1_vanderpol.md`, `post2_lotka_volterra.md`, `post3_duffing.md`, `post4_lorenz.md`, `post5_kepler.md`).
 
-27. **Manuscript Drafts**:
+27. **`HAomega/CentralAdequacy.lean` (The Central Adequacy Theorem: MR-to-Rep Bridge)**:
+    - **`soundnessClosed`**: Formalized soundness of closed $\mathrm{HA}^\omega$ derivations in the empty environment.
+    - **`RepOf`**: Formalized explicit-carrier representations over System T types $\sigma.\text{interp}$.
+    - **`central_adequacy_theorem`**: Proved that any closed $\mathrm{HA}^\omega$ natural deduction derivation of $\forall x : \sigma, \exists y : \tau, \Phi(x, y)$ directly produces an effective, choice-free representation realizer preserving code equivalence and satisfying the mathematical relation $P(x, y)$.
+    - **`central_galois_realizer`**: Systematically turns any constructive theorem proof into an operational `GaloisAdequate RX.toRep RY.toRep F` morphism in $\mathbf{Rep}$.
+
+28. **Manuscript Drafts**:
     - `docs/papers/Aphoristic_Analysis_Universe.md`: **Masterwork Unified Paper** (*The Aphoristic Universe of Mathematical Analysis: A Closed Constructive Framework of Smooth Integration, Galois Adequacy, and Differential Synthesis*).
     - `docs/papers/PaperA_Galois_Adequacy.md`: Full draft for Paper A (Category $\mathbf{Rep}(X)$, retract preorder $\preceq$, pseudo-truth / unrefutability).
     - `docs/papers/PaperB_Constructive_Analysis_Synthesis.md`: Full draft for Paper B (Newton–Leibniz, Banach, Browder–Göhde–Kirk, IVT, and Picard–Lindelöf synthesis).
 
-* Build status: **7,880 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,881 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 

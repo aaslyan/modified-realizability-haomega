@@ -236,8 +236,12 @@ Every definition, theorem, and algorithm in this universe has been formalized an
  HAomega.Fourier            Harmonic Orthogonality & Parseval 0-Axiom Core
  HAomega.EulerMaclaurin     Euler–Maclaurin Sum Formulae     Standard
  HAomega.AnalysisDeriv      Object-Level Deriv & extractClosed 0-Axiom Exec
+ HAomega.Chebyshev          3-Term Recurrence Economization  Standard
+ HAomega.FFT                Cooley–Tukey Radix-2 Butterfly   0-Axiom Core
+ HAomega.CauchyIntegral     Box Loop Integral & Pole Residue 0-Axiom Core
+ HAomega.PadeApproximants   [1/1] & [2/2] Rational Matching  Standard
 ========================================================================
- Total Build: 7,871 targets green | 0 errors | 0 warnings | 0 sorrys
+ Total Build: 7,875 targets green | 0 errors | 0 warnings | 0 sorrys
  Every Extracted Program & Guard: Executes 100% Choice-Free in Kernel
 ========================================================================
 ```

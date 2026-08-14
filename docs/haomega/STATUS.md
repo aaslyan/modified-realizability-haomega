@@ -1286,10 +1286,30 @@ see §7 for why the first is not statable here.
     - Verified kernel execution with `#guard` calculating powers $2^n$ up to $2^{10} = 1024$.
     - Connected extracted square root search `extractedSqrt2At4 = 22`.
 
-21. **Manuscript Drafts**:
+21. **`HAomega/Chebyshev.lean` (Chebyshev 3-Term Recurrence & Economization)**:
+    - Formalized 3-term polynomial recurrence $T_{n+1}(x) = 2x T_n(x) - T_{n-1}(x)$ on $\mathbb{Q}[x]$.
+    - Proved evaluation identities `chebyshev_t2_eval_id`, `chebyshev_t3_eval_id`, `chebyshev_t4_eval_id`.
+    - Verified kernel `#guard` checks for $T_0, \dots, T_4$ at $x = 0, 1/2, 1$.
+
+22. **`HAomega/FFT.lean` (Cooley–Tukey Radix-2 Butterfly Fast Fourier Transform)**:
+    - Implemented 4-point radix-2 Cooley–Tukey divide-and-conquer FFT with twiddle factor $W_4^1 = -i$.
+    - Proved exact equivalence to matrix DFT (`cooley_tukey_delta_exact`, `cooley_tukey_step_exact`) with **0 axioms** (`decide`).
+    - Verified kernel `#guard` spectrum computations for impulse, DC, Nyquist, and fundamental harmonics.
+
+23. **`HAomega/CauchyIntegral.lean` (Discrete Cauchy Contour Integral & Residue Theorem)**:
+    - Formalized Gaussian rational inversion $\mathrm{QC.inv}(z) = \frac{x - iy}{x^2 + y^2}$.
+    - Proved discrete Cauchy pole box residue theorem (`cauchy_pole_box_residue` $\oint \frac{dz}{z} = 8i$) with **0 axioms** (`decide`).
+    - Proved regular holomorphic contour vanishing (`cauchy_const_box_zero`) with **0 axioms** (`decide`).
+
+24. **`HAomega/PadeApproximants.lean` (Padé Rational Approximants Beyond Polynomials)**:
+    - Formalized rational quotient evaluator `evalPade`.
+    - Proved $[1/1]$ order 2 matching theorem (`pade_exp_11_order2_match`) and $[2/2]$ order 4 matching theorem (`pade_exp_22_order4_match`).
+    - Verified kernel `#guard` calculations showing $[2/2](1/2) = 61/37 \approx 1.6486486$ matching $e^{1/2}$ to 4 decimal places.
+
+25. **Manuscript Drafts**:
     - `docs/papers/Aphoristic_Analysis_Universe.md`: **Masterwork Unified Paper** (*The Aphoristic Universe of Mathematical Analysis: A Closed Constructive Framework of Smooth Integration, Galois Adequacy, and Differential Synthesis*).
     - `docs/papers/PaperA_Galois_Adequacy.md`: Full draft for Paper A (Category $\mathbf{Rep}(X)$, retract preorder $\preceq$, pseudo-truth / unrefutability).
     - `docs/papers/PaperB_Constructive_Analysis_Synthesis.md`: Full draft for Paper B (Newton–Leibniz, Banach, Browder–Göhde–Kirk, IVT, and Picard–Lindelöf synthesis).
 
-* Build status: **7,871 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,875 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 

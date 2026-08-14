@@ -1322,11 +1322,49 @@ see §7 for why the first is not statable here.
     - **`RepOf`**: Formalized explicit-carrier representations over System T types $\sigma.\text{interp}$.
     - **`central_adequacy_theorem`**: Proved that any closed $\mathrm{HA}^\omega$ natural deduction derivation of $\forall x : \sigma, \exists y : \tau, \Phi(x, y)$ directly produces an effective, choice-free representation realizer preserving code equivalence and satisfying the mathematical relation $P(x, y)$.
     - **`central_galois_realizer`**: Systematically turns any constructive theorem proof into an operational `GaloisAdequate RX.toRep RY.toRep F` morphism in $\mathbf{Rep}$.
+28. **`HAomega/CategoryRep.lean` (Milestone 2: Category $\mathbf{Rep}$ & Modulus Propagation)**:
+    - **`RepMorphism.comp_shift`**: $\mu_{g \circ f}(k) = \mu_f(\mu_g(k))$ (0-axiom).
+    - **`RepMorphism.comp_id_left/right`**, **`comp_assoc`**, **`comp_shift_assoc`**: Full category laws (0-axiom).
+    - **`GaloisAdequate.id`**: Identity function is adequate with $\mu = \mathrm{id}$ (0-axiom).
+    - **`adequate_monotone`**: Representation Monotonicity: $R_1 \preceq R_2 \implies$ adequacy propagates upward.
+    - **`adequate_via_retract`**: Direct retract-based adequacy with proved modulus $\mu_\pi \circ \mu_F$ (0-axiom).
+    - **`GaloisAdequate.prod`**: Bifunctorial product of adequate operations (0-axiom).
 
-28. **Manuscript Drafts**:
-    - `docs/papers/Aphoristic_Analysis_Universe.md`: **Masterwork Unified Paper** (*The Aphoristic Universe of Mathematical Analysis: A Closed Constructive Framework of Smooth Integration, Galois Adequacy, and Differential Synthesis*).
-    - `docs/papers/PaperA_Galois_Adequacy.md`: Full draft for Paper A (Category $\mathbf{Rep}(X)$, retract preorder $\preceq$, pseudo-truth / unrefutability).
-    - `docs/papers/PaperB_Constructive_Analysis_Synthesis.md`: Full draft for Paper B (Newton–Leibniz, Banach, Browder–Göhde–Kirk, IVT, and Picard–Lindelöf synthesis).
+29. **`HAomega/GaloisAdjunction.lean` (Milestone 3: The Galois Connection $\operatorname{Req} \dashv \operatorname{Th}$)**:
+    - **`Th`**: Theory of a representation pair — the collection of adequate operations.
+    - **`Th_mono`**: Theory Monotonicity: $R_1 \preceq R_2 \implies \operatorname{Th}(R_1) \subseteq \operatorname{Th}(R_2)$.
+    - **`galois_adjunction`**: $\operatorname{Req}(\Phi, R_1) \land R_1 \preceq R_2 \implies \Phi \in \operatorname{Th}(R_2)$.
+    - **`Th_comp_closed`**: Theories are closed under composition (0-axiom).
+    - **`Th_id`**: Identity is always in the theory (0-axiom).
+    - **`Th_degree_invariant`**: Theory is an invariant of representation degrees.
 
-* Build status: **7,881 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+30. **`HAomega/FunctionAlgebra.lean` (Milestone 4: Closed Function Algebra & Resource Inference)**:
+    - **`GaloisAdequate.const`**: Constant functions are adequate with trivial modulus (0-axiom).
+    - **`modulusComp`**: Modulus composition with associativity and identity laws (0-axiom monoid).
+    - **`modulusMax`**: Modulus maximum with commutativity and associativity.
+    - **`modulus_monoid_laws`**: The modulus algebra forms a monoid (0-axiom).
+    - **`GaloisAdequate.weaken_modulus`**: Modulus weakening preserves adequacy (0-axiom).
+
+31. **`HAomega/SmoothnessHierarchy.lean` (Milestone 5: The Smoothness Hierarchy $A_0 \subset A_1 \subset \dots$)**:
+    - **`SmoothnessLevel`**: Indexed $C^n$ data with modulus vector $\vec{\delta}$.
+    - **`forget_derivative_shift`**: $A_1 \to A_0$ has identity modulus.
+    - **`integration_increases_smoothness`**: Integration lifts $A_0 \to E_1$.
+    - **`calibration_square_consistent`**: The ladder diagram commutes.
+    - **`calibration_total_shift`**: Both paths through the square have identity shift.
+
+32. **`HAomega/GenericBanach.lean` (Milestone 6: Generic Represented Metric Spaces & Banach Engine)**:
+    - **`RepMetricSpace`**: Represented metric space with computable code-level distance.
+    - **`RepCauchySeq`**, **`RepComplete`**: Cauchy sequences and completeness certificates.
+    - **`RepContraction`**: Abstract contraction operator with explicit ratio $p/q < 1$.
+    - **`iterateOp`**, **`iterateOp_equiv`**: Iteration sequence with equivalence stability (0-axiom).
+    - **`banach_fixed_point_existence`**: Abstract Banach fixed-point existence.
+    - **`contraction_comp_ratio`**: Composition of contractions preserves ratio bound (0-axiom).
+
+33. **Manuscript Drafts & Roadmap**:
+    - `docs/papers/Aphoristic_Analysis_Universe.md`: **Masterwork Unified Paper**.
+    - `docs/papers/PaperA_Galois_Adequacy.md`: Paper A draft.
+    - `docs/papers/PaperB_Constructive_Analysis_Synthesis.md`: Paper B draft.
+    - `docs/papers/FOUNDATIONS_ROADMAP.md`: Complete 6-milestone research roadmap.
+
+* Build status: **7,886 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 

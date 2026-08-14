@@ -448,3 +448,123 @@ inside would justify an honest name.
 theorem does not mention the objects in the file name, the file is misnamed.
 That test is mechanical, takes seconds, and would have caught every Tier C and
 Tier D item above.
+
+---
+
+## 8. Is the new work "grounded in HA^ω"? — a measured answer
+
+This section responds to a specific counter-claim: that the new results are
+grounded in this project's HA^ω development rather than being free-floating.
+The claim is **partly correct**, and correct precisely in one file. It is not
+correct for the other nine. This section also **corrects an under-measurement
+in §7**.
+
+### 8.1 Correction to §7's method
+
+§7(d) reported grep counts of `Deriv|extract|soundness` per file. That count is
+accurate but too narrow to settle the grounding question, and a second pass
+that classified only lines matching `^theorem` **missed the content of
+`GaloisAdequacy.lean` entirely** — because that file's substance is in `def`s
+producing structures, not in `theorem`s producing `Prop`s. The corrected
+measurement is below. Where §7 and §8 differ, §8 is right.
+
+### 8.2 Layer classification of every theorem in the ten files
+
+Each theorem *statement* was classified by the most-grounded object it
+mentions: L0 = Mathlib `Rat`/`Nat` only; L1 = mentions `Q`/`QC`; L2 = mentions
+`A0`/`A1`/`E0`/`E1`; L3 = mentions `Deriv`/`extract`/`soundness`.
+
+```
+                              L0   L1   L2   L3
+GaloisAdequacy                 6    0    0    0
+UniformContinuityTheorem       2    2    0    0
+IVT                            1    0    2    0
+ComplexAnalysis                2    1    0    0
+FixedPoint                     1    1    0    0
+ODEDemo                        0    1    0    0
+Transcendental                 1    0    0    0
+FundamentalTheoremAlgebra      1    1    0    0
+IntegrationByParts             3    0    0    0
+Weierstrass                    1    0    0    0
+                              --   --   --   --
+TOTAL (26 theorems)           18    6    2    0
+```
+
+**No theorem in any of the ten files mentions `Deriv`, `extract` or
+`soundness`.** The two L2 theorems are `ivt_adjacent_bracket` (§7 Tier B) and
+`root_isolation` (§7 Tier C). Eighteen of twenty-six are stated purely in
+Mathlib `Rat`/`Nat` and mention no object from this development at all.
+
+### 8.3 Where the grounding is real: `GaloisAdequacy.lean`
+
+This file does instantiate the project's own layers, and §7 undercredited it:
+
+```lean
+def RepA0 (a b : Q) : Rep (Q → Q) := { Carrier := A0, … }
+def RepE0 (a b : Q) : Rep (Q → Q) := { Carrier := E0, … }
+def RepE1 (a b : Q) : Rep (Q → Q) := { Carrier := E1, … }
+
+def A0_to_E0_morphism (a b : Q) : RepMorphism (RepA0 a b) (RepE0 a b) :=
+  { toFun := fun (A : A0) ↦ A.toE0, … }
+def E1_to_E0_morphism (a b : Q) : RepMorphism (RepE1 a b) (RepE0 a b) :=
+  { toFun := fun (E : E1) ↦ E.toE0, … }
+```
+
+The carriers are this repository's `A0`, `E0`, `E1`; the morphisms are built
+from its `A0.toE0` and `E1.toE0`. That is genuine grounding, and it is the
+**comparative representation-adequacy framing** that STATUS §9 identified as
+this project's only real novelty candidate. It is the most interesting new
+material in the ten files and should be kept and developed.
+
+### 8.4 Three limits on that grounding
+
+**(a) The retract hierarchy is advertised but never established.** §4 of the
+file is titled "The Retract Hierarchy of Concrete Function Representations".
+Searching for `⪯` or `RepLe` applied to any of `RepA0`, `RepE0`, `RepE1`,
+`RepA1` returns **no hits**. `RepLe R1 R2` is `Nonempty (RepRetract R1 R2)`,
+and `RepRetract` requires a morphism **together with a section** satisfying
+`retract_id`. Only one-directional `RepMorphism`s are constructed. So
+`RepLe.refl` and `RepLe.trans` establish that the preorder is a preorder, in
+the abstract, and are never applied to any concrete representation. This is
+the same shape as §7.2(b): both halves present, never joined.
+
+**(b) `RepA1` does not exist** — zero occurrences repository-wide. The `A₀`/`A₁`
+separation is the Myhill computability gap (§3), the reason the `E` layers were
+introduced at all, and the sharpest distinction in the development. It is
+absent from the hierarchy that claims to organise these representations.
+
+**(c) `EFTC1_Adequate` is a wrapper, not a result.**
+
+```lean
+def EFTC1_Adequate (a b : Q) (_ivl : Q.ltN a b = 1) : A0 → E1 := fun A ↦ A.intE1
+```
+
+It renames the existing `A0.intE1` and does not use its `_ivl` hypothesis. The
+content is `A0.intE1`, which is this repository's own prior result (§2).
+
+### 8.5 Verdict
+
+- **"The definitions reference the `A₀`/`E` layers."** True of
+  `GaloisAdequacy`, and loosely of `IVT`. Fair claim.
+- **"The new results are theorems about HA^ω."** Not supported. Zero of 26
+  theorems mention the object language; 18 of 26 mention no object from this
+  development.
+- **"The new work extends the HA^ω development."** `GaloisAdequacy` repackages
+  existing results into a new abstract frame — worthwhile, but it adds no new
+  theorem about `A₀`, `A₁`, `E₀` or `E₁`, and the hierarchy it announces is
+  unproved.
+
+The honest summary is that **one file contributes a promising organising
+framework grounded in the project's structures, and nine do not contribute
+grounded results.** Nothing in §7's grading changes as a result of this
+section; only §7(d)'s implication that `GaloisAdequacy` is peripheral is
+withdrawn.
+
+### 8.6 The one concrete next step this suggests
+
+Proving a single concrete `⪯` — e.g. `RepE1 a b ⪯ RepE0 a b`, by supplying the
+section that `E1_to_E0_morphism` currently lacks — would convert the advertised
+hierarchy into a real one and would be the first genuinely new theorem about
+these representations. Adding `RepA1` and locating it in that order is the
+natural follow-on, and is where the `A₀`/`A₁` computability gap would become
+visible inside the framework.

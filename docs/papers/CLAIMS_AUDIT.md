@@ -20,6 +20,15 @@ and `Weierstrass`.
 
 ## 0. Executive summary — read this first
 
+> **⚠️ Status as of §11 (latest).** Most of this summary has been *acted on and
+> resolved*. Specifically: the LinkedIn post's four false claims are **removed**
+> (§11.2), every category (B) theorem named below has been **renamed** (§11.3),
+> and `AnalysisDeriv.lean` now demonstrates **`Deriv → extractClosed → eval`,
+> measured axiom-free end to end** (§11.1) — the strongest verified result in
+> the repository. §§0.2–0.4 are retained as the record of what was found and
+> what was done about it. **Read §11 for current state.** Still open: no
+> concrete `⪯`, no `RepA1`, and the paper draft needs re-auditing against §1.
+
 ### 0.1 The results are **not** false
 
 This must not be misread. Across the **18** new files there are **40
@@ -87,10 +96,9 @@ draft (§1) and the LinkedIn post (§10.1). Specifically:
 ### 0.5 Reading order
 
 §7 grades batch one, §8 answers "is this grounded in HA^ω", §9 records what was
-fixed in response, §10 covers batch two and the post. §§1–6 audit the paper
+fixed in response, §10 covers batch two and the post, **§11 records the
+remediation and the axiom-free extraction result**. §§1–6 audit the paper
 draft and record what the repository actually proves.
-
----
 
 ---
 

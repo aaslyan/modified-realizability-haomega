@@ -6,9 +6,15 @@ output. Where something is *stated but not proved*, or *not statable at all*,
 it says so in those words.
 
 **Build state at time of writing:** `lake build` green, **7,858 jobs**, 0
-errors, 0 HAomega warnings, 0 `sorry`. This includes the six newly arrived
-files (`GaloisAdequacy`, `UniformContinuityTheorem`, `IVT`, `ComplexAnalysis`,
-`FixedPoint`, `ODEDemo`), which were untracked when this was written.
+errors, 0 HAomega warnings, 0 `sorry`. This includes the newly arrived files
+(`GaloisAdequacy`, `UniformContinuityTheorem`, `IVT`, `ComplexAnalysis`,
+`FixedPoint`, `ODEDemo`, and `Transcendental`, which appeared last), all
+untracked when this was written.
+
+**Read §7 first if you are deciding what to build on.** A green build with no
+`sorry` establishes that those files' theorems are *true*. It does not
+establish that they are the theorems their names claim, and for several of
+them they are not.
 
 ---
 
@@ -212,3 +218,168 @@ the diff"*, actually contains **563 insertions across 4 files**: the entire new
 in a repository with concurrent in-progress work. It is pushed. The history is
 misleading and should be corrected or annotated; the work itself is intact and
 builds.
+
+---
+
+## 7. Name-versus-statement audit of the seven new files
+
+**Why this section exists.** The seven files compile, contain no `sorry`, no
+`admit`, no `native_decide`, and declare no axioms. Every theorem in them is
+*true*. But "compiles and is true" and "proves what the name says" are
+different properties, and the gap between them is wide here. Several theorem
+names, docstrings and file names assert results that their own statements do
+not express. Anyone reading the declaration list — or a paper generated from
+it — will substantially overestimate what has been established.
+
+The check applied below is mechanical and reproducible: **does the statement
+mention the objects the name is about?** A theorem called `pi_bracket_width`
+that never mentions a Riemann sum is not a theorem about Riemann sums,
+whatever its docstring says.
+
+### 7.1 Grading
+
+**Tier A — sound and honestly named.** No action needed.
+
+- `discrete_sign_crossing` (`IVT`) — a real induction on `N` producing a sign
+  crossing index. Elementary, correct, named exactly what it is.
+- `expPicard_succ` (`ODEDemo`) — `expPicard` is a genuine computable Taylor
+  polynomial; the recurrence is proved via `List.range_succ`/`foldl_append`.
+  Backed by 7 `#guard`s that actually compute (`expPicard 5 (1/2) = 6331/3840`).
+  Named "Taylor step recurrence", which is what it is. Note the *file* is named
+  `ODEDemo` and this is `exp`'s Taylor series, not Picard iteration on a
+  general ODE.
+- `RepLe.refl` / `RepLe.trans` / `RepLe.prod_mono_id` / `GaloisAdequate.comp`
+  (`GaloisAdequacy`) — measured genuinely axiom-free (§1.1). A preorder with a
+  monotonicity lemma. Modest and real.
+- The `#guard` blocks in `Transcendental` (14) and `ComplexAnalysis` (4).
+  Executable checks are evidence in the `spernerScan` sense and are the
+  strongest content in those two files.
+
+**Tier B — real content, oversold name.**
+
+- `ivt_adjacent_bracket` (`IVT`), billed as "The Galois Approximate IVT
+  Theorem". It genuinely consumes `A.cont`, so it does connect to the `A₀`
+  layer and is not vacuous. But it proves: *if you are handed `x, y` that are
+  already within `2^{-ω(k)}` and already have opposite signs, then both values
+  are within `2^{-k}` of zero.* The existence of such a pair — the actual IVT
+  content — is not proved. See 7.2.
+
+**Tier C — the hard hypothesis is assumed, not proved.**
+
+- `root_isolation` (`IVT`) takes `h_secant` as a hypothesis: a lower bound on
+  `|f(x) − f(y)|` in terms of `|x − y|`. That is the mean value theorem
+  consequence, i.e. precisely the bridge §3 of this document already records as
+  **absent from this development**. Confirming the gap: `TransverseA1`'s
+  substantive field `h_slope` (the derivative lower bound) is used **0 times**
+  in `root_isolation`'s proof — only `T.M` is. The structure's mathematics is
+  inert; the conclusion rests on the assumed secant bound.
+- `approx_fixed_point_bound` (`FixedPoint`), presented as a
+  Krasnoselskii–Mann rate of asymptotic regularity. Statement:
+
+  ```lean
+  theorem approx_fixed_point_bound (diam : Rat) (k n : Nat) (hn : 0 < n)
+      (h_sum : (n:Rat) * (1/2^(2*k+2)) ≤ diam^2) :
+      1/2^(2*k+2) ≤ diam^2 / (n:Rat)
+  ```
+
+  `NonExpansiveMap` and `kmRate` do not occur. The proof is `le_div_iff₀` —
+  dividing the hypothesis by `n`. The KM content is the hypothesis.
+
+**Tier D — the statement does not mention its own subject.**
+
+- `pi_bracket_width` (`Transcendental`): `(4:Rat)/N - (2:Rat)/N = 2/(N:Rat)`,
+  by `norm_num`. `piLeftSum` and `piRightSum` do not occur. The docstring
+  claims it is the telescoping difference of left and right Riemann sums for
+  `π`. It is `4/N − 2/N = 2/N`. Nothing links it to `π`.
+- `goursat_rect_zero` (`ComplexAnalysis`): `(CR.ux - CR.vy) * hx * hy = 0 ∧ …`,
+  proved `rw [CR.cr1]; ring`. `CauchyRiemannData.cr1` *is* `ux = vy`, so this is
+  `(a − a)·hx·hy = 0`. Goursat's theorem is that the contour integral of a
+  holomorphic function over a rectangle vanishes, and needs a subdivision
+  argument. There is no contour, no integral, and no subdivision in the file.
+- `cr_jacobian_eq_complex_mul` (`ComplexAnalysis`): same shape — `rw [CR.cr2];
+  ring` against the structure's own field.
+
+### 7.2 Structural findings (these matter more than any single theorem)
+
+**(a) `CauchyRiemannData` is never instantiated.** Zero occurrences outside its
+own declaration and the two theorems above. No holomorphic function is ever
+exhibited; the all-zeros assignment satisfies both fields. Every result about
+it is therefore consistent with the structure having only the trivial model.
+
+**(b) The IVT is proved in two halves that are never joined.**
+`discrete_sign_crossing` and `ivt_adjacent_bracket` each occur exactly once —
+at their own definition sites. No theorem mentions both. The missing bridge is
+exactly the grid search, and the definitions written to perform it —
+`IVTProblem`, `ivtGridPoint`, `isApproxZero` — are **defined and never used**
+(one occurrence each, their own definition). So the file contains the two ends
+of an IVT proof and the unused scaffolding for its middle.
+
+**(c) Dead scaffolding is systematic.** Declarations occurring exactly once in
+the entire repository, i.e. never used after definition: `kmRate`,
+`IVTProblem`, `ivtGridPoint`, `isApproxZero`, `latticeModulus`. These are the
+declarations whose names carry the most weight (`kmRate` is the advertised
+Krasnoselskii–Mann rate; `latticeModulus` the advertised lattice-envelope
+modulus). They contribute nothing to any proof.
+
+**(d) Four of the seven files never reach the realizability core.** Grepping
+`Deriv|extract|soundness`:
+
+```
+FixedPoint.lean        0
+ODEDemo.lean           0
+ComplexAnalysis.lean   0
+Transcendental.lean    0
+GaloisAdequacy.lean    3
+UniformContinuityTheorem.lean  3
+IVT.lean               1
+```
+
+In a development whose thesis is choice-free extraction from an object
+language, these four files are free-floating Mathlib `Rat` algebra. They do not
+extend the fragment, produce a `Deriv`, or invoke `soundness`. They can be true
+without bearing on the project's claim.
+
+**(e) `UniformContinuityTheorem.lean` asserts, in its header, the negative
+result this project recorded.** The header states that the file concerns the
+Heine–Borel / Fan Theorem principle that "every pointwise continuous functional
+on a compact domain admits an explicitly extracted uniform modulus of
+continuity". STATUS §6 records the opposite as a *measured* finding: the
+modulus metatheorem is **not proved**, with two obstructions (arrow types need
+a Kleene associate; `tiRec` has no compositional bound), and `HasMod` is
+Baire-space continuity while `ω`/`δ` are metric moduli on `ℚ` — **no lemma
+transfers**. The file's actual contents (`scale_modulus_correct`,
+`comp_modulus_correct`, `integral_lipschitz_modulus`) are closure lemmas that
+take moduli as *input* and build moduli as *output*. Nothing in the file
+extracts a modulus from continuity. The file name and header claim the
+project's hardest open problem; the contents are three modulus-arithmetic
+lemmas. This is the most serious item in §7, because it is the one a reader is
+most likely to believe on the strength of the file name alone.
+
+### 7.3 On production speed
+
+These seven files (~40KB of Lean) appeared in roughly 25 minutes. That is
+consistent with their content: the Tier C and D proofs are one to three lines
+(`ring`, `norm_num`, `le_div_iff₀`, `rw` against a hypothesis field), and the
+elaborate docstrings are prose. Speed is not itself evidence of a problem — it
+is explained by the difficulty of what was actually proved, which is low. For
+calibration, `eftc2_thm`, `lemma1` and `A0.intE1` in `QAnalysis.lean` took
+substantial work because their statements carry the content rather than
+assuming it.
+
+### 7.4 Recommendation
+
+Do not cite Tier C or Tier D results by name in any paper. Either restate them
+to say what they prove (`approx_fixed_point_bound` → "dividing a summed
+residual bound by `n`"; `goursat_rect_zero` → "the CR equations, multiplied
+out"), or complete them:
+
+- **IVT** is the closest to real. Joining (b)'s two halves through the unused
+  grid definitions would produce a genuine approximate IVT for `A₀`. That is a
+  well-scoped, worthwhile task.
+- **`root_isolation`** needs the MVT bridge, which §3 records as absent. It is
+  blocked, not nearly-done.
+- **`ComplexAnalysis`** has no complex analysis in it; a rectangle contour and
+  a subdivision argument would be new work of a different order.
+- **`UniformContinuityTheorem`** should be renamed to what it contains
+  (e.g. `ModulusClosure.lean`) regardless of any other decision, since its
+  present name contradicts a recorded negative result.

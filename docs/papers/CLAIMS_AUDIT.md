@@ -366,7 +366,60 @@ calibration, `eftc2_thm`, `lemma1` and `A0.intE1` in `QAnalysis.lean` took
 substantial work because their statements carry the content rather than
 assuming it.
 
-### 7.4 Recommendation
+### 7.4 Second wave: `FundamentalTheoremAlgebra`, `IntegrationByParts`, `Weierstrass`
+
+Three further files arrived while §7.1–7.3 were being written. They confirm the
+pattern rather than departing from it, and they sharpen the diagnosis.
+
+- `ibp_duality_algebra` (`IntegrationByParts`) — the purest Tier D instance in
+  the repository:
+
+  ```lean
+  theorem ibp_duality_algebra (boundary_diff int_u'_v int_u_v' : Rat)
+      (h_ftc : int_u'_v + int_u_v' = boundary_diff) :
+      int_u_v' = boundary_diff - int_u'_v := by linarith
+  ```
+
+  Three arbitrary rationals carrying integral-shaped *names*. The content is
+  `a + b = c ⊢ b = c − a`. No integral, no `u`, no `v`, no `∫`. Integration by
+  parts is the hypothesis `h_ftc`, assumed.
+- `bernstein_sq_error_at_half` (`Weierstrass`) — `1/4 + (1/4)/n − 1/4 =
+  1/(4n)`, by `ring`. `bernsteinOp` is defined and does compute, but does not
+  occur in the statement. Weierstrass approximation needs uniform convergence
+  over the interval; this is an arithmetic identity.
+- `linear_root_val` (`FundamentalTheoremAlgebra`) — **Tier A**. It genuinely
+  evaluates `evalPoly [−z₀, 1] z₀` in `QC` and shows both components are zero.
+  Modest, correct, and named exactly what it is: the root of a *linear*
+  polynomial. The file, however, is named for the Fundamental Theorem of
+  Algebra, which requires a root-existence argument for arbitrary degree and is
+  nowhere present.
+
+### 7.5 The consistent split — and what is actually worth keeping
+
+Across all ten files the same division holds, and it is the most useful finding
+in this section:
+
+> **The computable definitions and the `#guard` blocks are real. The theorem
+> layer is decoration.**
+
+`bernsteinOp` genuinely computes Bernstein polynomials; `expPicard` genuinely
+computes Taylor partial sums and is `#guard`ed to `6331/3840`; `evalPoly`
+genuinely evaluates over `QC`; the `IntegrationByParts` guards compute real
+boundary terms. That is executable, kernel-checked content of exactly the kind
+this repository values elsewhere (the `spernerScan` sense of evidence). It cost
+real work and should be kept.
+
+The theorems sitting above those definitions largely do not mention them. Where
+a file has both a computing definition and a headline theorem, the theorem is
+typically an arithmetic identity about free variables named after the
+definition's outputs. The `#guard`s are the load-bearing part; the `theorem`s
+are the part that will mislead a reader.
+
+This inverts the usual reliability ordering and is worth stating plainly to
+anyone building on these files: **trust the `#guard`s, re-read every
+`theorem`.**
+
+### 7.6 Recommendation
 
 Do not cite Tier C or Tier D results by name in any paper. Either restate them
 to say what they prove (`approx_fixed_point_bound` → "dividing a summed
@@ -383,3 +436,15 @@ out"), or complete them:
 - **`UniformContinuityTheorem`** should be renamed to what it contains
   (e.g. `ModulusClosure.lean`) regardless of any other decision, since its
   present name contradicts a recorded negative result.
+
+The same renaming point applies to `FundamentalTheoremAlgebra.lean` (contains a
+linear root evaluation), `Weierstrass.lean` (contains Bernstein computations at
+a point), `ComplexAnalysis.lean` (contains the CR equations rearranged) and
+`ODEDemo.lean` (contains `exp`'s Taylor series). In each case a file name
+asserts a theorem the file does not contain, and in each case the *definitions*
+inside would justify an honest name.
+
+**Rule of thumb for any future file here:** if the statement of the headline
+theorem does not mention the objects in the file name, the file is misnamed.
+That test is mechanical, takes seconds, and would have caught every Tier C and
+Tier D item above.

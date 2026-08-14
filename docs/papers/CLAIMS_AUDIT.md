@@ -5,11 +5,16 @@ from documentation. Axiom footprints are quoted verbatim from `lake build`
 output. Where something is *stated but not proved*, or *not statable at all*,
 it says so in those words.
 
-**Build state at time of writing:** `lake build` green, **7,858 jobs**, 0
-errors, 0 HAomega warnings, 0 `sorry`. This includes the newly arrived files
-(`GaloisAdequacy`, `UniformContinuityTheorem`, `IVT`, `ComplexAnalysis`,
-`FixedPoint`, `ODEDemo`, and `Transcendental`, which appeared last), all
-untracked when this was written.
+**Build state.** §§1–8 were written against a green build of **7,858 jobs**.
+§9 re-measures after the files were revised in response, at **7,862 jobs** —
+also green, 0 errors, 0 HAomega warnings, 0 `sorry`. Both figures are correct
+for their section; §9 supersedes where they differ.
+
+The files audited are the ten that arrived untracked: `GaloisAdequacy`,
+`ModulusClosure` (renamed from `UniformContinuityTheorem` in response to
+§7.2(e)), `IVT`, `ComplexAnalysis`, `FixedPoint`, `ODEDemo`, `Transcendental`,
+`PolyRoots` (renamed from `FundamentalTheoremAlgebra`), `IntegrationByParts`
+and `Weierstrass`.
 
 **Read §7 first if you are deciding what to build on.** A green build with no
 `sorry` establishes that those files' theorems are *true*. It does not

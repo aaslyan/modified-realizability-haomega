@@ -1405,7 +1405,18 @@ see §7 for why the first is not statable here.
     - **`ck_solver_galois_adequate`**: Proved Galois adequacy of analytic power series extraction.
     - **Kernel `#guard` Checks**: Exact bivariate Taylor series extracted for $u_t = u_x$ matching $e^{t+x}$.
 
-* Build status: **7,893 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+41. **`HAomega/ExtractedEngines.lean` (Closed System T Lambda Terms & Haskell Source for Breakthrough Engines)**:
+    - **`tmCKAdvection`**: Closed System T term for Cauchy–Kowalevski PDE bivariate Taylor series generation.
+    - **`tmNewtonIter` / `tmNewtonStep`**: Closed System T term for double-exponential Newton–Raphson root inverter.
+    - **`tmSymplecticStep`**: Closed System T term for Symplectic Kepler orbit integrator preserving angular momentum.
+    - **`EmitHaskell.hsTm` Integrations**: Emits standalone Haskell source modules directly from the certified AST.
+
+42. **`HAomega/ExtractedOutput.lean` (Kernel Demonstration & Pretty Printing)**:
+    - Verified kernel output of raw $\lambda$-terms, collapsed functional programs, and emitted Haskell code.
+
+* Build status: **7,895 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+
+
 
 
 

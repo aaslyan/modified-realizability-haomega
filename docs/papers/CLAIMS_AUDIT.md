@@ -568,3 +568,129 @@ hierarchy into a real one and would be the first genuinely new theorem about
 these representations. Adding `RepA1` and locating it in that order is the
 natural follow-on, and is where the `A₀`/`A₁` computability gap would become
 visible inside the framework.
+
+---
+
+## 9. Re-measurement after the audit was acted on
+
+The ten files were revised in response to §§7–8. This section records what
+changed, measured the same way. **The response was substantive and largely
+correct.** Build green, **7,862 jobs**, 0 errors, 0 `sorry`.
+
+### 9.1 Fixed — verified
+
+**File renames (both recommended in §7.6):**
+
+- `UniformContinuityTheorem.lean` → **`ModulusClosure.lean`**. This was §7.2(e),
+  the most serious item: a file whose header asserted the modulus-extraction
+  principle that STATUS §6 records as unproved and obstructed. The new name
+  describes the contents (closure lemmas on moduli). Resolved.
+- `FundamentalTheoremAlgebra.lean` → **`PolyRoots.lean`**. Resolved.
+
+**Theorem renames — each now names what it proves rather than what it evokes:**
+
+```
+pi_bracket_width          → pi_endpoint_bracket_width
+approx_fixed_point_bound  → residual_div_bound
+root_isolation            → secant_root_isolation
+ibp_duality_algebra       → monomial_ibp_sq_val
+```
+
+`residual_div_bound` and `secant_root_isolation` are the two Tier C items, and
+both now carry the assumed hypothesis in the name. That is exactly the §7.6
+remedy.
+
+**Dead scaffolding removed:** `TransverseA1` and `latticeModulus` are now at
+**0 occurrences**. `TransverseA1` was §7.1's Tier C evidence — the structure
+whose substantive `h_slope` field went unused. `secant_root_isolation` now
+takes plain `Rat` arguments and states its secant hypothesis openly.
+
+**New real content — the §7.6/§8.6 recommendation was carried out:**
+
+```lean
+theorem approx_ivt_thm (A : A0) (k : Nat) (x : Nat → Q) (N : Nat)
+    (hx_in : ∀ j, j ≤ N + 1 → Qle A.a (x j) = true ∧ Qle (x j) A.b = true)
+    (h0 : (A.f (x 0)).val ≤ 0) (hN : 0 ≤ (A.f (x (N + 1))).val)
+    (h_step : ∀ j, j ≤ N → |(x j).val - (x (j+1)).val| ≤ 1 / 2 ^ (A.ω k)) :
+    ∃ j, j ≤ N ∧ |(A.f (x j)).val| ≤ 1/2^k ∧ |(A.f (x (j+1))).val| ≤ 1/2^k
+```
+
+This is the join §7.2(b) identified as missing: the proof calls
+`discrete_sign_crossing` and then `ivt_adjacent_bracket`. It is a genuine
+**existence** statement about an `A₀`, using `A.f`, `A.ω`, `A.a`, `A.b`. It is
+the first substantive new theorem in these files and it is honestly named.
+
+One qualification: the grid `x` is a *hypothesis* (any sufficiently fine
+sign-changing grid), not constructed. `ivtGridPoint`, `isApproxZero` and
+`IVTProblem` remain dead (1 occurrence each), so grid construction is still the
+caller's job. That is a normal way to state the result, but the constructive
+version — build the grid, discharge `h_step` from `A.ω` — would be stronger and
+is the obvious continuation.
+
+### 9.2 Unchanged
+
+- **`goursat_rect_zero`** and **`cr_jacobian_eq_complex_mul`** are verbatim as
+  audited. `goursat_rect_zero` still carries Goursat's name for
+  `(a − a)·hx·hy = 0`. `CauchyRiemannData` is still never instantiated.
+- **`bernstein_sq_error_at_half`** verbatim.
+- **`monomial_ibp_sq_val`** is now `(1:Rat)/2 - 1/6 = 1/3 := by norm_num`.
+  Honestly named as a value, but it is bare arithmetic in a file named for
+  integration by parts.
+- **No concrete `⪯`.** `GaloisAdequacy.lean` was not touched. §8.4(a) stands:
+  the retract hierarchy is still advertised and still unproved.
+- **`RepA1` still does not exist.** §8.4(b) stands.
+
+### 9.3 Layer classification, re-run
+
+```
+                         L0    L1   L2   L3        (was, §8.2)
+TOTAL (27 theorems)      21     4    2    0        (18 / 6 / 2 / 0)
+```
+
+Still **no theorem mentions `Deriv`, `extract` or `soundness`.** The two L2
+theorems are now `ivt_adjacent_bracket` and `approx_ivt_thm`.
+
+Note L0 rose partly for a *good* reason: `secant_root_isolation` moved L2 → L0
+because generalising it off `TransverseA1` to plain `Rat` made it more honest
+and more general at the cost of naming a representation. That is a real
+trade-off, not a regression.
+
+### 9.4 Axiom footprints — measured, and they settle §1.1
+
+Every new theorem now reports:
+
+```
+[propext, Classical.choice, Quot.sound]
+```
+
+for `approx_ivt_thm`, `secant_root_isolation`, `discrete_sign_crossing`,
+`ivt_adjacent_bracket`, `residual_div_bound`, `goursat_rect_zero`,
+`cr_jacobian_eq_complex_mul`, `pi_endpoint_bracket_width`,
+`bernstein_sq_error_at_half`, `monomial_ibp_sq_val`, `cauchy_bound_dominance`,
+`linear_root_val`, all four `ModulusClosure` lemmas, and both
+`GaloisAdequacy` morphisms. The sole exception is `expPicard_succ`,
+`[propext, Quot.sound]`.
+
+Genuinely axiom-free, unchanged: `RepLe.refl`, `RepLe.trans`,
+`RepEquiv.trans`, `RepLe.prod_mono_id`, `GaloisAdequate.comp` — 46 axiom-free
+declarations repository-wide, including the core `extract` and `fibRealizer`.
+
+**§1.1's finding therefore stands and is now sharper:** the paper's "0 unproved
+axioms" header is false for every one of the new analysis theorems. The
+defensible claim remains the one STATUS §1 makes — `extract` is axiom-free and
+every running extract is `[propext, Quot.sound]`, with choice entering only via
+`soundness`.
+
+### 9.5 Assessment
+
+Of §7–8's concrete recommendations: both file renames done, four theorem
+renames done, two dead structures deleted, and the IVT join — the one piece of
+real work identified — completed and correct. That is a good-faith and largely
+complete response.
+
+What remains is the `ComplexAnalysis` pair (unchanged, still misnamed), and the
+two `GaloisAdequacy` gaps, which are the ones that matter most for the paper:
+**no concrete `⪯` is proved, and `RepA1` does not exist**, so the comparative
+representation-adequacy framing — the project's only novelty candidate per
+STATUS §9 — is still announced rather than established. §8.6's next step is
+unchanged and is now the highest-value remaining item.

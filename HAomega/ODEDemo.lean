@@ -140,54 +140,30 @@ def picardAffineDeriv : Deriv .nil (.all .nat (iterInv .rat [] qOne picardAffine
 def picardIterTm : Tm [.nat] .rat :=
   iterTm .rat qOne picardAffineStepTm
 
-/-- **Theorem (Picard Contraction Invariant Region)**:
-    Every Picard iterate starting from $y_0 = 1$ is strictly less than the fixed point $2$:
-    $$\forall n : \mathrm{nat}. \; y_n < 2$$
-    proved constructively in `Deriv`. -/
-def picardLtTwoDeriv :
+/-- Natural deduction derivation that the affine Picard iteration sequence exists in HA^ω:
+    $$\forall n : \mathrm{nat}. \; \exists y : \mathrm{rat}. \; y = \mathrm{picardIterTm}(n)$$ -/
+def picardBoundedDeriv :
     Deriv Ctx.nil (.all .nat (.ex .rat (.eq (.var .here) picardIterTm.wk))) :=
   picardAffineDeriv
-
-/-- **Theorem (Picard Iteration with Certified Basin Bound)**:
-    $$\forall n : \mathrm{nat}. \; \exists y : \mathrm{rat}. \; (y = y_n) \land (y \le 2)$$
-    Proves constructively in `Deriv` that the Picard sequence exists and remains bounded. -/
-def picardBoundedDeriv :
-    Deriv Ctx.nil (.all .nat (.ex .rat (.eq (.var .here) picardIterTm.wk))) := by
-  have d_val_refl : Deriv (Ctx.nil.wk (σ := .nat)) (.eq picardIterTm picardIterTm) :=
-    Deriv.eqRefl picardIterTm
-  have d_val_subst : Deriv (Ctx.nil.wk (σ := .nat))
-      ((Formula.eq (.var .here) picardIterTm.wk).subst1 picardIterTm) :=
-    Formula.subst1_eq_var_wk picardIterTm picardIterTm ▸ d_val_refl
-  have d_ex := Deriv.exI picardIterTm d_val_subst
-  exact Deriv.allI d_ex
 
 /-- The extracted Picard iteration program (EXTRACTED from `picardAffineDeriv`). -/
 def picardAffineExtracted (n : Nat) : Q :=
   ((extractClosed picardAffineDeriv).eval Env.nil n).1
 
-/-- The extracted Picard program certifying both value and invariant bound $y_n < 2$. -/
-def picardBoundedExtracted (n : Nat) : Q :=
-  ((extractClosed picardBoundedDeriv).eval Env.nil n).1
-
 -- Extracted Picard Contraction Sequence (EXTRACTED):
 -- T⁰(1) = 1
 #guard picardAffineExtracted 0 == Q.of 1 1
-#guard picardBoundedExtracted 0 == Q.of 1 1
 
 -- T¹(1) = 1 + 1/2 = 3/2
 #guard picardAffineExtracted 1 == Q.of 3 2
-#guard picardBoundedExtracted 1 == Q.of 3 2
 
 -- T²(1) = 1 + 3/4 = 7/4
 #guard picardAffineExtracted 2 == Q.of 7 4
-#guard picardBoundedExtracted 2 == Q.of 7 4
 
 -- T³(1) = 1 + 7/8 = 15/8
 #guard picardAffineExtracted 3 == Q.of 15 8
-#guard picardBoundedExtracted 3 == Q.of 15 8
 
 -- T⁴(1) = 1 + 15/16 = 31/16
 #guard picardAffineExtracted 4 == Q.of 31 16
-#guard picardBoundedExtracted 4 == Q.of 31 16
 
 end HAomega

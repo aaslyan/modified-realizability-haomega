@@ -12,3 +12,4 @@ paper/build.log
 paper/*.bbl
 paper/*.blg
 paper/fonttest.*
+__pycache__/

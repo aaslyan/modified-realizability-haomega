@@ -1,28 +1,29 @@
 # Formal Extraction Status Report — HAomega
 
-This report provides the audited status of program extraction in `HAomega` across all 397 `#guard`/`#eval` verification points, strictly categorizing each into **EXTRACTED**, **OBJECT-RUN**, and **PLAIN**, and detailing the mathematical specification content, tautological status, certified answers vs. uncertified iterations, and soundness guarantees.
+This report provides the audited status of program extraction in `HAomega` across all 424 `#guard`/`#eval` verification points, strictly categorizing each into **EXTRACTED**, **OBJECT-RUN**, and **PLAIN**, detailing the mathematical specification content, tautological status, certified 2-D objects, function-valued integral extraction, and the honest analysis assessment.
 
 ---
 
 ## A. Headline Table
 
-Across `HAomega/*.lean`, verified proof extraction (**EXTRACTED**) accounts for **125** guards:
+Across `HAomega/*.lean`, verified proof extraction (**EXTRACTED**) accounts for **150** guards:
 
 | Tier | Count | Description |
 |---|---|---|
-| **EXTRACTED** | **125** | Programs extracted via `extractClosed (d : Deriv)` from proof derivations |
+| **EXTRACTED** | **150** | Programs extracted via `extractClosed (d : Deriv)` from proof derivations |
 | **OBJECT-RUN** | **30** | Hand-written System T terms (`Tm`) executed via `Tm.eval Env.nil` without a `Deriv` tree |
-| **PLAIN** | **242** | Ordinary Lean mathematics, dyadic/rational arithmetic substrate, and reference algorithms |
-| **Total** | **397** | All kernel verification points across the entire library |
+| **PLAIN** | **244** | Ordinary Lean mathematics, dyadic/rational arithmetic substrate, and reference algorithms |
+| **Total** | **424** | All kernel verification points across the entire library |
 
 ### Raw `classify.py` Output
 
 ```
-TOTALS: {'EXTRACT': 125, 'Tm.eval': 30, 'PLAIN': 242} sum: 397
+TOTALS: {'EXTRACT': 150, 'Tm.eval': 30, 'PLAIN': 244} sum: 424
 AnalysisDeriv.lean               {'EXTRACT': 8, 'Tm.eval': 0, 'PLAIN': 0}
 BanachInstance.lean              {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 14}
 CauchyIntegral.lean              {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 5}
 CauchyKowalevski.lean            {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 4}
+CertifiedPlotter.lean            {'EXTRACT': 11, 'Tm.eval': 0, 'PLAIN': 2}
 Chebyshev.lean                   {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 11}
 ComplexAnalysis.lean             {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 4}
 ConstructiveFFT.lean             {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 4}
@@ -51,6 +52,7 @@ Hydra.lean                       {'EXTRACT': 2, 'Tm.eval': 0, 'PLAIN': 0}
 HydraSurgery.lean                {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 4}
 HydraTree.lean                   {'EXTRACT': 5, 'Tm.eval': 0, 'PLAIN': 0}
 HydraTyped.lean                  {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 5}
+IntegralModulus.lean             {'EXTRACT': 14, 'Tm.eval': 0, 'PLAIN': 0}
 IntegrationByParts.lean          {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 3}
 InverseFunction.lean             {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 4}
 Isoperimetric.lean               {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 6}
@@ -80,29 +82,34 @@ Weierstrass.lean                 {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 6}
 
 ## B. Certified Answers vs. Uncertified Iterations
 
-The constructive analysis architecture pairs **fast computational iterations** with **genuine certifying derivations**:
-
-> **The iteration computes fast.** (Tautological specification $\forall n. \exists y. y = \mathrm{iterTm}(n)$, proven by reflexivity).
-> **The crossing theorem certifies what it converges to.** (Non-tautological higher-type theorem $\forall F, \forall y, \dots \implies \exists k < K. \text{colour}(k) \neq \text{colour}(k+1)$, proven via Sperner's discrete IVT).
-
-| Quantity | Fast Program (Specification) | Certifying Derivation (Specification) | Agreement Checked in Kernel |
+| Quantity / Object | Fast Program (Specification) | Certifying Derivation (Specification) | Agreement Checked in Kernel |
 |---|---|---|---|
-| **Picard Fixed Point ($y=2$)** | `picardAffineExtracted` (Tautological $\forall n. \exists y. y = T^n(1)$) | `fnCrossingD` at $F(x) = x \cdot \frac{1}{2}, y = 1$ (**GENUINE**) | `#guard`s verify $T^n(1) \to 2$ while certified bracket $[k \cdot 2^{-n}, (k+1) \cdot 2^{-n})$ tightens exactly around $2$ at $n=0, 1, 2, 4, 6$. |
+| **Picard Fixed Point ($y=2$)** | `picardAffineExtracted` (Tautological $\forall n. \exists y. y = T^n(1)$) | `fnCrossingD` at $F(x) = x \cdot \frac{1}{2}, y = 1$ (**GENUINE**) | `#guard`s verify $T^n(1) \to 2$ while certified bracket $[k \cdot 2^{-n}, (k+1) \cdot 2^{-n})$ tightens around $2$ at $n=0, 1, 2, 4, 6$. |
 | **Square Root ($\sqrt{2}$)** | `newtonSqrt2Extracted` (Tautological $\forall n. \exists y. y = x_n$) | `sqrtApproxD` / `fnCrossingD` at $F(x) = x^2, y = 2$ (**GENUINE**) | `#guard` verifies Newton iterate $x_4 = \frac{665857}{470832}$ lands strictly inside certified bracket $[\frac{362}{256}, \frac{363}{256})$. |
 | **Square Root ($\sqrt{3}$)** | `newtonSqrt3Extracted` (Tautological $\forall n. \exists y. y = x_n$) | `fnCrossingD` at $F(x) = x^2, y = 3$ (**GENUINE**) | `#guard` verifies Newton iterate $x_4 = \frac{18817}{10864}$ lands strictly inside certified bracket $[\frac{443}{256}, \frac{444}{256})$. |
-| **Cube Root ($\sqrt[3]{2}, \sqrt[3]{8}, \sqrt[3]{27}$)** | — | `cubeApproxD` (**GENUINE**) | `#guard`s verify certified isolation of $\sqrt[3]{2} \in [\frac{20}{16}, \frac{21}{16})$, $\sqrt[3]{8}=2, \sqrt[3]{27}=3, \sqrt[3]{1/8}=1/2$. |
-| **Fourth Root ($\sqrt[4]{2}$)** | — | `fnCrossingD` at $F(x) = x^4, y = 2$ (**GENUINE**) | `#guard` verifies certified root isolation at $\frac{19}{16} = 1.1875$. |
-| **Non-Closed Form Root ($x^5 + x = 1$)** | — | `fnCrossingD` at $F(x) = x^5 + x, y = 1$ (**GENUINE**) | `#guard`s verify certified crossing at $k=193$ ($2^{-8}$) and $k=772$ ($2^{-10}$). |
-| **Non-Polynomial / Piecewise ($x + \|x-1\| = 4$)** | — | `fnCrossingD` at $F(x) = x + \|x-1\|, y = 4$ (**GENUINE**) | `#guard` verifies exact certified root $x = 5/2 = 2.5$. |
-| **Riemann Integrator ($S(f, h, N)$)** | `riemannExtracted` (Tautological $\forall N. \exists y. y = S_N$) | *No certified convergence companion in Deriv yet* | Plainly disclosed in `DerivFTC.lean` without overclaiming. |
+| **2-D Unit Circle ($x^2+y^2=1$)** | — | `circleY` / `fnCrossingD` at $F(y) = y^2, y_0 = 1 - x^2$ (**GENUINE**) | `#guard`s verify axis intercepts $(0,1), (1,0)$, the 3-4-5 point $(3/5, 4/5)$, strict sweep monotonicity, and pointwise bracket containment. |
+| **2-D Ellipse ($x^2/4+y^2=1$)** | — | `ellipseY` / `fnCrossingD` at $F(y) = y^2, y_0 = 1 - x^2/4$ (**GENUINE**) | `#guard`s verify intercepts $(0,1), (2,0)$ and rational point $(6/5, 4/5)$. |
+| **2-D Cubic Curve ($y^3+y=x$)** | — | `cubicCurveY` / `fnCrossingD` (**GENUINE**) | `#guard`s verify integer solution points $(0,0), (2,1), (10,2), (30,3)$. |
+| **Extracted Continuous Integral** | — | `integralFunctionD` ($\exists F : \mathbb{Q} \to \mathbb{Q}$, **GENUINE**) | Extracts realizer $(F, M)$ where $F$ is the integral function and $M(n) = n + j$ is the certified modulus of continuity. |
+| **Riemann Integrator ($S(f, h, N)$)** | `riemannExtracted` (Tautological $\forall N. \exists y. y = S_N$) | *No certified convergence companion in Deriv yet* | Plainly disclosed in `DerivFTC.lean`. |
 
 ---
 
-## C. Technical Summary
+## C. Honest Analysis Assessment
 
-1. **Higher-Type Generalization of Sperner / Discrete IVT:**
-   [`SquareRoot.lean`](file:///Users/araaslyan/modified-realizability-haomega/HAomega/SquareRoot.lean) proves `fnCrossingD` over an abstract function variable $F : \mathbb{Q} \to \mathbb{Q}$ and target value $y$. This provides a universal, certified level-set / root / inverse solver for any computable function.
-2. **Computational Verification:**
-   All 125 extracted programs evaluate inside the Lean 4 kernel with 0 unproved axioms (`[propext, Quot.sound]` only) and compile to standalone Haskell via `EmitHaskell`.
-3. **Build Status:**
-   7,895 jobs built successfully with 0 errors, 0 warnings, 0 `sorry`.
+### 1. What is certified?
+* **For Target A (Certified Curve Plotter):** Every plotted rational point $(x, y)$ computed by `circleY`, `ellipseY`, or `cubicCurveY` is certified by `fnCrossingD` to satisfy the rigorous two-sided bracket:
+  $$y^2 \le \Phi(x) < (y + 2^{-n})^2$$
+* **For Target B (Extracted Continuous Integral):** The arrow-type existential $\exists F : \mathbb{Q} \to \mathbb{Q}$ extracts a function-valued witness $F$ paired with its certified modulus of uniform continuity $M(n) = n + j$.
+
+### 2. What is not certified?
+* **For Target A:** The sweep grid (the list of $x$-coordinates) is chosen externally by the caller. The points are certified individually as level-set crossings, not the global geometric curve as an abstract limit object in a function space.
+* **For Target B:** The $2^j$-Lipschitz premise of the integrand is discharged outside the formal deductive system (by arithmetic computation at call sites).
+
+### 3. Is this real mathematics recovered, or a demonstration?
+It is a **real, constructive demonstration of certified numerical analysis**. A certified 2-D implicit curve plotter and an extracted function-valued continuous integral with modulus are genuine constructive artifacts, proved without tautological shortcuts (`∃y. y = t`). They demonstrate that modified realizability in higher types can produce certified solvers and continuous real functions without extra adapters. However, they are not yet a complete foundation for real analysis, which would require internalizing full metric space completions and arithmetic conversion rules for rational operations.
+
+### 4. What is the single next genuine step?
+**The Riemann sum monotonicity theorem (Target A1):**
+$$\forall f, g : \mathbb{Q} \to \mathbb{Q}, \; (\forall x. f(x) < g(x)) \land (h > 0) \implies \forall N > 0. \; S(f, h, N) < S(g, h, N)$$
+proved by mathematical induction in `Deriv` using `convQMulLt` and `convQAddLt`.

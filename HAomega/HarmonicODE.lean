@@ -70,8 +70,8 @@ def tmHarmonicEulerStep : Tm [] (.arrow (.prod .rat .rat) (.prod .rat .rat)) :=
   )
 
 /-- Natural deduction derivation of harmonic oscillator evolution by mathematical induction. -/
-def harmonicDeriv : Deriv .nil (.all .nat (iterInv (.prod .rat .rat) [])) :=
-  iterSequenceD [] (.prod .rat .rat) (.pair (.qnat .zero) (.qnat (.succ .zero))) tmHarmonicEulerStep
+def harmonicDeriv : Deriv .nil (.all .nat (iterInv (.prod .rat .rat) [] (.pair (.qnat .zero) (.qnat (.succ .zero))) tmHarmonicEulerStep)) :=
+  iterSequenceD (.prod .rat .rat) (.pair (.qnat .zero) (.qnat (.succ .zero))) tmHarmonicEulerStep
 
 /-- The extracted harmonic oscillator state generator (EXTRACTED from `harmonicDeriv`). -/
 def harmonicExtracted (n : Nat) : Q × Q :=

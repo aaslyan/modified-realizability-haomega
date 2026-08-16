@@ -134,8 +134,8 @@ def picardAffineStepTm : Tm [] (.arrow .rat .rat) :=
   )
 
 /-- Natural deduction derivation of Picard sequence existence via mathematical induction. -/
-def picardAffineDeriv : Deriv .nil (.all .nat (iterInv .rat [])) :=
-  iterSequenceD [] .rat (.qnat (.succ .zero)) picardAffineStepTm
+def picardAffineDeriv : Deriv .nil (.all .nat (iterInv .rat [] (.qnat (.succ .zero)) picardAffineStepTm)) :=
+  iterSequenceD .rat (.qnat (.succ .zero)) picardAffineStepTm
 
 /-- The extracted Picard iteration program (EXTRACTED from `picardAffineDeriv`). -/
 def picardAffineExtracted (n : Nat) : Q :=

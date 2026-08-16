@@ -103,12 +103,12 @@ def newtonSqrt3StepTm : Tm [] (.arrow .rat .rat) :=
   )
 
 /-- Natural deduction derivation of the Newton sequence for √2 from initial guess x₀ = 1. -/
-def newtonSqrt2Deriv : Deriv .nil (.all .nat (iterInv .rat [])) :=
-  iterSequenceD [] .rat (.qnat (.succ .zero)) newtonSqrt2StepTm
+def newtonSqrt2Deriv : Deriv .nil (.all .nat (iterInv .rat [] (.qnat (.succ .zero)) newtonSqrt2StepTm)) :=
+  iterSequenceD .rat (.qnat (.succ .zero)) newtonSqrt2StepTm
 
 /-- Natural deduction derivation of the Newton sequence for √3 from initial guess x₀ = 1. -/
-def newtonSqrt3Deriv : Deriv .nil (.all .nat (iterInv .rat [])) :=
-  iterSequenceD [] .rat (.qnat (.succ .zero)) newtonSqrt3StepTm
+def newtonSqrt3Deriv : Deriv .nil (.all .nat (iterInv .rat [] (.qnat (.succ .zero)) newtonSqrt3StepTm)) :=
+  iterSequenceD .rat (.qnat (.succ .zero)) newtonSqrt3StepTm
 
 /-- The extracted **program** for √2 Newton iteration (EXTRACTED from `newtonSqrt2Deriv`). -/
 def newtonSqrt2Extracted (n : Nat) : Q :=

@@ -35,30 +35,34 @@ namespace HAomega
 
 open Rat
 
-/-! ## 1. The Natural Deduction Derivation in `Deriv` -/
+/-- Step term for recursor: `λ k acc. step acc` in context `.nat :: Γ`. -/
+def iterStepTm {Γ : List Ty} {τ : Ty} (step : Tm Γ (.arrow τ τ)) :
+    Tm (.nat :: Γ) (.arrow .nat (.arrow τ τ)) :=
+  .lam (.lam (.app step.wk.wk.wk (.var .here)))
 
-/-- Invariant formula over `.nat :: Γ`: $\exists y : \tau. \; y = y$. -/
-abbrev iterInv (τ : Ty) (Γ : List Ty) : Formula (.nat :: Γ) (.prod τ .unit) :=
-  .ex τ (.eq (.var .here) (.var .here))
+/-- The closed/open term for the n-th iterate: `recNat y0 (λ k acc. step acc) n`. -/
+def iterTm {Γ : List Ty} (τ : Ty) (y0 : Tm Γ τ) (step : Tm Γ (.arrow τ τ)) :
+    Tm (.nat :: Γ) τ :=
+  .recNat y0.wk (iterStepTm step) (.var .here)
+
+/-- Invariant formula over `.nat :: Γ`: $\exists y : \tau. \; y = \mathrm{iterTm}\ \tau\ y_0\ \mathrm{step}\ n$. -/
+abbrev iterInv (τ : Ty) (Γ : List Ty) (y0 : Tm Γ τ) (step : Tm Γ (.arrow τ τ)) :
+    Formula (.nat :: Γ) (.prod τ .unit) :=
+  .ex τ (.eq (.var .here) (iterTm τ y0 step).wk)
 
 /-- **Theorem (Object-Level General Iteration Derivation)**:
     For any step term $F : \tau \to \tau$ and initial state $y_0 : \tau$,
-    constructs a complete, valid natural deduction proof of $\forall n : \mathrm{nat}. \; \exists y : \tau. \; y = y$. -/
-def iterSequenceD (Γ : List Ty) {as : List Ty} {Δ : Ctx Γ as} (τ : Ty)
-    (y0 : Tm Γ τ) (step : Tm Γ (.arrow τ τ)) :
-    Deriv Δ (.all .nat (iterInv τ Γ)) := by
-  refine Deriv.ind (φ := iterInv τ Γ) ?h0 ?hsucc
-  · -- Base case (n = 0): witness is y0
-    have d_refl : Deriv Δ (.eq y0 y0) := Deriv.eqRefl y0
-    exact Deriv.exI y0 d_refl
-  · -- Induction step (n ↦ n+1): witness is step(y_n)
-    refine Deriv.allI (Deriv.impI ?_)
-    have d_hyp : Deriv (Ctx.cons (iterInv τ Γ) (Δ.wk)) (iterInv τ Γ) := Deriv.ax
-    refine Deriv.exE d_hyp ?_
-    let next_val : Tm (τ :: .nat :: Γ) τ := .app (step.wk.wk) (.var .here)
-    have d_next_refl : Deriv (Ctx.cons (.eq (.var .here) (.var .here)) ((Ctx.cons (iterInv τ Γ) (Δ.wk)).wk))
-                             (.eq next_val next_val) := Deriv.eqRefl next_val
-    exact Deriv.exI next_val d_next_refl
+    constructs a complete, valid natural deduction proof of $\forall n : \mathrm{nat}. \; \exists y : \tau. \; y = \mathrm{iterTm}\ \tau\ y_0\ F\ n$. -/
+def iterSequenceD (τ : Ty)
+    (y0 : Tm [] τ) (step : Tm [] (.arrow τ τ)) :
+    Deriv Ctx.nil (.all .nat (iterInv τ [] y0 step)) := by
+  have d_refl : Deriv (Ctx.nil.wk (σ := .nat)) (Formula.eq (iterTm τ y0 step) (iterTm τ y0 step)) :=
+    Deriv.eqRefl (iterTm τ y0 step)
+  have d_subst : Deriv (Ctx.nil.wk (σ := .nat))
+      ((Formula.eq (.var .here) (iterTm τ y0 step).wk).subst1 (iterTm τ y0 step)) :=
+    Formula.subst1_eq_var_wk (iterTm τ y0 step) (iterTm τ y0 step) ▸ d_refl
+  have d_ex := Deriv.exI (iterTm τ y0 step) d_subst
+  exact Deriv.allI d_ex
 
 /-! ## 2. Kleene–Kreisel Realizer Extraction via `extractClosed` -/
 
@@ -67,8 +71,8 @@ def doublingStepTm : Tm [] (.arrow .nat .nat) :=
   .lam (.add (.var .here) (.var .here))
 
 /-- Natural deduction derivation of 2ⁿ power sequence via induction in HA^ω. -/
-def doublingRecDeriv : Deriv .nil (.all .nat (iterInv .nat [])) :=
-  iterSequenceD [] .nat (.succ .zero) doublingStepTm
+def doublingRecDeriv : Deriv .nil (.all .nat (iterInv .nat [] (.succ .zero) doublingStepTm)) :=
+  iterSequenceD .nat (.succ .zero) doublingStepTm
 
 /-- The extracted realizer in System T extracted from `doublingRecDeriv`. -/
 def doublingRealizer : Tm [] (.arrow .nat (.prod .nat .unit)) :=

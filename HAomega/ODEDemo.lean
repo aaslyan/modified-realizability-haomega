@@ -8,6 +8,7 @@ import HAomega.Picard
 import HAomega.GaloisAdequacy
 import HAomega.FixedPoint
 import HAomega.AnalysisDeriv
+import HAomega.SquareRoot
 
 /-!
 # Executable ODE Extraction Demo: Solving $y' = y, y(0) = 1$ via Picard Iteration
@@ -144,7 +145,7 @@ def picardIterTm : Tm [.nat] .rat :=
 def picardAffineExtracted (n : Nat) : Q :=
   ((extractClosed picardAffineDeriv).eval Env.nil n).1
 
--- Extracted Picard Contraction Sequence (EXTRACTED):
+-- Extracted Picard Contraction Sequence (EXTRACTED, tautological specification):
 -- T⁰(1) = 1
 #guard picardAffineExtracted 0 == Q.of 1 1
 
@@ -159,5 +160,43 @@ def picardAffineExtracted (n : Nat) : Q :=
 
 -- T⁴(1) = 1 + 15/16 = 31/16
 #guard picardAffineExtracted 4 == Q.of 31 16
+
+-- T⁵(1) = 1 + 31/32 = 63/32
+#guard picardAffineExtracted 5 == Q.of 63 32
+
+-- T⁶(1) = 1 + 63/64 = 127/64
+#guard picardAffineExtracted 6 == Q.of 127 64
+
+/-! ## 4. Certified Answer: The Picard Fixed Point via Sperner's Discrete IVT
+
+The contrast between the two extractions:
+- `picardAffineExtracted n` computes $T^n(1)$ — its specification is **tautological** ($\forall n. \exists y. y = y_n$).
+  It climbs rapidly from below: $1, 3/2, 7/4, 15/8, 31/16, 63/32, 127/64 \to 2$.
+- `fnCrossingSol (· × 1/2) 1` **certifies** that $2$ is the unique fixed point ($T(y) = y \iff y/2 = 1$).
+  Its specification (`fnCrossingD`) is **GENUINE** and non-tautological, derived from the 1-D Sperner lemma.
+-/
+
+-- The Picard fixed point y = 2, certified by the crossing theorem at precision 2⁰ (grid step 1):
+#guard fnCrossingX (fun x ↦ Q.mul (Q.of 1 2) x) (Q.ofNat 1) 0 5 == 2
+#guard fnCrossingSol (fun x ↦ Q.mul (Q.of 1 2) x) (Q.ofNat 1) 0 5 == Q.ofNat 2
+
+-- Certified bracket at precision 2⁻¹ (grid step 1/2): k = 4, interval [4/2, 5/2) = [2, 2.5)
+#guard fnCrossingX (fun x ↦ Q.mul (Q.of 1 2) x) (Q.ofNat 1) 1 10 == 4
+#guard fnCrossingSol (fun x ↦ Q.mul (Q.of 1 2) x) (Q.ofNat 1) 1 10 == Q.ofNat 2
+
+-- Certified bracket at precision 2⁻² (grid step 1/4): k = 8, interval [8/4, 9/4) = [2, 2.25)
+#guard fnCrossingX (fun x ↦ Q.mul (Q.of 1 2) x) (Q.ofNat 1) 2 20 == 8
+#guard fnCrossingSol (fun x ↦ Q.mul (Q.of 1 2) x) (Q.ofNat 1) 2 20 == Q.ofNat 2
+
+-- Certified bracket at precision 2⁻⁴ (grid step 1/16): k = 32, interval [32/16, 33/16) = [2, 2.0625)
+#guard fnCrossingX (fun x ↦ Q.mul (Q.of 1 2) x) (Q.ofNat 1) 4 80 == 32
+#guard fnCrossingSol (fun x ↦ Q.mul (Q.of 1 2) x) (Q.ofNat 1) 4 80 == Q.ofNat 2
+
+-- Certified bracket at precision 2⁻⁶ (grid step 1/64): k = 128, interval [128/64, 129/64) = [2, 2.015625)
+#guard fnCrossingX (fun x ↦ Q.mul (Q.of 1 2) x) (Q.ofNat 1) 6 320 == 128
+#guard fnCrossingSol (fun x ↦ Q.mul (Q.of 1 2) x) (Q.ofNat 1) 6 320 == Q.ofNat 2
+
+-- The Picard iterate T⁶(1) = 127/64 lies strictly below the certified fixed point 2:
+#guard Q.ltN (picardAffineExtracted 6) (fnCrossingSol (fun x ↦ Q.mul (Q.of 1 2) x) (Q.ofNat 1) 6 320) == 1
 
 end HAomega

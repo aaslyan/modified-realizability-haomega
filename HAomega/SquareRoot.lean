@@ -257,6 +257,24 @@ def fnCrossingSol (F : Q → Q) (y : Q) (n K : Nat) : Q :=
 #guard fnCrossingX (fun x ↦ Q.mul x (Q.mul (Q.mul x x) (Q.mul x x))) (Q.ofNat 32) 0 5 == 2
 #guard fnCrossingSol (fun x ↦ Q.mul x (Q.mul (Q.mul x x) (Q.mul x x))) (Q.ofNat 32) 0 5 == Q.ofNat 2
 
+-- 5. Non-closed form algebraic root: x⁵ + x = 1 (proved crossing without radicals):
+-- At precision 2⁻⁸ (1/256): k = 193 (193/256 ≈ 0.7539 ≤ root < 0.7578)
+#guard fnCrossingX (fun x ↦ Q.add (Q.mul x (Q.mul (Q.mul x x) (Q.mul x x))) x) (Q.ofNat 1) 8 256 == 193
+#guard fnCrossingSol (fun x ↦ Q.add (Q.mul x (Q.mul (Q.mul x x) (Q.mul x x))) x) (Q.ofNat 1) 8 256 == Q.of 193 256
+-- At precision 2⁻¹⁰ (1/1024): k = 772 (772/1024 = 193/256 ≈ 0.75390625)
+#guard fnCrossingX (fun x ↦ Q.add (Q.mul x (Q.mul (Q.mul x x) (Q.mul x x))) x) (Q.ofNat 1) 10 1024 == 772
+
+-- 6. Non-polynomial / piecewise continuous crossing: F(x) = x + |x - 1|, solving F(x) = 4 (x = 5/2 = 2.5):
+#guard fnCrossingX (fun x ↦ Q.add x (Q.abs (Q.sub x (Q.ofNat 1)))) (Q.ofNat 4) 1 10 == 5
+#guard fnCrossingSol (fun x ↦ Q.add x (Q.abs (Q.sub x (Q.ofNat 1)))) (Q.ofNat 4) 1 10 == Q.of 5 2
+
+-- 7. Progressive tightening sequence for √2 via fnCrossingD at F(x) = x²:
+#guard fnCrossingSol (fun x ↦ Q.mul x x) (Q.ofNat 2) 4 32 == Q.of 11 8      -- 22/16 = 11/8 = 1.375
+#guard fnCrossingSol (fun x ↦ Q.mul x x) (Q.ofNat 2) 5 64 == Q.of 45 32     -- 45/32 = 1.40625
+#guard fnCrossingSol (fun x ↦ Q.mul x x) (Q.ofNat 2) 6 128 == Q.of 45 32    -- 90/64 = 45/32
+#guard fnCrossingSol (fun x ↦ Q.mul x x) (Q.ofNat 2) 7 256 == Q.of 181 128  -- 181/128 ≈ 1.41406
+#guard fnCrossingSol (fun x ↦ Q.mul x x) (Q.ofNat 2) 8 512 == Q.of 181 128  -- 362/256 = 181/128
+
 #print axioms fnCrossingD
 #print axioms fnCrossingX
 

@@ -109,4 +109,12 @@ def runRiemannSum (f : Q → Q) (h : Q) (N : Nat) : Q :=
 #guard riemannExtracted tmSqr tmQuarter 4 == Q.of 7 32
 #guard runRiemannSum (fun x ↦ Q.mul x x) (Q.of 1 4) 4 == Q.of 7 32
 
+/-! ## 4. Honest Audit: Integrator Specification Status
+
+- **Status:** `riemannExtracted` computes discrete Riemann sums $S(f, h, N)$ with a **tautological** specification:
+  $$\forall N : \mathrm{nat}. \; \exists y : \mathrm{rat}. \; y = \mathrm{indexedIterTm}(N)$$
+  The derivation `riemannSequenceD` is a genuine natural deduction derivation in `Deriv`, but its theorem statement asserts existence by reflexivity (`eqRefl`).
+- **Certified Companion Status:** Unlike the Picard fixed point (certified by `fnCrossingD`) and Newton square root iterations (certified by `sqrtApproxD`), the Riemann integrator currently has **no certified companion lemma** for mesh convergence in `Deriv`.
+-/
+
 end HAomega

@@ -13,6 +13,7 @@ import HAomega.ODEDemo
 import HAomega.Taylor
 import HAomega.HarmonicODE
 import HAomega.AnalysisDeriv
+import HAomega.SquareRoot
 
 /-!
 # Newton–Raphson Method and Quadratic Error Contraction
@@ -183,5 +184,27 @@ def runNewtonSqrtIter (a : Q) (x0 : Q) (N : Nat) : Q :=
 
 -- Iteration 4: 18817/10864 ≈ 1.73205081 (x₄² - 3 = 1/118026496 ≈ 8.4 * 10⁻⁹)
 #guard newtonSqrt3Extracted 4 == Q.of 18817 10864
+
+/-! ## 5. Certified Answers: Newton Convergence Checked Against Non-Tautological Brackets
+
+The pairing between fast iteration and genuine certification:
+- `newtonSqrt2Extracted` and `newtonSqrt3Extracted` compute quadratically fast:
+  - $x_4(\sqrt{2}) = 665857/470832 \approx 1.41421356237469$ (12 correct digits).
+  - $x_4(\sqrt{3}) = 18817/10864 \approx 1.73205081$ (8 correct digits).
+  Their formal specification (`newtonSqrt2Deriv`, `newtonSqrt3Deriv`) is **tautological** ($\forall n. \exists y. y = x_n$).
+- `sqrtApproxD` and `fnCrossingD` **certify** the root brackets through Sperner's discrete IVT — a **GENUINE**, non-tautological higher-type derivation.
+
+Below, kernel `#guard`s verify that the fast, uncertified Newton answers land strictly inside the certified intervals at matching precisions.
+-/
+
+-- √2: Newton's 4th iterate lands inside the certified interval [362/256, 363/256) at precision 2⁻⁸:
+#guard sqrtApprox (Q.ofNat 2) 8 512 == Q.of 181 128
+#guard Q.ltN (sqrtApprox (Q.ofNat 2) 8 512) (newtonSqrt2Extracted 4) == 1
+#guard Q.ltN (newtonSqrt2Extracted 4) (Q.add (sqrtApprox (Q.ofNat 2) 8 512) (D.toQ (D.pow2neg 8))) == 1
+
+-- √3: Newton's 4th iterate lands inside the certified interval [443/256, 444/256) at precision 2⁻⁸:
+#guard fnCrossingSol (fun x ↦ Q.mul x x) (Q.ofNat 3) 8 1024 == Q.of 443 256
+#guard Q.ltN (fnCrossingSol (fun x ↦ Q.mul x x) (Q.ofNat 3) 8 1024) (newtonSqrt3Extracted 4) == 1
+#guard Q.ltN (newtonSqrt3Extracted 4) (Q.add (fnCrossingSol (fun x ↦ Q.mul x x) (Q.ofNat 3) 8 1024) (D.toQ (D.pow2neg 8))) == 1
 
 end HAomega

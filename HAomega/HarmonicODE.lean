@@ -35,11 +35,7 @@ namespace HAomega
 
 open Rat
 
-/-! ## 1. Polynomial Integration and 2D Picard Step -/
-
-/-- Integrate polynomial $P(t) = \sum c_j t^j$: $\int_0^x P(t)\,dt = \sum \frac{c_j}{j+1} x^{j+1}$. -/
-def polyIntegrate (p : List Q) : List Q :=
-  Q.zero :: (((List.range p.length).zip p).map (fun ⟨j, c⟩ ↦ Q.div c (Q.ofNat (j + 1))))
+/-! ## 1. 2D Picard Step for Harmonic Oscillator -/
 
 /-- Negation of a polynomial. -/
 def polyNeg (p : List Q) : List Q :=
@@ -56,12 +52,6 @@ def harmonicPicardStep (pair : List Q × List Q) : List Q × List Q :=
 def harmonicPicard : Nat → List Q × List Q
   | 0 => ⟨[Q.zero], [Q.ofNat 1]⟩
   | n + 1 => harmonicPicardStep (harmonicPicard n)
-
-/-- Evaluate a polynomial at $x$. -/
-def evalRealPoly (p : List Q) (x : Q) : Q :=
-  ((List.range p.length).zip p).foldl (fun acc ⟨j, c⟩ ↦
-    let term := Q.mul c (qpow x j)
-    Q.add acc term) Q.zero
 
 /-! ## 2. Harmonic Energy Derivative Cancellation Identity -/
 

@@ -87,7 +87,41 @@ def tmSymplecticStep {Γ : List Ty} :
     .pair (.pair rx_next ry_next) (.pair vx_next vy_next)
   ))))
 
-/-! ## 4. Renderings of the Extracted Terms -/
+/-! ## 4. 2D Harmonic Oscillator System T Term -/
+
+/-- Closed 2D Harmonic Oscillator step in System T:
+    Type: `(Q × Q) → Q → (Q × Q)`
+    Given `(x, v)` and `dt`, returns `(x + dt * v, v - dt * x)`. -/
+def tmHarmonicStep {Γ : List Ty} :
+    Tm Γ (.arrow (.prod .rat .rat) (.arrow .rat (.prod .rat .rat))) :=
+  .lam (.lam (
+    let state : Tm _ (.prod .rat .rat) := .var (.there .here)
+    let dt : Tm _ .rat := .var .here
+    let x : Tm _ .rat := .fst state
+    let v : Tm _ .rat := .snd state
+    let x_next := .qadd x (.qmul dt v)
+    let v_next := .qsub v (.qmul dt x)
+    .pair x_next v_next
+  ))
+
+/-! ## 5. 1D Heat Equation Diffusion Step in System T -/
+
+/-- Closed 1D Heat Equation spatial stencil step in System T:
+    Type: `Q → Q → Q → Q → Q`
+    Given `(u_{i-1}, u_i, u_{i+1}, r)` computes `u_i + r * (u_{i+1} - 2 u_i + u_{i-1})`. -/
+def tmHeatDiffusionStep {Γ : List Ty} :
+    Tm Γ (.arrow .rat (.arrow .rat (.arrow .rat (.arrow .rat .rat)))) :=
+  .lam (.lam (.lam (.lam (
+    let u_prev : Tm _ .rat := .var (.there (.there (.there .here)))
+    let u_curr : Tm _ .rat := .var (.there (.there .here))
+    let u_next : Tm _ .rat := .var (.there .here)
+    let r : Tm _ .rat := .var .here
+    let two_u := .qmul (.qnat (.succ (.succ .zero))) u_curr
+    let laplacian := .qadd (.qsub u_next two_u) u_prev
+    .qadd u_curr (.qmul r laplacian)
+  ))))
+
+/-! ## 6. Renderings of the Extracted Terms -/
 
 def ckRawLambda : String := tmCKAdvection (Γ := []).pretty 0
 def ckCollapsedLambda : String := tmCKAdvection (Γ := []).pretty' 0
@@ -100,5 +134,13 @@ def newtonHaskellSource : String := EmitHaskell.hsTm (tmNewtonIter (Γ := [])) 0
 def symplecticRawLambda : String := tmSymplecticStep (Γ := []).pretty 0
 def symplecticCollapsedLambda : String := tmSymplecticStep (Γ := []).pretty' 0
 def symplecticHaskellSource : String := EmitHaskell.hsTm (tmSymplecticStep (Γ := [])) 0
+
+def harmonicRawLambda : String := tmHarmonicStep (Γ := []).pretty 0
+def harmonicCollapsedLambda : String := tmHarmonicStep (Γ := []).pretty' 0
+def harmonicHaskellSource : String := EmitHaskell.hsTm (tmHarmonicStep (Γ := [])) 0
+
+def heatRawLambda : String := tmHeatDiffusionStep (Γ := []).pretty 0
+def heatCollapsedLambda : String := tmHeatDiffusionStep (Γ := []).pretty' 0
+def heatHaskellSource : String := EmitHaskell.hsTm (tmHeatDiffusionStep (Γ := [])) 0
 
 end HAomega

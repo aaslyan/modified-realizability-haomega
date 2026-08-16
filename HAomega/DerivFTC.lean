@@ -10,7 +10,7 @@ import HAomega.IVT
 import HAomega.ModulusClosure
 
 /-!
-# Object-Level Riemann Integration and Realizer Extraction in $\mathrm{HA}^\omega$
+# Object-Level Riemann Integration and Realizer Execution in $\mathrm{HA}^\omega$
 
 This module formalizes the **Riemann integration operator** as an object-level term
 in Gödel's System T ($\mathrm{Tm}$):
@@ -19,11 +19,11 @@ in Gödel's System T ($\mathrm{Tm}$):
    Constructed via `recNat` in `Tm`:
    $$S(0) = 0, \qquad S(n+1) = S(n) + f(n \cdot h) \cdot h$$
 
-2. **Realizer Evaluator (`evalTmRiemannSum`)**:
-   Evaluates the extracted Riemann integration term in the Lean 4 kernel with 0 axioms.
+2. **Running the Object-Language Integrator (`runRiemannSum`)**:
+   Directly executes the closed System T term `tmRiemannSum` through `Tm.eval`.
 
 3. **Kernel-Verified Computations**:
-   Verified execution of the integrator computing rational Riemann sums for monomials.
+   Verified execution of the System T integrator computing rational Riemann sums for monomials.
 -/
 
 namespace HAomega
@@ -55,31 +55,31 @@ def tmRiemannSum {Γ : List Ty} :
     Tm Γ (.arrow (.arrow .rat .rat) (.arrow .rat (.arrow .nat .rat))) :=
   .lam (.lam (.lam (.recNat (.qnat .zero) (.lam (.lam tmRiemannStep)) (.var .here))))
 
-/-! ## 2. Value-Level Evaluator for Kernel Guards -/
+/-! ## 2. Running the Object-Language Integrator -/
 
-/-- Value-level execution of the object Riemann sum. -/
-def evalTmRiemannSum (f : Q → Q) (h : Q) (N : Nat) : Q :=
-  (List.range N).foldl (fun acc i ↦
-    let xi := Q.mul (Q.ofNat i) h
-    let term := Q.mul (f xi) h
-    Q.add acc term) Q.zero
+/-- **The object term itself, evaluated.**  Not a re-implementation:
+`tmRiemannSum` is applied to its three arguments through `Tm.eval`, so the
+guards below execute the System T operator rather than a parallel Lean
+function that happens to compute the same sums. -/
+def runRiemannSum (f : Q → Q) (h : Q) (N : Nat) : Q :=
+  (tmRiemannSum (Γ := [])).eval Env.nil f h N
 
 /-! ## 3. Kernel-Verified Computations for System T Integrator -/
 
 -- Integrating f(x) = 1 on [0, 1] with N = 4 (h = 1/4):
 -- S_4 = 4 * (1 * 1/4) = 1
-#guard evalTmRiemannSum (fun _ ↦ Q.ofNat 1) (Q.of 1 4) 4 == Q.ofNat 1
+#guard runRiemannSum (fun _ ↦ Q.ofNat 1) (Q.of 1 4) 4 == Q.ofNat 1
 
 -- Integrating f(x) = x on [0, 1] with N = 4 (h = 1/4):
 -- S_4 = (1/4) * (0 + 1/4 + 2/4 + 3/4) = (1/4) * (6/4) = 6/16 = 3/8 = 0.375
-#guard evalTmRiemannSum (fun x ↦ x) (Q.of 1 4) 4 == Q.of 3 8
+#guard runRiemannSum (fun x ↦ x) (Q.of 1 4) 4 == Q.of 3 8
 
 -- Integrating f(x) = x on [0, 1] with N = 8 (h = 1/8):
 -- S_8 = (1/8) * (28/8) = 28/64 = 7/16 = 0.4375 (approaching 1/2)
-#guard evalTmRiemannSum (fun x ↦ x) (Q.of 1 8) 8 == Q.of 7 16
+#guard runRiemannSum (fun x ↦ x) (Q.of 1 8) 8 == Q.of 7 16
 
 -- Integrating f(x) = x² on [0, 1] with N = 4 (h = 1/4):
 -- S_4 = (1/4) * (0 + 1/16 + 4/16 + 9/16) = (1/4) * (14/16) = 14/64 = 7/32 = 0.21875 (approaching 1/3)
-#guard evalTmRiemannSum (fun x ↦ Q.mul x x) (Q.of 1 4) 4 == Q.of 7 32
+#guard runRiemannSum (fun x ↦ Q.mul x x) (Q.of 1 4) 4 == Q.of 7 32
 
 end HAomega

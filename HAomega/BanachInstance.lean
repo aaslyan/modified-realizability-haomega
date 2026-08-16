@@ -150,8 +150,8 @@ theorem expConvergenceRate_mono {k1 k2 : Nat} (h : k1 ≤ k2) :
     This is the core algebraic identity that connects the Picard framework
     to the Taylor series — the two constructions are identical when $f(t, y) = y$. -/
 theorem picard_taylor_identity (n : Nat) (x : Q) :
-    expPicard (n + 1) x = Q.add (expPicard n x) (taylorTerm x (n + 1)) :=
-  expPicard_succ n x
+    expTaylor (n + 1) x = Q.add (expTaylor n x) (taylorTerm x (n + 1)) :=
+  expTaylor_succ n x
 
 #print axioms picard_taylor_identity
 

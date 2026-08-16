@@ -70,19 +70,27 @@ def collapsedPicardCode : String :=
 def haskellPicardCode : String :=
   EmitHaskell.hsTm (tmPicardIter (Γ := []) (τ := .rat)) 0
 
-/-! ## 3. Kernel Guards Verifying Kleene–Kreisel Functional Execution -/
+/-- Direct System T evaluation of the closed Picard iteration functional. -/
+def runPicardIter {τ : Ty} (y0 : τ.interp) (T : τ.interp → τ.interp) (N : Nat) : τ.interp :=
+  (tmPicardIter (Γ := []) (τ := τ)).eval Env.nil y0 T N
 
--- Picard step for y' = y, y(0) = 1 on polynomial coefficients:
+/-! ## 3. Kernel Guards Verifying System T and Polynomial Picard Execution -/
+
+-- 1. Direct System T Execution of the Picard Functional (Contraction T(y) = 1 + y/2):
+-- y₀ = 1, T(y) = 1 + y/2
+#guard runPicardIter (τ := .rat) (Q.ofNat 1) (fun y ↦ Q.add (Q.ofNat 1) (Q.mul (Q.of 1 2) y)) 0 == Q.ofNat 1
+#guard runPicardIter (τ := .rat) (Q.ofNat 1) (fun y ↦ Q.add (Q.ofNat 1) (Q.mul (Q.of 1 2) y)) 1 == Q.of 3 2
+#guard runPicardIter (τ := .rat) (Q.ofNat 1) (fun y ↦ Q.add (Q.ofNat 1) (Q.mul (Q.of 1 2) y)) 2 == Q.of 7 4
+#guard runPicardIter (τ := .rat) (Q.ofNat 1) (fun y ↦ Q.add (Q.ofNat 1) (Q.mul (Q.of 1 2) y)) 3 == Q.of 15 8
+
+-- 2. Picard step for y' = y, y(0) = 1 on polynomial coefficients:
 -- P_{n+1}(x) = 1 + ∫₀ˣ P_n(t) dt
 def polyPicardStepExp (p : List Q) : List Q :=
-  Q.ofNat 1 :: (((List.range p.length).zip p).map (fun ⟨j, c⟩ ↦ Q.div c (Q.ofNat (j + 1))))
+  expPicardStep p
 
 /-- n-th Picard polynomial for exp(x). -/
 def picardExpN (n : Nat) : List Q :=
-  let rec loop : Nat → List Q → List Q
-    | 0, acc => acc
-    | k + 1, acc => loop k (polyPicardStepExp acc)
-  loop n [Q.ofNat 1]
+  expPicardPoly n
 
 -- N = 0: P₀(x) = 1
 #guard evalRealPoly (picardExpN 0) (Q.of 1 2) == Q.ofNat 1

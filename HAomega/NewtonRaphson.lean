@@ -92,35 +92,67 @@ def tmNewtonSqrtStep {Γ : List Ty} :
        let two := Tm.qnat (Tm.succ (Tm.succ Tm.zero))
        Tm.qdiv sum two))
 
+/-- Step term for Newton recursion in context `[acc, k, N, x0, a, Γ...]`. -/
+def tmNewtonSqrtRecStep {Γ : List Ty} :
+    Tm (.rat :: .nat :: .nat :: .rat :: .rat :: Γ) .rat :=
+  let acc_val : Tm (.rat :: .nat :: .nat :: .rat :: .rat :: Γ) .rat := Tm.var .here
+  let a_val : Tm (.rat :: .nat :: .nat :: .rat :: .rat :: Γ) .rat := Tm.var (.there (.there (.there (.there .here))))
+  let a_div_acc := Tm.qdiv a_val acc_val
+  let sum := Tm.qadd acc_val a_div_acc
+  let two := Tm.qnat (Tm.succ (Tm.succ Tm.zero))
+  Tm.qdiv sum two
+
+/-- Closed Newton sqrt iterator in System T:
+    `fun a x0 N ↦ recNat x0 (fun k acc ↦ (acc + a / acc) / 2) N`. -/
+def tmNewtonSqrtIter {Γ : List Ty} :
+    Tm Γ (.arrow .rat (.arrow .rat (.arrow .nat .rat))) :=
+  .lam -- a
+    (.lam -- x0
+      (.lam -- N
+        (.recNat (.var (.there .here)) (.lam (.lam tmNewtonSqrtRecStep)) (.var .here))))
+
+/-- Direct System T evaluation of the Newton sqrt iterator term. -/
+def runNewtonSqrtIter (a : Q) (x0 : Q) (N : Nat) : Q :=
+  (tmNewtonSqrtIter (Γ := [])).eval Env.nil a x0 N
+
 /-! ## 4. Verified High-Precision Computations in Lean 4 Kernel -/
 
--- Approximating √2 with x₀ = 1:
+-- Approximating √2 with x₀ = 1 via System T evaluation:
 -- Iteration 0: x₀ = 1
+#guard runNewtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 0 == Q.ofNat 1
 #guard newtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 0 == Q.ofNat 1
 
 -- Iteration 1: x₁ = 3/2 = 1.5 (x₁² - 2 = 9/4 - 2 = 1/4 = 0.25)
+#guard runNewtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 1 == Q.of 3 2
 #guard newtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 1 == Q.of 3 2
 
 -- Iteration 2: x₂ = 17/12 ≈ 1.416667 (x₂² - 2 = 289/144 - 2 = 1/144 ≈ 0.00694)
+#guard runNewtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 2 == Q.of 17 12
 #guard newtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 2 == Q.of 17 12
 
 -- Iteration 3: x₃ = 577/408 ≈ 1.414215686 (x₃² - 2 = 1/166464 ≈ 0.0000060)
+#guard runNewtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 3 == Q.of 577 408
 #guard newtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 3 == Q.of 577 408
 
 -- Iteration 4: x₄ = 665857/470832 ≈ 1.41421356237469 (x₄² - 2 = 1/221682772224 ≈ 4.5 * 10⁻¹²)
+#guard runNewtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 4 == Q.of 665857 470832
 #guard newtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 4 == Q.of 665857 470832
 
 -- Approximating √3 with x₀ = 1:
 -- Iteration 1: (1 + 3/1)/2 = 2
+#guard runNewtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 1 == Q.ofNat 2
 #guard newtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 1 == Q.ofNat 2
 
 -- Iteration 2: (2 + 3/2)/2 = 7/4 = 1.75
+#guard runNewtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 2 == Q.of 7 4
 #guard newtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 2 == Q.of 7 4
 
 -- Iteration 3: (7/4 + 12/7)/2 = 97/56 ≈ 1.73214 (x₃² - 3 = 1/3136 ≈ 0.000318)
+#guard runNewtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 3 == Q.of 97 56
 #guard newtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 3 == Q.of 97 56
 
 -- Iteration 4: 18817/10864 ≈ 1.73205081 (x₄² - 3 = 1/118026496 ≈ 8.4 * 10⁻⁹)
+#guard runNewtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 4 == Q.of 18817 10864
 #guard newtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 4 == Q.of 18817 10864
 
 end HAomega

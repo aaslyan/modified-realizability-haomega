@@ -122,7 +122,7 @@ theorem expPicard_succ (n : Nat) (x : Q) :
 
 #print axioms expPicard_succ
 
-/-- Rational constants for Picard bounds. -/
+/-- Rational constants for Picard iteration. -/
 def qZero : Tm [] .rat := .qnat .zero
 def qOne : Tm [] .rat := .qnat (.succ .zero)
 def qTwo : Tm [] .rat := .qnat (.succ (.succ .zero))
@@ -139,12 +139,6 @@ def picardAffineDeriv : Deriv .nil (.all .nat (iterInv .rat [] qOne picardAffine
 /-- The $n$-th iterate of Picard contraction as a System T term: $y_n = T^n(1)$. -/
 def picardIterTm : Tm [.nat] .rat :=
   iterTm .rat qOne picardAffineStepTm
-
-/-- Natural deduction derivation that the affine Picard iteration sequence exists in HA^ω:
-    $$\forall n : \mathrm{nat}. \; \exists y : \mathrm{rat}. \; y = \mathrm{picardIterTm}(n)$$ -/
-def picardBoundedDeriv :
-    Deriv Ctx.nil (.all .nat (.ex .rat (.eq (.var .here) picardIterTm.wk))) :=
-  picardAffineDeriv
 
 /-- The extracted Picard iteration program (EXTRACTED from `picardAffineDeriv`). -/
 def picardAffineExtracted (n : Nat) : Q :=

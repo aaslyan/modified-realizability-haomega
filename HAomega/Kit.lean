@@ -266,4 +266,34 @@ def Deriv.congArg {Γ as : List Ty} {Δ : Ctx Γ as} {c d : Ty}
     (by rw [hs]; exact Deriv.eqRefl _)
   rw [hs] at key; exact key.symmE
 
+/-- Replace left argument of inequality by equality. -/
+def Deriv.qltEqLeft {Γ as : List Ty} {Δ : Ctx Γ as} {s s' t : Tm Γ .rat}
+    (heq : Deriv Δ (.eq s s')) (hlt : Deriv Δ (.eq (.qlt s t) (.succ .zero))) :
+    Deriv Δ (.eq (.qlt s' t) (.succ .zero)) := by
+  have hs : ∀ u : Tm Γ .rat,
+      (Formula.eq (.qlt (Tm.var .here) t.wk) (.succ .zero)).subst1 u
+        = Formula.eq (.qlt u t) (.succ .zero) := by
+    intro u
+    show Formula.eq (.qlt u (t.wk.subst1 u)) (.succ .zero) = _
+    rw [Tm.subst1_wk]
+  have key := Deriv.eqSubst (Δ := Δ)
+    (Formula.eq (.qlt (Tm.var .here) t.wk) (.succ .zero)) heq
+    (by rw [hs]; exact hlt)
+  rw [hs] at key; exact key
+
+/-- Replace right argument of inequality by equality. -/
+def Deriv.qltEqRight {Γ as : List Ty} {Δ : Ctx Γ as} {s t t' : Tm Γ .rat}
+    (heq : Deriv Δ (.eq t t')) (hlt : Deriv Δ (.eq (.qlt s t) (.succ .zero))) :
+    Deriv Δ (.eq (.qlt s t') (.succ .zero)) := by
+  have hs : ∀ u : Tm Γ .rat,
+      (Formula.eq (.qlt s.wk (Tm.var .here)) (.succ .zero)).subst1 u
+        = Formula.eq (.qlt s u) (.succ .zero) := by
+    intro u
+    show Formula.eq (.qlt (s.wk.subst1 u) u) (.succ .zero) = _
+    rw [Tm.subst1_wk]
+  have key := Deriv.eqSubst (Δ := Δ)
+    (Formula.eq (.qlt s.wk (Tm.var .here)) (.succ .zero)) heq
+    (by rw [hs]; exact hlt)
+  rw [hs] at key; exact key
+
 end HAomega

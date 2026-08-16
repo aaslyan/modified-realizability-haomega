@@ -64,6 +64,30 @@ def iterSequenceD (τ : Ty)
   have d_ex := Deriv.exI (iterTm τ y0 step) d_subst
   exact Deriv.allI d_ex
 
+/-- The closed/open term for an indexed iterate: `recNat y0 step n`. -/
+def indexedIterTm {Γ : List Ty} (τ : Ty) (y0 : Tm Γ τ) (step : Tm Γ (.arrow .nat (.arrow τ τ))) :
+    Tm (.nat :: Γ) τ :=
+  .recNat y0.wk step.wk (.var .here)
+
+/-- Invariant formula for indexed iteration: $\exists y : \tau. \; y = \mathrm{indexedIterTm}\ \tau\ y_0\ \mathrm{step}\ n$. -/
+abbrev indexedIterInv (τ : Ty) (Γ : List Ty) (y0 : Tm Γ τ) (step : Tm Γ (.arrow .nat (.arrow τ τ))) :
+    Formula (.nat :: Γ) (.prod τ .unit) :=
+  .ex τ (.eq (.var .here) (indexedIterTm τ y0 step).wk)
+
+/-- **Theorem (Object-Level Indexed Iteration Derivation)**:
+    For any indexed step term $F : \mathrm{nat} \to \tau \to \tau$ and initial state $y_0 : \tau$,
+    constructs a complete, valid natural deduction proof of $\forall n : \mathrm{nat}. \; \exists y : \tau. \; y = \mathrm{indexedIterTm}\ \tau\ y_0\ F\ n$. -/
+def indexedIterSequenceD (τ : Ty)
+    (y0 : Tm [] τ) (step : Tm [] (.arrow .nat (.arrow τ τ))) :
+    Deriv Ctx.nil (.all .nat (indexedIterInv τ [] y0 step)) := by
+  have d_refl : Deriv (Ctx.nil.wk (σ := .nat)) (Formula.eq (indexedIterTm τ y0 step) (indexedIterTm τ y0 step)) :=
+    Deriv.eqRefl (indexedIterTm τ y0 step)
+  have d_subst : Deriv (Ctx.nil.wk (σ := .nat))
+      ((Formula.eq (.var .here) (indexedIterTm τ y0 step).wk).subst1 (indexedIterTm τ y0 step)) :=
+    Formula.subst1_eq_var_wk (indexedIterTm τ y0 step) (indexedIterTm τ y0 step) ▸ d_refl
+  have d_ex := Deriv.exI (indexedIterTm τ y0 step) d_subst
+  exact Deriv.allI d_ex
+
 /-! ## 2. Kleene–Kreisel Realizer Extraction via `extractClosed` -/
 
 /-- Closed extracted realizer in System T for integer doubling recurrence $y_{n+1} = 2 y_n$, $y_0 = 1$. -/

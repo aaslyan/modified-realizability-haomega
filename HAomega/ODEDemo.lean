@@ -7,6 +7,7 @@ import HAomega.QAnalysis
 import HAomega.Picard
 import HAomega.GaloisAdequacy
 import HAomega.FixedPoint
+import HAomega.AnalysisDeriv
 
 /-!
 # Executable ODE Extraction Demo: Solving $y' = y, y(0) = 1$ via Picard Iteration
@@ -120,5 +121,40 @@ theorem expPicard_succ (n : Nat) (x : Q) :
   expTaylor_succ n x
 
 #print axioms expPicard_succ
+
+/-! ### Object-Level Natural Deduction Derivation & Realizer Extraction -/
+
+/-- Step term for Picard iteration $T(y) = 1 + y/2$ on $\mathbb{Q}$. -/
+def picardAffineStepTm : Tm [] (.arrow .rat .rat) :=
+  .lam (
+    let y_val : Tm (.rat :: []) .rat := .var .here
+    let half : Tm (.rat :: []) .rat :=
+      .qdiv (.qnat (.succ .zero)) (.qnat (.succ (.succ .zero)))
+    .qadd (.qnat (.succ .zero)) (.qmul half y_val)
+  )
+
+/-- Natural deduction derivation of Picard sequence existence via mathematical induction. -/
+def picardAffineDeriv : Deriv .nil (.all .nat (iterInv .rat [])) :=
+  iterSequenceD [] .rat (.qnat (.succ .zero)) picardAffineStepTm
+
+/-- The extracted Picard iteration program (EXTRACTED from `picardAffineDeriv`). -/
+def picardAffineExtracted (n : Nat) : Q :=
+  ((extractClosed picardAffineDeriv).eval Env.nil n).1
+
+-- Extracted Picard Contraction Sequence (EXTRACTED):
+-- T⁰(1) = 1
+#guard picardAffineExtracted 0 == Q.of 1 1
+
+-- T¹(1) = 1 + 1/2 = 3/2
+#guard picardAffineExtracted 1 == Q.of 3 2
+
+-- T²(1) = 1 + 3/4 = 7/4
+#guard picardAffineExtracted 2 == Q.of 7 4
+
+-- T³(1) = 1 + 7/8 = 15/8
+#guard picardAffineExtracted 3 == Q.of 15 8
+
+-- T⁴(1) = 1 + 15/16 = 31/16
+#guard picardAffineExtracted 4 == Q.of 31 16
 
 end HAomega

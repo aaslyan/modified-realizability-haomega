@@ -10,14 +10,20 @@ import HAomega.InverseFunction
 import HAomega.SymplecticKepler
 
 /-!
-# Extracted System T Lambda Terms & Haskell Source for Breakthrough Engines
+# Hand-Written Gödel System T Object Terms & Haskell Source (OBJECT-RUN)
 
-This module formalizes the closed Gödel System T $\lambda$-terms (`Tm`) and emits
-the exact, standalone Haskell programs for:
+This module formalizes hand-written closed Gödel System T terms (`Tm`) and emits
+their exact, standalone Haskell programs for:
 
-1. **The Cauchy–Kowalevski Analytic PDE Engine** (Bivariate Taylor Recursor)
-2. **The Newton–Raphson Double-Exponential Root Inverter**
-3. **The Symplectic Kepler Orbit & Angular Momentum Integrator**
+1. **The Cauchy–Kowalevski Analytic PDE Engine** (`tmCKAdvection`)
+2. **The Newton–Raphson Inverter** (`tmNewtonIter`)
+3. **The Symplectic Kepler Orbit & Momentum Integrator** (`tmSymplecticStep`)
+4. **The 2D Harmonic Oscillator Step** (`tmHarmonicStep`)
+5. **The 1D Heat Equation Diffusion Step** (`tmHeatDiffusionStep`)
+
+**Classification Note:** These terms are hand-written object-language programs
+evaluated via `Tm.eval Env.nil` (`OBJECT-RUN`). They are not produced by `extractClosed`
+from a natural deduction proof tree (`EXTRACTED`).
 -/
 
 namespace HAomega

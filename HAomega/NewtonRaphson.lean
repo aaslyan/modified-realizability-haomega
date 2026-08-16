@@ -12,6 +12,7 @@ import HAomega.ModulusClosure
 import HAomega.ODEDemo
 import HAomega.Taylor
 import HAomega.HarmonicODE
+import HAomega.AnalysisDeriv
 
 /-!
 # Newton–Raphson Method and Quadratic Error Contraction
@@ -78,7 +79,44 @@ theorem newton_step_pos (a x : Rat) (ha : 0 < a) (hx : 0 < x) :
 
 #print axioms newton_step_pos
 
-/-! ## 3. Object-Level Newton Operator in System T -/
+/-! ## 3. Object-Level Newton Operator in System T and Realizer Extraction -/
+
+/-- Closed step term for √2: `(x + 2/x)/2`. -/
+def newtonSqrt2StepTm : Tm [] (.arrow .rat .rat) :=
+  .lam (
+    let x_val : Tm (.rat :: []) .rat := Tm.var .here
+    let two : Tm (.rat :: []) .rat := Tm.qnat (Tm.succ (Tm.succ Tm.zero))
+    let two_div_x := Tm.qdiv two x_val
+    let sum := Tm.qadd x_val two_div_x
+    Tm.qdiv sum two
+  )
+
+/-- Closed step term for √3: `(x + 3/x)/2`. -/
+def newtonSqrt3StepTm : Tm [] (.arrow .rat .rat) :=
+  .lam (
+    let x_val : Tm (.rat :: []) .rat := Tm.var .here
+    let three : Tm (.rat :: []) .rat := Tm.qnat (Tm.succ (Tm.succ (Tm.succ Tm.zero)))
+    let two : Tm (.rat :: []) .rat := Tm.qnat (Tm.succ (Tm.succ Tm.zero))
+    let three_div_x := Tm.qdiv three x_val
+    let sum := Tm.qadd x_val three_div_x
+    Tm.qdiv sum two
+  )
+
+/-- Natural deduction derivation of the Newton sequence for √2 from initial guess x₀ = 1. -/
+def newtonSqrt2Deriv : Deriv .nil (.all .nat (iterInv .rat [])) :=
+  iterSequenceD [] .rat (.qnat (.succ .zero)) newtonSqrt2StepTm
+
+/-- Natural deduction derivation of the Newton sequence for √3 from initial guess x₀ = 1. -/
+def newtonSqrt3Deriv : Deriv .nil (.all .nat (iterInv .rat [])) :=
+  iterSequenceD [] .rat (.qnat (.succ .zero)) newtonSqrt3StepTm
+
+/-- The extracted **program** for √2 Newton iteration (EXTRACTED from `newtonSqrt2Deriv`). -/
+def newtonSqrt2Extracted (n : Nat) : Q :=
+  ((extractClosed newtonSqrt2Deriv).eval Env.nil n).1
+
+/-- The extracted **program** for √3 Newton iteration (EXTRACTED from `newtonSqrt3Deriv`). -/
+def newtonSqrt3Extracted (n : Nat) : Q :=
+  ((extractClosed newtonSqrt3Deriv).eval Env.nil n).1
 
 /-- Closed Newton step term in System T: `fun a x ↦ (x + a / x) / 2`. -/
 def tmNewtonSqrtStep {Γ : List Ty} :
@@ -102,7 +140,7 @@ def tmNewtonSqrtRecStep {Γ : List Ty} :
   let two := Tm.qnat (Tm.succ (Tm.succ Tm.zero))
   Tm.qdiv sum two
 
-/-- Closed Newton sqrt iterator in System T:
+/-- Closed Newton sqrt iterator in System T (OBJECT-RUN):
     `fun a x0 N ↦ recNat x0 (fun k acc ↦ (acc + a / acc) / 2) N`. -/
 def tmNewtonSqrtIter {Γ : List Ty} :
     Tm Γ (.arrow .rat (.arrow .rat (.arrow .nat .rat))) :=
@@ -111,48 +149,39 @@ def tmNewtonSqrtIter {Γ : List Ty} :
       (.lam -- N
         (.recNat (.var (.there .here)) (.lam (.lam tmNewtonSqrtRecStep)) (.var .here))))
 
-/-- Direct System T evaluation of the Newton sqrt iterator term. -/
+/-- Direct System T evaluation of the Newton sqrt iterator term (OBJECT-RUN). -/
 def runNewtonSqrtIter (a : Q) (x0 : Q) (N : Nat) : Q :=
   (tmNewtonSqrtIter (Γ := [])).eval Env.nil a x0 N
 
 /-! ## 4. Verified High-Precision Computations in Lean 4 Kernel -/
 
--- Approximating √2 with x₀ = 1 via System T evaluation:
+-- Approximating √2 with x₀ = 1 via EXTRACTED realizer from newtonSqrt2Deriv:
 -- Iteration 0: x₀ = 1
-#guard runNewtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 0 == Q.ofNat 1
-#guard newtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 0 == Q.ofNat 1
+#guard newtonSqrt2Extracted 0 == Q.ofNat 1
 
 -- Iteration 1: x₁ = 3/2 = 1.5 (x₁² - 2 = 9/4 - 2 = 1/4 = 0.25)
-#guard runNewtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 1 == Q.of 3 2
-#guard newtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 1 == Q.of 3 2
+#guard newtonSqrt2Extracted 1 == Q.of 3 2
 
 -- Iteration 2: x₂ = 17/12 ≈ 1.416667 (x₂² - 2 = 289/144 - 2 = 1/144 ≈ 0.00694)
-#guard runNewtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 2 == Q.of 17 12
-#guard newtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 2 == Q.of 17 12
+#guard newtonSqrt2Extracted 2 == Q.of 17 12
 
 -- Iteration 3: x₃ = 577/408 ≈ 1.414215686 (x₃² - 2 = 1/166464 ≈ 0.0000060)
-#guard runNewtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 3 == Q.of 577 408
-#guard newtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 3 == Q.of 577 408
+#guard newtonSqrt2Extracted 3 == Q.of 577 408
 
 -- Iteration 4: x₄ = 665857/470832 ≈ 1.41421356237469 (x₄² - 2 = 1/221682772224 ≈ 4.5 * 10⁻¹²)
-#guard runNewtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 4 == Q.of 665857 470832
-#guard newtonSqrtIter (Q.ofNat 2) (Q.ofNat 1) 4 == Q.of 665857 470832
+#guard newtonSqrt2Extracted 4 == Q.of 665857 470832
 
--- Approximating √3 with x₀ = 1:
+-- Approximating √3 with x₀ = 1 via EXTRACTED realizer from newtonSqrt3Deriv:
 -- Iteration 1: (1 + 3/1)/2 = 2
-#guard runNewtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 1 == Q.ofNat 2
-#guard newtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 1 == Q.ofNat 2
+#guard newtonSqrt3Extracted 1 == Q.ofNat 2
 
 -- Iteration 2: (2 + 3/2)/2 = 7/4 = 1.75
-#guard runNewtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 2 == Q.of 7 4
-#guard newtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 2 == Q.of 7 4
+#guard newtonSqrt3Extracted 2 == Q.of 7 4
 
 -- Iteration 3: (7/4 + 12/7)/2 = 97/56 ≈ 1.73214 (x₃² - 3 = 1/3136 ≈ 0.000318)
-#guard runNewtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 3 == Q.of 97 56
-#guard newtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 3 == Q.of 97 56
+#guard newtonSqrt3Extracted 3 == Q.of 97 56
 
 -- Iteration 4: 18817/10864 ≈ 1.73205081 (x₄² - 3 = 1/118026496 ≈ 8.4 * 10⁻⁹)
-#guard runNewtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 4 == Q.of 18817 10864
-#guard newtonSqrtIter (Q.ofNat 3) (Q.ofNat 1) 4 == Q.of 18817 10864
+#guard newtonSqrt3Extracted 4 == Q.of 18817 10864
 
 end HAomega

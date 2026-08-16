@@ -85,7 +85,7 @@ def fibRealizer : Tm [] (.arrow .nat (.prod .nat .unit)) := extractClosed fibDer
 
 /-- The extracted **program**: apply the realizer to `n` and read the witness
 component of the existential. -/
-def fibExtracted (n : Nat) : Nat := (fibRealizer.eval Env.nil n).1
+def fibExtracted (n : Nat) : Nat := ((extractClosed fibDeriv).eval Env.nil n).1
 
 /-! ## It runs -/
 

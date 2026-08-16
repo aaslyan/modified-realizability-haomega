@@ -5,9 +5,6 @@ Authors: Ara Aslyan
 -/
 import HAomega.Sperner
 import HAomega.SquareRoot
-import HAomega.HarmonicODE
-import HAomega.Taylor
-import HAomega.NewtonRaphson
 
 /-!
 # Object-Level Natural Deduction Derivations and Realizer Extraction in Analysis
@@ -69,36 +66,41 @@ def iterSequenceD (Γ : List Ty) {as : List Ty} {Δ : Ctx Γ as} (τ : Ty)
 def doublingStepTm : Tm [] (.arrow .nat .nat) :=
   .lam (.add (.var .here) (.var .here))
 
-def doublingDeriv : Deriv .nil (.all .nat (iterInv .nat [])) :=
+/-- Natural deduction derivation of 2ⁿ power sequence via induction in HA^ω. -/
+def doublingRecDeriv : Deriv .nil (.all .nat (iterInv .nat [])) :=
   iterSequenceD [] .nat (.succ .zero) doublingStepTm
 
-/-- The extracted realizer in System T extracted from `doublingDeriv`. -/
+/-- The extracted realizer in System T extracted from `doublingRecDeriv`. -/
 def doublingRealizer : Tm [] (.arrow .nat (.prod .nat .unit)) :=
-  extractClosed doublingDeriv
+  extractClosed doublingRecDeriv
+
+/-- The extracted **program**: apply the extracted realizer to `n` and read the witness. -/
+def doublingExtracted (n : Nat) : Nat :=
+  ((extractClosed doublingRecDeriv).eval Env.nil n).1
 
 /-! ## 3. Kernel Verification of the Extracted Realizer -/
 
--- Evaluate doubling sequence 2ⁿ extracted from the derivation:
+-- Evaluate doubling sequence 2ⁿ extracted directly from the derivation:
 -- n = 0: 2⁰ = 1
-#guard (doublingRealizer.eval Env.nil 0).1 == 1
+#guard doublingExtracted 0 == 1
 
 -- n = 1: 2¹ = 2
-#guard (doublingRealizer.eval Env.nil 1).1 == 2
+#guard doublingExtracted 1 == 2
 
 -- n = 2: 2² = 4
-#guard (doublingRealizer.eval Env.nil 2).1 == 4
+#guard doublingExtracted 2 == 4
 
 -- n = 3: 2³ = 8
-#guard (doublingRealizer.eval Env.nil 3).1 == 8
+#guard doublingExtracted 3 == 8
 
 -- n = 4: 2⁴ = 16
-#guard (doublingRealizer.eval Env.nil 4).1 == 16
+#guard doublingExtracted 4 == 16
 
 -- n = 5: 2⁵ = 32
-#guard (doublingRealizer.eval Env.nil 5).1 == 32
+#guard doublingExtracted 5 == 32
 
 -- n = 10: 2¹⁰ = 1024
-#guard (doublingRealizer.eval Env.nil 10).1 == 1024
+#guard doublingExtracted 10 == 1024
 
 /-! ## 4. Extracted Rational Sqrt Search Derivation -/
 

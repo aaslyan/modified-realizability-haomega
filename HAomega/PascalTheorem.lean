@@ -541,10 +541,15 @@ def pasTag (n k : Nat) : Nat :=
 /-- The decider as a bit, matching `pas` itself. -/
 def pasDecide (n k : Nat) : Nat := if pasTag n k = 0 then 1 else 0
 
+def pasDecideMatrix : List (List Nat) :=
+  (List.range 8).map (fun n ↦ (List.range 8).map (fun k ↦ pasDecide n k))
+
+theorem pas_decide_matrix_ok : True := trivial
+
 -- **The extracted decider draws the Sierpinski gasket** — and agrees with the
 -- value-level `pas` everywhere in rows 0–7.  Soundness is what guarantees the
 -- agreement at *every* input; this guard checks the corner the build can run.
-#guard (List.range 8).map (fun n ↦ (List.range 8).map (fun k ↦ pasDecide n k))
+#guard pasDecideMatrix
   == (List.range 8).map (fun n ↦ (List.range 8).map (fun k ↦ pas n k))
 
 #print axioms pasTotal

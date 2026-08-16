@@ -11,6 +11,7 @@ import HAomega.IVT
 import HAomega.ModulusClosure
 import HAomega.ODEDemo
 import HAomega.Taylor
+import HAomega.AnalysisDeriv
 
 /-!
 # 2D Picard ODE Solver: Harmonic Oscillator and Simultaneous $\sin(x) / \cos(x)$ Synthesis
@@ -53,7 +54,30 @@ def harmonicPicard : Nat → List Q × List Q
   | 0 => ⟨[Q.zero], [Q.ofNat 1]⟩
   | n + 1 => harmonicPicardStep (harmonicPicard n)
 
-/-! ## 2. Harmonic Energy Derivative Cancellation Identity -/
+/-! ## 2. Object-Level Natural Deduction Derivation & Realizer Extraction -/
+
+/-- Step term for 2D harmonic oscillator in System T: `(x, v) ↦ (x + v/2, v - x/2)` with step dt = 1/2. -/
+def tmHarmonicEulerStep : Tm [] (.arrow (.prod .rat .rat) (.prod .rat .rat)) :=
+  .lam (
+    let state : Tm (.prod .rat .rat :: []) (.prod .rat .rat) := .var .here
+    let x : Tm (.prod .rat .rat :: []) .rat := .fst state
+    let v : Tm (.prod .rat .rat :: []) .rat := .snd state
+    let half : Tm (.prod .rat .rat :: []) .rat :=
+      .qdiv (.qnat (.succ .zero)) (.qnat (.succ (.succ .zero)))
+    let x_next := .qadd x (.qmul half v)
+    let v_next := .qsub v (.qmul half x)
+    .pair x_next v_next
+  )
+
+/-- Natural deduction derivation of harmonic oscillator evolution by mathematical induction. -/
+def harmonicDeriv : Deriv .nil (.all .nat (iterInv (.prod .rat .rat) [])) :=
+  iterSequenceD [] (.prod .rat .rat) (.pair (.qnat .zero) (.qnat (.succ .zero))) tmHarmonicEulerStep
+
+/-- The extracted harmonic oscillator state generator (EXTRACTED from `harmonicDeriv`). -/
+def harmonicExtracted (n : Nat) : Q × Q :=
+  ((extractClosed harmonicDeriv).eval Env.nil n).1
+
+/-! ## 3. Harmonic Energy Derivative Cancellation Identity -/
 
 /-- **Theorem (Harmonic Energy Derivative Cancellation Identity)**:
     For components satisfying $y_1' = y_2$ and $y_2' = -y_1$, the algebraic derivative
@@ -64,8 +88,22 @@ theorem harmonic_energy_deriv_cancel (y1 y2 : Rat) :
 
 #print axioms harmonic_energy_deriv_cancel
 
-/-! ## 3. Verified Kernel Computations for Sine and Cosine -/
+/-! ## 4. Verified Kernel Computations -/
 
+-- 1. Extracted Natural Deduction Evolution (EXTRACTED):
+-- Step 0: (0, 1)
+#guard harmonicExtracted 0 == ⟨Q.zero, Q.ofNat 1⟩
+
+-- Step 1: (1/2, 1)
+#guard harmonicExtracted 1 == ⟨Q.of 1 2, Q.ofNat 1⟩
+
+-- Step 2: (1, 3/4)
+#guard harmonicExtracted 2 == ⟨Q.ofNat 1, Q.of 3 4⟩
+
+-- Step 3: (11/8, 1/4)
+#guard harmonicExtracted 3 == ⟨Q.of 11 8, Q.of 1 4⟩
+
+-- 2. Value-Level Polynomial Picard Iteration for Sine & Cosine Series (PLAIN):
 -- Picard Iteration 0: (0, 1)
 #guard evalRealPoly (harmonicPicard 0).1 (Q.of 1 2) == Q.zero
 #guard evalRealPoly (harmonicPicard 0).2 (Q.of 1 2) == Q.ofNat 1

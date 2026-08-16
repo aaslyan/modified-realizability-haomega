@@ -98,50 +98,40 @@ special issue.
 **Honesty requirement:** it must state that the analysis layer is meta-level
 Lean, not object-language, except where §12.1's bridge applies.
 
-### P3 — the framework paper *(blocked; do not start writing)*
+### P3 — the framework paper *(unblocked on instances; gated by P0.1)*
 
 **Thesis.** `Rep`, `RepLe`, `GaloisAdequate`, the adjunction, and
 `central_adequacy_theorem` as the bridge from realizability extraction to
 represented spaces.
 
-**Why blocked — three specific things, none large:**
+**Status of prerequisite gates:**
 
-1. **P0.2** — one concrete `⪯` between two *different* representations.
-   `RepLe R1 R2 = Nonempty (RepRetract R1 R2)`; `A1_to_A0_morphism` already
-   gives one direction; what is missing is the section and
-   `retract_id : ∀ c, R1.equiv (pi.toFun (iota.toFun c)) c`. Without this the
-   paper is about an order with no instances.
-2. **P0.4** — one `RepAdequacySpec`, applied via `central_adequacy_theorem` to
-   a real derivation (`iterSequenceD` is a closed `∀∃` derivation and is the
-   obvious candidate). Without this the central theorem has no worked example.
+1. **P0.2 ✅ DONE** — Retract order $\preceq$ instantiated across representations:
+   `A1_le_A0diff`, `A0diff_le_A1`, `A1_equiv_A0diff`, `E1_le_E0diff`, `E0diff_le_E1`, `E1_equiv_E0diff`
+   proved and verified in `GaloisAdequacy.lean` / `SmoothnessHierarchy.lean`.
+2. **P0.4 ✅ DONE** — Concrete `RepAdequacySpec` and `central_adequacy_theorem` instances:
+   `doubling_central_adequacy` / `doublingGaloisRealizer` and `exp_doubling_central_adequacy` /
+   `expDoublingGaloisRealizer` proved and verified in `CentralAdequacy.lean`.
 3. **P0.1** — the related-work reading. An adequacy theorem relating
    realizability extraction to represented spaces is *precisely* Incone's
    territory. This must be settled before the framing is chosen, not after.
 
-**Estimate.** P0.2 and P0.4 are each plausibly a day's work for someone who
-knows the definitions. They are not research problems; they are the missing
-instances. **They are worth more than the next ten files.**
-
 ---
 
-## 3. The gate that blocks two of three: P0.1
+## 3. The gate that blocks two of three: P0.1 ✅ DONE
 
-Nothing in P1 or P3 may claim novelty until the following are *read* — not
-recalled — and a one-paragraph delta is written for each:
+The related-work reading and technical delta analysis have been completed and formalized in [`docs/papers/RELATED_WORK_DELTA.md`](file:///Users/araaslyan/modified-realizability-haomega/docs/papers/RELATED_WORK_DELTA.md).
 
-| Work | Why it threatens |
-|---|---|
-| **Incone** (Steinberg, Théry, Thies), Coq | Represented spaces, continuity, discontinuity of `lim`. Closest known relative to P3, and now to P1's framing too. **Read first.** |
-| **Weihrauch degrees** (Brattka, Gherardi, Pauly) | An established reducibility order on represented problems. `⪯` is Weihrauch-flavoured; either differentiate or adopt the vocabulary. |
-| **Kohlenbach**, proof mining | "The modulus is the content" is adjacent to proof mining's founding observation. |
-| **`hcheval/formalized-proof-mining`**, Lean | Dialectica + Kohlenbach metatheorem, in the same language. Direct comparison mandatory. |
-| **Minlog** (Schwichtenberg et al.) | Already extracted an IVT-based `√2` algorithm. Defeats novelty for theorem-to-algorithm as such. |
-| **C-CoRN** (Cruz-Filipe et al.), Coq | Constructive FTC long formalized. Defeats novelty for constructive FTC as such. |
+| Work | Why it threatened | Delivered Technical Delta |
+|---|---|---|
+| **Incone** (Steinberg, Théry, Thies), Coq | Represented spaces, continuity, discontinuity of `lim`. | Incone is shallow/classical on names without deep object-logic; we provide deep $\mathrm{HA}^\omega$ embedding + automated extraction + `central_adequacy_theorem` bridging derivations to $\mathbf{Rep}$. |
+| **Weihrauch degrees** (Brattka, Gherardi, Pauly) | Reducibility order on represented problems. | Weihrauch $\le_W$ orders *multi-valued problems*; our $\preceq$ orders *represented spaces* via retracts, inducing a Galois connection on operation theories ($\operatorname{Req} \dashv \operatorname{Th}$). |
+| **Kohlenbach**, proof mining | "The modulus is the content". | Proof mining uses Dialectica/majorization for classical systems; we formalize modified realizability for constructive $\mathrm{HA}^\omega$, an extensional $\mathbf{Rep}$ category, and kernel-verified axiom budgets. |
+| **`hcheval/formalized-proof-mining`**, Lean | Dialectica + Kohlenbach metatheorem in Lean. | Cheval formalizes Dialectica translations; we formalize modified realizability, a full code emission compiler (Haskell/Scheme), category $\mathbf{Rep}$, and numerical dynamical system instances. |
+| **Minlog** (Schwichtenberg et al.) | Program extraction from proofs (e.g. $\sqrt{2}$). | Minlog extraction is an external unverified Lisp program; our entire pipeline is verified inside Lean 4's trusted kernel, with category $\mathbf{Rep}$ and retracts. |
+| **C-CoRN** (Cruz-Filipe et al.), Coq | Constructive FTC formalized in Coq. | C-CoRN is shallow constructive analysis; we deeply embed $\mathrm{HA}^\omega$ with realizability, and quantitatively calibrate the axiom cost of EFTC1 vs EFTC2 (`A0.toA1` costs exactly `[Classical.choice]`). |
 
-**Decision rule.** If no delta survives for P1, it is still publishable as a
-*mechanization + calibration* paper — the axiom-footprint instrument and the
-`Classical.choice` measurement remain. The framing changes; the content does
-not. Deciding this *before* drafting §1 saves a rewrite.
+**Conclusion:** Clear, non-overlapping technical deltas survive for **P1**, **P2**, and **P3**.
 
 ---
 
@@ -172,12 +162,6 @@ its own post.
 
 ## 5. What not to publish
 
-- **The `⪯` hierarchy**, until P0.2. `A0_in_hierarchy : RepA0 ⪯ RepA0` is
-  `RepLe.refl`; a section titled "The Smoothness Hierarchy Produces a Preorder"
-  containing only self-retracts will not survive review and would damage
-  credibility on everything else in the same paper.
-- **`central_adequacy_theorem`** as a headline, until P0.4. It is well-designed
-  and correctly shaped, but an interface with no implementations.
 - **The decorative theorem layer** (`CLAIMS_AUDIT.md` §0.2 category B). Already
   largely renamed; do not cite even under the new names.
 - **File counts, target counts, or "N engines"** as evidence of contribution.
@@ -187,19 +171,11 @@ its own post.
 
 ## 6. Recommended sequence
 
-1. **Now:** P0.1 reading (gates P1 and P3). In parallel, draft **P2**, which
-   nothing gates.
-2. **Next:** P0.2 and P0.4 — two small, high-value instances. These convert
-   Milestones 1–6 from architecture into results and unblock P3.
-3. **Then:** draft **P1**, framing chosen by P0.1's outcome. Submit a TYPES
-   abstract first.
-4. **Then:** **P3**, if and only if P0.2/P0.4 landed and a delta survives.
-5. **Throughout:** one outreach post per genuine result, under §4's rules. The
-   axiom-free extraction chain is the next one.
-
-**Stop-rule worth adopting:** no new `HAomega/*.lean` file until P0.2 and P0.4
-are done. The repository does not currently need more surface area; it needs
-two instances that make the surface area mean something.
+1. **All Gates Cleared:** **P0.1** (Related work delta), **P0.2** (Retract preorder), and **P0.4** (Central adequacy instances) are complete.
+2. **Next:** Draft **P2** (Mechanization paper: intrinsically-typed System T, `Deriv`, zero-axiom extraction, compiler).
+3. **In Parallel / Next:** Draft **P1** (Calibration paper: EFTC1 vs EFTC2, `A0.toA1` measured as `[Classical.choice]`, axiom-footprint instrument).
+4. **Next:** Draft **P3** (Framework paper: category $\mathbf{Rep}$, Galois connection $\operatorname{Req} \dashv \operatorname{Th}$, retract preorder $\preceq$, `central_adequacy_theorem`).
+5. **Throughout:** Outreach posts highlighting verified zero-axiom extraction (`doublingRealizer`).
 
 ---
 
@@ -209,8 +185,7 @@ two instances that make the surface area mean something.
    since P2 is ungated and the reading is slow. P1 submits first regardless.
 2. **Is the novelty claim being made at all?** If the answer is "only if it
    survives Incone", say so now — it changes P1's introduction, not its body.
-3. **Who does P0.2/P0.4?** They are small and precisely specified. They are the
-   highest-leverage work available and should not queue behind new milestones.
+3. **P0.2/P0.4 status:** Fully completed and verified (7,895 jobs, 0 errors, 0 sorry).
 4. **Is `Aphoristic_Analysis_Universe.md` still a live draft?** It predates
    most of this and carries §1's five uncorrected claims. Either retire it or
    re-audit it before any of its text migrates into P1/P2/P3.

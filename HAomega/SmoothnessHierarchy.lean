@@ -133,27 +133,39 @@ theorem calibration_total_shift_direct (a b : Q) :
 #print axioms calibration_total_shift
 #print axioms calibration_total_shift_direct
 
-/-! ## 6. The Smoothness Hierarchy Produces a Preorder on Representation Spaces -/
+/-! ## 6. The Smoothness Hierarchy Preorder Across Representations -/
 
-/-- $A_0$ self-retract: $A_0 \preceq A_0$. -/
-theorem A0_in_hierarchy (a b : Q) : (RepA0 a b) ⪯ (RepA0 a b) :=
-  RepLe.refl _
+/-- $A_1$ embeds into the restricted representation $A_0^{\mathrm{diff}}$: $A_1 \preceq A_0^{\mathrm{diff}}$.
+    The projection $\pi : A_0^{\mathrm{diff}} \to A_1$ uses `Classical.choice` (`A0.toA1`). -/
+theorem A1_le_A0diff_hierarchy (a b : Q) : (RepA1 a b) ⪯ (RepA0diff a b) :=
+  A1_le_A0diff a b
 
-/-- $A_1$ self-retract: $A_1 \preceq A_1$. -/
-theorem A1_in_hierarchy (a b : Q) : (RepA1 a b) ⪯ (RepA1 a b) :=
-  RepLe.refl _
+/-- $A_0^{\mathrm{diff}}$ embeds into $A_1$: $A_0^{\mathrm{diff}} \preceq A_1$. -/
+theorem A0diff_le_A1_hierarchy (a b : Q) : (RepA0diff a b) ⪯ (RepA1 a b) :=
+  A0diff_le_A1 a b
 
-/-- $E_0$ self-retract: $E_0 \preceq E_0$. -/
-theorem E0_in_hierarchy (a b : Q) : (RepE0 a b) ⪯ (RepE0 a b) :=
-  RepLe.refl _
+/-- Galois equivalence between $A_1$ and $A_0^{\mathrm{diff}}$: $A_1 \equiv_{r} A_0^{\mathrm{diff}}$. -/
+theorem A1_equiv_A0diff_hierarchy (a b : Q) : (RepA1 a b) ≃ᵣ (RepA0diff a b) :=
+  A1_equiv_A0diff a b
 
-/-- $E_1$ self-retract: $E_1 \preceq E_1$. -/
-theorem E1_in_hierarchy (a b : Q) : (RepE1 a b) ⪯ (RepE1 a b) :=
-  RepLe.refl _
+/-- $E_1$ embeds into the restricted representation $E_0^{\mathrm{diff}}$: $E_1 \preceq E_0^{\mathrm{diff}}$.
+    The projection $\pi : E_0^{\mathrm{diff}} \to E_1$ uses `Classical.choice` (`E0.toE1`). -/
+theorem E1_le_E0diff_hierarchy (a b : Q) : (RepE1 a b) ⪯ (RepE0diff a b) :=
+  E1_le_E0diff a b
 
-#print axioms A0_in_hierarchy
-#print axioms A1_in_hierarchy
-#print axioms E0_in_hierarchy
-#print axioms E1_in_hierarchy
+/-- $E_0^{\mathrm{diff}}$ embeds into $E_1$: $E_0^{\mathrm{diff}} \preceq E_1$. -/
+theorem E0diff_le_E1_hierarchy (a b : Q) : (RepE0diff a b) ⪯ (RepE1 a b) :=
+  E0diff_le_E1 a b
+
+/-- Galois equivalence between $E_1$ and $E_0^{\mathrm{diff}}$: $E_1 \equiv_{r} E_0^{\mathrm{diff}}$. -/
+theorem E1_equiv_E0diff_hierarchy (a b : Q) : (RepE1 a b) ≃ᵣ (RepE0diff a b) :=
+  E1_equiv_E0diff a b
+
+#print axioms A1_le_A0diff_hierarchy
+#print axioms A0diff_le_A1_hierarchy
+#print axioms A1_equiv_A0diff_hierarchy
+#print axioms E1_le_E0diff_hierarchy
+#print axioms E0diff_le_E1_hierarchy
+#print axioms E1_equiv_E0diff_hierarchy
 
 end HAomega

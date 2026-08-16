@@ -1,0 +1,42 @@
+\begin{thebibliography}{1}
+
+\bibitem{berger1998}
+Ulrich Berger and Helmut Schwichtenberg.
+\newblock Program extraction from classical proofs.
+\newblock pages 77--97, 1998.
+
+\bibitem{cheval2023}
+Hora{\textcommabelow t}iu Cheval.
+\newblock Formalized proof mining in {Lean 4}.
+\newblock \url{https://github.com/hcheval/formalized-proof-mining}, 2023.
+
+\bibitem{cruzfilipe2004}
+Lu{\'i}s Cruz-Filipe, Herman Geuvers, and Freek Wiedijk.
+\newblock {C-CoRN}, the constructive {Coq} repository at {Nijmegen}.
+\newblock {\em Mathematical Knowledge Management (MKM)}, 3119:88--103, 2004.
+
+\bibitem{godel1958}
+Kurt G{\"o}del.
+\newblock {\"U}ber eine bisher noch nicht ben{\"u}tzte {E}rweiterung des
+  finiten {S}tandpunktes.
+\newblock {\em Dialectica}, 12(3-4):280--287, 1958.
+
+\bibitem{kreisel1959}
+Georg Kreisel.
+\newblock Interpretation of analysis by means of functionals of finite type.
+\newblock pages 101--128, 1959.
+
+\bibitem{schwichtenberg2012}
+Helmut Schwichtenberg and Stanley~S. Wainer.
+\newblock {\em Proofs and Computations}.
+\newblock Perspectives in Logic. Cambridge University Press, 2012.
+
+\bibitem{steinberg2022}
+Florian Steinberg, Laurent Th{\'e}ry, and Holger Thies.
+\newblock Computing with infinite objects in {Coq}: Represented spaces and
+  type-two effectivity.
+\newblock In {\em 13th International Conference on Interactive Theorem Proving
+  (ITP 2022)}, pages 29:1--29:19. Schloss Dagstuhl - Leibniz-Zentrum f{\"u}r
+  Informatik, 2022.
+
+\end{thebibliography}

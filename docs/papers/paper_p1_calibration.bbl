@@ -1,0 +1,67 @@
+\begin{thebibliography}{10}
+
+\bibitem{bishop1967}
+Errett Bishop.
+\newblock {\em Foundations of Constructive Analysis}.
+\newblock McGraw-Hill, New York, 1967.
+
+\bibitem{bishop1985}
+Errett Bishop and Douglas Bridges.
+\newblock {\em Constructive Analysis}, volume 279 of {\em Grundlehren der
+  mathematischen Wissenschaften}.
+\newblock Springer-Verlag, Berlin, Heidelberg, 1985.
+
+\bibitem{brattka2021}
+Vasco Brattka, Guido Gherardi, and Arno Pauly.
+\newblock Weihrauch complexity in computable analysis.
+\newblock pages 367--417, 2021.
+
+\bibitem{cruzfilipe2004}
+Lu{\'i}s Cruz-Filipe, Herman Geuvers, and Freek Wiedijk.
+\newblock {C-CoRN}, the constructive {Coq} repository at {Nijmegen}.
+\newblock {\em Mathematical Knowledge Management (MKM)}, 3119:88--103, 2004.
+
+\bibitem{demoura2021}
+Leonardo de~Moura and Sebastian Ullrich.
+\newblock The {Lean 4} theorem prover and programming language.
+\newblock In {\em Automated Deduction -- CADE 28}, pages 625--635. Springer,
+  2021.
+
+\bibitem{friedman1982}
+Harvey Friedman and Ker-I Ko.
+\newblock Computational complexity of real functions.
+\newblock {\em Theoretical Computer Science}, 20(3):323--352, 1982.
+
+\bibitem{kohlenbach2008}
+Ulrich Kohlenbach.
+\newblock {\em Applied Proof Theory: Proof Interpretations and Their Use in
+  Mathematics}.
+\newblock Springer Monographs in Mathematics. Springer-Verlag, Berlin,
+  Heidelberg, 2008.
+
+\bibitem{myhill1971}
+John Myhill.
+\newblock A note on degrees of non-constructivity in real analysis.
+\newblock {\em Zeitschrift f{\"u}r Mathematische Logik und Grundlagen der
+  Mathematik}, 17:215--218, 1971.
+
+\bibitem{steinberg2017}
+Florian Steinberg, Laurent Th{\'e}ry, and Holger Thies.
+\newblock Quantitative continuity analysis in {Coq}.
+\newblock In {\em 8th International Conference on Interactive Theorem Proving
+  (ITP 2017)}, pages 493--509. Springer, 2017.
+
+\bibitem{steinberg2022}
+Florian Steinberg, Laurent Th{\'e}ry, and Holger Thies.
+\newblock Computing with infinite objects in {Coq}: Represented spaces and
+  type-two effectivity.
+\newblock In {\em 13th International Conference on Interactive Theorem Proving
+  (ITP 2022)}, pages 29:1--29:19. Schloss Dagstuhl - Leibniz-Zentrum f{\"u}r
+  Informatik, 2022.
+
+\bibitem{weihrauch2000}
+Klaus Weihrauch.
+\newblock {\em Computable Analysis: An Introduction}.
+\newblock Springer-Verlag, Berlin, Heidelberg, 2000.
+
+\end{thebibliography}

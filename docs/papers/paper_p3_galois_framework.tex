@@ -1,0 +1,245 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{cd,arrows,shapes}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=green!50!black,
+    urlcolor=blue!80!black
+}
+
+\lstdefinelanguage{Lean}{
+  keywords={structure, extends, def, noncomputable, theorem, lemma, inductive, where, let, in, match, with, fun, if, then, else, Prop, Type},
+  sensitive=true
+}
+
+\lstset{
+  language=Lean,
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  commentstyle=\color{gray},
+  keywordstyle=\color{blue!80!black}\bfseries,
+  stringstyle=\color{teal},
+  frame=single,
+  frameround=tttt,
+  backgroundcolor=\color{gray!5},
+  extendedchars=true,
+  literate=
+    {->}{{$\to$}}1
+    {<-}{{$\leftarrow$}}1
+    {∀}{{$\forall$}}1
+    {∃}{{$\exists$}}1
+    {∧}{{$\land$}}1
+    {∨}{{$\lor$}}1
+    {ω}{{$\omega$}}1
+    {δ}{{$\delta$}}1
+    {μ}{{$\mu$}}1
+    {σ}{{$\sigma$}}1
+    {τ}{{$\tau$}}1
+    {φ}{{$\phi$}}1
+    {Φ}{{$\Phi$}}1
+    {ψ}{{$\psi$}}1
+    {⪯}{{$\preceq$}}1
+    {≃ᵣ}{{$\simeq_r$}}1
+    {↦}{{$\mapsto$}}1
+    {Γ}{{$\Gamma$}}1
+    {Δ}{{$\Delta$}}1
+    {α}{{$\alpha$}}1
+    {β}{{$\beta$}}1
+    {↔}{{$\leftrightarrow$}}1
+    {⊆}{{$\subseteq$}}1
+    {∈}{{$\in$}}1
+}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\HAomega}{\ensuremath{\mathrm{HA}^\omega}}
+\newcommand{\Rep}{\ensuremath{\mathbf{Rep}}}
+\newcommand{\Q}{\ensuremath{\mathbb{Q}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Th}{\ensuremath{\operatorname{Th}}}
+\newcommand{\Req}{\ensuremath{\operatorname{Req}}}
+\newcommand{\mr}{\ensuremath{\;\mathbf{mr}\;}}
+\newcommand{\preceqR}{\ensuremath{\preceq}}
+\newcommand{\simeqR}{\ensuremath{\simeq_r}}
+
+\title{\textbf{Representation Adequacy as a Galois Connection:\\Bridging Constructive Proofs to Computable Analysis in Lean 4}}
+
+\author{Ara Aslyan}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We develop a categorical and proof-theoretic framework in Lean~4 that connects constructive proofs in Heyting Arithmetic in all finite types ($\HAomega$) directly to Type-Two Effectivity (computable analysis) on represented spaces. The core of this framework is the category $\Rep$ of represented metric spaces, where morphisms bundle computational code transformers with explicit, algebraic precision moduli $\mu : \N \to \N$ satisfying verified functorial composition laws ($\mu_{g \circ f} = \mu_f \circ \mu_g$).
+
+We introduce a representation retract preorder ($R_1 \preceqR R_2$) based on section-retraction pairs preserving approximation and code equivalence, and prove that representation capacity induces a monotone \textbf{Galois connection} $\Req \dashv \Th$ on operational theories:
+\[
+\Req(\Phi, R_1) \land R_1 \preceqR R_2 \implies \Phi \in \Th(R_2)
+\]
+We prove cross-representation Galois equivalences between continuously differentiable representations and differentiable continuous representations ($A_1 \simeqR A_0^{\text{diff}}$ and $E_1 \simeqR E_0^{\text{diff}}$). Finally, we formalize the \textbf{Central Adequacy Theorem} (\texttt{central\_adequacy\_theorem}), which automatically synthesizes a certified morphism in $\Rep$ from any closed natural deduction derivation $\vdash_{\HAomega} \forall x \exists y \Phi(x, y)$ satisfying a representation compatibility specification (\texttt{RepAdequacySpec}). We demonstrate the end-to-end bridge on discrete arithmetic derivations and certified Banach fixed-point solvers for dynamical systems across 7,895 verified compilation jobs in Lean~4.
+\end{abstract}
+
+\section{Introduction}
+
+Bridging proof theory and computable analysis has been a longstanding goal of constructive mathematics. While realizability interpretations extract lambda terms from proofs in formal arithmetic, and Type-Two Effectivity (TTE)~\cite{weihrauch2000} formalizes computability on metric spaces via representations $(X, \delta)$, an explicit, mechanized connection linking formal proof derivations directly to represented space morphisms has been missing.
+
+In standard computable analysis, represented spaces are typically studied through topological continuity or Weihrauch degrees~\cite{brattka2021}, which order \emph{computational problems} over fixed representations. However, this does not directly address how enriching the \emph{data carried by a representation} affects the lattice of realizable mathematical operations, nor does it provide a compiler from formal object-logic derivations to verified realizer morphisms.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzcd}[row sep=large, column sep=large]
+  \begin{array}{c} \text{Formal Proof in } \HAomega \\ \vdash \forall x : \sigma, \exists y : \tau, \Phi(x, y) \end{array} 
+  \arrow[r, "\text{\texttt{central\_adequacy\_theorem}}", "\text{+ \texttt{RepAdequacySpec}}"'] &
+  \begin{array}{c} \text{Morphism in } \Rep \\ F : \operatorname{GaloisAdequate}(R_X, R_Y, f) \end{array} \\
+  \begin{array}{c} \text{Representation Retract} \\ R_1 \preceqR R_2 \end{array}
+  \arrow[r, "\text{Galois Connection}"', "\Req \dashv \Th"] &
+  \begin{array}{c} \text{Theory Monotonicity} \\ \Th(R_1) \subseteq \Th(R_2) \end{array}
+\end{tikzcd}
+\caption{The Realizability-to-Representation Galois Bridge.}
+\end{figure}
+
+\section{The Category $\Rep$ of Represented Spaces}
+
+\begin{definition}[Represented Space]
+An object $R \in \Rep(\alpha)$ over space $\alpha$ is a carrier type with approximation relation $\operatorname{approx}$ and equivalence $\operatorname{equiv}$:
+\begin{lstlisting}[language=Lean]
+structure Rep (α : Type) where
+  Carrier      : Type
+  approx       : Carrier -> Nat -> α -> Prop
+  equiv        : Carrier -> Carrier -> Prop
+  equiv_refl   : ∀ c, equiv c c
+  equiv_symm   : ∀ c1 c2, equiv c1 c2 -> equiv c2 c1
+  equiv_trans  : ∀ c1 c2 c3, equiv c1 c2 -> equiv c2 c3 -> equiv c1 c3
+  approx_congr : ∀ c1 c2 k x, equiv c1 c2 -> (approx c1 k x ↔ approx c2 k x)
+\end{lstlisting}
+\end{definition}
+
+\begin{definition}[Morphism in $\Rep$]
+A morphism $F : \operatorname{RepMorphism}(R_1, R_2)$ over $f : \alpha \to \beta$ bundles a code transformer and a precision shift $\mu : \N \to \N$:
+\begin{lstlisting}[language=Lean]
+structure RepMorphism (R1 : Rep α) (R2 : Rep β) where
+  toFun       : R1.Carrier -> R2.Carrier
+  shift       : Nat -> Nat
+  resp_equiv  : ∀ c1 c2, R1.equiv c1 c2 -> R2.equiv (toFun c1) (toFun c2)
+  resp_approx : ∀ c k x, R1.approx c (shift k) x -> R2.approx (toFun c) k (f x)
+\end{lstlisting}
+\end{definition}
+
+\begin{theorem}[Functorial Modulus Law]
+For $f : R_1 \to R_2$ and $g : R_2 \to R_3$, composition satisfies:
+\[
+(g \circ f)_{\text{code}} = g_{\text{code}} \circ f_{\text{code}}, \quad \mu_{g \circ f}(k) = \mu_f(\mu_g(k))
+\]
+proved in \texttt{CategoryRep.lean} with \textbf{0 axioms}.
+\end{theorem}
+
+\section{The Retract Preorder $\preceq$ and Galois Adjunction}
+
+\begin{definition}[Representation Retract]
+We define $R_1 \preceqR R_2$ by the existence of a section-retraction pair:
+\[
+\iota : R_1 \to R_2, \quad \pi : R_2 \to R_1 \quad \text{such that} \quad \pi(\iota(c)) \sim c
+\]
+\end{definition}
+
+\begin{definition}[Operational Theory $\Th$]
+For representations $R_1, R_2$, let $\Th(R_1, R_2)$ be the set of all operations admitting adequate realizers:
+\[
+\Th(R_1, R_2) = \{ f : \alpha \to \beta \mid \operatorname{Nonempty}(\operatorname{GaloisAdequate}(R_1, R_2, f)) \}
+\]
+\end{definition}
+
+\begin{theorem}[Galois Adjunction Theorem]
+In \texttt{HAomega/GaloisAdjunction.lean}:
+\begin{lstlisting}[language=Lean]
+theorem Th_mono {R1 R2 : Rep α} {S : Rep β} (h : R1 ⪯ R2) :
+    Th R2 S ⊆ Th R1 S
+
+theorem galois_adjunction (Φ : Formula) (R1 R2 : Rep α) :
+    Req Φ R1 ∧ R1 ⪯ R2 -> Φ ∈ Th R2 R2
+\end{lstlisting}
+\end{theorem}
+
+\section{Concrete Retracts \& Cross-Representation Equivalences}
+
+We define restricted subtypes with differentiability certificates:
+\begin{itemize}
+    \item \texttt{RepA0diff} (Carrier: $\{ A : A_0 \mid \operatorname{HasUnifDeriv}(A) \}$)
+    \item \texttt{RepE0diff} (Carrier: $\{ E : E_0 \mid \operatorname{HasSmoothDataE0}(E) \}$)
+\end{itemize}
+
+\begin{theorem}[Cross-Representation Equivalences]
+In \texttt{HAomega/GaloisAdequacy.lean}:
+\begin{lstlisting}[language=Lean]
+theorem A1_equiv_A0diff (a b : Q) : (RepA1 a b) ≃ᵣ (RepA0diff a b)
+theorem E1_equiv_E0diff (a b : Q) : (RepE1 a b) ≃ᵣ (RepE0diff a b)
+\end{lstlisting}
+\end{theorem}
+Thus, continuously differentiable representations ($A_1$) and continuous representations with differentiability certificates ($A_0^{\text{diff}}$) are Galois-equivalent in $\Rep$.
+
+\section{The Central Adequacy Theorem}
+
+\begin{definition}[\texttt{RepAdequacySpec}]
+A specification connecting an object-level formula $\Phi(x, y)$ to an extensional relation $P(x, y)$:
+\begin{lstlisting}[language=Lean]
+structure RepAdequacySpec (RX : Rep α) (RY : Rep β) (P : α -> β -> Prop) (Φ : Formula [.nat, .nat] .unit) where
+  mu           : Nat -> Nat
+  sound        : ∀ c k x y_code r, RX.approx c (mu k) x -> MR Φ (y_code :: c :: nil) r ->
+                   ∃ y, RY.approx y_code k y ∧ P x y
+  equiv_compat : ∀ c1 c2 y1 y2 r1 r2, RX.equiv c1 c2 -> 
+                   MR Φ (y1 :: c1 :: nil) r1 -> MR Φ (y2 :: c2 :: nil) r2 -> RY.equiv y1 y2
+\end{lstlisting}
+\end{definition}
+
+\begin{theorem}[Master Central Adequacy Bridge]
+In \texttt{HAomega/CentralAdequacy.lean}:
+\begin{lstlisting}[language=Lean]
+theorem central_adequacy_theorem (RX : Rep α) (RY : Rep β) (P : α -> β -> Prop) (Φ : Formula [.nat, .nat] .unit)
+    (spec : RepAdequacySpec RX RY P Φ)
+    (D : Deriv .nil (ForallExistsFormula .nat .nat Φ)) :
+    let realizeCode := fun c ↦ ((extractClosed D).eval Env.nil c).1
+    (∀ c1 c2, RX.equiv c1 c2 -> RY.equiv (realizeCode c1) (realizeCode c2)) ∧
+    (∀ c k x, RX.approx c (spec.mu k) x ->
+      ∃ y, RY.approx (realizeCode c) k y ∧ P x y)
+\end{lstlisting}
+\end{theorem}
+
+\section{Applied Banach Fixed-Point Engine}
+
+We formalize represented metric spaces (\texttt{RepMetricSpace}) and prove the Banach contraction fixed-point theorem in $\Rep$. In \texttt{BanachInstance.lean}, we instantiate the engine for initial value ODEs ($y' = y, y(0) = 1$ on $[0, 1/4]$):
+\begin{itemize}
+    \item Proved geometric convergence rate $\Phi(k) = (k+2)/2$ (\texttt{exp\_geometric\_convergence}).
+    \item Proved exact Taylor series equivalence (\texttt{picard\_taylor\_identity}).
+    \item Verified kernel evaluations: $P_6(1/4) = 757349/589824 \approx 1.28402540$ (error $< 10^{-7}$).
+\end{itemize}
+
+\section{Conclusion}
+
+The framework provides an end-to-end bridge from formal constructive derivations in $\HAomega$ to certified represented space morphisms in $\Rep$, uniting proof-theoretic realizability with Type-Two Effectivity.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

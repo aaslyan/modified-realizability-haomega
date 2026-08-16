@@ -5,6 +5,7 @@ Authors: Ara Aslyan
 -/
 import HAomega.Soundness
 import HAomega.GaloisAdequacy
+import HAomega.Kit
 
 /-!
 # Milestone 1: The Central Adequacy Theorem (MR-to-Rep Bridge)
@@ -172,5 +173,147 @@ def central_galois_realizer {X Y : Type} {σ τ a : Ty}
       exact hy_approx }
 
 #print axioms central_galois_realizer
+
+/-! ## 5. Concrete Instances of the Central Adequacy Bridge -/
+
+/-- Canonical representation of the natural numbers $\mathbb{N}$ as a discrete space with code carrier `Nat`. -/
+def RepNat : RepOf Nat Ty.nat.interp :=
+  { approx := fun c _ x ↦ c = x
+    equiv := fun c1 c2 ↦ c1 = c2
+    equiv_refl := fun _ ↦ rfl
+    equiv_symm := fun _ _ h ↦ h.symm
+    equiv_trans := fun _ _ _ h1 h2 ↦ h1.trans h2
+    approx_congr := by
+      intro c1 c2 k x h
+      simp [h] }
+
+/-- Constructive derivation of $\forall x : \mathrm{nat}, \exists y : \mathrm{nat}, y = t(x)$ in `Deriv`. -/
+def termDeriv (t : Tm [.nat] .nat) :
+    Deriv .nil (ForallExistsFormula .nat .nat (.eq (.var .here) t.wk)) := by
+  have d_refl : Deriv (Ctx.nil.wk (σ := .nat)) (Formula.eq t t) := Deriv.eqRefl t
+  have d_subst : Deriv (Ctx.nil.wk (σ := .nat)) ((Formula.eq (.var .here) t.wk).subst1 t) :=
+    Formula.subst1_eq_var_wk t t ▸ d_refl
+  exact Deriv.allI (Deriv.exI t d_subst)
+
+/-- Representation-logical compatibility specification for any closed term $t : \mathrm{Tm}\ [\mathrm{nat}]\ \mathrm{nat}$. -/
+def termAdequacySpec (t : Tm [.nat] .nat) :
+    RepAdequacySpec RepNat RepNat (fun x y ↦ y = t.eval (Env.cons x Env.nil)) (.eq (.var .here) t.wk) :=
+  { mu := fun k ↦ k
+    sound := by
+      intro c k x y_code r h_approx h_mr
+      dsimp [RepNat] at h_approx ⊢
+      dsimp [MR] at h_mr
+      have hy : y_code = t.eval (Env.cons c Env.nil) := by
+        have h_eval : y_code = t.wk.eval (Env.cons y_code (Env.cons c Env.nil)) := h_mr
+        rw [show t.wk.eval (Env.cons y_code (Env.cons c Env.nil)) = t.eval (Env.cons c Env.nil) from Tm.eval_wk t y_code (Env.cons c Env.nil)] at h_eval
+        exact h_eval
+      subst h_approx
+      exact ⟨y_code, rfl, hy⟩
+    equiv_compat := by
+      intro c1 c2 y1 y2 r1 r2 hc h_mr1 h_mr2
+      dsimp [RepNat] at hc ⊢
+      dsimp [MR] at h_mr1 h_mr2
+      have hy1 : y1 = t.eval (Env.cons c1 Env.nil) := by
+        have h_eval : y1 = t.wk.eval (Env.cons y1 (Env.cons c1 Env.nil)) := h_mr1
+        rw [show t.wk.eval (Env.cons y1 (Env.cons c1 Env.nil)) = t.eval (Env.cons c1 Env.nil) from Tm.eval_wk t y1 (Env.cons c1 Env.nil)] at h_eval
+        exact h_eval
+      have hy2 : y2 = t.eval (Env.cons c2 Env.nil) := by
+        have h_eval : y2 = t.wk.eval (Env.cons y2 (Env.cons c2 Env.nil)) := h_mr2
+        rw [show t.wk.eval (Env.cons y2 (Env.cons c2 Env.nil)) = t.eval (Env.cons c2 Env.nil) from Tm.eval_wk t y2 (Env.cons c2 Env.nil)] at h_eval
+        exact h_eval
+      subst hc
+      rw [hy1, hy2] }
+
+/-- Closed doubling term $2x$ in context `[.nat]`. -/
+def doublingTm : Tm [.nat] .nat :=
+  .add (.var .here) (.var .here)
+
+/-- Derivation of $\forall x : \mathrm{nat}, \exists y : \mathrm{nat}, y = 2x$. -/
+def doublingDeriv :
+    Deriv .nil (ForallExistsFormula .nat .nat (.eq (.var .here) doublingTm.wk)) :=
+  termDeriv doublingTm
+
+/-- Representation-logical compatibility specification for doubling $n \mapsto 2n$. -/
+def doublingAdequacySpec :
+    RepAdequacySpec RepNat RepNat (fun n y ↦ y = 2 * n) (.eq (.var .here) doublingTm.wk) := by
+  have spec := termAdequacySpec doublingTm
+  refine { mu := spec.mu, sound := ?_, equiv_compat := spec.equiv_compat }
+  intro c k x y_code r h_approx h_mr
+  have ⟨y, hy_app, hy_eval⟩ := spec.sound c k x y_code r h_approx h_mr
+  refine ⟨y, hy_app, ?_⟩
+  change y = x + x at hy_eval
+  rw [hy_eval]
+  omega
+
+/-- **Theorem (Doubling Central Adequacy Instance)**:
+    Applying `central_adequacy_theorem` to the doubling derivation yields a certified realizer. -/
+theorem doubling_central_adequacy :
+    let t := extractClosed doublingDeriv
+    let f := t.eval Env.nil
+    let realizeCode : Nat → Nat := fun c ↦ (f c).1
+    (∀ (c1 c2 : Nat), RepNat.equiv c1 c2 → RepNat.equiv (realizeCode c1) (realizeCode c2)) ∧
+    (∀ (c : Nat) (k : Nat) (x : Nat),
+      RepNat.approx c (doublingAdequacySpec.mu k) x →
+      ∃ y : Nat, RepNat.approx (realizeCode c) k y ∧ y = 2 * x) :=
+  central_adequacy_theorem RepNat RepNat (fun n y ↦ y = 2 * n) _ doublingAdequacySpec doublingDeriv
+
+/-- The packaged `GaloisAdequate` representation morphism for doubling $n \mapsto 2n$. -/
+def doublingGaloisRealizer : GaloisAdequate RepNat.toRep RepNat.toRep (fun n ↦ 2 * n) :=
+  central_galois_realizer RepNat RepNat (fun n ↦ 2 * n) _ doublingAdequacySpec doublingDeriv
+
+/-- Closed exponential doubling term $2^n$ via System T primitive recursion `recNat 1 (λ _ acc. 2 * acc) n`. -/
+def expDoublingTm : Tm [.nat] .nat :=
+  .recNat (.succ .zero) (.lam (.lam (.add (.var .here) (.var .here)))) (.var .here)
+
+theorem expDoubling_eval (x : Nat) :
+    expDoublingTm.eval (Env.cons x Env.nil) = 2 ^ x := by
+  induction x with
+  | zero => rfl
+  | succ x ih =>
+      change expDoublingTm.eval (Env.cons x Env.nil) + expDoublingTm.eval (Env.cons x Env.nil) = 2 ^ (x + 1)
+      rw [ih, Nat.pow_succ, Nat.mul_two]
+
+/-- Derivation of $\forall n : \mathrm{nat}, \exists y : \mathrm{nat}, y = 2^n$. -/
+def expDoublingDeriv :
+    Deriv .nil (ForallExistsFormula .nat .nat (.eq (.var .here) expDoublingTm.wk)) :=
+  termDeriv expDoublingTm
+
+/-- Representation-logical compatibility specification for exponential doubling $n \mapsto 2^n$. -/
+def expDoublingAdequacySpec :
+    RepAdequacySpec RepNat RepNat (fun n y ↦ y = 2 ^ n) (.eq (.var .here) expDoublingTm.wk) := by
+  have spec := termAdequacySpec expDoublingTm
+  refine { mu := spec.mu, sound := ?_, equiv_compat := spec.equiv_compat }
+  intro c k x y_code r h_approx h_mr
+  have ⟨y, hy_app, hy_eval⟩ := spec.sound c k x y_code r h_approx h_mr
+  refine ⟨y, hy_app, ?_⟩
+  rw [hy_eval, expDoubling_eval]
+
+/-- **Theorem (Exponential Doubling Central Adequacy Instance)**:
+    Applying `central_adequacy_theorem` to the exponential doubling derivation yields a certified realizer. -/
+theorem exp_doubling_central_adequacy :
+    let t := extractClosed expDoublingDeriv
+    let f := t.eval Env.nil
+    let realizeCode : Nat → Nat := fun c ↦ (f c).1
+    (∀ (c1 c2 : Nat), RepNat.equiv c1 c2 → RepNat.equiv (realizeCode c1) (realizeCode c2)) ∧
+    (∀ (c : Nat) (k : Nat) (x : Nat),
+      RepNat.approx c (expDoublingAdequacySpec.mu k) x →
+      ∃ y : Nat, RepNat.approx (realizeCode c) k y ∧ y = 2 ^ x) :=
+  central_adequacy_theorem RepNat RepNat (fun n y ↦ y = 2 ^ n) _ expDoublingAdequacySpec expDoublingDeriv
+
+/-- The packaged `GaloisAdequate` representation morphism for exponential doubling $n \mapsto 2^n$. -/
+def expDoublingGaloisRealizer : GaloisAdequate RepNat.toRep RepNat.toRep (fun n ↦ 2 ^ n) :=
+  central_galois_realizer RepNat RepNat (fun n ↦ 2 ^ n) _ expDoublingAdequacySpec expDoublingDeriv
+
+#print axioms RepNat
+#print axioms termDeriv
+#print axioms termAdequacySpec
+#print axioms doublingDeriv
+#print axioms doublingAdequacySpec
+#print axioms doubling_central_adequacy
+#print axioms doublingGaloisRealizer
+#print axioms expDoublingDeriv
+#print axioms expDoublingAdequacySpec
+#print axioms exp_doubling_central_adequacy
+#print axioms expDoublingGaloisRealizer
 
 end HAomega

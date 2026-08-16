@@ -286,6 +286,57 @@ def RepE1 (a b : Q) : Rep (Q → Q) :=
         rw [h_val]
         exact hx }
 
+/-- Representation for exact uniformly differentiable functions on $[a, b]$ via
+    continuous $A_0$ data equipped with a witness of differentiability `A0.HasUnifDeriv`. -/
+def RepA0diff (a b : Q) : Rep (Q → Q) :=
+  { Carrier := { A : A0 // A0.HasUnifDeriv A }
+    approx := fun A k f ↦ (RepA0 a b).approx A.1 k f
+    equiv := fun A1 A2 ↦ (RepA0 a b).equiv A1.1 A2.1
+    equiv_refl := fun A ↦ (RepA0 a b).equiv_refl A.1
+    equiv_symm := fun A1 A2 h ↦ (RepA0 a b).equiv_symm A1.1 A2.1 h
+    equiv_trans := fun A1 A2 A3 h1 h2 ↦ (RepA0 a b).equiv_trans A1.1 A2.1 A3.1 h1 h2
+    approx_congr := fun A1 A2 k f h ↦ (RepA0 a b).approx_congr A1.1 A2.1 k f h }
+
+/-- An approximating evaluator $E_0$ has smooth data if it admits continuity and differentiability moduli. -/
+def HasSmoothDataE0 (E : E0) : Prop :=
+  ∃ (ω : Nat → Nat) (δ : Nat → Nat) (dq : Nat → Q → Nat),
+    (∀ (k n : Nat) (x y : Q), E.cm k ≤ n →
+      Qle E.a x = true → Qle x E.b = true → Qle E.a y = true → Qle y E.b = true →
+      Qle (Q.abs (Q.sub x y)) (D.toQ (D.pow2neg (ω k))) = true →
+      Qle (Q.abs (Q.sub (E.ev n x) (E.ev n y))) (D.toQ (D.pow2neg k)) = true) ∧
+    (∃ F : Q → Q, ∀ (k n : Nat) (x h : Q), dq k h ≤ n →
+      Qle E.a x = true → Qle x E.b = true →
+      Qle E.a (Q.add x h) = true → Qle (Q.add x h) E.b = true →
+      h.num ≠ 0 → Qle (Q.abs h) (D.toQ (D.pow2neg (δ k))) = true →
+      Qle (Q.abs (Q.sub (Q.div (Q.sub (E.ev n (Q.add x h)) (E.ev n x)) h) (F x)))
+        (D.toQ (D.pow2neg k)) = true)
+
+/-- Classical lift from smooth $E_0$ data to $E_1$. -/
+noncomputable def E0.toE1 (E : E0) (h : HasSmoothDataE0 E) : E1 :=
+  let ω := h.choose
+  let h1 := h.choose_spec
+  let δ := h1.choose
+  let h2 := h1.choose_spec
+  let dq := h2.choose
+  let h3 := h2.choose_spec
+  { toE0 := E
+    ω := ω
+    δ := δ
+    dq := dq
+    cont := h3.1
+    diff := h3.2 }
+
+/-- Representation for approximating differentiable functions on $[a, b]$ via
+    $E_0$ codes carrying a witness of smooth data `HasSmoothDataE0`. -/
+def RepE0diff (a b : Q) : Rep (Q → Q) :=
+  { Carrier := { E : E0 // HasSmoothDataE0 E }
+    approx := fun E k f ↦ (RepE0 a b).approx E.1 k f
+    equiv := fun E1 E2 ↦ (RepE0 a b).equiv E1.1 E2.1
+    equiv_refl := fun E ↦ (RepE0 a b).equiv_refl E.1
+    equiv_symm := fun E1 E2 h ↦ (RepE0 a b).equiv_symm E1.1 E2.1 h
+    equiv_trans := fun E1 E2 E3 h1 h2 ↦ (RepE0 a b).equiv_trans E1.1 E2.1 E3.1 h1 h2
+    approx_congr := fun E1 E2 k f h ↦ (RepE0 a b).approx_congr E1.1 E2.1 k f h }
+
 /-! ## 5. Morphisms Connecting the Representation Ladder -/
 
 /-- Forgetting derivative data: $A_1 \to A_0$. -/
@@ -312,6 +363,34 @@ def A1_to_E1_morphism (a b : Q) : RepMorphism (RepA1 a b) (RepE1 a b) :=
 /-- Forgetting derivative data: $E_1 \to E_0$. -/
 def E1_to_E0_morphism (a b : Q) : RepMorphism (RepE1 a b) (RepE0 a b) :=
   { toFun := fun (E : E1) ↦ E.toE0
+    map_equiv := fun _ _ h ↦ h
+    shift := fun k ↦ k
+    map_approx := fun _ _ _ h ↦ h }
+
+/-- Embedding $A_1 \to A_0^{\mathrm{diff}}$: an exact $A_1$ carries uniform differentiability data. -/
+def A1_to_A0diff_morphism (a b : Q) : RepMorphism (RepA1 a b) (RepA0diff a b) :=
+  { toFun := fun (A : A1) ↦ ⟨A.toA0, ⟨A.δ, A.diff⟩⟩
+    map_equiv := fun _ _ h ↦ h
+    shift := fun k ↦ k
+    map_approx := fun _ _ _ h ↦ h }
+
+/-- Retraction $A_0^{\mathrm{diff}} \to A_1$: extracts the uniform derivative modulus via classical choice (`A0.toA1`). -/
+noncomputable def A0diff_to_A1_morphism (a b : Q) : RepMorphism (RepA0diff a b) (RepA1 a b) :=
+  { toFun := fun A ↦ A0.toA1 A.1 A.2
+    map_equiv := fun _ _ h ↦ h
+    shift := fun k ↦ k
+    map_approx := fun _ _ _ h ↦ h }
+
+/-- Embedding $E_1 \to E_0^{\mathrm{diff}}$: an approximating $E_1$ carries smooth data. -/
+def E1_to_E0diff_morphism (a b : Q) : RepMorphism (RepE1 a b) (RepE0diff a b) :=
+  { toFun := fun (E : E1) ↦ ⟨E.toE0, ⟨E.ω, ⟨E.δ, ⟨E.dq, ⟨E.cont, E.diff⟩⟩⟩⟩⟩
+    map_equiv := fun _ _ h ↦ h
+    shift := fun k ↦ k
+    map_approx := fun _ _ _ h ↦ h }
+
+/-- Retraction $E_0^{\mathrm{diff}} \to E_1$: extracts smoothness moduli via classical choice (`E0.toE1`). -/
+noncomputable def E0diff_to_E1_morphism (a b : Q) : RepMorphism (RepE0diff a b) (RepE1 a b) :=
+  { toFun := fun E ↦ E0.toE1 E.1 E.2
     map_equiv := fun _ _ h ↦ h
     shift := fun k ↦ k
     map_approx := fun _ _ _ h ↦ h }
@@ -409,6 +488,54 @@ theorem A0_prod_retract (a b : Q) :
     ((RepA0 a b) ⊗ᵣ (RepA0 a b)) ⪯ ((RepA0 a b) ⊗ᵣ (RepA0 a b)) :=
   RepLe.refl _
 
+/-- Retraction of $A_1$ into the restricted representation $A_0^{\mathrm{diff}}$. -/
+noncomputable def A1_retract_A0diff (a b : Q) : RepRetract (RepA1 a b) (RepA0diff a b) :=
+  { iota := A1_to_A0diff_morphism a b
+    pi := A0diff_to_A1_morphism a b
+    retract_id := fun _ ↦ ⟨rfl, rfl, fun _ _ _ ↦ rfl⟩ }
+
+/-- $A_1$ is a retract of the restricted representation $A_0^{\mathrm{diff}}$: $A_1 \preceq A_0^{\mathrm{diff}}$. -/
+theorem A1_le_A0diff (a b : Q) : (RepA1 a b) ⪯ (RepA0diff a b) :=
+  ⟨A1_retract_A0diff a b⟩
+
+/-- Retraction of $A_0^{\mathrm{diff}}$ into $A_1$. -/
+noncomputable def A0diff_retract_A1 (a b : Q) : RepRetract (RepA0diff a b) (RepA1 a b) :=
+  { iota := A0diff_to_A1_morphism a b
+    pi := A1_to_A0diff_morphism a b
+    retract_id := fun A ↦ (RepA0 a b).equiv_refl A.1 }
+
+/-- $A_0^{\mathrm{diff}}$ is a retract of $A_1$: $A_0^{\mathrm{diff}} \preceq A_1$. -/
+theorem A0diff_le_A1 (a b : Q) : (RepA0diff a b) ⪯ (RepA1 a b) :=
+  ⟨A0diff_retract_A1 a b⟩
+
+/-- Galois equivalence between $A_1$ and $A_0^{\mathrm{diff}}$: $A_1 \equiv_{r} A_0^{\mathrm{diff}}$. -/
+theorem A1_equiv_A0diff (a b : Q) : (RepA1 a b) ≃ᵣ (RepA0diff a b) :=
+  ⟨A1_le_A0diff a b, A0diff_le_A1 a b⟩
+
+/-- Retraction of $E_1$ into the restricted representation $E_0^{\mathrm{diff}}$. -/
+noncomputable def E1_retract_E0diff (a b : Q) : RepRetract (RepE1 a b) (RepE0diff a b) :=
+  { iota := E1_to_E0diff_morphism a b
+    pi := E0diff_to_E1_morphism a b
+    retract_id := fun _ ↦ ⟨rfl, rfl, fun _ _ _ _ ↦ rfl⟩ }
+
+/-- $E_1$ is a retract of the restricted representation $E_0^{\mathrm{diff}}$: $E_1 \preceq E_0^{\mathrm{diff}}$. -/
+theorem E1_le_E0diff (a b : Q) : (RepE1 a b) ⪯ (RepE0diff a b) :=
+  ⟨E1_retract_E0diff a b⟩
+
+/-- Retraction of $E_0^{\mathrm{diff}}$ into $E_1$. -/
+noncomputable def E0diff_retract_E1 (a b : Q) : RepRetract (RepE0diff a b) (RepE1 a b) :=
+  { iota := E0diff_to_E1_morphism a b
+    pi := E1_to_E0diff_morphism a b
+    retract_id := fun E ↦ (RepE0 a b).equiv_refl E.1 }
+
+/-- $E_0^{\mathrm{diff}}$ is a retract of $E_1$: $E_0^{\mathrm{diff}} \preceq E_1$. -/
+theorem E0diff_le_E1 (a b : Q) : (RepE0diff a b) ⪯ (RepE1 a b) :=
+  ⟨E0diff_retract_E1 a b⟩
+
+/-- Galois equivalence between $E_1$ and $E_0^{\mathrm{diff}}$: $E_1 \equiv_{r} E_0^{\mathrm{diff}}$. -/
+theorem E1_equiv_E0diff (a b : Q) : (RepE1 a b) ≃ᵣ (RepE0diff a b) :=
+  ⟨E1_le_E0diff a b, E0diff_le_E1 a b⟩
+
 #print axioms RepLe.refl
 #print axioms RepLe.trans
 #print axioms RepLe.prod_mono_id
@@ -416,10 +543,20 @@ theorem A0_prod_retract (a b : Q) :
 #print axioms A1_retract_self
 #print axioms E0_retract_self
 #print axioms E1_retract_self
+#print axioms A1_le_A0diff
+#print axioms A0diff_le_A1
+#print axioms A1_equiv_A0diff
+#print axioms E1_le_E0diff
+#print axioms E0diff_le_E1
+#print axioms E1_equiv_E0diff
 #print axioms GaloisAdequate.comp
 #print axioms A1_to_A0_morphism
 #print axioms A0_to_E0_morphism
 #print axioms A1_to_E1_morphism
 #print axioms E1_to_E0_morphism
+#print axioms A1_to_A0diff_morphism
+#print axioms A0diff_to_A1_morphism
+#print axioms E1_to_E0diff_morphism
+#print axioms E0diff_to_E1_morphism
 
 end HAomega

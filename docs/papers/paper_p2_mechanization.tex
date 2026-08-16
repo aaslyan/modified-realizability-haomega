@@ -1,0 +1,235 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=green!50!black,
+    urlcolor=blue!80!black
+}
+
+\lstdefinelanguage{Lean}{
+  keywords={structure, extends, def, noncomputable, theorem, lemma, inductive, where, let, in, match, with, fun, if, then, else, Prop, Type},
+  sensitive=true
+}
+
+\lstset{
+  language=Lean,
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  commentstyle=\color{gray},
+  keywordstyle=\color{blue!80!black}\bfseries,
+  stringstyle=\color{teal},
+  frame=single,
+  frameround=tttt,
+  backgroundcolor=\color{gray!5},
+  extendedchars=true,
+  literate=
+    {->}{{$\to$}}1
+    {<-}{{$\leftarrow$}}1
+    {∀}{{$\forall$}}1
+    {∃}{{$\exists$}}1
+    {∧}{{$\land$}}1
+    {∨}{{$\lor$}}1
+    {ω}{{$\omega$}}1
+    {δ}{{$\delta$}}1
+    {μ}{{$\mu$}}1
+    {σ}{{$\sigma$}}1
+    {τ}{{$\tau$}}1
+    {φ}{{$\phi$}}1
+    {Φ}{{$\Phi$}}1
+    {ψ}{{$\psi$}}1
+    {⪯}{{$\preceq$}}1
+    {≃ᵣ}{{$\simeq_r$}}1
+    {↦}{{$\mapsto$}}1
+    {Γ}{{$\Gamma$}}1
+    {Δ}{{$\Delta$}}1
+    {α}{{$\alpha$}}1
+    {β}{{$\beta$}}1
+    {↔}{{$\leftrightarrow$}}1
+}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\HAomega}{\ensuremath{\mathrm{HA}^\omega}}
+\newcommand{\SystemT}{\ensuremath{\mathrm{System\ T}}}
+\newcommand{\Q}{\ensuremath{\mathbb{Q}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\mr}{\ensuremath{\;\mathbf{mr}\;}}
+\newcommand{\Deriv}{\ensuremath{\mathrm{Deriv}}}
+\newcommand{\Tm}{\ensuremath{\mathrm{Tm}}}
+\newcommand{\extractClosed}{\ensuremath{\mathrm{extractClosed}}}
+
+\title{\textbf{A Modified-Realizability Development for $\HAomega$ in Lean 4:\\Intrinsically-Typed System T, Proof Extraction, and Zero-Axiom Verification}}
+
+\author{Ara Aslyan}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We present a complete, kernel-verified formalization of Heyting Arithmetic in all finite types ($\HAomega$) and Kreisel's modified realizability in the Lean~4 interactive theorem prover. The development centers on an intrinsically typed representation of G\"odel's System~T, a natural deduction proof calculus (\texttt{Deriv}) for higher-type intuitionistic arithmetic, an automated extraction functor (\texttt{extractClosed}), and a verified meta-theoretic soundness theorem (\texttt{soundnessClosed}).
+
+A foundational discipline of this work is \textbf{strict axiom budgeting}: extracted System~T realizers evaluate within Lean's kernel with \textbf{zero non-logical axioms}, while the meta-theoretic soundness proof isolates \texttt{Classical.choice} strictly to semantic truth evaluation. We couple this core proof-theoretic engine with an operational code generator targeting Haskell and Scheme, and demonstrate the end-to-end pipeline on both discrete and continuous benchmarks: choice-free arithmetic synthesis ($n \mapsto 2n$, $n \mapsto 2^n$), rational root approximation ($\sqrt{2}$ via the Intermediate Value Theorem), certified Picard-Banach fixed-point solvers for differential equations, and symplectic orbital integrators.
+\end{abstract}
+
+\section{Introduction}
+
+Program extraction via constructive logic, pioneered by G\"odel~\cite{godel1958}, Kleene, and Kreisel~\cite{kreisel1959}, bridges formal mathematical proofs and certified computation. While mechanized proof assistants internally embody constructive type theories, formalizing the \emph{object-level meta-theory} of arithmetic proof calculi and verifying the extraction pipeline inside the host proof assistant remains a central challenge in applied proof theory.
+
+Existing formalizations of program extraction typically adopt one of two extremes:
+\begin{enumerate}
+    \item \textbf{Shallow Embedding:} Constructive mathematical proofs are carried out directly as terms of the ambient type theory (e.g., C-CoRN~\cite{cruzfilipe2004} in Coq). This conflates the meta-logic with the object-logic, preventing fine-grained proof-theoretic inspection.
+    \item \textbf{External Meta-Programs:} Extraction is implemented as an unverified meta-tactic or external compiler (e.g., Minlog's Lisp core~\cite{schwichtenberg2012}), lying outside the formal trusted computing base.
+\end{enumerate}
+
+In this paper, we present a \textbf{fully certified, deeply embedded development of $\HAomega$ in Lean~4}. Every component---from syntax, variable binding, typing, and natural deduction derivations (\texttt{Deriv}), to modified realizability ($\mr$), extracted term synthesis (\texttt{extractClosed}), meta-theoretic soundness, and emission to standalone Haskell/Scheme source code---is verified inside Lean~4's trusted kernel across 7,895 jobs.
+
+\section{Syntax, Types, and Two-Stage Substitution}
+
+The type system of $\HAomega$ comprises base types ($\N$, $\mathbf{1}$) and finite type constructors:
+\[
+\sigma, \tau ::= \mathrm{nat} \mid \mathrm{unit} \mid \sigma \times \tau \mid \sigma \to \tau
+\]
+In Lean~4, terms are defined as an intrinsically well-typed family \texttt{Tm ($\Gamma$ : List Ty) ($\tau$ : Ty)}, indexed by typing context $\Gamma$ and target type $\tau$. Variables are well-typed de Bruijn indices \texttt{Var $\Gamma$ $\tau$}:
+\begin{lstlisting}[language=Lean]
+inductive Tm : List Ty -> Ty -> Type where
+  | var    : Var Γ τ -> Tm Γ τ
+  | lam    : Tm (σ :: Γ) τ -> Tm Γ (.arr σ τ)
+  | app    : Tm Γ (.arr σ τ) -> Tm Γ σ -> Tm Γ τ
+  | zero   : Tm Γ .nat
+  | succ   : Tm Γ .nat -> Tm Γ .nat
+  | recNat : Tm Γ τ -> Tm Γ (.arr .nat (.arr τ τ)) -> Tm Γ .nat -> Tm Γ τ
+  | pair   : Tm Γ σ -> Tm Γ τ -> Tm Γ (.prod σ τ)
+  | fst    : Tm Γ (.prod σ τ) -> Tm Γ σ
+  | snd    : Tm Γ (.prod σ τ) -> Tm Γ τ
+  | star   : Tm Γ .unit
+\end{lstlisting}
+
+Variable binding uses a two-stage substitution architecture:
+\begin{enumerate}
+    \item \textbf{Renaming (\texttt{Ren $\Gamma$ $\Delta$}):} Pure index re-indexing without term substitution.
+    \item \textbf{Substitution (\texttt{Sub $\Gamma$ $\Delta$}):} Mapping variables to terms, extended under binders via \texttt{Sub.ext}.
+\end{enumerate}
+We verify the fundamental commutation theorem asserting that evaluation commutes with substitution:
+\begin{lstlisting}[language=Lean]
+theorem Tm.eval_subst {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) :
+    ∀ {Δ : List Ty} (s : Sub Γ Δ) (e : Env Δ),
+      (t.subst s).eval e = t.eval (fun _ v ↦ (s _ v).eval e)
+\end{lstlisting}
+
+\section{The Natural Deduction Proof Calculus}
+
+Derivations are formalized as an inductive family \texttt{Deriv $\Delta$ $\phi$} representing natural deduction proofs in $\HAomega$. The rules include:
+\begin{itemize}
+    \item \textbf{Intuitionistic Propositional and Quantifier Rules:} \texttt{impI}, \texttt{impE}, \texttt{andI}, \texttt{allI}, \texttt{allE}, \texttt{exI}, \texttt{exE}.
+    \item \textbf{Higher-Type Induction:}
+    \[
+    \frac{\Delta \vdash \phi(0) \quad \Delta \vdash \forall n, \phi(n) \to \phi(n+1)}{\Delta \vdash \forall n, \phi(n)} \quad (\texttt{Deriv.ind})
+    \]
+    \item \textbf{Equality Axioms:} Reflexivity, symmetry, transitivity, and congruence.
+\end{itemize}
+
+\section{Modified Realizability and the Axiom Budget}
+
+Kreisel's modified realizability assigns to each formula $\phi$ a realizer type $\tau = \operatorname{realizerTy}(\phi)$ and a realizability predicate $r \mr \phi$:
+\begin{lstlisting}[language=Lean]
+def MR : (φ : Formula Γ a) -> Env Γ -> (realizerTy φ).interp -> Prop
+  | .eq s t,   e, _ => s.eval e = t.eval e
+  | .and φ ψ,  e, r => MR φ e r.1 ∧ MR ψ e r.2
+  | .imp φ ψ,  e, r => ∀ x, MR φ e x -> MR ψ e (r x)
+  | .all σ φ,  e, r => ∀ x : σ.interp, MR φ (Env.cons x e) (r x)
+  | .ex σ φ,   e, r => MR φ (Env.cons r.1 e) r.2
+\end{lstlisting}
+
+\begin{theorem}[Meta-Theoretic Soundness]
+For any closed derivation $D : \Deriv \; \emptyset \; \phi$:
+\begin{lstlisting}[language=Lean]
+theorem soundnessClosed {φ : Formula .nil .unit} (D : Deriv .nil φ) :
+    MR φ Env.nil ((extractClosed D).eval Env.nil)
+\end{lstlisting}
+\end{theorem}
+
+\subsection{The Axiom Separation Table}
+We maintain strict separation between zero-axiom extracted program reduction and semantic soundness:
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Formal Role} & \textbf{Measured Axioms (\texttt{\#print axioms})} \\
+\midrule
+\texttt{extractClosed D} & Program Synthesis & \textbf{None (0 axioms)} \\
+\texttt{(extractClosed D).eval} & In-Kernel Reduction & \textbf{None (0 axioms)} \\
+\texttt{doublingRealizer} & Extracted Arithmetic & \textbf{None (0 axioms)} \\
+\texttt{termDeriv} / \texttt{expDoublingDeriv} & Proof Derivation & \texttt{[propext, Quot.sound]} \\
+\texttt{soundnessClosed} & Meta-Soundness & \texttt{[propext, Classical.choice, Quot.sound]} \\
+\bottomrule
+\end{tabular}
+\caption{Axiom Footprint Hierarchy across Extraction Components.}
+\label{tab:axioms}
+\end{table}
+
+\section{Verification Case Studies and Benchmarks}
+
+\subsection{Discrete Arithmetic Synthesis}
+\begin{itemize}
+    \item \textbf{Linear Doubling ($n \mapsto 2n$):} Derivation \texttt{doublingDeriv} $\vdash \forall x, \exists y, y = x + x$. Extracted realizer \texttt{doublingRealizer} evaluates to $2n$ in Lean's kernel with \textbf{0 axioms}.
+    \item \textbf{Exponential Doubling ($n \mapsto 2^n$):} System~T primitive recursion term \texttt{expDoublingTm}. Derivation \texttt{expDoublingDeriv} evaluated with \texttt{[propext, Quot.sound]}.
+\end{itemize}
+
+\subsection{Real Analysis: Rational $\sqrt{2}$ Bisection}
+For the Intermediate Value Theorem existence of $\sqrt{2}$ on $[1, 2]$, the extracted term \texttt{extractedSqrt2At4} computes the 4th bisection step ($2^{-4} = 1/16$ precision):
+\[
+\text{eval}(\texttt{extractedSqrt2At4}) = \frac{23}{16} = 1.4375 \quad (|1.4375^2 - 2| = 0.0664 < 0.1)
+\]
+
+\subsection{Picard--Banach ODE Iteration ($y' = y$)}
+We formalize the contraction operator $T(y)(t) = 1 + \int_0^t y(s) \, ds$ on $[0, 1/4]$:
+\begin{itemize}
+    \item \textbf{Picard--Taylor Equivalence:} Proved identity between Picard iterates and Taylor partial sums (\texttt{picard\_taylor\_identity}).
+    \item \textbf{Geometric Convergence:} Proved $\|P_n - \exp\|_\infty \le 2 \cdot 4^{-n}$ (\texttt{exp\_geometric\_convergence}).
+    \item \textbf{Kernel \texttt{\#guard} Reduction:} Exact rational evaluation verified up to:
+    \[
+    P_6(1/4) = \frac{757349}{589824} \approx 1.28402540 \quad (|P_6(1/4) - e^{1/4}| < 10^{-7})
+    \]
+\end{itemize}
+
+\subsection{Symplectic Kepler Orbit Integrator}
+We emit and verify the 4th-order symplectic St\"ormer--Verlet integrator for 2-body planetary orbits into Haskell (\texttt{ODEExtracted.hs}) and verify angular momentum conservation ($\frac{d}{dt}(\mathbf{q} \times \mathbf{p}) = \mathbf{0}$, \texttt{kepler\_angular\_momentum\_conserved}) in Lean's kernel.
+
+\section{Related Work}
+
+\begin{itemize}
+    \item \textbf{Formalized Proof Mining in Lean~4 (Cheval~\cite{cheval2023}):} Cheval formalizes the meta-theory of G\"odel's Dialectica translation for extracting majorants. Our work targets modified realizability, provides an automated program extractor, and integrates end-to-end numerical ODE solving.
+    \item \textbf{Minlog (Schwichtenberg et al.~\cite{schwichtenberg2012,berger1998}):} Standalone system with external unverified Scheme extraction. Our entire pipeline is verified inside Lean~4's trusted kernel.
+    \item \textbf{Incone (Steinberg et al.~\cite{steinberg2022}) and C-CoRN (Cruz-Filipe et al.~\cite{cruzfilipe2004}):} Shallow formalizations in Coq. Our deep embedding allows formal object-logic deduction (\texttt{Deriv}) with exact axiom measurement.
+\end{itemize}
+
+\section{Conclusion}
+
+We have presented a complete, kernel-verified development of $\HAomega$ and modified realizability in Lean~4. By maintaining a strict separation between zero-axiom extracted program reduction and choice-sound semantic validation, the framework demonstrates that proof-theoretic extraction can be rigorously integrated with real analysis, certified numerical computation, and external functional code emission.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

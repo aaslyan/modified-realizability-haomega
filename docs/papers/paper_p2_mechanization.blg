@@ -1,0 +1,49 @@
+This is BibTeX, Version 0.99e (TeX Live 2026/Homebrew)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: paper_p2_mechanization.aux
+The style file: plain.bst
+Database file #1: references.bib
+Warning--empty journal in berger1998
+Warning--empty journal in kreisel1959
+You've used 7 entries,
+            2118 wiz_defined-function locations,
+            547 strings with 5250 characters,
+and the built_in function-call counts, 2453 in all, are:
+= -- 258
+> -- 83
+< -- 3
++ -- 33
+- -- 26
+* -- 143
+:= -- 385
+add.period$ -- 23
+call.type$ -- 7
+change.case$ -- 33
+chr.to.int$ -- 0
+cite$ -- 9
+duplicate$ -- 104
+empty$ -- 203
+format.name$ -- 26
+if$ -- 538
+int.to.chr$ -- 0
+int.to.str$ -- 7
+missing$ -- 7
+newline$ -- 38
+num.names$ -- 14
+pop$ -- 42
+preamble$ -- 1
+purify$ -- 27
+quote$ -- 0
+skip$ -- 86
+stack$ -- 0
+substring$ -- 181
+swap$ -- 33
+text.length$ -- 3
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 26
+warning$ -- 2
+while$ -- 27
+width$ -- 8
+write$ -- 77
+(There were 2 warnings)

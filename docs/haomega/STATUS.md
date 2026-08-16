@@ -1317,11 +1317,15 @@ see §7 for why the first is not statable here.
     - `docs/media/`: 5 high-resolution scientific diagrams (`vanderpol_limit_cycle.jpg`, `lotka_volterra_orbits.jpg`, `duffing_double_well.jpg`, `lorenz_butterfly_attractor.jpg`, `kepler_orbit_mechanics.jpg`).
     - `docs/showcase/`: 5 publication-ready LinkedIn post drafts (`post1_vanderpol.md`, `post2_lotka_volterra.md`, `post3_duffing.md`, `post4_lorenz.md`, `post5_kepler.md`).
 
-27. **`HAomega/CentralAdequacy.lean` (The Central Adequacy Theorem: MR-to-Rep Bridge)**:
+27. **`HAomega/CentralAdequacy.lean` (The Central Adequacy Theorem: MR-to-Rep Bridge & Concrete Instances)**:
     - **`soundnessClosed`**: Formalized soundness of closed $\mathrm{HA}^\omega$ derivations in the empty environment.
     - **`RepOf`**: Formalized explicit-carrier representations over System T types $\sigma.\text{interp}$.
     - **`central_adequacy_theorem`**: Proved that any closed $\mathrm{HA}^\omega$ natural deduction derivation of $\forall x : \sigma, \exists y : \tau, \Phi(x, y)$ directly produces an effective, choice-free representation realizer preserving code equivalence and satisfying the mathematical relation $P(x, y)$.
     - **`central_galois_realizer`**: Systematically turns any constructive theorem proof into an operational `GaloisAdequate RX.toRep RY.toRep F` morphism in $\mathbf{Rep}$.
+    - **`RepNat` & `termDeriv`**: Canonical discrete natural representation and generic derivation compiler for closed terms $t : \mathrm{Tm}\ [\mathrm{nat}]\ \mathrm{nat}$ (0-axiom derivation in `Deriv`).
+    - **`doubling_central_adequacy` & `doublingGaloisRealizer`**: Concrete central adequacy instance extracting a verified $\mathbf{Rep}$-morphism for linear doubling $n \mapsto 2n$.
+    - **`exp_doubling_central_adequacy` & `expDoublingGaloisRealizer`**: Concrete central adequacy instance extracting a verified $\mathbf{Rep}$-morphism for exponential doubling $n \mapsto 2^n$ via System T primitive recursion (`recNat`).
+
 28. **`HAomega/CategoryRep.lean` (Milestone 2: Category $\mathbf{Rep}$ & Modulus Propagation)**:
     - **`RepMorphism.comp_shift`**: $\mu_{g \circ f}(k) = \mu_f(\mu_g(k))$ (0-axiom).
     - **`RepMorphism.comp_id_left/right`**, **`comp_assoc`**, **`comp_shift_assoc`**: Full category laws (0-axiom).
@@ -1345,12 +1349,15 @@ see §7 for why the first is not statable here.
     - **`modulus_monoid_laws`**: The modulus algebra forms a monoid (0-axiom).
     - **`GaloisAdequate.weaken_modulus`**: Modulus weakening preserves adequacy (0-axiom).
 
-31. **`HAomega/SmoothnessHierarchy.lean` (Milestone 5: The Smoothness Hierarchy $A_0 \subset A_1 \subset \dots$)**:
+31. **`HAomega/SmoothnessHierarchy.lean` & `HAomega/GaloisAdequacy.lean` (Milestone 5: The Smoothness Hierarchy & Retract Preorder $\preceq$)**:
     - **`SmoothnessLevel`**: Indexed $C^n$ data with modulus vector $\vec{\delta}$.
     - **`forget_derivative_shift`**: $A_1 \to A_0$ has identity modulus.
     - **`integration_increases_smoothness`**: Integration lifts $A_0 \to E_1$.
     - **`calibration_square_consistent`**: The ladder diagram commutes.
     - **`calibration_total_shift`**: Both paths through the square have identity shift.
+    - **Cross-Representation Retracts & Galois Equivalences**:
+      - `A1_le_A0diff_hierarchy` / `A1_le_A0diff` ($A_1 \preceq A_0^{\text{diff}}$) and `A0diff_le_A1_hierarchy` / `A0diff_le_A1` ($A_0^{\text{diff}} \preceq A_1$) $\implies$ `A1_equiv_A0diff_hierarchy` ($A_1 \simeq_r A_0^{\text{diff}}$).
+      - `E1_le_E0diff_hierarchy` / `E1_le_E0diff` ($E_1 \preceq E_0^{\text{diff}}$) and `E0diff_le_E1_hierarchy` / `E0diff_le_E1` ($E_0^{\text{diff}} \preceq E_1$) $\implies$ `E1_equiv_E0diff_hierarchy` ($E_1 \simeq_r E_0^{\text{diff}}$).
 
 32. **`HAomega/GenericBanach.lean` (Milestone 6: Generic Represented Metric Spaces & Banach Engine)**:
     - **`RepMetricSpace`**: Represented metric space with computable code-level distance.

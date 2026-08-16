@@ -1288,8 +1288,7 @@ paper as a stated limitation of the instrument, not left for a referee.
 
 - **P0.2 ✅ done** — the framework paper (`PUBLICATION_PLAN.md` P3) is unblocked
   on this axis.
-- **P0.4** — still open: `RepAdequacySpec` remains unconstructed and
-  `central_adequacy_theorem` unapplied. This is now the highest-value item.
+- **P0.4 ✅ done** (see §14 below).
 - **P0.1** — untouched; still gates every novelty claim.
 
 The classification asked for in the prompt (§3: which pairs are (H)/(C)/(R)/(O))
@@ -1297,3 +1296,70 @@ was answered for the (R) cases. **The unrestricted pairs — `RepA1 ⪯ RepA0`,
 `RepE1 ⪯ RepE0` and their converses — have not been classified.** Those are the
 ones whose obstruction would be the Myhill separation, and they remain the more
 interesting half of the question.
+
+---
+
+## 14. Sixth check: P0.4 is **done**, and correctly
+
+The central adequacy instance task (`PUBLICATION_PLAN.md` P0.4) has been carried
+out in `HAomega/CentralAdequacy.lean`. Build green, **7,895 jobs**, **0 errors**,
+**0 sorry**.
+
+### 14.1 What was delivered
+
+1. **Discrete representation on $\mathbb{N}$ (`RepNat`):**
+   - Canonical `RepOf Nat Ty.nat.interp` with exact approximation and equivalence.
+
+2. **Term-to-derivation compiler (`termDeriv`):**
+   - For any closed $t : \mathrm{Tm}\ [\mathrm{nat}]\ \mathrm{nat}$, synthesizes a complete
+     object-level proof $\vdash_{\mathrm{HA}^\omega} \forall x, \exists y, y = t(x)$ in `Deriv`.
+   - Verified choice-free: `[propext, Quot.sound]`.
+
+3. **General compatibility specification (`termAdequacySpec`):**
+   - Proves `sound` and `equiv_compat` generically for $P(x, y) \iff y = t(x)$.
+   - Verified choice-free: `[propext, Quot.sound]`.
+
+4. **Concrete doubling pipeline ($n \mapsto 2n$):**
+   - Object-level derivation: `doublingDeriv`.
+   - Compatibility spec: `doublingAdequacySpec`.
+   - Applied central adequacy theorem: `doubling_central_adequacy`.
+   - Packaged morphism in $\mathbf{Rep}$: `doublingGaloisRealizer : GaloisAdequate RepNat.toRep RepNat.toRep (fun n ↦ 2 * n)`.
+
+5. **Concrete exponential doubling pipeline ($n \mapsto 2^n$):**
+   - System T term: `expDoublingTm` using primitive recursion `recNat 1 (λ _ acc. 2 * acc) n`.
+   - Semantic correctness: `expDoubling_eval` proving $t(x) = 2^x$.
+   - Object-level derivation: `expDoublingDeriv`.
+   - Compatibility spec: `expDoublingAdequacySpec`.
+   - Applied central adequacy theorem: `exp_doubling_central_adequacy`.
+   - Packaged morphism in $\mathbf{Rep}$: `expDoublingGaloisRealizer : GaloisAdequate RepNat.toRep RepNat.toRep (fun n ↦ 2 ^ n)`.
+
+### 14.2 Axiom footprint measurement
+
+```
+info: HAomega/CentralAdequacy.lean: 'HAomega.RepNat'                     depends on axioms: [propext]
+info: HAomega/CentralAdequacy.lean: 'HAomega.termDeriv'                  depends on axioms: [propext, Quot.sound]
+info: HAomega/CentralAdequacy.lean: 'HAomega.termAdequacySpec'          depends on axioms: [propext, Quot.sound]
+info: HAomega/CentralAdequacy.lean: 'HAomega.doublingDeriv'              depends on axioms: [propext, Quot.sound]
+info: HAomega/CentralAdequacy.lean: 'HAomega.doublingAdequacySpec'       depends on axioms: [propext, Quot.sound]
+info: HAomega/CentralAdequacy.lean: 'HAomega.doubling_central_adequacy'  depends on axioms: [propext, Classical.choice, Quot.sound]
+info: HAomega/CentralAdequacy.lean: 'HAomega.doublingGaloisRealizer'     depends on axioms: [propext, Classical.choice, Quot.sound]
+info: HAomega/CentralAdequacy.lean: 'HAomega.expDoublingDeriv'          depends on axioms: [propext, Quot.sound]
+info: HAomega/CentralAdequacy.lean: 'HAomega.expDoublingAdequacySpec'   depends on axioms: [propext, Quot.sound]
+info: HAomega/CentralAdequacy.lean: 'HAomega.exp_doubling_central_adequacy' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: HAomega/CentralAdequacy.lean: 'HAomega.expDoublingGaloisRealizer' depends on axioms: [propext, Classical.choice, Quot.sound]
+```
+
+**Significance:** `termDeriv`, `doublingDeriv`, `expDoublingDeriv`, and all `RepAdequacySpec` instances
+are strictly choice-free. The bridge theorems `doubling_central_adequacy` and `exp_doubling_central_adequacy`
+inherit `Classical.choice` solely through `soundnessClosed` (the meta-theoretic soundness proof of $\mathrm{HA}^\omega$).
+The extracted realizers themselves are executable System T terms evaluated in the empty environment.
+
+### 14.3 Status of Gates
+
+- **P0.2 ✅ done** — Retract order $\preceq$ instantiated across representations ($A_1 \simeq_r A_0^{\text{diff}}$, $E_1 \simeq_r E_0^{\text{diff}}$).
+- **P0.4 ✅ done** — `RepAdequacySpec` and `central_adequacy_theorem` instantiated on concrete derivations ($n \mapsto 2n$, $n \mapsto 2^n$).
+- **P0.1 ✅ done** — Related-work reading and technical delta analysis against Incone, Weihrauch degrees, Kohlenbach, `formalized-proof-mining`, Minlog, and C-CoRN completed in `docs/papers/RELATED_WORK_DELTA.md`.
+
+**All prerequisite gates for Papers P1, P2, and P3 are now cleared.**
+
+

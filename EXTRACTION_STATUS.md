@@ -1,24 +1,24 @@
 # Formal Extraction Status Report — HAomega
 
-This report provides the audited status of program extraction in `HAomega` across all 456 `#guard`/`#eval` verification points, strictly categorizing each into **EXTRACTED**, **OBJECT-RUN**, and **PLAIN**, detailing the mathematical specification content, tautological status, stopping criteria extraction for Banach contractions, certified 2-D objects, function-valued integral extraction, constructive Weierstrass polynomial approximation, the constructive inverse function operator, and the honest analysis assessment.
+This report provides the audited status of program extraction in `HAomega` across all 472 `#guard`/`#eval` verification points, strictly categorizing each into **EXTRACTED**, **OBJECT-RUN**, and **PLAIN**, detailing the mathematical specification content, tautological status, stopping criteria extraction for Banach contractions, certified 2-D objects, function-valued integral extraction, constructive Weierstrass polynomial approximation, the constructive inverse function operator, constructive mollification, and the honest analysis assessment.
 
 ---
 
 ## A. Headline Table
 
-Across `HAomega/*.lean`, verified proof extraction (**EXTRACTED**) accounts for **192** guards:
+Across `HAomega/*.lean`, verified proof extraction (**EXTRACTED**) accounts for **208** guards:
 
 | Tier | Count | Description |
 |---|---|---|
-| **EXTRACTED** | **192** | Programs extracted via `extractClosed (d : Deriv)` from proof derivations |
+| **EXTRACTED** | **208** | Programs extracted via `extractClosed (d : Deriv)` from proof derivations |
 | **OBJECT-RUN** | **30** | Hand-written System T terms (`Tm`) executed via `Tm.eval Env.nil` without a `Deriv` tree |
 | **PLAIN** | **234** | Ordinary Lean mathematics, dyadic/rational arithmetic substrate, and reference algorithms |
-| **Total** | **456** | All kernel verification points across the entire library |
+| **Total** | **472** | All kernel verification points across the entire library |
 
 ### Raw `classify.py` Output
 
 ```
-TOTALS: {'EXTRACT': 192, 'Tm.eval': 30, 'PLAIN': 234} sum: 456
+TOTALS: {'EXTRACT': 208, 'Tm.eval': 30, 'PLAIN': 234} sum: 472
 AnalysisDeriv.lean               {'EXTRACT': 8, 'Tm.eval': 0, 'PLAIN': 0}
 BanachInstance.lean              {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 14}
 BanachModulus.lean               {'EXTRACT': 9, 'Tm.eval': 0, 'PLAIN': 0}
@@ -58,6 +58,7 @@ IntegrationByParts.lean          {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 3}
 InverseFunction.lean             {'EXTRACT': 13, 'Tm.eval': 0, 'PLAIN': 0}
 Isoperimetric.lean               {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 6}
 Modulus.lean                     {'EXTRACT': 0, 'Tm.eval': 0, 'PLAIN': 3}
+Mollification.lean               {'EXTRACT': 16, 'Tm.eval': 0, 'PLAIN': 0}
 NewtonRaphson.lean               {'EXTRACT': 15, 'Tm.eval': 0, 'PLAIN': 0}
 NumericsDemo.lean                {'EXTRACT': 0, 'Tm.eval': 3, 'PLAIN': 1}
 ODEDemo.lean                     {'EXTRACT': 18, 'Tm.eval': 0, 'PLAIN': 14}
@@ -85,6 +86,7 @@ Weierstrass.lean                 {'EXTRACT': 22, 'Tm.eval': 0, 'PLAIN': 0}
 
 | Quantity / Object | Fast Program (Specification) | Certifying Derivation (Specification) | Agreement Checked in Kernel |
 |---|---|---|---|
+| **Constructive Mollification Operator** | — | `mollifierModulusD` ($\forall f, \forall j$, **GENUINE**) | Lifts raw signals to smoothed functions $\mathcal{S}_h(f)$ gaining Lipschitz regularity and extracts modulus $M(n) = n + j$. Kernel guards verify affine preservation $\mathcal{S}_h(ax+b)=ax+b$, smoothing jump discontinuities (Heaviside step and signum), triangular peak decay, and exact quadratic shift invariant $\mathcal{S}_h^m(x^2)(0) = m \cdot h^2/2$. |
 | **Constructive Inverse Function Operator** | — | `inverseFunctionD` ($\forall f, \forall j$, **GENUINE**) | Lifts pointwise crossings (`fnCrossingD`) to an arrow-type functional $g = f^{-1}$ and extracts modulus of uniform continuity $M(n) = n + j$. Kernel guards verify affine inverse $f(x)=2x+1 \implies g(5)=2, g(7)=3$, cubic inverse $f(x)=x^3+x \implies g(2)=1, g(10)=2, g(30)=3$, quintic inverse $f(x)=x^5+x \implies g(34)=2$, and mirrored graph identities $g(f(x)) = x$. |
 | **Constructive Weierstrass Approximator** | — | `weierstrassApproxD` ($\forall f, \forall \omega, \forall k_0$, **GENUINE**) | Extracts degree selector $N(n) = n + k_0$ and polynomial functional `weierstrassPoly`. Kernel guards verify exact affine reproduction $B_N(x) = x$, quadratic signature $B_N(x^2)(1/2) = 1/4 + 1/(4N)$ ($1/2, 3/8, 5/16, 9/32$), cubic $B_N(x^3)(1/2) = 1/8 + 3/(8N)$ ($1/2, 5/16, 7/32, 11/64$), and exact boundary containment. |
 | **Upper-Limit Riemann Integral** | — | `riemannIntegralD` / `lipschitzModulusD` ($\forall f, \forall j, \forall N$, **GENUINE**) | Extracts integral function $F(x) = \mathrm{tmRiemannSum}(f, x/N, N)$ and certified uniform continuity modulus $M(n) = n + j$. Kernel guards verify $F(0) = 0$, $f=1 \implies F(x) = x$, $f=x \implies F(1) = \frac{N-1}{2N}$, and Lipschitz sharpness. |
@@ -102,6 +104,7 @@ Weierstrass.lean                 {'EXTRACT': 22, 'Tm.eval': 0, 'PLAIN': 0}
 ## C. Honest Analysis Assessment
 
 ### 1. What is certified?
+* **For Mollification (`Mollification.lean`):** `mollifierModulusD` quantifies over the bounded/rough function $f : \mathbb{Q} \to \mathbb{Q}$ and bound scale $j$, certifying the extracted smoothed function `mollifyEval` and uniform continuity modulus $M(n) = n + j$.
 * **For the Inverse Function Operator (`InverseFunction.lean`):** `inverseFunctionD` quantifies over the monotone function $f : \mathbb{Q} \to \mathbb{Q}$ and slope bound $j$, certifying the inverse function evaluator `inverseEval` and uniform continuity modulus $M(n) = n + j$.
 * **For Weierstrass Approximation (`Weierstrass.lean`):** `weierstrassApproxD` quantifies over the continuous function $f : \mathbb{Q} \to \mathbb{Q}$, modulus $\omega$, and bound $k_0$, certifying the polynomial degree selector $N(n) = n + k_0$ and polynomial approximator `weierstrassPoly` achieving uniform error $< 2^{-n}$.
 * **For Continuous Integration (`IntegralModulus.lean`):** The indefinite integral function $F(x) = \mathrm{tmRiemannSum}(f, x/N, N)$ is extracted directly as a System T function and equipped with certified uniform continuity modulus $M(n) = n + j$.
@@ -110,10 +113,11 @@ Weierstrass.lean                 {'EXTRACT': 22, 'Tm.eval': 0, 'PLAIN': 0}
   $$y^2 \le \Phi(x) < (y + 2^{-n})^2$$
 
 ### 2. What is not certified?
+* **For Mollification:** The global $C^\infty$ limit when $h \to 0$ requires infinitesimal analysis not formalized in finitary System T.
 * **For the Inverse Function Operator:** Global existence of roots on unbounded domains requires a finite bracket cutoff $K$ supplied by the caller.
 * **For Weierstrass Approximation:** The algebraic expansion of higher-degree Bernstein polynomial variance on non-monomial terms is computed in Lean arithmetic rather than formal natural deduction within `Deriv`.
 * **For Continuous Integration:** Proving reverse differentiation ($F' = f$) requires higher-order regularity not formalized in this stage.
 * **For Banach Contractions:** The theorem treats the dyadic contraction ratio $c = 1/2$. General non-dyadic constants $c < 1$ require logarithmic conversions not yet formalized in `Deriv`.
 
 ### 3. Is this real mathematics recovered, or a demonstration?
-It is a **genuine, constructive demonstration of certified numerical analysis and higher-type functional extraction**. The constructive inverse function operator, the constructive Weierstrass polynomial approximator, the certified Banach stopping rule, the certified 2-D implicit curve plotter, and the extracted function-valued continuous integral with modulus are genuine constructive artifacts, proved without tautological shortcuts (`∃y. y = t`).
+It is a **genuine, constructive demonstration of certified numerical analysis and higher-type functional extraction**. The constructive mollification smoothing operator, the constructive inverse function operator, the constructive Weierstrass polynomial approximator, the certified Banach stopping rule, the certified 2-D implicit curve plotter, and the extracted function-valued continuous integral with modulus are genuine constructive artifacts, proved without tautological shortcuts (`∃y. y = t`).

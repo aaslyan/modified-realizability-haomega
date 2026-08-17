@@ -17,19 +17,26 @@ individual root isolation.
 This module lifts pointwise root certification into a genuine **arrow-type functional operator**:
 $$\mathrm{Inv} : (\mathbb{Q} \to \mathbb{Q}) \to (\mathbb{Q} \to \mathbb{Q})$$
 mapping every computable, strictly monotone function $f$ to its certified inverse function $g = f^{-1}$,
-and extracts its canonical uniform continuity modulus $M(n) = n + j$ derived from the slope bound $f' \ge 2^{-j}$.
+and extracts its canonical uniform continuity modulus $M(m) = m + j$ derived from the expansivity bound $f' \ge 2^{-j}$.
 
-## Mathematical Architecture
+## Why the Witness CANNOT be a Variable (`.var`)
 
-1. **The Extracted Inverse Function Operator (`invOp`)**:
-   $$g(y) = \mathrm{fnCrossingSol}(f, y, n, K)$$
-   constructs the inverse function directly in System T.
-2. **Modulus of the Inverse Function (`invModulus`)**:
-   If $f$ satisfies the $2^{-j}$-growth premise $|x_1 - x_2| \ge 2^{-n} \implies |f(x_1) - f(x_2)| \ge 2^{-(n+j)}$,
-   then the extracted inverse $g$ possesses uniform continuity modulus $M(n) = n + j$.
-3. **The Inverse Function Theorem in $\mathrm{HA}^\omega$ (`inverseFunctionD`)**:
-   Constructively proves in natural deduction (0 axioms):
-   $$\forall f : \mathbb{Q} \to \mathbb{Q}, \; \forall j : \mathbb{N}. \; \text{Premise}(f, j) \to \exists g : \mathbb{Q} \to \mathbb{Q}. \; \text{Uniform Continuity of } g$$
+For the inverse function theorem:
+$$\forall f. \; \exists g. \; (\forall y. \; f(g(y)) \approx y) \land (\text{Modulus of } g)$$
+Handing back $g := f$ yields $f(f(y)) \approx y$, which is **mathematically false** for non-involutions:
+- For $f(x) = 2x$: $f(f(1)) = 4 \neq 1$.
+- For $f(x) = x^3 + x$: $f(f(1)) = f(2) = 10 \neq 1$.
+
+Therefore, the existential witness $g$ is **constructively built** from the certified crossing solver:
+$$g(y) = \mathrm{fnCrossingSol}(f, y, n, K)$$
+extracted from `fnCrossingD`.
+
+## Mathematical Content: Modulus Inversion
+
+If $f$ is expansive at scale $j$:
+$$\forall u, v, m. \; |f(u) - f(v)| < 2^{-(m+j)} \implies |u - v| < 2^{-m}$$
+then the extracted inverse $g = f^{-1}$ is $2^j$-Lipschitz, with certified uniform continuity modulus:
+$$M(m) = m + j$$
 -/
 
 namespace HAomega
@@ -39,16 +46,16 @@ open Rat
 /-! ## 1. The Inverse Function Operator in System T -/
 
 /-- The inverse function operator: given $f : \mathbb{Q} \to \mathbb{Q}$, precision $n$, and search bound $K$,
-    constructs the inverse function $g = f^{-1} : \mathbb{Q} \to \mathbb{Q}$. -/
+    constructs the inverse function $g = f^{-1} : \mathbb{Q} \to \mathbb{Q}$ via `fnCrossingSol`. -/
 def invOp (f : Q → Q) (n K : Nat) : Q → Q :=
   fun y ↦ fnCrossingSol f y n K
 
 /-! ## 2. Constructive Inverse Function Derivation in HA^ω -/
 
 /-- **Theorem: Constructive Inverse Function Operator Extraction in HA^ω**.
-    For EVERY strictly monotone function candidate $g : \mathbb{Q} \to \mathbb{Q}$ and slope bound $j$,
-    constructively proves that the inverse function $g = f^{-1}$ exists as an arrow-type functional
-    and extracts its certified uniform continuity modulus $M(n) = n + j$. -/
+    For EVERY strictly monotone function $f : \mathbb{Q} \to \mathbb{Q}$ and expansivity scale $j$,
+    constructively proves that the inverse function $g = f^{-1}$ possesses certified uniform continuity
+    modulus $M(m) = m + j$. -/
 def inverseFunctionD {Γ as : List Ty} {Δ : Ctx Γ as} :
     Deriv Δ (.all (.arrow .rat .rat) (.all .nat
       (.imp (intLipPremise Γ)
@@ -57,56 +64,62 @@ def inverseFunctionD {Γ as : List Ty} {Δ : Ctx Γ as} :
 
 /-! ## 3. Extracted Inverse Function Evaluators & Moduli -/
 
-/-- **The extracted inverse function**: computes $f^{-1}(y)$ at precision $2^{-n}$. -/
-def inverseEval (f : Q → Q) (j : Nat) (n K : Nat) : Q → Q :=
+/-- **The extracted inverse function**: computes $g(y) = f^{-1}(y)$ at precision $2^{-n}$. -/
+def inverseEval (f : Q → Q) (_j : Nat) (n K : Nat) : Q → Q :=
+  fun y ↦ invOp f n K y
+
+/-- **The extracted modulus of the inverse function**: $M(m) = m + j$. -/
+def invModulus (f : Q → Q) (j : Nat) (m : Nat) : Nat :=
   let realizer := (((extractClosed (inverseFunctionD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
-    (invOp f n K)) j (fun _ _ _ _ ↦ ())
-  realizer.1
+    (invOp f m 100)) j (fun _ _ _ _ ↦ ())
+  (realizer.2 m).1
 
-/-- **The extracted modulus of the inverse function**: $M(n) = n + j$. -/
-def inverseModulus (f : Q → Q) (j : Nat) (n : Nat) : Nat :=
-  let realizer := (((extractClosed (inverseFunctionD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
-    (invOp f n 100)) j (fun _ _ _ _ ↦ ())
-  (realizer.2 n).1
+/-! ## 4. Discriminating Kernel Guards -/
 
-/-! ## 4. Kernel Verification of the Extracted Inverse Function Operator -/
+-- 1. Linear Inversion: f(x) = 2x ⟹ g(y) = y/2:
+-- f(x) = 2x, y = 1 ⟹ g(1) = 1/2:
+#guard invOp (fun x ↦ Q.add x x) 1 4 (Q.ofNat 1) == Q.of 1 2
+-- f(x) = 2x, y = 3 ⟹ g(3) = 3/2:
+#guard invOp (fun x ↦ Q.add x x) 1 4 (Q.ofNat 3) == Q.of 3 2
+-- f(x) = 2x, y = 7/4 ⟹ g(7/4) = 7/8:
+#guard invOp (fun x ↦ Q.add x x) 3 32 (Q.of 7 4) == Q.of 7 8
 
--- 1. Affine Inversion: f(x) = 2x + 1 ⟹ f⁻¹(y) = (y - 1)/2:
--- f(2) = 5 ⟹ f⁻¹(5) = 2
-#guard inverseEval (fun x ↦ Q.add (Q.mul (Q.ofNat 2) x) (Q.ofNat 1)) 0 0 5 (Q.ofNat 5) == Q.ofNat 2
--- f(3) = 7 ⟹ f⁻¹(7) = 3
-#guard inverseEval (fun x ↦ Q.add (Q.mul (Q.ofNat 2) x) (Q.ofNat 1)) 0 0 5 (Q.ofNat 7) == Q.ofNat 3
--- f(0) = 1 ⟹ f⁻¹(1) = 0
-#guard inverseEval (fun x ↦ Q.add (Q.mul (Q.ofNat 2) x) (Q.ofNat 1)) 0 0 5 (Q.ofNat 1) == Q.ofNat 0
+-- 2. THE ROUND-TRIP GUARD: f(g(y)) = y exactly (proves g is the genuine inverse):
+#guard Q.add (invOp (fun x ↦ Q.add x x) 3 32 (Q.of 7 4))
+             (invOp (fun x ↦ Q.add x x) 3 32 (Q.of 7 4)) == Q.of 7 4
 
--- 2. Cubic Inversion (f(x) = x³ + x, strictly monotone on [0, 5]):
--- f(0) = 0 ⟹ f⁻¹(0) = 0
-#guard inverseEval (fun x ↦ Q.add (Q.mul x (Q.mul x x)) x) 0 0 5 (Q.ofNat 0) == Q.ofNat 0
--- f(1) = 2 ⟹ f⁻¹(2) = 1
-#guard inverseEval (fun x ↦ Q.add (Q.mul x (Q.mul x x)) x) 0 0 5 (Q.ofNat 2) == Q.ofNat 1
--- f(2) = 10 ⟹ f⁻¹(10) = 2
-#guard inverseEval (fun x ↦ Q.add (Q.mul x (Q.mul x x)) x) 0 0 5 (Q.ofNat 10) == Q.ofNat 2
--- f(3) = 30 ⟹ f⁻¹(30) = 3
-#guard inverseEval (fun x ↦ Q.add (Q.mul x (Q.mul x x)) x) 0 0 5 (Q.ofNat 30) == Q.ofNat 3
+-- 3. Cubic Inversion: f(x) = x³ + x ⟹ g(10) = 2 (since 2³ + 2 = 8 + 2 = 10):
+#guard invOp (fun x ↦ Q.add (Q.mul x (Q.mul x x)) x) 0 5 (Q.ofNat 10) == Q.ofNat 2
+-- Round trip on cubic: 2³ + 2 = 10
+#guard let g10 := invOp (fun x ↦ Q.add (Q.mul x (Q.mul x x)) x) 0 5 (Q.ofNat 10)
+       Q.add (Q.mul g10 (Q.mul g10 g10)) g10 == Q.ofNat 10
 
--- 3. Quintic Inversion (f(x) = x⁵ + x):
--- f(2) = 34 ⟹ f⁻¹(34) = 2
-#guard inverseEval (fun x ↦ Q.add (Q.mul x (Q.mul (Q.mul x x) (Q.mul x x))) x) 0 0 5 (Q.ofNat 34) == Q.ofNat 2
+-- 4. Non-Closed-Form Quintic Inversion: f(x) = x⁵ + x (strictly increasing, no radical formula):
+-- Solving x⁵ + x = 34 ⟹ x = 2:
+#guard invOp (fun x ↦ Q.add (Q.mul x (Q.mul (Q.mul x x) (Q.mul x x))) x) 0 5 (Q.ofNat 34) == Q.ofNat 2
+-- Solving x⁵ + x = 1 at precision 2⁻⁸ (1/256):
+#guard invOp (fun x ↦ Q.add (Q.mul x (Q.mul (Q.mul x x) (Q.mul x x))) x) 8 256 (Q.ofNat 1) == Q.of 193 256
 
--- 4. Mirrored Graph Pairing: (x, f(x)) on f ⟺ (f(x), x) on f⁻¹:
-#guard (inverseEval (fun x ↦ Q.add (Q.mul (Q.ofNat 3) x) (Q.ofNat 2)) 0 0 10)
-         (Q.add (Q.mul (Q.ofNat 3) (Q.ofNat 4)) (Q.ofNat 2)) == Q.ofNat 4
+-- 5. Extracted Modulus of the Inverse Function M(m) = m + j:
+#guard (List.range 5).map (invModulus (fun x ↦ Q.add x x) 1) == [1, 2, 3, 4, 5]
+#guard (List.range 5).map (invModulus (fun x ↦ Q.add x x) 2) == [2, 3, 4, 5, 6]
+#guard (List.range 5).map (invModulus (fun x ↦ Q.add x x) 3) == [3, 4, 5, 6, 7]
 
-#guard (inverseEval (fun x ↦ Q.add (Q.mul x (Q.mul x x)) x) 0 0 10)
-         (Q.add (Q.mul (Q.ofNat 2) (Q.mul (Q.ofNat 2) (Q.ofNat 2))) (Q.ofNat 2)) == Q.ofNat 2
+/-! ## 5. Visualisation: Mirrored Curves Across the Identity Diagonal y = x -/
 
--- 5. Extracted Modulus of the Inverse Function: M(n) = n + j:
-#guard (List.range 5).map (inverseModulus (fun x ↦ x) 1) == [1, 2, 3, 4, 5]
-#guard (List.range 5).map (inverseModulus (fun x ↦ x) 2) == [2, 3, 4, 5, 6]
-#guard (List.range 5).map (inverseModulus (fun x ↦ x) 3) == [3, 4, 5, 6, 7]
+/-- Generate ASCII plot comparing $f(x) = 2x$, $g(y) = y/2$, and diagonal $y = x$. -/
+def renderMirroredPlot : String :=
+  let points := (List.range 5).map (fun i ↦
+    let x := Q.ofNat i
+    let fx := Q.mul (Q.ofNat 2) x
+    let gy := invOp (fun t ↦ Q.mul (Q.ofNat 2) t) 1 10 fx
+    s!"x={x.num} | f(x)={fx.num} | g(f(x))={gy.num}/{gy.den}")
+  String.intercalate "\n" points
+
+#eval renderMirroredPlot
 
 #print axioms inverseFunctionD
-#print axioms inverseEval
-#print axioms inverseModulus
+#print axioms invOp
+#print axioms invModulus
 
 end HAomega

@@ -112,28 +112,26 @@ def riemannUpperSumTm {Γ : List Ty} :
   let h_val : Tm ctxTy .rat := .qdiv x_var (.qnat N_var)
   .lam (.app (.app (.app tmRiemannSum.wk.wk.wk.wk f_var) h_val) N_var)
 
-/-- **Theorem: Constructive Extraction of the Upper-Limit Riemann Integral Function Modulus**.
-    For every integrand $f : \mathbb{Q} \to \mathbb{Q}$, bound scale $j$, partition size $N$,
-    and given candidate $F : \mathbb{Q} \to \mathbb{Q}$, if $F$ is $2^j$-Lipschitz,
-    constructs the certified uniform continuity modulus $M(n) = n + j$. -/
-def riemannIntegralD {Γ as : List Ty} {Δ : Ctx Γ as} :
-    Deriv Δ (.all (.arrow .rat .rat) (.all .nat
-      (.imp (intLipPremise Γ) (intConcl Γ)))) :=
-  lipschitzModulusD
+/-!
+### Status Note on the Upper-Limit Riemann Sum
+`riemannUpperSumTm` is an intrinsically typed System T term defining $F(x) = S(f, x/N, N)$.
+The theorem `lipschitzModulusD` below proves that given ANY $2^j$-Lipschitz function $F$,
+its uniform continuity modulus $M(n) = n + j$ is constructively extractable.
+Formal verification within `Deriv` that `riemannUpperSumTm` itself satisfies the $2^j$-Lipschitz
+hypothesis requires strip induction over $N$ with `convQMulLt`/`convQAddLt`.
+-/
 
-/-- **The extracted upper-limit Riemann integral function** $F(x) = \int_0^x f(t)\,dt$,
-    computed directly via the System T term `riemannUpperSumTm` and certified by `riemannIntegralD`. -/
+/-- **The evaluated upper-limit Riemann integral function** $F(x) = \int_0^x f(t)\,dt$,
+    computed directly via the System T term `riemannUpperSumTm`. -/
 def integralF (f : Q → Q) (j : Nat) (N : Nat) : Q → Q :=
-  let realizer := (((extractClosed (riemannIntegralD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
-    (fun x ↦
-      let env : Env [.nat, .nat, .arrow .rat .rat] :=
-        Env.cons N (Env.cons j (Env.cons f Env.nil))
-      (riemannUpperSumTm.eval env) x)) j (fun _ _ _ _ ↦ ())
-  realizer.1
+  fun x ↦
+    let env : Env [.nat, .nat, .arrow .rat .rat] :=
+      Env.cons N (Env.cons j (Env.cons f Env.nil))
+    (riemannUpperSumTm.eval env) x
 
-/-- **The extracted modulus of uniform continuity** $M(n) = n + j$. -/
+/-- **The extracted modulus of uniform continuity** $M(n) = n + j$ from `lipschitzModulusD`. -/
 def integralModulus (F : Q → Q) (j : Nat) (n : Nat) : Nat :=
-  let realizer := (((extractClosed (riemannIntegralD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
+  let realizer := (((extractClosed (lipschitzModulusD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
     F) j (fun _ _ _ _ ↦ ())
   (realizer.2 n).1
 
@@ -167,7 +165,6 @@ def integralModulus (F : Q → Q) (j : Nat) (n : Nat) : Nat :=
              (D.toQ (D.pow2neg 2)) == 1
 
 #print axioms lipschitzModulusD
-#print axioms riemannIntegralD
 #print axioms integralF
 #print axioms integralModulus
 

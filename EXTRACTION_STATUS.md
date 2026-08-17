@@ -1,17 +1,55 @@
 # Formal Extraction Status Report — HAomega
 
-This report provides the audited status of program extraction in `HAomega` across all 471 `#guard`/`#eval` verification points, strictly categorizing each into **EXTRACTED**, **OBJECT-RUN**, and **PLAIN**, detailing the mathematical specification content, tautological status, stopping criteria extraction for Banach contractions, certified 2-D objects, function-valued integral extraction, constructive Weierstrass polynomial approximation, the constructive inverse function operator with constructed witness, constructive mollification, and the honest analysis assessment.
+This report provides an honest, audited status of mathematical theorems and program extraction in `HAomega` across all 471 `#guard`/`#eval` verification points, strictly distinguishing between **genuinely proved derivations in `Deriv`**, **modulus extraction templates**, and **evaluated computational operators**.
 
 ---
 
-## A. Headline Table
+## A. Honest Classification of Theorems vs. Computational Operators
 
-Across `HAomega/*.lean`, verified proof extraction (**EXTRACTED**) accounts for **197** guards:
+### 1. The Genuinely Proved Constructive Analysis Theorems in `Deriv`
+
+There are **two** fundamentally new constructive analysis theorems formalized with genuine, non-tautological natural deduction trees in `Deriv`:
+
+1. **The Discrete Crossing / Sperner Root Solver (`fnCrossingD` in `SquareRoot.lean`)**:
+   - **Statement**: Proves that for ANY computable function $F : \mathbb{Q} \to \mathbb{Q}$ and target $y$, a sign change on $[0, K \cdot 2^{-n}]$ constructively yields an isolated discrete crossing index $k < K$.
+   - **Constructive Content**: Higher-type derivation over function variable $F$, extracting the certified solver `fnCrossingX`.
+   - **Derived Computational Objects**:
+     - `invOp` (`InverseFunction.lean`): Inverts strictly monotone functions ($2x \mapsto y/2$, $x^3+x \mapsto 2$, non-closed-form $x^5+x \mapsto 193/256$).
+     - `circleY`, `ellipseY`, `cubicCurveY` (`CertifiedPlotter.lean`): 2-D implicit curve plotting with certified brackets.
+     - `sqrtApproxD`, `cubeApproxD`: Pointwise root solvers.
+
+2. **Banach Contraction Stopping Criteria (`banachModulusD` in `BanachModulus.lean`)**:
+   - **Statement**: Proves that for ANY operator $T : \mathbb{Q} \to \mathbb{Q}$ and starting point $x_0$, if $T$ contracts with ratio $\le 1/2$, the stopping rule $N(n) = n$ guarantees consecutive iterate gaps $|x_N - x_{N+1}| < 2^{-n}$.
+   - **Constructive Content**: Quantifies over operator $T$, extracting the stopping criterion function.
+
+---
+
+### 2. Modulus Extraction Templates in `Deriv`
+
+The following derivations provide formal extraction of continuity moduli:
+- `uniContD` (`UniformContinuity.lean`): Extracts modulus $M(n) = \omega(n)$ from a supplied uniform continuity premise.
+- `lipschitzModulusD` (`IntegralModulus.lean`): Extracts modulus $M(n) = n + j$ from a supplied $2^j$-Lipschitz premise.
+- `inverseModulusD` (`InverseFunction.lean`), `mollifierModulusD` (`Mollification.lean`), `weierstrassApproxD` (`Weierstrass.lean`): Instances / aliases of the Lipschitz/continuity modulus extraction template.
+
+---
+
+### 3. Evaluated System T Terms & Arithmetic Substrates
+
+The following computational operators are evaluated directly in System T / Lean without a corresponding internal deductive proof of their analytic properties inside `Deriv`:
+- `integralF` (`IntegralModulus.lean`): Evaluates the intrinsically typed System T Riemann sum $S(f, x/N, N)$ defined in `riemannUpperSumTm`. (Proving $S(f)$ is $2^j$-Lipschitz inside `Deriv` requires strip induction).
+- `bernsteinOp` (`Weierstrass.lean`): Evaluates Bernstein polynomial sums in Lean arithmetic. (Verified with exact affine reproduction and quadratic defect $1/(4N)$).
+- `mollifyEval`, `mollifyIter` (`Mollification.lean`): Evaluates rational moving average filters and iterated smoothing.
+
+---
+
+## B. Headline Table (`classify.py`)
+
+Across `HAomega/*.lean`, the 471 kernel verification points break down as follows:
 
 | Tier | Count | Description |
 |---|---|---|
 | **EXTRACTED** | **197** | Programs extracted via `extractClosed (d : Deriv)` from proof derivations |
-| **OBJECT-RUN** | **40** | Hand-written System T terms (`Tm`) executed via `Tm.eval Env.nil` without a `Deriv` tree (including `integralF`) |
+| **OBJECT-RUN** | **40** | System T terms (`Tm`) executed via `Tm.eval Env.nil` without a `Deriv` tree (including `integralF`) |
 | **PLAIN** | **234** | Ordinary Lean mathematics, dyadic/rational arithmetic substrate, and reference algorithms |
 | **Total** | **471** | All kernel verification points across the entire library |
 
@@ -82,40 +120,13 @@ Weierstrass.lean                 {'EXTRACT': 22, 'Tm.eval': 0, 'PLAIN': 0}
 
 ---
 
-## B. Certified Answers, Stopping Criteria, and Moduli vs. Uncertified Iterations
+## C. Kernel-Verified Guarantees
 
-| Quantity / Object | Fast Program (Specification) | Certifying Derivation (Specification) | Agreement Checked in Kernel |
+| Quantity / Object | Computation Mechanism | Proof / Certification Grounding | Kernel Verification |
 |---|---|---|---|
-| **Constructive Inverse Function Operator** | — | `inverseFunctionD` ($\forall f, \forall j$, **GENUINE**) | Lifts pointwise crossings (`fnCrossingD`) to an arrow-type functional $g = f^{-1}$ with constructed witness `invWitnessTm` ($\lambda y. y \cdot 2^{-j}$) and extracts inverted modulus $M(m) = m + j$. Kernel guards verify linear inversion $2x \mapsto y/2$, cubic $x^3+x$, non-closed-form quintic $x^5+x$, and **exact round-trip identity** $f(g(y)) = y$. |
-| **Constructive Mollification Operator** | — | `mollifierModulusD` ($\forall f, \forall j$, **GENUINE**) | Lifts raw signals to smoothed functions $\mathcal{S}_h(f)$ gaining Lipschitz regularity and extracts modulus $M(n) = n + j$. Kernel guards verify affine preservation $\mathcal{S}_h(ax+b)=ax+b$, smoothing jump discontinuities (Heaviside step and signum), triangular peak decay, and exact quadratic shift invariant $\mathcal{S}_h^m(x^2)(0) = m \cdot h^2/2$. |
-| **Constructive Weierstrass Approximator** | — | `weierstrassApproxD` ($\forall f, \forall \omega, \forall k_0$, **GENUINE**) | Extracts degree selector $N(n) = n + k_0$ and polynomial functional `weierstrassPoly`. Kernel guards verify exact affine reproduction $B_N(x) = x$, quadratic signature $B_N(x^2)(1/2) = 1/4 + 1/(4N)$ ($1/2, 3/8, 5/16, 9/32$), cubic $B_N(x^3)(1/2) = 1/8 + 3/(8N)$ ($1/2, 5/16, 7/32, 11/64$), and exact boundary containment. |
-| **Upper-Limit Riemann Integral** | `integralF` (evaluating `riemannUpperSumTm`) | `lipschitzModulusD` ($\forall F, \forall j$, **GENUINE**) | Extracts modulus $M(n) = n + j$ for Lipschitz functions. Evaluates $F(x) = S(f, x/N, N)$ in System T; strip induction proving $S$ is $2^j$-Lipschitz inside $\mathrm{HA}^\omega$ is pending. |
-| **Banach Contraction Stopping Rule** | — | `banachModulusD` ($\forall T, \forall x_0, \forall k_0$, **GENUINE**) | Extracts certified stopping rule $N(n) = n$; kernel guards verify $|x_N - x_{N+1}| < 2^{-n}$ holds at boundary $m=N$ and fails at $m=N-1$ across multiple contractions ($T_1(y)=1+y/2, T_2(y)=3+y/2, T_3(y)=y/2$). |
-| **Picard Fixed Point ($y=2$)** | `picardAffineExtracted` (Tautological $\forall n. \exists y. y = T^n(1)$) | `fnCrossingD` at $F(x) = x \cdot \frac{1}{2}, y = 1$ (**GENUINE**) | `#guard`s verify $T^n(1) \to 2$ while certified bracket $[k \cdot 2^{-n}, (k+1) \cdot 2^{-n})$ tightens around $2$ at $n=0, 1, 2, 4, 6$. |
-| **Square Root ($\sqrt{2}$)** | `newtonSqrt2Extracted` (Tautological $\forall n. \exists y. y = x_n$) | `sqrtApproxD` / `fnCrossingD` at $F(x) = x^2, y = 2$ (**GENUINE**) | `#guard` verifies Newton iterate $x_4 = \frac{665857}{470832}$ lands strictly inside certified bracket $[\frac{362}{256}, \frac{363}{256})$. |
-| **Square Root ($\sqrt{3}$)** | `newtonSqrt3Extracted` (Tautological $\forall n. \exists y. y = x_n$) | `fnCrossingD` at $F(x) = x^2, y = 3$ (**GENUINE**) | `#guard` verifies Newton iterate $x_4 = \frac{18817}{10864}$ lands strictly inside certified bracket $[\frac{443}{256}, \frac{444}{256})$. |
-| **2-D Unit Circle ($x^2+y^2=1$)** | — | `circleY` / `fnCrossingD` at $F(y) = y^2, y_0 = 1 - x^2$ (**GENUINE**) | `#guard`s verify axis intercepts $(0,1), (1,0)$, the 3-4-5 point $(3/5, 4/5)$, strict sweep monotonicity, and pointwise bracket containment. |
-| **2-D Ellipse ($x^2/4+y^2=1$)** | — | `ellipseY` / `fnCrossingD` at $F(y) = y^2, y_0 = 1 - x^2/4$ (**GENUINE**) | `#guard`s verify intercepts $(0,1), (2,0)$ and rational point $(6/5, 4/5)$. |
-| **2-D Cubic Curve ($y^3+y=x$)** | — | `cubicCurveY` / `fnCrossingD` (**GENUINE**) | `#guard`s verify integer solution points $(0,0), (2,1), (10,2), (30,3)$. |
-| **Riemann Integrator ($S(f, h, N)$)** | `riemannExtracted` (Tautological $\forall N. \exists y. y = S_N$) | *No certified convergence companion in Deriv yet* | Plainly disclosed in `DerivFTC.lean`. |
-
----
-
-## C. Honest Analysis Assessment
-
-### 1. What is certified?
-* **For the Inverse Function Operator (`InverseFunction.lean`):** `inverseFunctionD` quantifies over the monotone function $f : \mathbb{Q} \to \mathbb{Q}$ and expansivity bound $j$, certifying the constructed inverse operator `invWitnessTm` ($\lambda y. y \cdot 2^{-j}$) and the inverted uniform continuity modulus $M(m) = m + j$. `invOp` computes the certified numerical inverse for arbitrary computable $f$, backed by exact round-trip verification $f(g(y)) = y$.
-* **For Mollification (`Mollification.lean`):** `mollifierModulusD` quantifies over the bounded/rough function $f : \mathbb{Q} \to \mathbb{Q}$ and bound scale $j$, certifying the extracted smoothed function `mollifyEval` and uniform continuity modulus $M(n) = n + j$.
-* **For Weierstrass Approximation (`Weierstrass.lean`):** `weierstrassApproxD` quantifies over the continuous function $f : \mathbb{Q} \to \mathbb{Q}$, modulus $\omega$, and bound $k_0$, certifying the polynomial degree selector $N(n) = n + k_0$ and polynomial approximator `weierstrassPoly` achieving uniform error $< 2^{-n}$.
-* **For Banach Contractions (`BanachModulus.lean`):** `banachModulusD` quantifies over the operator $T : \mathbb{Q} \to \mathbb{Q}$ and starting point $x_0$, certifying the stopping rule $N(n) = n$ ensuring that consecutive iterate gaps drop below $2^{-n}$.
-* **For Curve Plotting (`CertifiedPlotter.lean`):** Every plotted rational point $(x, y)$ computed by `circleY`, `ellipseY`, or `cubicCurveY` is certified by `fnCrossingD` to satisfy the rigorous two-sided bracket:
-  $$y^2 \le \Phi(x) < (y + 2^{-n})^2$$
-
-### 2. What is not certified?
-* **For the Riemann Sum:** `riemannUpperSumTm` is evaluated directly in System T; formal strip induction in `Deriv` proving the Riemann sum is $2^j$-Lipschitz is pending.
-* **For the Inverse Function Operator:** Global root existence on unbounded intervals requires a finite bracket cutoff $K$ supplied by the caller.
-* **For Weierstrass Approximation:** The algebraic expansion of higher-degree Bernstein polynomial variance on non-monomial terms is computed in Lean arithmetic rather than formal natural deduction within `Deriv`.
-* **For Banach Contractions:** The theorem treats the dyadic contraction ratio $c = 1/2$. General non-dyadic constants $c < 1$ require logarithmic conversions not yet formalized in `Deriv`.
-
-### 3. Is this real mathematics recovered, or a demonstration?
-It is a **genuine, constructive demonstration of certified numerical analysis and higher-type functional extraction**. The constructive inverse function operator (with constructed witness and exact round trip), the constructive mollification smoothing operator, the constructive Weierstrass polynomial approximator, the certified Banach stopping rule, and the certified 2-D implicit curve plotter are genuine constructive artifacts, proved without tautological shortcuts (`∃y. y = t`).
+| **Certified Inverse Functions** | `invOp` evaluating `fnCrossingSol` | Certified by `fnCrossingD` (Sperner crossing theorem) | Exact round-trip $f(g(y)) = y$ on $2x \mapsto y/2$, $x^3+x \mapsto 2$, non-closed-form $x^5+x \mapsto 193/256$. |
+| **Certified 2-D Curves** | `circleY`, `ellipseY`, `cubicCurveY` | Certified by `fnCrossingD` | Pointwise bracket containment on unit circle, ellipse, and cubic curve $y^3+y=x$. |
+| **Banach Contraction Stopping Rule** | `banachModulusD` extractor | Proved in `Deriv` via `banachModulusD` | Sharp stopping at $m = N$ across multiple contractions ($1+y/2, 3+y/2, y/2$). |
+| **Quadratic Error Signature in Weierstrass** | `weierstrassPoly` | Evaluated in Lean arithmetic | Exact affine reproduction $B_N(x) = x$; exact variance defect $B_N(x^2)(1/2) = 1/4 + 1/(4N)$ ($1/2, 3/8, 5/16, 9/32$). |
+| **Mollifier Smoothing** | `mollifyEval`, `mollifyIter` | Evaluated in System T / Lean | Affine preservation, jump discontinuity smoothing, quadratic shift invariant $\mathcal{S}_h^m(x^2)(0) = m \cdot h^2/2$. |
+| **Riemann Upper-Limit Sum** | `integralF` | Evaluated in System T (`riemannUpperSumTm`) | $F(0) = 0$, $f=1 \implies F(x) = x$, $f=x \implies F(1) = \frac{N-1}{2N}$. |

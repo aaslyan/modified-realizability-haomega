@@ -8,73 +8,55 @@ import HAomega.SquareRoot
 import HAomega.IntegralModulus
 
 /-!
-# Constructive Inverse Function Operator: Lifting Pointwise Crossings to Arrow Type
+# Constructive Inverse Function Operator via Certified Level Crossings
 
 Classically, the inverse function theorem asserts the existence of an inverse mapping $f^{-1}$
-for strictly monotone functions. Pointwise, `fnCrossingD` in `SquareRoot.lean` already certifies
-individual root isolation.
+for strictly monotone functions.
 
-This module lifts pointwise root certification into a genuine **arrow-type functional operator**:
-$$\mathrm{Inv} : (\mathbb{Q} \to \mathbb{Q}) \to (\mathbb{Q} \to \mathbb{Q})$$
-mapping every computable, strictly monotone function $f$ to its certified inverse function $g = f^{-1}$,
-and extracts its canonical uniform continuity modulus $M(m) = m + j$ derived from the expansivity bound $f' \ge 2^{-j}$.
+## Architectural Structure & Proven Theorems
 
-## Why the Witness CANNOT be a Variable (`.var`)
+1. **Certified Pointwise Inversion (`invOp`)**:
+   Built directly on `fnCrossingD` (proved in `SquareRoot.lean` from Sperner's lemma), which quantifies
+   over arbitrary computable $F : \mathbb{Q} \to \mathbb{Q}$:
+   $$g(y) = \mathrm{fnCrossingSol}(f, y, n, K)$$
+   Every evaluated point is certified to lie in the bracket $[k \cdot 2^{-n}, (k+1) \cdot 2^{-n})$.
 
-For the inverse function theorem:
-$$\forall f. \; \exists g. \; (\forall y. \; f(g(y)) \approx y) \land (\text{Modulus of } g)$$
-Handing back $g := f$ yields $f(f(y)) \approx y$, which is **mathematically false** for non-involutions:
-- For $f(x) = 2x$: $f(f(1)) = 4 \neq 1$.
-- For $f(x) = x^3 + x$: $f(f(1)) = f(2) = 10 \neq 1$.
+2. **Modulus Template (`lipschitzModulusD`)**:
+   `inverseModulusD` aliases `lipschitzModulusD` to provide the formal modulus extraction template:
+   if $f$ is expansive with $f' \ge 2^{-j}$, its inverse $g$ is $2^j$-Lipschitz, yielding modulus $M(m) = m + j$.
 
-Therefore, the existential witness $g$ is **constructively built** from the certified crossing solver:
-$$g(y) = \mathrm{fnCrossingSol}(f, y, n, K)$$
-extracted from `fnCrossingD`.
-
-## Mathematical Content: Modulus Inversion
-
-If $f$ is expansive at scale $j$:
-$$\forall u, v, m. \; |f(u) - f(v)| < 2^{-(m+j)} \implies |u - v| < 2^{-m}$$
-then the extracted inverse $g = f^{-1}$ is $2^j$-Lipschitz, with certified uniform continuity modulus:
-$$M(m) = m + j$$
+3. **Round-Trip Identity Verification**:
+   The round-trip identity $f(g(y)) = y$ is verified in the kernel across linear ($2x$), cubic ($x^3+x$),
+   and non-closed-form quintic ($x^5+x$) functions.
 -/
 
 namespace HAomega
 
 open Rat
 
-/-! ## 1. The Inverse Function Operator in System T -/
+/-! ## 1. The Inverse Function Operator Built on `fnCrossingD` -/
 
 /-- The inverse function operator: given $f : \mathbb{Q} \to \mathbb{Q}$, precision $n$, and search bound $K$,
     constructs the inverse function $g = f^{-1} : \mathbb{Q} \to \mathbb{Q}$ via `fnCrossingSol`. -/
 def invOp (f : Q → Q) (n K : Nat) : Q → Q :=
   fun y ↦ fnCrossingSol f y n K
 
-/-! ## 2. Constructive Inverse Function Derivation in HA^ω -/
+/-! ## 2. Modulus Extraction Template -/
 
-/-- **Theorem: Constructive Inverse Function Operator Extraction in HA^ω**.
-    For EVERY strictly monotone function $f : \mathbb{Q} \to \mathbb{Q}$ and expansivity scale $j$,
-    constructively proves that the inverse function $g = f^{-1}$ possesses certified uniform continuity
-    modulus $M(m) = m + j$. -/
-def inverseFunctionD {Γ as : List Ty} {Δ : Ctx Γ as} :
+/-- Modulus extraction template for Lipschitz functions (aliasing `lipschitzModulusD`). -/
+abbrev inverseModulusD {Γ as : List Ty} {Δ : Ctx Γ as} :
     Deriv Δ (.all (.arrow .rat .rat) (.all .nat
       (.imp (intLipPremise Γ)
         (intConcl Γ)))) :=
   lipschitzModulusD
 
-/-! ## 3. Extracted Inverse Function Evaluators & Moduli -/
-
-/-- **The extracted inverse function**: computes $g(y) = f^{-1}(y)$ at precision $2^{-n}$. -/
-def inverseEval (f : Q → Q) (_j : Nat) (n K : Nat) : Q → Q :=
-  fun y ↦ invOp f n K y
-
 /-- **The extracted modulus of the inverse function**: $M(m) = m + j$. -/
 def invModulus (f : Q → Q) (j : Nat) (m : Nat) : Nat :=
-  let realizer := (((extractClosed (inverseFunctionD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
+  let realizer := (((extractClosed (inverseModulusD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
     (invOp f m 100)) j (fun _ _ _ _ ↦ ())
   (realizer.2 m).1
 
-/-! ## 4. Discriminating Kernel Guards -/
+/-! ## 3. Discriminating Kernel Guards -/
 
 -- 1. Linear Inversion: f(x) = 2x ⟹ g(y) = y/2:
 -- f(x) = 2x, y = 1 ⟹ g(1) = 1/2:
@@ -105,7 +87,7 @@ def invModulus (f : Q → Q) (j : Nat) (m : Nat) : Nat :=
 #guard (List.range 5).map (invModulus (fun x ↦ Q.add x x) 2) == [2, 3, 4, 5, 6]
 #guard (List.range 5).map (invModulus (fun x ↦ Q.add x x) 3) == [3, 4, 5, 6, 7]
 
-/-! ## 5. Visualisation: Mirrored Curves Across the Identity Diagonal y = x -/
+/-! ## 4. Visualisation: Mirrored Curves Across the Identity Diagonal y = x -/
 
 /-- Generate ASCII plot comparing $f(x) = 2x$, $g(y) = y/2$, and diagonal $y = x$. -/
 def renderMirroredPlot : String :=
@@ -118,7 +100,7 @@ def renderMirroredPlot : String :=
 
 #eval renderMirroredPlot
 
-#print axioms inverseFunctionD
+#print axioms inverseModulusD
 #print axioms invOp
 #print axioms invModulus
 

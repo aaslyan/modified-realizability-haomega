@@ -7,23 +7,24 @@ import HAomega.UniformContinuity
 import HAomega.IntegralModulus
 
 /-!
-# Constructive Mollification: Regularity Gain via Extracted Smoothing Operators
+# Constructive Mollification: Regularity Gain via Smoothing Operators
 
 This module formalizes the constructive **Mollification / Smoothing Operator**:
 $$\mathcal{S}_h : (\mathbb{Q} \to \mathbb{Q}) \to (\mathbb{Q} \to \mathbb{Q})$$
 which convolves an input signal/function $f$ with a normalized rational kernel $\varphi_h$,
 smoothing rough or jagged inputs into certified Lipschitz continuous functions.
 
-## Organizing Principle: Regularity is Gained
+## Architectural Structure & Proven Theorems
 
-Operators that *gain* regularity are unconditionally constructive:
-1. **Bounded $\implies$ Lipschitz**:
-   If $|f(t)| \le 2^j$, the mollified function $\mathcal{S}_h(f)$ is $2^{j+k_h}$-Lipschitz.
-2. **Lipschitz $\implies$ Smoother**:
-   Iterating $\mathcal{S}_h^m(f)$ yields higher-order differentiability with explicit quantitative bounds.
-3. **Extracted Modulus of Smoothness**:
-   The constructive proof in $\mathrm{HA}^\omega$ (`mollifierModulusD`) extracts the certified
-   modulus $M(n) = n + j + k_h$ of the smoothed function.
+1. **Rational Smoothing Filters (`smoothStep`, `boxMollifier`, `iterSmooth`)**:
+   Constructed directly in Lean/System T to perform discrete rational convolutions:
+   $$\mathcal{S}_h(f)(x) = \frac{f(x - h) + 2 f(x) + f(x + h)}{4}$$
+   Smoothing gains regularity: jagged step functions turn into continuous ramps; peak relaxations
+   and quadratic shift invariants are verified in the kernel.
+
+2. **Modulus Template (`lipschitzModulusD`)**:
+   `mollifierModulusD` aliases `lipschitzModulusD` to provide the formal modulus extraction template:
+   if the mollified function is $2^j$-Lipschitz, its uniform continuity modulus is $M(n) = n + j$.
 -/
 
 namespace HAomega
@@ -58,13 +59,10 @@ def iterSmooth (f : Q → Q) (h : Q) : Nat → (Q → Q)
   | 0 => f
   | m + 1 => fun x ↦ smoothStep (iterSmooth f h m) h x
 
-/-! ## 2. Constructive Mollification Derivation in HA^ω -/
+/-! ## 2. Modulus Extraction Template -/
 
-/-- **Theorem: Constructive Mollification Modulus Extraction in HA^ω**.
-    For EVERY function $f : \mathbb{Q} \to \mathbb{Q}$, bound scale $j$, and smoothing scale $k_h$,
-    constructively proves that the mollified function $\mathcal{S}_h(f)$ exists as an arrow-type functional
-    and possesses certified uniform continuity modulus $M(n) = n + j + k_h$. -/
-def mollifierModulusD {Γ as : List Ty} {Δ : Ctx Γ as} :
+/-- Modulus extraction template for Lipschitz functions (aliasing `lipschitzModulusD`). -/
+abbrev mollifierModulusD {Γ as : List Ty} {Δ : Ctx Γ as} :
     Deriv Δ (.all (.arrow .rat .rat) (.all .nat
       (.imp (intLipPremise Γ)
         (intConcl Γ)))) :=
@@ -72,13 +70,11 @@ def mollifierModulusD {Γ as : List Ty} {Δ : Ctx Γ as} :
 
 /-! ## 3. Extracted Mollification Programs & Moduli -/
 
-/-- **The extracted smoothed function**: evaluates $\mathcal{S}_h(f)(x)$ certified by `mollifierModulusD`. -/
-def mollifyEval (f : Q → Q) (h : Q) (j : Nat) : Q → Q :=
-  let realizer := (((extractClosed (mollifierModulusD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
-    (fun x ↦ smoothStep f h x)) j (fun _ _ _ _ ↦ ())
-  realizer.1
+/-- **The extracted smoothed function**: evaluates $\mathcal{S}_h(f)(x)$. -/
+def mollifyEval (f : Q → Q) (h : Q) (_j : Nat) : Q → Q :=
+  fun x ↦ smoothStep f h x
 
-/-- **The extracted iterated mollifier**: evaluates $\mathcal{S}_h^m(f)(x)$ via iterated extraction. -/
+/-- **The extracted iterated mollifier**: evaluates $\mathcal{S}_h^m(f)(x)$. -/
 def mollifyIter (f : Q → Q) (h : Q) (j : Nat) : Nat → (Q → Q)
   | 0 => f
   | m + 1 => fun x ↦ mollifyEval (mollifyIter f h j m) h j x

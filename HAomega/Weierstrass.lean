@@ -145,7 +145,9 @@ def weierstrassDegree (f : Q → Q) (ω : Nat → Nat) (k0 : Nat) (n : Nat) : Na
 
 /-- **The extracted polynomial approximator**: constructs the $N$-th Bernstein polynomial $B_N(f)$. -/
 def weierstrassPoly (f : Q → Q) (ω : Nat → Nat) (k0 : Nat) (n : Nat) : Q → Q :=
-  let deg := weierstrassDegree f ω k0 n
+  let realizer := (((extractClosed (weierstrassApproxD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
+    f) ω k0 (fun _ _ ↦ ())
+  let deg := (realizer n).1
   bernsteinOp f deg
 
 /-! ## 5. Kernel Verification of the Extracted Bernstein Polynomials -/

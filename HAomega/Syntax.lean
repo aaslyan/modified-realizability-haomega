@@ -659,6 +659,19 @@ def qpow2pos {Γ : List Ty} : Tm Γ (.arrow .nat .rat) :=
   .lam (.recNat (.qnat (.succ .zero)) (.lam (.lam (.qadd (.var .here) (.var .here))))
     (.var .here))
 
+/-- `|z|` as an object term. -/
+def qabsT {Γ : List Ty} : Tm Γ (.arrow .rat .rat) :=
+  .lam (.recNat (.var .here)
+    (.lam (.lam (.qsub (.qnat .zero) (.var (.there (.there .here))))))
+    (.qlt (.var .here) (.qnat .zero)))
+
+/-- `close k x y` — the test `|x − y| < 2⁻ᵏ`, as a `0`/`1` numeral. -/
+def qclose {Γ : List Ty} :
+    Tm Γ (.arrow .nat (.arrow .rat (.arrow .rat .nat))) :=
+  .lam (.lam (.lam
+    (.qlt (.app qabsT (.qsub (.var (.there .here)) (.var .here)))
+      (.app qpow2 (.var (.there (.there .here)))))))
+
 #print axioms Tm.eval
 #print axioms Tm.eval_subst1
 

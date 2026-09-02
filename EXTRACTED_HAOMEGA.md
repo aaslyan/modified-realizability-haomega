@@ -334,18 +334,18 @@ Realizer type: `(Q → Q) → (N → ((Q → (Q → (N → (1 → 1)))) → (N �
 **1. High-level extracted object** (raw realizer; `★` = erased certificate):
 
 ```
-(λx0. (λx1. (λx2. (λx3. ⟨(x3 + x1), (λx4. (λx5. (λx6. ((((x2 x4) x5) x3) x6))))⟩))))
+(λx0. (λx1. (λx2. (λx3. ⟨(x3 + x1), (λx4. (λx5. (λx6. ★)))⟩))))
 ```
 
 **2. Collapsed functional program** (contentless parts elided):
 
 ```
-(λx0. (λx1. (λx2. (λx3. ⟨(x3 + x1), (λx4. (λx5. (λx6. ((((x2 x4) x5) x3) x6))))⟩))))
+(λx0. (λx1. (λx2. (λx3. ⟨(x3 + x1), (λx4. (λx5. (λx6. ·)))⟩))))
 ```
 
 **3. Haskell** (generated translation, not the certified artifact):
 
 ```haskell
-(\x0 -> (\x1 -> (\x2 -> (\x3 -> ((x3 + x1), (\x4 -> (\x5 -> (\x6 -> ((((x2 x4) x5) x3) x6)))))))))
+(\x0 -> (\x1 -> (\x2 -> (\x3 -> ((x3 + x1), (\x4 -> (\x5 -> (\x6 -> ()))))))))
 ```
 

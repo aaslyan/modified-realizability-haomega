@@ -645,7 +645,19 @@ def twice {Γ : List Ty} (τ : Ty) : Tm Γ (.arrow (.arrow τ τ) (.arrow τ τ)
   .lam (.lam (.app (.var (.there .here)) (.app (.var (.there .here))
     (.var .here))))
 
-example : (twice .nat).eval Env.nil (· + 3) 1 = 7 := rfl
+/-- `2⁻ⁿ` as an object term: iterate halving from `1`. -/
+def dpow2 {Γ : List Ty} : Tm Γ (.arrow .nat .dyad) :=
+  .lam (.recNat (.dnat (.succ .zero)) (.lam (.lam (.dhalf (.var .here))))
+    (.var .here))
+
+/-- `2⁻ⁿ` read as rationals through the bridge. -/
+def qpow2 {Γ : List Ty} : Tm Γ (.arrow .nat .rat) :=
+  .lam (.dtoq (.app dpow2 (.var .here)))
+
+/-- `2ⁿ` as an object term: iterate doubling from `1`. -/
+def qpow2pos {Γ : List Ty} : Tm Γ (.arrow .nat .rat) :=
+  .lam (.recNat (.qnat (.succ .zero)) (.lam (.lam (.qadd (.var .here) (.var .here))))
+    (.var .here))
 
 #print axioms Tm.eval
 #print axioms Tm.eval_subst1

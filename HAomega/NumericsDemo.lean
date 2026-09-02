@@ -37,14 +37,7 @@ exactly what writing that theorem will reveal.
 
 namespace HAomega
 
-/-- `2⁻ⁿ` as an object term: iterate halving from `1`. -/
-def dpow2 {Γ : List Ty} : Tm Γ (.arrow .nat .dyad) :=
-  .lam (.recNat (.dnat (.succ .zero)) (.lam (.lam (.dhalf (.var .here))))
-    (.var .here))
-
-/-- The same sequence read as rationals, through the bridge. -/
-def qpow2 {Γ : List Ty} : Tm Γ (.arrow .nat .rat) :=
-  .lam (.dtoq (.app dpow2 (.var .here)))
+-- The precision sequence terms `dpow2` and `qpow2` are defined in `Syntax.lean`.
 
 -- The object term computes the precision sequence.
 #guard (List.range 6).map ((dpow2 (Γ := [])).eval Env.nil)

@@ -132,6 +132,9 @@ def extract : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {a : Ty
   | _, _, _, _, _, .convQAddLt _ _ _ _ => .star
   | _, _, _, _, _, .convQMulLt _ _ _ _ _ => .star
   | _, _, _, _, _, .convQLtTrans _ _ _ _ _ => .star
+  | _, _, _, _, _, .convQLeLtTrans _ _ _ _ _ => .star
+  | _, _, _, _, _, .convQCloseMono _ _ _ _ => .star
+  | _, _, _, _, _, .convQLipScale _ _ _ _ _ _ => .star
   | _, _, _, _, _, .convQAddComm _ _ => .star
   | _, _, _, _, _, .convQAddAssoc _ _ _ => .star
   | _, _, _, _, _, .convQMulComm _ _ => .star

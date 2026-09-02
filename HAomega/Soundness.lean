@@ -140,6 +140,21 @@ theorem Realizes.congrEnv : {Γ : List Ty} → {as : List Ty} → (Δ : Ctx Γ a
       intro e ε ε' hee h
       exact ⟨by rw [← hee]; exact h.1,
              ih e _ _ (fun τ v ↦ hee τ (.there v)) h.2⟩
+theorem qpow2_eval {Γ : List Ty} (e : Env Γ) (k : Nat) :
+    ((qpow2 (Γ := Γ)).eval e) k = D.toQ (D.pow2neg k) := by
+  show D.toQ (Nat.rec (D.ofNat 1) (fun _ acc ↦ D.half acc) k) = D.toQ (D.pow2neg k)
+  congr 1
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+      show D.half (Nat.rec (D.ofNat 1) (fun _ acc ↦ D.half acc) k) = D.pow2neg (k + 1)
+      rw [ih]
+      rfl
+
+theorem qpow2pos_eval_eq {Γ : List Ty} (e : Env Γ) (j : Nat) :
+    ((qpow2pos (Γ := Γ)).eval e) j = qpow2posVal j := by
+  show Nat.rec (Q.ofNat 1) (fun _ acc ↦ Q.add acc acc) j = qpow2posVal j
+  rfl
 
 theorem soundness : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {a : Ty} →
     {φ : Formula Γ a} → (D : Deriv Δ φ) → ∀ (e : Env Γ) (ε : Env (as ++ Γ)),
@@ -279,6 +294,29 @@ theorem soundness : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {
       intro e ε h; exact Q.ltN_mul_right_pos _ _ _ (ih₁ e ε h) (ih₂ e ε h)
   | convQLtTrans s t v D₁ D₂ ih₁ ih₂ =>
       intro e ε h; exact Q.ltN_trans _ _ _ (ih₁ e ε h) (ih₂ e ε h)
+  | convQLeLtTrans s t v D₁ D₂ ih₁ ih₂ =>
+      intro e ε h; exact Q.ltN_le_lt_trans _ _ _ (ih₁ e ε h) (ih₂ e ε h)
+  | convQCloseMono a c diff D ih =>
+      intro e ε h
+      have h1 : Q.ltN (diff.eval e) (HAomega.D.toQ (HAomega.D.pow2neg (a.eval e + c.eval e))) = 1 := by
+        have h : Q.ltN (diff.eval e) ((qpow2.eval e) (a.eval e + c.eval e)) = 1 := ih e ε h
+        rwa [qpow2_eval] at h
+      have h2 := Q_ltN_pow2neg_mono (a.eval e) (c.eval e) (diff.eval e) h1
+      show Q.ltN (diff.eval e) ((qpow2.eval e) (a.eval e)) = 1
+      rwa [qpow2_eval]
+  | convQLipScale n j diff_in diff_out D₁ D₂ ih₁ ih₂ =>
+      intro e ε h
+      have h1 : Q.ltN (Q.mul (qpow2posVal (j.eval e)) (diff_in.eval e)) (diff_out.eval e) = 0 := by
+        have h : Q.ltN (Q.mul ((qpow2pos.eval e) (j.eval e)) (diff_in.eval e)) (diff_out.eval e) = 0 := ih₁ e ε h
+        rwa [qpow2pos_eval_eq] at h
+      have h2 : Q.ltN (diff_in.eval e) (HAomega.D.toQ (HAomega.D.pow2neg (n.eval e + j.eval e))) = 1 := by
+        have h : Q.ltN (diff_in.eval e) ((qpow2.eval e) (n.eval e + j.eval e)) = 1 := ih₂ e ε h
+        rwa [qpow2_eval] at h
+      have hscale := qpow2posVal_val (j.eval e)
+      have h3 := Q_lip_scale_diff (n.eval e) (j.eval e) (diff_in.eval e) (diff_out.eval e)
+        (qpow2posVal (j.eval e)) hscale h1 h2
+      show Q.ltN (diff_out.eval e) ((qpow2.eval e) (n.eval e)) = 1
+      rwa [qpow2_eval]
   | convQAddComm s t => intro e ε h; exact Q.add_comm _ _
   | convQAddAssoc s t v => intro e ε h; exact Q.add_assoc _ _ _
   | convQMulComm s t => intro e ε h; exact Q.mul_comm _ _

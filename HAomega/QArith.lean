@@ -5,6 +5,7 @@ Authors: Ara Aslyan
 -/
 import Mathlib
 import HAomega.Rationals
+import HAomega.Dyadics
 
 /-!
 # Arithmetic for `Q` — the well-definedness lemma and what follows
@@ -357,9 +358,124 @@ theorem Q.ltN_trans (a b c : Q) (h1 : Q.ltN a b = 1) (h2 : Q.ltN b c = 1) :
   rw [Q.ltN_eq_one_iff] at h1 h2 ⊢
   linarith
 
+theorem Q.ltN_le_lt_trans (a b c : Q) (h1 : Q.ltN b a = 0) (h2 : Q.ltN b c = 1) :
+    Q.ltN a c = 1 := by
+  rw [Q.ltN_eq_zero_iff] at h1
+  rw [Q.ltN_eq_one_iff] at h2 ⊢
+  exact lt_of_le_of_lt h1 h2
+
+theorem twoPowN_pos (k : Nat) : 0 < twoPowN k := by
+  induction k with
+  | zero => decide
+  | succ k ih => unfold twoPowN; omega
+
+theorem twoPowN_cast (k : Nat) : (twoPowN k : Rat) = 2^k := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+      unfold twoPowN
+      push_cast
+      rw [ih, pow_succ]
+      ring
+
+theorem D_pow2neg_val (k : Nat) : (D.toQ (D.pow2neg k)).val = (1 : Rat) / (2 : Rat)^k := by
+  unfold D.toQ D.pow2neg
+  have hne : twoPowN k ≠ 0 := ne_of_gt (twoPowN_pos k)
+  rw [Q.val_of 1 (twoPowN k) hne, twoPowN_cast]
+  simp
+
+theorem D_pow2neg_le (a c : Nat) : (D.toQ (D.pow2neg (a + c))).val ≤ (D.toQ (D.pow2neg a)).val := by
+  rw [D_pow2neg_val, D_pow2neg_val]
+  have h2pos : (0 : Rat) < 2 := by decide
+  have h1 : (2 : Rat)^a ≤ (2 : Rat)^(a + c) := by
+    rw [pow_add]
+    have hpow : 1 ≤ (2 : Rat)^c := one_le_pow₀ (by decide)
+    have ha : 0 < (2 : Rat)^a := pow_pos h2pos a
+    nlinarith
+  have hpa : 0 < (2 : Rat)^a := pow_pos h2pos a
+  have hpac : 0 < (2 : Rat)^(a + c) := pow_pos h2pos (a + c)
+  exact one_div_le_one_div_of_le hpa h1
+
+theorem Q_close_mono (a c : Nat) (u v : Q)
+    (h : Q.ltN (Q.abs (Q.sub u v)) (D.toQ (D.pow2neg (a + c))) = 1) :
+    Q.ltN (Q.abs (Q.sub u v)) (D.toQ (D.pow2neg a)) = 1 := by
+  rw [Q.ltN_eq_one_iff] at h ⊢
+  have hle := D_pow2neg_le a c
+  exact lt_of_lt_of_le h hle
+
+theorem Q_ltN_pow2neg_mono (a c : Nat) (diff : Q)
+    (h : Q.ltN diff (D.toQ (D.pow2neg (a + c))) = 1) :
+    Q.ltN diff (D.toQ (D.pow2neg a)) = 1 := by
+  rw [Q.ltN_eq_one_iff] at h ⊢
+  have hle := D_pow2neg_le a c
+  exact lt_of_lt_of_le h hle
+
+theorem Q_lip_scale (n j : Nat) (u v fu fv scale : Q)
+    (hscale : scale.val = (2 : Rat)^j)
+    (hlip : Q.ltN (Q.mul scale (Q.abs (Q.sub u v))) (Q.abs (Q.sub fu fv)) = 0)
+    (hclose : Q.ltN (Q.abs (Q.sub u v)) (D.toQ (D.pow2neg (n + j))) = 1) :
+    Q.ltN (Q.abs (Q.sub fu fv)) (D.toQ (D.pow2neg n)) = 1 := by
+  rw [Q.ltN_eq_zero_iff] at hlip
+  rw [Q.val_mul, hscale] at hlip
+  rw [Q.ltN_eq_one_iff] at hclose ⊢
+  rw [D_pow2neg_val] at hclose ⊢
+  have h2pos : (0 : Rat) < 2 := by decide
+  have hjpos : (0 : Rat) < (2 : Rat)^j := pow_pos h2pos j
+  have hmul : (2 : Rat)^j * (Q.abs (Q.sub u v)).val < (2 : Rat)^j * (1 / (2 : Rat)^(n + j)) :=
+    mul_lt_mul_of_pos_left hclose hjpos
+  have heq : (2 : Rat)^j * (1 / (2 : Rat)^(n + j)) = (1 : Rat) / (2 : Rat)^n := by
+    rw [pow_add]
+    have h1 : (2 : Rat)^(n + j) = (2 : Rat)^n * (2 : Rat)^j := pow_add 2 n j
+    have hnpos : (0 : Rat) < (2 : Rat)^n := pow_pos h2pos n
+    field_simp
+  rw [heq] at hmul
+  exact lt_of_le_of_lt hlip hmul
+
+theorem Q_lip_scale_diff (n j : Nat) (diff_in diff_out scale : Q)
+    (hscale : scale.val = (2 : Rat)^j)
+    (hlip : Q.ltN (Q.mul scale diff_in) diff_out = 0)
+    (hclose : Q.ltN diff_in (D.toQ (D.pow2neg (n + j))) = 1) :
+    Q.ltN diff_out (D.toQ (D.pow2neg n)) = 1 := by
+  rw [Q.ltN_eq_zero_iff] at hlip
+  rw [Q.val_mul, hscale] at hlip
+  rw [Q.ltN_eq_one_iff] at hclose ⊢
+  rw [D_pow2neg_val] at hclose ⊢
+  have h2pos : (0 : Rat) < 2 := by decide
+  have hjpos : (0 : Rat) < (2 : Rat)^j := pow_pos h2pos j
+  have hmul : (2 : Rat)^j * diff_in.val < (2 : Rat)^j * (1 / (2 : Rat)^(n + j)) :=
+    mul_lt_mul_of_pos_left hclose hjpos
+  have heq : (2 : Rat)^j * (1 / (2 : Rat)^(n + j)) = (1 : Rat) / (2 : Rat)^n := by
+    rw [pow_add]
+    have h1 : (2 : Rat)^(n + j) = (2 : Rat)^n * (2 : Rat)^j := pow_add 2 n j
+    have hnpos : (0 : Rat) < (2 : Rat)^n := pow_pos h2pos n
+    field_simp
+  rw [heq] at hmul
+  exact lt_of_le_of_lt hlip hmul
+
+def qpow2posVal (j : Nat) : Q :=
+  Nat.rec (Q.ofNat 1) (fun _ acc ↦ Q.add acc acc) j
+
+theorem qpow2posVal_val (j : Nat) : (qpow2posVal j).val = (2 : Rat)^j := by
+  induction j with
+  | zero =>
+      show (Q.ofNat 1).val = 2^0
+      rw [Q.val_ofNat]
+      rfl
+  | succ j ih =>
+      show (Q.add (qpow2posVal j) (qpow2posVal j)).val = (2 : Rat)^(j + 1)
+      rw [Q.val_add, ih, pow_succ]
+      ring
+
+#print axioms qpow2posVal_val
+
 #print axioms Q.ltN_add_right
 #print axioms Q.ltN_mul_right_pos
 #print axioms Q.ltN_trans
+#print axioms Q.ltN_le_lt_trans
+#print axioms Q_close_mono
+#print axioms Q_ltN_pow2neg_mono
+#print axioms Q_lip_scale
+#print axioms Q_lip_scale_diff
 
 #print axioms Q.of_eq_mkRat
 #print axioms Q.of_eq_of

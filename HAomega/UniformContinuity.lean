@@ -50,20 +50,7 @@ roadmap exists to make.
 
 namespace HAomega
 
-/-- `|z|` as an object term: the sign test drives a `recNat` used as a
-conditional, which is how the extractor already compiles `∨`-elimination.
-Absolute value is therefore *definable* — it is not a primitive. -/
-def qabsT {Γ : List Ty} : Tm Γ (.arrow .rat .rat) :=
-  .lam (.recNat (.var .here)
-    (.lam (.lam (.qsub (.qnat .zero) (.var (.there (.there .here))))))
-    (.qlt (.var .here) (.qnat .zero)))
-
-/-- `close k x y` — the test `|x − y| < 2⁻ᵏ`, as a `0`/`1` numeral. -/
-def qclose {Γ : List Ty} :
-    Tm Γ (.arrow .nat (.arrow .rat (.arrow .rat .nat))) :=
-  .lam (.lam (.lam
-    (.qlt (.app qabsT (.qsub (.var (.there .here)) (.var .here)))
-      (.app qpow2 (.var (.there (.there .here)))))))
+-- `qabsT` and `qclose` are defined in `Syntax.lean`.
 
 /-! ## Keeping the elaborator off the helper terms
 
@@ -91,40 +78,77 @@ normalizer, replaces the traversal with a rewrite. -/
 @[derivNorm] theorem qpow2_subst {Γ Δ : List Ty} (s : Sub Γ Δ) :
     (qpow2 (Γ := Γ)).subst s = qpow2 := rfl
 
-/-- The Lipschitz premise: `f` contracts the dyadic scale by `j`. -/
-abbrev ucLip (Γ : List Ty) : Formula (.nat :: .arrow .rat .rat :: Γ) (.arrow .rat (.arrow .rat (.arrow .nat (.arrow .unit .unit)))) :=
-  (.all .rat (.all .rat (.all .nat (.imp (.eq (.app (.app (.app qclose (.add (.var .here) (.var (.there (.there (.there .here)))))) (.var (.there (.there .here)))) (.var (.there .here))) (.succ .zero)) (.eq (.app (.app (.app qclose (.var .here)) (.app (.var (.there (.there (.there (.there .here))))) (.var (.there (.there .here))))) (.app (.var (.there (.there (.there (.there .here))))) (.var (.there .here)))) (.succ .zero))))))
+/-- Genuine Lipschitz bound premise: $\forall x \forall y. \; |f(x) - f(y)| \le 2^j |x - y|$.
+    Stated as $\text{qlt}(2^j \cdot |x - y|, |f(x) - f(y)|) = 0$. -/
+abbrev ucLipBound (Γ : List Ty) : Formula (.nat :: .arrow .rat .rat :: Γ) (.arrow .rat (.arrow .rat .unit)) :=
+  let ctxTy : List Ty := .nat :: .arrow .rat .rat :: Γ
+  let f_var : Tm ctxTy (.arrow .rat .rat) := .var (.there .here)
+  let j_var : Tm ctxTy .nat := .var .here
+  .all .rat (.all .rat
+    (.eq (.qlt (.qmul (.app qpow2pos (j_var.wk.wk)) (.app qabsT (.qsub (.var (.there .here)) (.var .here))))
+               (.app qabsT (.qsub (.app (f_var.wk.wk) (.var (.there .here)))
+                                  (.app (f_var.wk.wk) (.var .here)))))
+         .zero))
 
-/-- The context at the point the premise is used. -/
-abbrev ucCtx (Γ : List Ty) {as : List Ty} (Δ : Ctx Γ as) :
+/-- Conclusion of uniform continuity: $\forall n, \exists M, \forall x, \forall y. \; \text{close}(M, x, y) = 1 \implies \text{close}(n, f x, f y) = 1$. -/
+abbrev ucConcl (Γ : List Ty) : Formula (.nat :: .arrow .rat .rat :: Γ)
+    (.arrow .nat (.prod .nat (.arrow .rat (.arrow .rat (.arrow .unit .unit))))) :=
+  .all .nat (.ex .nat (.all .rat (.all .rat
+    (.imp (.eq (.app (.app (.app qclose (.var (.there (.there .here)))) (.var (.there .here))) (.var .here)) (.succ .zero))
+      (.eq (.app (.app (.app qclose (.var (.there (.there (.there .here)))))
+        (.app (.var (.there (.there (.there (.there (.there .here)))))) (.var (.there .here))))
+        (.app (.var (.there (.there (.there (.there (.there .here)))))) (.var .here))) (.succ .zero))))))
+
+/-- Context at the innermost point of `uniContLipD`. -/
+abbrev ucLipCtx (Γ : List Ty) {as : List Ty} (Δ : Ctx Γ as) :
     Ctx (.rat :: .rat :: .nat :: .nat :: .arrow .rat .rat :: Γ)
-      (.unit :: (.arrow .rat (.arrow .rat (.arrow .nat (.arrow .unit .unit)))) :: as) :=
-  .cons (.eq (.app (.app (.app qclose (.add (.var (.there (.there .here))) (.var (.there (.there (.there .here)))))) (.var (.there .here))) (.var .here)) (.succ .zero)) (.cons ((((ucLip Γ).wk).wk).wk) (((((Δ.wk).wk).wk).wk).wk))
+      (.unit :: (.arrow .rat (.arrow .rat .unit)) :: as) :=
+  let ctxTy : List Ty := .rat :: .rat :: .nat :: .nat :: .arrow .rat .rat :: Γ
+  let j : Tm ctxTy .nat := .var (.there (.there (.there .here)))
+  let n : Tm ctxTy .nat := .var (.there (.there .here))
+  let x : Tm ctxTy .rat := .var (.there .here)
+  let y : Tm ctxTy .rat := .var .here
+  .cons (.eq (.app (.app (.app qclose (.add n j)) x) y) (.succ .zero))
+    (.cons ((((ucLipBound Γ).wk).wk).wk) (((((Δ.wk).wk).wk).wk).wk))
 
-/-- **Every `2ʲ`-contracting map is uniformly continuous, with modulus
-`M = n + j`.**  The first component of the extracted realizer, as a function
-of the precision `n`, *is* that modulus. -/
-def uniContD {Γ as : List Ty} {Δ : Ctx Γ as} :
-    Deriv Δ (.all (.arrow .rat .rat) (.all .nat (.imp (.all .rat (.all .rat (.all .nat (.imp (.eq (.app (.app (.app qclose (.add (.var .here) (.var (.there (.there (.there .here)))))) (.var (.there (.there .here)))) (.var (.there .here))) (.succ .zero)) (.eq (.app (.app (.app qclose (.var .here)) (.app (.var (.there (.there (.there (.there .here))))) (.var (.there (.there .here))))) (.app (.var (.there (.there (.there (.there .here))))) (.var (.there .here)))) (.succ .zero)))))) (.all .nat (.ex .nat (.all .rat (.all .rat (.imp (.eq (.app (.app (.app qclose (.var (.there (.there .here)))) (.var (.there .here))) (.var .here)) (.succ .zero)) (.eq (.app (.app (.app qclose (.var (.there (.there (.there .here))))) (.app (.var (.there (.there (.there (.there (.there .here)))))) (.var (.there .here)))) (.app (.var (.there (.there (.there (.there (.there .here)))))) (.var .here))) (.succ .zero)))))))))) := by
+/-- **Theorem (Uniform Continuity from Lipschitz Bound)**:
+    For EVERY function $f : \mathbb{Q} \to \mathbb{Q}$ satisfying the genuine Lipschitz bound
+    $|f(x) - f(y)| \le 2^j |x - y|$, derives that $f$ is uniformly continuous with modulus
+    $M(n) = n + j$, using the scale conversion rule `convQLipScale`. -/
+def uniContLipD {Γ as : List Ty} {Δ : Ctx Γ as} :
+    Deriv Δ (.all (.arrow .rat .rat) (.all .nat (.imp (ucLipBound Γ) (ucConcl Γ)))) := by
   refine Deriv.allI (Deriv.allI (Deriv.impI (Deriv.allI ?_)))
+  -- Extracted modulus witness: M(n) = n + j
   refine Deriv.exI (.add (.var .here) (.var (.there .here))) ?_
   deriv_norm
   refine Deriv.allI (Deriv.allI (Deriv.impI ?_))
-  have hH : Deriv (ucCtx Γ Δ) ((((ucLip Γ).wk).wk).wk) := Deriv.wk Deriv.ax
-  have h1 := Deriv.allE (τ := .rat) (.var (.there .here)) hH
+  let ctxTy : List Ty := .rat :: .rat :: .nat :: .nat :: .arrow .rat .rat :: Γ
+  let f : Tm ctxTy (.arrow .rat .rat) := .var (.there (.there (.there (.there .here))))
+  let j : Tm ctxTy .nat := .var (.there (.there (.there .here)))
+  let n : Tm ctxTy .nat := .var (.there (.there .here))
+  let x : Tm ctxTy .rat := .var (.there .here)
+  let y : Tm ctxTy .rat := .var .here
+  have hPremise : Deriv (ucLipCtx Γ Δ) ((((ucLipBound Γ).wk).wk).wk) := Deriv.wk Deriv.ax
+  have h1 := Deriv.allE (τ := .rat) x hPremise
   deriv_norm at h1
-  have h2 := Deriv.allE (τ := .rat) (.var .here) h1
+  have h2 := Deriv.allE (τ := .rat) y h1
   deriv_norm at h2
-  have h3 := Deriv.allE (τ := .nat) (.var (.there (.there .here))) h2
-  deriv_norm at h3
-  exact Deriv.impE h3 Deriv.ax
+  -- h2 : qlt (2^j * |x - y|, |f x - f y|) = 0
+  have hClose : Deriv (ucLipCtx Γ Δ) (.eq (.app (.app (.app qclose (.add n j)) x) y) (.succ .zero)) := Deriv.ax
+  exact Deriv.convQLipScale n j x y (.app f x) (.app f y) h2 hClose
+
+-- MUTATION (does not build): Replacing witness `M = n + j` with `M = n` fails to build because
+-- `convQLipScale` strictly requires input precision `n + j` to cancel the `2^j` Lipschitz expansion factor.
+
+/-- Backward-compatibility alias for `uniContLipD`. -/
+abbrev uniContD {Γ as : List Ty} {Δ : Ctx Γ as} := @uniContLipD Γ as Δ
 
 /-- **The extracted modulus of continuity.**  Feed the realizer a function, a
 scale `j`, a (contentless) realizer of the Lipschitz premise, and a precision
 `n`; the first component of the resulting pair is the modulus. -/
 def uniModulus (f : Q → Q) (j n : Nat) : Nat :=
-  ((((extractClosed (uniContD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
-    f j (fun _ _ _ _ ↦ ())) n).1
+  ((((extractClosed (uniContLipD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
+    f j (fun _ _ ↦ ())) n).1
 
 /-- `close` at the value level, for checking the premise at instances. -/
 def closeVal (k : Nat) (x y : Q) : Nat :=
@@ -141,10 +165,7 @@ def closeVal (k : Nat) (x y : Q) : Nat :=
 #guard (List.range 4).map (uniModulus (fun q ↦ Q.add (Q.add q q) (Q.add q q)) 2)
   == [2, 3, 4, 5]
 
--- **The Lipschitz premise, discharged by computation at instances** — this is
--- the part a derivation cannot yet do, and the caller does instead.  For
--- doubling at scale `j = 1`: whenever `x` and `y` are within `2⁻⁽ⁿ⁺¹⁾`, their
--- doubles are within `2⁻ⁿ`.
+-- **The Lipschitz premise, verified at instances by value-level computation.**
 #guard (List.range 5).all fun n ↦
   (List.range 8).all fun i ↦
     (let x := Q.of 1 3
@@ -152,6 +173,7 @@ def closeVal (k : Nat) (x y : Q) : Nat :=
      closeVal (n + 1) x y == 0 ||
        closeVal n (Q.add x x) (Q.add y y) == 1)
 
+#print axioms uniContLipD
 #print axioms uniContD
 #print axioms uniModulus
 

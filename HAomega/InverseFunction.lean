@@ -41,20 +41,18 @@ open Rat
 def invOp (f : Q → Q) (n K : Nat) : Q → Q :=
   fun y ↦ fnCrossingSol f y n K
 
-/-! ## 2. Modulus Extraction Template -/
-
-/-- Modulus extraction template for Lipschitz functions (aliasing `lipschitzModulusD`). -/
+/-- Modulus extraction template for Lipschitz functions (aliasing `uniContLipD`). -/
 abbrev inverseModulusD {Γ as : List Ty} {Δ : Ctx Γ as} :
     Deriv Δ (.all (.arrow .rat .rat) (.all .nat
-      (.imp (intLipPremise Γ)
-        (intConcl Γ)))) :=
-  lipschitzModulusD
+      (.imp (ucLipBound Γ)
+        (ucConcl Γ)))) :=
+  uniContLipD
 
 /-- **The extracted modulus of the inverse function**: $M(m) = m + j$. -/
 def invModulus (f : Q → Q) (j : Nat) (m : Nat) : Nat :=
   let realizer := (((extractClosed (inverseModulusD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
-    (invOp f m 100)) j (fun _ _ _ _ ↦ ())
-  (realizer.2 m).1
+    (invOp f m 100)) j (fun _ _ ↦ ())
+  (realizer m).1
 
 /-! ## 3. Discriminating Kernel Guards -/
 

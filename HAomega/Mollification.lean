@@ -59,14 +59,12 @@ def iterSmooth (f : Q → Q) (h : Q) : Nat → (Q → Q)
   | 0 => f
   | m + 1 => fun x ↦ smoothStep (iterSmooth f h m) h x
 
-/-! ## 2. Modulus Extraction Template -/
-
-/-- Modulus extraction template for Lipschitz functions (aliasing `lipschitzModulusD`). -/
+/-- Modulus extraction template for Lipschitz functions (aliasing `uniContLipD`). -/
 abbrev mollifierModulusD {Γ as : List Ty} {Δ : Ctx Γ as} :
     Deriv Δ (.all (.arrow .rat .rat) (.all .nat
-      (.imp (intLipPremise Γ)
-        (intConcl Γ)))) :=
-  lipschitzModulusD
+      (.imp (ucLipBound Γ)
+        (ucConcl Γ)))) :=
+  uniContLipD
 
 /-! ## 3. Extracted Mollification Programs & Moduli -/
 
@@ -82,8 +80,8 @@ def mollifyIter (f : Q → Q) (h : Q) (j : Nat) : Nat → (Q → Q)
 /-- **The extracted modulus of the smoothed function**: $M(n) = n + j$. -/
 def mollifyModulus (f : Q → Q) (h : Q) (j : Nat) (n : Nat) : Nat :=
   let realizer := (((extractClosed (mollifierModulusD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
-    (fun x ↦ smoothStep f h x)) j (fun _ _ _ _ ↦ ())
-  (realizer.2 n).1
+    (fun x ↦ smoothStep f h x)) j (fun _ _ ↦ ())
+  (realizer n).1
 
 /-! ## 4. Kernel Verification of the Extracted Smoothing Operator -/
 

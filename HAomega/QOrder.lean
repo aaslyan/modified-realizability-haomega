@@ -18,21 +18,8 @@ Proof-side only, like `QArith`: nothing here is reachable from `Tm.eval`.
 
 namespace HAomega
 
-theorem twoPowN_pos (k : Nat) : 0 < twoPowN k := by
-  induction k with
-  | zero => decide
-  | succ n ih => unfold twoPowN; omega
 
 theorem twoPowN_ne_zero (k : Nat) : twoPowN k ≠ 0 := Nat.ne_of_gt (twoPowN_pos k)
-
-theorem twoPowN_cast (k : Nat) : ((twoPowN k : Nat) : Rat) = 2 ^ k := by
-  induction k with
-  | zero => decide
-  | succ n ih =>
-    show ((2 * twoPowN n : Nat) : Rat) = _
-    push_cast
-    rw [ih, pow_succ]
-    ring
 
 /-- `2⁻ᵏ` denotes what it should. -/
 theorem toQ_pow2neg_val (k : Nat) : (D.toQ (D.pow2neg k)).val = 1 / 2 ^ k := by

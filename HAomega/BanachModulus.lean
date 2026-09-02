@@ -139,22 +139,20 @@ abbrev banachRealizerTy : Ty :=
   .arrow .nat (.prod .nat (.arrow .nat .unit))
 
 /-- Formula for the Banach convergence modulus conclusion:
-    $\forall n, \exists N, \forall d. \; \text{close}(n + d + k_0, x_{N+d}, x_{N+d+1}) = 1$. -/
+    $\forall n, \exists N, \forall d. \; \text{close}(n, x_{N+d}, x_{N+d+1}) = 1$. -/
 abbrev banachContractionConcl (Γ : List Ty) :
     Formula (.nat :: .rat :: (.arrow .rat .rat) :: Γ) banachRealizerTy :=
   let ctxTy : List Ty := .nat :: .nat :: .nat :: .nat :: .rat :: (.arrow .rat .rat) :: Γ
   let T_var : Tm ctxTy (.arrow .rat .rat) := .var (.there (.there (.there (.there (.there .here)))))
   let x0_var : Tm ctxTy .rat := .var (.there (.there (.there (.there .here))))
-  let k0_var : Tm ctxTy .nat := .var (.there (.there (.there .here)))
   let n_var : Tm ctxTy .nat := .var (.there (.there .here))
   let N_var : Tm ctxTy .nat := .var (.there .here)
   let d_var : Tm ctxTy .nat := .var .here
-  let scale_var : Tm ctxTy .nat := .add (.add n_var d_var) k0_var
   let m_var : Tm ctxTy .nat := .add N_var d_var
   let xm : Tm ctxTy .rat := iterAt T_var x0_var m_var
   let xm1 : Tm ctxTy .rat := iterAt T_var x0_var (.succ m_var)
   .all .nat (.ex .nat (.all .nat
-    (.eq (.app (.app (.app qclose scale_var) xm) xm1) (.succ .zero))))
+    (.eq (.app (.app (.app qclose n_var) xm) xm1) (.succ .zero))))
 
 /-- Context at the innermost point of `banachContractionD`. -/
 abbrev banachInnerCtx (Γ : List Ty) {as : List Ty} (Δ : Ctx Γ as) :
@@ -168,7 +166,7 @@ abbrev banachInnerCtx (Γ : List Ty) {as : List Ty} (Δ : Ctx Γ as) :
     For EVERY contraction $T : \mathbb{Q} \to \mathbb{Q}$ with seed $x_0 \in \mathbb{Q}$
     and initial scale $k_0 \in \mathbb{N}$, derives by mathematical induction (`Deriv.ind`)
     on the iteration count $m$ that the stopping criterion $N(n) = n$ guarantees consecutive
-    iterate gaps drop below $2^{-(n + d + k_0)}$. -/
+    iterate gaps drop below $2^{-n}$ for all future iterations $N + d$. -/
 def banachContractionD {Γ as : List Ty} {Δ : Ctx Γ as} :
     Deriv Δ (.all (.arrow .rat .rat) (.all .rat (.all .nat
       (.imp (banachContractPremise Γ)
@@ -189,6 +187,8 @@ def banachContractionD {Γ as : List Ty} {Δ : Ctx Γ as} :
   let x0 : Tm ctxTy .rat := .var (.there (.there (.there .here)))
   let T : Tm ctxTy (.arrow .rat .rat) := .var (.there (.there (.there (.there .here))))
   let innerCtx := banachInnerCtx Γ Δ
+  let xm : Tm ctxTy .rat := iterAt T x0 (.add n d)
+  let xm1 : Tm ctxTy .rat := iterAt T x0 (.succ (.add n d))
   -- Orbit invariant for general m in this context:
   let orbitInv : Formula (.nat :: ctxTy) .unit :=
     let m_var : Tm (.nat :: ctxTy) .nat := .var .here
@@ -196,9 +196,9 @@ def banachContractionD {Γ as : List Ty} {Δ : Ctx Γ as} :
     let x0_var : Tm (.nat :: ctxTy) .rat := .var (.there (.there (.there (.there .here))))
     let T_var : Tm (.nat :: ctxTy) (.arrow .rat .rat) := .var (.there (.there (.there (.there (.there .here)))))
     let scale : Tm (.nat :: ctxTy) .nat := .add m_var k0_var
-    let xm : Tm (.nat :: ctxTy) .rat := iterAt T_var x0_var m_var
-    let xm1 : Tm (.nat :: ctxTy) .rat := iterAt T_var x0_var (.succ m_var)
-    .eq (.app (.app (.app qclose scale) xm) xm1) (.succ .zero)
+    let xm_m : Tm (.nat :: ctxTy) .rat := iterAt T_var x0_var m_var
+    let xm1_m : Tm (.nat :: ctxTy) .rat := iterAt T_var x0_var (.succ m_var)
+    .eq (.app (.app (.app qclose scale) xm_m) xm1_m) (.succ .zero)
   have hOrbit : Deriv innerCtx (.all .nat orbitInv) := by
     refine Deriv.ind ?_ ?_
     · -- Base case: m = 0
@@ -243,12 +243,19 @@ def banachContractionD {Γ as : List Ty} {Δ : Ctx Γ as} :
         Deriv.symmE (iterAtSucc T_s x0_s (.succ m_s))
       exact qcloseTransport heq_scale heq_u heq_v hStepClose
   have hInst := Deriv.allE (.add n d) hOrbit
-  exact hInst
+  -- hInst : close((n + d) + k0, xm, xm1) = 1
+  have heq_assoc : Deriv innerCtx (.eq (.add (.add n d) k0) (.add n (.add d k0))) := by
+    have h := plusAssocD (Δ := innerCtx)
+    have h' := Deriv.allE k0 (Deriv.allE d (Deriv.allE n h))
+    deriv_norm at h'
+    exact h'
+  have hReassoc : Deriv innerCtx (.eq (.app (.app (.app qclose (.add n (.add d k0))) xm) xm1) (.succ .zero)) :=
+    qcloseTransport heq_assoc (Deriv.eqRefl xm) (Deriv.eqRefl xm1) hInst
+  exact Deriv.convQCloseMono n (.add d k0) xm xm1 hReassoc
 
--- MUTATION TEST: Replacing witness `N = n` (`.var .here`) with a trivial witness like `N = 0` (`.zero`)
--- fails to build because the required scale tolerance `(n + d) + k0` depends on `n`,
--- and instantiating the induction hypothesis at `0 + d` gives scale `(0 + d) + k0`,
--- which cannot close `close((n + d) + k0, x_{0+d}, ...)` without scale-monotonicity rules.
+-- MUTATION (does not build): Replacing witness `N = n` (`.var .here`) with a false witness like `N = 0` (`.zero`)
+-- fails to build because the orbit step count `0 + d` gives scale tolerance `(0 + d) + k0`,
+-- which cannot be reduced to target precision `n` via scale monotonicity when `n > d + k0`.
 
 /-- Backward-compatibility alias for `banachContractionD`. -/
 abbrev banachModulusD {Γ as : List Ty} {Δ : Ctx Γ as} := @banachContractionD Γ as Δ

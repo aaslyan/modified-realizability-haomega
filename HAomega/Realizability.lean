@@ -277,13 +277,13 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
       Deriv Δ (.eq (.qlt t s) .zero) →
       Deriv Δ (.eq (.qlt t u) (.succ .zero)) →
       Deriv Δ (.eq (.qlt s u) (.succ .zero))
-  | convQCloseMono {Γ as} {Δ : Ctx Γ as} (a c : Tm Γ .nat) (diff : Tm Γ .rat) :
-      Deriv Δ (.eq (.qlt diff (.app qpow2 (.add a c))) (.succ .zero)) →
-      Deriv Δ (.eq (.qlt diff (.app qpow2 a)) (.succ .zero))
-  | convQLipScale {Γ as} {Δ : Ctx Γ as} (n j : Tm Γ .nat) (diff_in diff_out : Tm Γ .rat) :
-      Deriv Δ (.eq (.qlt (.qmul (.app qpow2pos j) diff_in) diff_out) .zero) →
-      Deriv Δ (.eq (.qlt diff_in (.app qpow2 (.add n j))) (.succ .zero)) →
-      Deriv Δ (.eq (.qlt diff_out (.app qpow2 n)) (.succ .zero))
+  | convQCloseMono {Γ as} {Δ : Ctx Γ as} (a c : Tm Γ .nat) (u v : Tm Γ .rat) :
+      Deriv Δ (.eq (.app (.app (.app qclose (.add a c)) u) v) (.succ .zero)) →
+      Deriv Δ (.eq (.app (.app (.app qclose a) u) v) (.succ .zero))
+  | convQLipScale {Γ as} {Δ : Ctx Γ as} (n j : Tm Γ .nat) (u v fu fv : Tm Γ .rat) :
+      Deriv Δ (.eq (.qlt (.qmul (.app qpow2pos j) (.app qabsT (.qsub u v))) (.app qabsT (.qsub fu fv))) .zero) →
+      Deriv Δ (.eq (.app (.app (.app qclose (.add n j)) u) v) (.succ .zero)) →
+      Deriv Δ (.eq (.app (.app (.app qclose n) fu) fv) (.succ .zero))
   -- The `Q` ring laws.  These are separate from `t − t = 0` below because
   -- their soundness needs uniqueness of normal forms (`Q.of_eq_of`), which is
   -- Mathlib-dependent, whereas `sub_self`'s does not.  Admitting them is the

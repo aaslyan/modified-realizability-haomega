@@ -54,10 +54,10 @@ def liftR : (φ : Formula) → {m : ℕ} →
         pairPT (fun _ ↦ (0 : ℕ)) (liftR φ (sndPT x))
       else
         pairPT (fun _ ↦ (1 : ℕ)) (liftR ψ (sndPT x))
-  | .imp φ ψ, 0, _ => defaultPT 2
-  | .imp φ ψ, m' + 1, F =>
+  | .imp _ _, 0, _ => defaultPT 2
+  | .imp φ ψ, _ + 1, F =>
       abs₁ (fun x ↦ liftR ψ (app₁ F (dropR φ x)))
-  | .all _ φ, 0, _ => defaultPT 2
+  | .all _ _, 0, _ => defaultPT 2
   | .all _ φ, m' + 1, F =>
       abs₁ (fun x ↦ liftR φ (app₁ F (natPT (m' + 1) (x (defaultPT (m' + 1))))))
   | .ex _ φ, m, x =>
@@ -75,10 +75,10 @@ def dropR : (φ : Formula) → {m : ℕ} →
         pairPT (fun _ ↦ (0 : ℕ)) (dropR φ (sndPT y))
       else
         pairPT (fun _ ↦ (1 : ℕ)) (dropR ψ (sndPT y))
-  | .imp φ ψ, 0, _ => defaultPT 1
-  | .imp φ ψ, m' + 1, H =>
+  | .imp _ _, 0, _ => defaultPT 1
+  | .imp φ ψ, _ + 1, H =>
       abs₁ (fun x ↦ dropR ψ (app₁ H (liftR φ x)))
-  | .all _ φ, 0, _ => defaultPT 1
+  | .all _ _, 0, _ => defaultPT 1
   | .all _ φ, m' + 1, H =>
       abs₁ (fun x ↦ dropR φ (app₁ H (natPT (m' + 2) (x (defaultPT m')))))
   | .ex _ φ, m, y =>

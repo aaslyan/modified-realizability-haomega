@@ -8,8 +8,8 @@ import HAomega.SquareRoot
 /-!
 # Uniform continuity, and the modulus as the realizer
 
-    uniContD : ∀f^(ℚ→ℚ) ∀j.
-        (∀x ∀y ∀m. close(m+j, x, y) → close(m, f x, f y))
+    uniContLipD : ∀f^(ℚ→ℚ) ∀j.
+        (∀x ∀y. |f x − f y| ≤ 2^j · |x − y|)
         → ∀n ∃M ∀x ∀y. close(M, x, y) → close(n, f x, f y)
 
 where `close(k, x, y)` is the test `|x − y| < 2⁻ᵏ`. Read the realizer type of

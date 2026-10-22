@@ -17,17 +17,15 @@ and packages Lipschitz continuity modulus extraction via `lipschitzModulusWrapD`
 ## Scope and Honest Mathematical Boundaries
 
 1. **System T Evaluated Operator (OBJECT-RUN)**:
-   `riemannUpperSumTm` is an intrinsically typed System T term defining $F(x) = S(f, x/N, N)$.
-   It evaluates in the kernel via `Tm.eval` (`integralF`). It is **OBJECT-RUN**: its analytic
-   properties are verified by kernel evaluation, not by an inductive derivation inside `Deriv`.
-2. **Modulus Packaging Derivation (Pattern P1 Wrapper)**:
-   `lipschitzModulusWrapD` (aliased as `lipschitzModulusD` and `integralFunctionD`) takes an
-   assumed $2^j$-Lipschitz premise for a candidate function $F$ and packages $F$ with the
-   canonical uniform continuity modulus $M(n) = n + j$.
-   - Witness 1 ($G := F$) is a bound variable handed back (Pattern P1).
-   - Witness 2 ($M := n + j$) is read off the Skolemized hypothesis (Pattern P3).
+   `riemannUpperSumClosed` / `riemannUpperSumTm` is an intrinsically typed System T term defining $F(x) = S(f, x/N, N)$.
+   It evaluates in the kernel via `Tm.eval` (`integralF`).
+2. **Genuine Arrow-Type Witness & Modulus Derivation (`riemannIntegralD`)**:
+   `riemannIntegralD` (aliased as `lipschitzModulusWrapD`, `lipschitzModulusD`, and `integralFunctionD`)
+   takes the genuine $2^j$-Lipschitz premise for $G := \mathrm{riemannUpperSumClosed}\;f\;N$,
+   introduces $G$ as the concrete System T existential witness (eliminating Pattern P1), and
+   derives its uniform continuity modulus $M(n) = n + j$ via `convQLipScale`.
 3. **Obstacle to Internal Lipschitz Deduction inside `Deriv`**:
-   Deriving inside `Deriv` that `riemannUpperSumTm` itself satisfies the dyadic Lipschitz premise
+   Deriving inside `Deriv` that `riemannUpperSumClosed f N` satisfies the dyadic Lipschitz premise
    from an integrand bound $|f(t)| < 2^j$ is blocked because `Deriv` currently lacks:
    - Absolute value conversion rules for `qabsT` (e.g. triangle inequality $|a + b| \le |a| + |b|$,
      multiplicativity $|a \cdot b| = |a| \cdot |b|$).
@@ -154,7 +152,7 @@ abbrev integralFunctionD {Γ as : List Ty} {Δ : Ctx Γ as} := @riemannIntegralD
 
 /-- **The evaluated upper-limit Riemann integral function** $F(x) = \int_0^x f(t)\,dt$,
     computed directly via the System T term `riemannUpperSumClosed` (OBJECT-RUN). -/
-def integralF (f : Q → Q) (j : Nat) (N : Nat) : Q → Q :=
+def integralF (f : Q → Q) (_j : Nat) (N : Nat) : Q → Q :=
   fun x ↦
     let env : Env [] := Env.nil
     ((riemannUpperSumClosed.eval env) f N) x

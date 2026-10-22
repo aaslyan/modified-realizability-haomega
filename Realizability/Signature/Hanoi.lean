@@ -172,7 +172,7 @@ theorem hcheck_hanoiAux : ∀ (n f t v r : ℕ),
     show hcheck (n + 1) f t v
       (hanoiAux n f v t (hconsN (mvN f t) (hanoiAux n v t f r))) = some r
     rw [hcheck, hcheck_hanoiAux n f v t _]
-    simp only [hcons_ne_zero, if_neg, hhead_hcons, if_pos, htail_hcons]
+    simp only [hcons_ne_zero, hhead_hcons, if_pos, htail_hcons]
     exact hcheck_hanoiAux n v t f r
 
 /-- The headline value-level fact, and the justification of the Phase-E2
@@ -282,7 +282,7 @@ theorem hcheck_happN : ∀ (n f t v k s r : ℕ), hcheck n f t v k = some s →
           rw [hmw] at hh h
           rw [hhead_hcons] at hh
           rw [htail_hcons] at h
-          simp only [hcons_ne_zero, if_neg, hhead_hcons, hh, if_pos, htail_hcons]
+          simp only [hcons_ne_zero, hhead_hcons, hh, if_pos, htail_hcons]
           exact hcheck_happN n v t f w s r h
         · rw [if_neg hh] at h; exact absurd h (by simp)
 
@@ -304,7 +304,7 @@ theorem solvesN_succ {n f t v k₁ k₂ : ℕ}
   show (if hcheck (n + 1) f t v (happN k₁ (hconsN (mvN f t) k₂)) = some 0
     then 1 else 0) = 1
   rw [hcheck, hpre]
-  simp only [happN_nil, hcons_ne_zero, if_neg, hhead_hcons, if_pos, htail_hcons, e₂]
+  simp only [happN_nil, hcons_ne_zero, hhead_hcons, if_pos, htail_hcons, e₂]
   simp
 
 /-! ## Uniqueness — what "optimal" does and does not mean here

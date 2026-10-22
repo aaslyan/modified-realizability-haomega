@@ -494,7 +494,7 @@ theorem tiCFind_sound (φ : Formula) (b : Fam) (m : ℕ) :
     rw [List.map_cons] at h
     by_cases hjk : j = k
     · subst hjk
-      simp only [tiCFind, if_pos rfl] at h
+      simp only [tiCFind] at h
       injection h with h'
       exact h'.symm
     · simp only [tiCFind, if_neg hjk] at h

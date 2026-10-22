@@ -683,7 +683,7 @@ one in the coefficient.  If `b` prepends then all three of `a`'s branches
 give a head strictly below `b`, so each is one exponent comparison.  If
 `b` recurses then `a ≺ b ≺ oE X` forces `a` to recurse too, and the
 induction hypothesis finishes it. -/
-theorem precB_insertExp_mono_exp {a b : ℕ} (ha : nfB a = true)
+theorem precB_insertExp_mono_exp {a b : ℕ} (_ha : nfB a = true)
     (hb : nfB b = true) (hab : precB a b = true) :
     ∀ X : ℕ, nfB X = true → precB (insertExp a X) (insertExp b X) = true := by
   refine nat_strong_ind (fun X ih ↦ ?_)
@@ -790,7 +790,7 @@ theorem insertIter_push {e X : ℕ} (h : precB e (oE X) = true) : ∀ n : ℕ,
 
 /-- **The bound**: `n` copies of `ω^a` sit below one `ω^b`, for every `n`,
 whenever `a ≺ b`.  Induction on `X`; `n` is untouched. -/
-theorem precB_insertIter_lt {a b : ℕ} (ha : nfB a = true) (hb : nfB b = true)
+theorem precB_insertIter_lt {a b : ℕ} (_ha : nfB a = true) (hb : nfB b = true)
     (hab : precB a b = true) :
     ∀ X : ℕ, nfB X = true → ∀ n : ℕ,
       precB (insertIter a n X) (insertExp b X) = true := by
@@ -924,7 +924,7 @@ theorem cutH_descends (n : ℕ) : ∀ h : Hydra, h ≠ Hydra.leaf →
         ordOfForest_append_replicate]
       exact precB_insertIter_lt hnf₁ hnf₂ IH _ hnfR (n + 1)
     · simp only [Bool.not_eq_true] at hflag
-      simp only [cutH, hflag, if_false, ordOfHydra_node, ordOfForest_cons]
+      simp only [cutH, hflag, ordOfHydra_node, ordOfForest_cons]
       exact precB_insertExp_mono_exp hnf₁ hnf₂ IH _ hnfR
 
 /-- The assignment on codes — the value-level function the fragment's

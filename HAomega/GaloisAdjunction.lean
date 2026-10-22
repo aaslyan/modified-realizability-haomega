@@ -268,7 +268,7 @@ theorem adequacy_spectrum_upper_set {X Y : Type} {S : Rep Y} {F : X → Y}
     set of minimal representations on which $F$ is adequate. The Galois connection
     ensures this frontier is unique up to representation equivalence. -/
 theorem adequacy_frontier_unique {X Y : Type} {R1 R2 : Rep X} {S : Rep Y} {F : X → Y}
-    (h1 : Th R1 S F) (h2 : Th R2 S F)
+    (_h1 : Th R1 S F) (_h2 : Th R2 S F)
     (hR : RepEquiv R1 R2) :
     Th R1 S F ↔ Th R2 S F :=
   Th_degree_invariant hR

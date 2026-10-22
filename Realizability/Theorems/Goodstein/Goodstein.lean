@@ -134,7 +134,7 @@ theorem hrepAux_hterm (k : ℕ) : ∀ fuel n : ℕ, HTerm (hrepAux k fuel n)
   | 0, 0 => .zero
   | 0, _ + 1 => .zero
   | _ + 1, 0 => .zero
-  | fuel + 1, n + 1 =>
+  | fuel + 1, _ + 1 =>
       .plus (.times (.exp .var0 (hrepAux_hterm k fuel _)) (numeral_hterm _))
         (hrepAux_hterm k fuel _)
 

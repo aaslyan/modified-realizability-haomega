@@ -132,7 +132,7 @@ theorem iterateOp_equiv {X : Type} {M : RepMetricSpace X} (T : RepContraction M)
 theorem banach_fixed_point_existence {X : Type} (M : RepMetricSpace X)
     (compl : RepComplete M) (T : RepContraction M)
     (c0 : M.rep.Carrier)
-    (h_cauchy : RepCauchySeq M) (h_seq : h_cauchy.seq = iterateOp T c0) :
+    (h_cauchy : RepCauchySeq M) (_h_seq : h_cauchy.seq = iterateOp T c0) :
     -- The limit exists and is a code in the carrier
     ∃ (fixedCode : M.rep.Carrier), fixedCode = compl.limit h_cauchy :=
   ⟨compl.limit h_cauchy, rfl⟩

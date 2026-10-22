@@ -72,7 +72,7 @@ recursive calls one row up. -/
 def pasN : ℕ → ℕ → ℕ
   | 0, 0 => 1
   | 0, _ + 1 => 0
-  | n + 1, 0 => 1
+  | _ + 1, 0 => 1
   | n + 1, k + 1 => xorN (pasN n k) (pasN n (k + 1))
 
 /-! ### The four defining equations, as named facts

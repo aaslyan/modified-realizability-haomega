@@ -1,6 +1,6 @@
 # HA^ω status
 
-**As of 2026-10-23.** Full `lake build` green — 7,916 jobs,
+**As of 2026-10-23.** Full `lake build` green — 7,928 jobs,
 including Mathlib and the first-order tree — zero HAomega warnings, zero
 `sorry`/`admit`. 33,530 lines across 108 files in `HAomega/`, **60** inference
 rules (constructors of `Deriv`), 36 extracted realizers rendered in
@@ -139,6 +139,17 @@ three labels, according to where its computational content comes from:
     `[propext, Quot.sound]`) — so every ODE solver in the catalog factors
     through the single n-variable solver.
     `genSolveND`/extraction `[propext, Quot.sound]`.
+  - *The universe as a class (QUESTIONS.md item 19, resolved: polynomial-ODE
+    functions):* `UniverseTrial.lean` defines `InUniverse f` — `f` is, as
+    rational values, a component of the solution of a well-formed system
+    (`solN sys v n` = the `(n+1)`-st iterate's coefficient `n`), with
+    `solN_fixed` and closure under `+` (`InUniverse_add`, system `sumSys`).
+    `UniverseMul.lean`: the value-level product rule on coefficient streams
+    (`jetMul_leibniz_val`) and closure under `×` (`InUniverse_mul`, system
+    `mulSys`: the two systems plus `h = A_f·A_g + ∫(f'g + fg' − D(A_f·A_g))`,
+    `f' = D A_f + F_f`), identified with `f·g` by `genSolveN_unique_val`.
+    Closure proofs are metatheory (`[propext, Classical.choice, Quot.sound]`);
+    every member's solver is the proof-computed `genSolveND`.
   - *Inverses (closed-universe pillar 4):* `ShiftSolve.lean`. On the
     unnormalized `Q` the guard `G(0)·Y(i)` of `Y = 1 + G·Y` is not structurally
     `0`, so the guard is the shift `x·F` (`tmJetShift`, no division).
@@ -1604,7 +1615,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,926 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,928 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

@@ -115,15 +115,8 @@ recommendations.  Items get moved to "Resolved" when you answer them.
    and proved (`goodsteinTheorem`).  The original item is preserved
    below for the record.
 
-## Open
-
-*(nothing blocking; the roadmap's phases and the Hydra project's six are
-all delivered, as are Phases E and F.  Item 12 is engineering, not
-mathematics; items 13–16 are design points, recorded rather than silently
-chosen.  Item 18 gates the HA^ω closed universe's algebra laws.)*
-
 19. **HA^ω closed universe: which class is "the universe"?**  *Raised
-   2026-10-23, deferred by the user until the current plan is finished.*
+   2026-10-23; resolved 2026-10-23: (b), the user taking the recommendation.*
    "Closed" is meant algebraically: every operation is total on the class, so
    every output is a valid input. Trigonometric polynomials are not closed
    under `∫` (`∫1 = x`); inverse and composition have domain conditions.
@@ -138,6 +131,20 @@ chosen.  Item 18 gates the HA^ω closed universe's algebra laws.)*
    streams, so in-logic laws are harder; needs n-variable systems (`JExprN`).
    Recommendation (2026-10-23): (b) as the universe, (a) as a finite,
    decidable sub-universe for the in-logic laws.
+   **Decision:** the universe is `InUniverse` (HAomega/UniverseTrial.lean): a
+   predicate on jets, "a component of the solution of a well-formed
+   polynomial–integral system". Jets stay the representation, so every
+   existing proof stands. Closure is proved operation by operation by
+   building a combined system and applying `genSolveN_unique_val`
+   (`InUniverse_add` first). Exponential polynomials remain the intended
+   finite sub-universe for laws inside `Deriv` (item 18 still open).
+
+## Open
+
+*(nothing blocking; the roadmap's phases and the Hydra project's six are
+all delivered, as are Phases E and F.  Item 12 is engineering, not
+mathematics; items 13–16 are design points, recorded rather than silently
+chosen.  Item 18 gates the HA^ω closed universe's algebra laws.)*
 
 18. **HA^ω closed universe: what does `=` on `rat` mean for the algebra laws?**
    *Raised 2026-10-23, kept open by the user's choice.*  The hand-rolled `Q`

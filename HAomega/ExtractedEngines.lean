@@ -8,6 +8,7 @@ import HAomega.EmitHaskell
 import HAomega.CauchyKowalevski
 import HAomega.InverseFunction
 import HAomega.SymplecticKepler
+import HAomega.AnalysisDeriv
 
 /-!
 # Hand-Written Gödel System T Object Terms & Haskell Source (OBJECT-RUN)
@@ -148,5 +149,96 @@ def harmonicHaskellSource : String := EmitHaskell.hsTm (tmHarmonicStep (Γ := []
 def heatRawLambda : String := tmHeatDiffusionStep (Γ := []).pretty 0
 def heatCollapsedLambda : String := tmHeatDiffusionStep (Γ := []).pretty' 0
 def heatHaskellSource : String := EmitHaskell.hsTm (tmHeatDiffusionStep (Γ := [])) 0
+
+/-! ## 7. Natural Deduction Derivations in `Deriv` & `extractClosed` Realizers -/
+
+/-- Generic closed existential synthesis in `Deriv` for any closed System T term $t : \mathrm{Tm}\ []\ \tau$:
+    derives $\exists f : \tau.\; f = t$ and extracts $t$ via `extractClosed`. -/
+def closedEngineD (τ : Ty) (t : Tm [] τ) :
+    Deriv Ctx.nil (.ex τ (.eq (.var .here) t.wk)) := by
+  have d_refl : Deriv Ctx.nil (Formula.eq t t) := Deriv.eqRefl t
+  have d_subst : Deriv Ctx.nil ((Formula.eq (.var .here) t.wk).subst1 t) :=
+    Formula.subst1_eq_var_wk t t ▸ d_refl
+  exact Deriv.exI t d_subst
+
+/-- 1. Cauchy–Kowalevski `Deriv` proof and `extractClosed` realizer. -/
+def ckAdvectionD :
+    Deriv Ctx.nil (.ex (.arrow (.arrow .nat .rat) (.arrow .nat (.arrow .nat .rat)))
+      (.eq (.var .here) (tmCKAdvection (Γ := [])).wk)) :=
+  closedEngineD _ (tmCKAdvection (Γ := []))
+
+def ckAdvectionExtracted (a : Nat → Q) (j k : Nat) : Q :=
+  ((extractClosed ckAdvectionD).eval Env.nil).1 a j k
+
+/-- 2. Newton–Raphson `Deriv` proof and `extractClosed` realizer. -/
+def newtonIterD :
+    Deriv Ctx.nil (.ex (.arrow (.arrow .rat .rat) (.arrow (.arrow .rat .rat) (.arrow .rat (.arrow .rat (.arrow .nat .rat)))))
+      (.eq (.var .here) (tmNewtonIter (Γ := [])).wk)) :=
+  closedEngineD _ (tmNewtonIter (Γ := []))
+
+def newtonIterExtracted (f df : Q → Q) (y x0 : Q) (N : Nat) : Q :=
+  ((extractClosed newtonIterD).eval Env.nil).1 f df y x0 N
+
+/-- 3. Symplectic Kepler step `Deriv` proof and multi-step trajectory `Deriv` proof (`iterSequenceD`). -/
+def symplecticStepD :
+    Deriv Ctx.nil (.ex (.arrow (.prod .rat .rat) (.arrow (.prod .rat .rat) (.arrow .rat (.arrow .rat (.prod (.prod .rat .rat) (.prod .rat .rat))))))
+      (.eq (.var .here) (tmSymplecticStep (Γ := [])).wk)) :=
+  closedEngineD _ (tmSymplecticStep (Γ := []))
+
+def symplecticStepExtracted (r v : Q × Q) (dt kappa : Q) : (Q × Q) × (Q × Q) :=
+  ((extractClosed symplecticStepD).eval Env.nil).1 r v dt kappa
+
+/-- 4. 2D Harmonic Oscillator multi-step trajectory `Deriv` proof via `iterSequenceD` and `extractClosed`. -/
+def harmonicStepForDt (dt : Tm [] .rat) :
+    Tm [] (.arrow (.prod .rat .rat) (.prod .rat .rat)) :=
+  .lam (.app (.app (tmHarmonicStep (Γ := [])).wk (.var .here)) dt.wk)
+
+def harmonicTrajectoryD (s0 : Tm [] (.prod .rat .rat)) (dt : Tm [] .rat) :
+    Deriv Ctx.nil (.all .nat (iterInv (.prod .rat .rat) [] s0 (harmonicStepForDt dt))) :=
+  iterSequenceD (.prod .rat .rat) s0 (harmonicStepForDt dt)
+
+def harmonicTrajectoryExtracted (s0 : Tm [] (.prod .rat .rat)) (dt : Tm [] .rat) (n : Nat) : Q × Q :=
+  ((extractClosed (harmonicTrajectoryD s0 dt)).eval Env.nil n).1
+
+/-- 5. 1D Heat Diffusion step `Deriv` proof and `extractClosed` realizer. -/
+def heatDiffusionStepD :
+    Deriv Ctx.nil (.ex (.arrow .rat (.arrow .rat (.arrow .rat (.arrow .rat .rat))))
+      (.eq (.var .here) (tmHeatDiffusionStep (Γ := [])).wk)) :=
+  closedEngineD _ (tmHeatDiffusionStep (Γ := []))
+
+def heatDiffusionExtracted (u_prev u_curr u_next r : Q) : Q :=
+  ((extractClosed heatDiffusionStepD).eval Env.nil).1 u_prev u_curr u_next r
+
+/-! ## 8. Kernel `#guard` Checks on the `extractClosed` Engine Realizers -/
+
+-- 1. Cauchy–Kowalevski extracted realizer: c_{j,k} = a(j + k)
+#guard ckAdvectionExtracted (fun n ↦ Q.ofNat (n + 1)) 2 3 == Q.ofNat 6
+
+-- 2. Newton–Raphson extracted realizer: solving x² = 2 from x0 = 1
+-- Step 1: 1 - (1 - 2)/2 = 3/2; Step 2: 3/2 - (9/4 - 2)/3 = 17/12
+#guard newtonIterExtracted (fun x ↦ Q.mul x x) (fun x ↦ Q.add x x) (Q.ofNat 2) (Q.ofNat 1) 1 == Q.of 3 2
+#guard newtonIterExtracted (fun x ↦ Q.mul x x) (fun x ↦ Q.add x x) (Q.ofNat 2) (Q.ofNat 1) 2 == Q.of 17 12
+
+-- 3. Symplectic Kepler extracted realizer: conserves discrete angular momentum rx * vy - ry * vx = 1
+#guard let s1 := symplecticStepExtracted (Q.ofNat 1, Q.zero) (Q.zero, Q.ofNat 1) (Q.of 1 10) (Q.neg (Q.ofNat 1))
+       Q.sub (Q.mul s1.1.1 s1.2.2) (Q.mul s1.1.2 s1.2.1) == Q.ofNat 1
+
+-- 4. 2D Harmonic Oscillator trajectory extracted via `iterSequenceD`:
+-- Initial state (1, 0), dt = 1/4: step 0 = (1, 0), step 1 = (1, -1/4), step 2 = (15/16, -1/2)
+#guard harmonicTrajectoryExtracted (.pair (.qnat (.succ .zero)) (.qnat .zero))
+         (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.succ (.succ (.succ .zero)))))) 0 == (Q.ofNat 1, Q.zero)
+#guard harmonicTrajectoryExtracted (.pair (.qnat (.succ .zero)) (.qnat .zero))
+         (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.succ (.succ (.succ .zero)))))) 1 == (Q.ofNat 1, Q.neg (Q.of 1 4))
+#guard harmonicTrajectoryExtracted (.pair (.qnat (.succ .zero)) (.qnat .zero))
+         (.qdiv (.qnat (.succ .zero)) (.qnat (.succ (.succ (.succ (.succ .zero)))))) 2 == (Q.of 15 16, Q.neg (Q.of 1 2))
+
+-- 5. Heat Diffusion extracted realizer: smoothing spike (0, 1, 0) with r = 1/4 gives 1 + 1/4*(0 - 2 + 0) = 1/2
+#guard heatDiffusionExtracted Q.zero (Q.ofNat 1) Q.zero (Q.of 1 4) == Q.of 1 2
+
+#print axioms ckAdvectionD
+#print axioms newtonIterD
+#print axioms symplecticStepD
+#print axioms harmonicTrajectoryD
+#print axioms heatDiffusionStepD
 
 end HAomega

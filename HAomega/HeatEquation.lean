@@ -7,29 +7,21 @@ import HAomega.QAnalysis
 import HAomega.GaloisAdequacy
 
 /-!
-# Constructive 1D Heat Equation & Diffusion Smoothing Engine
+# Constructive 1D Heat Equation & Rational Modal Dissipation
 
-This module formalizes the **Constructive 1D Heat Equation** on the periodic domain:
+This module formalizes a discrete rational modal propagator for the 1D Heat Equation:
 $$u_t(x, t) = u_{xx}(x, t), \qquad u(x, 0) = g(x)$$
-and proves the **Fundamental Regularity Boost Theorem**: instantaneous smoothing from $A_0$ to $C^\infty$.
 
-## Theoretical Results
+## Scope and Results
 
-1. **Fourier Mode Heat Propagator (`HeatState`)**:
-   A thermal state represented by its truncated rational Fourier coefficients $\vec{c} = (c_0, c_1, \dots, c_N)$.
-
-2. **Gaussian Decay Factor ($e^{-n^2 t}$)**:
-   For time $t > 0$, the $n$-th spatial harmonic decays by $e^{-n^2 t}$.
-   We formalize the rational Padé/Taylor approximation of the dissipation factor:
-   $$\text{decay}(n, t) \le \frac{1}{1 + n^2 t}$$
-
-3. **Constructive Regularity Boost ($A_0 \to C^k$)**:
-   For any $t > 0$ and any derivative order $k$, the $k$-th spatial derivative series converges:
-   $$\sum_{n=1}^\infty n^k |c_n| e^{-n^2 t} < \infty$$
-   proving that diffusion is an **infinite-order regularity compiler**.
-
-4. **Verified Thermal Evolution**:
-   Exact rational diffusion simulations verified in Lean's kernel.
+1. **Fourier Mode Heat Propagator (`ThermalState`, `heatEvolve`)**:
+   A thermal state represented by truncated rational cosine Fourier coefficients $\vec{a} = (a_0, a_1, \dots, a_N)$,
+   evolved by the rational Padé dissipation factor $\text{modeDecay}(n, p) = \frac{1}{1 + n^2 / 2^p}$.
+2. **Verified Modal Properties (`heat_decay_zero_step1`, `heat_high_frequency_suppression`)**:
+   - Mean temperature conservation ($n = 0 \implies \text{decay}(0, 1) = 1$).
+   - Monotonicity of frequency damping ($n_1 \le n_2 \implies n_1^2 \le n_2^2$).
+3. **Kernel-Verified Thermal Evolution**:
+   Exact rational step-by-step damping of high-frequency modes verified by `#guard`.
 -/
 
 namespace HAomega
@@ -86,7 +78,42 @@ def sharpWave : ThermalState :=
 -- Step 1 evolution: High frequencies die out much faster than low frequencies
 #guard (heatEvolve sharpWave 1).coeffs == [Q.ofNat 1, Q.of 2 3, Q.of 1 3, Q.of 2 11, Q.of 1 9]
 
-/-! ## 4. The Regularity Boost Theorem -/
+/-! ## 4. Modal Dissipation & Regularity Boost Theorems -/
+
+/-- Exact rational evaluation of the Padé modal dissipation factor:
+    $$(\text{modeDecay}\ n\ p).\mathrm{val} = \frac{1}{1 + n^2 / 2^p}.$$ -/
+theorem modeDecay_val (n p : Nat) :
+    (modeDecay n p).val = 1 / (1 + ((n * n : Nat) : Rat) / (2 : Rat) ^ p) := by
+  unfold modeDecay
+  have h2p_pos : 0 < 2 ^ p := Nat.pow_pos (by decide)
+  have h2p_num : (Q.ofNat (2 ^ p)).num ≠ 0 := by
+    unfold Q.ofNat
+    exact Int.ofNat_ne_zero.mpr (ne_of_gt h2p_pos)
+  have h_div_val : (Q.div (Q.ofNat (n * n)) (Q.ofNat (2 ^ p))).val =
+      ((n * n : Nat) : Rat) / (2 : Rat) ^ p := by
+    rw [Q.val_div _ _ h2p_num, Q.val_ofNat, Q.val_ofNat]
+    push_cast
+    rfl
+  have h_denom_val :
+      (Q.add (Q.ofNat 1) (Q.div (Q.ofNat (n * n)) (Q.ofNat (2 ^ p)))).val =
+      1 + ((n * n : Nat) : Rat) / (2 : Rat) ^ p := by
+    rw [Q.val_add, Q.val_ofNat, h_div_val]
+    rfl
+  have h_denom_pos : 0 < (Q.add (Q.ofNat 1) (Q.div (Q.ofNat (n * n)) (Q.ofNat (2 ^ p)))).val := by
+    rw [h_denom_val]
+    positivity
+  have h_denom_num : (Q.add (Q.ofNat 1) (Q.div (Q.ofNat (n * n)) (Q.ofNat (2 ^ p)))).num ≠ 0 :=
+    Q.num_ne_zero_of_val_ne_zero (ne_of_gt h_denom_pos)
+  rw [Q.val_div _ _ h_denom_num, Q.val_ofNat, h_denom_val]
+  rfl
+
+/-- **Theorem (Mean Mode Conservation at Every Time Step)**:
+    Mode $0$ (mean temperature) has zero dissipation at every dyadic step $2^{-p}$:
+    $(\text{modeDecay}\ 0\ p).\mathrm{val} = 1$. -/
+theorem modeDecay_zero_val (p : Nat) :
+    (modeDecay 0 p).val = 1 := by
+  rw [modeDecay_val]
+  simp
 
 /-- **Theorem (Mean Mode Decay at p=1 is Identity)**:
     Mode 0 (mean temperature) has zero dissipation at step 1: $\text{decay}(0, 1) = 1$. -/
@@ -94,15 +121,46 @@ theorem heat_decay_zero_step1 :
     modeDecay 0 1 = Q.ofNat 1 := by
   decide
 
-#print axioms heat_decay_zero_step1
+/-- **Theorem (Positivity and Non-Amplification of Modal Dissipation)**:
+    For every Fourier mode $n$ and dyadic time scale $p$,
+    $0 < (\text{modeDecay}\ n\ p).\mathrm{val} \le 1$. -/
+theorem modeDecay_bounds (n p : Nat) :
+    0 < (modeDecay n p).val ∧ (modeDecay n p).val ≤ 1 := by
+  rw [modeDecay_val]
+  have h_nonneg : (0 : Rat) ≤ ((n * n : Nat) : Rat) / (2 : Rat) ^ p := by positivity
+  have h_denom_ge : (1 : Rat) ≤ 1 + ((n * n : Nat) : Rat) / (2 : Rat) ^ p := by linarith
+  have h_denom_pos : (0 : Rat) < 1 + ((n * n : Nat) : Rat) / (2 : Rat) ^ p := by linarith
+  refine ⟨div_pos one_pos h_denom_pos, ?_⟩
+  rw [div_le_iff₀ h_denom_pos]
+  linarith
 
-/-- **Theorem (High-Frequency Suppression Bound)**:
-    Higher harmonics $n \ge 1$ decay strictly faster than lower harmonics:
+/-- **Theorem (High-Frequency Suppression / Modal Antitonicity)**:
+    Higher harmonics decay faster than lower harmonics: whenever $n_1 \le n_2$,
+    $$(\text{modeDecay}\ n_2\ p).\mathrm{val} \le (\text{modeDecay}\ n_1\ p).\mathrm{val}.$$ -/
+theorem modeDecay_anti_mono (n1 n2 p : Nat) (hn : n1 ≤ n2) :
+    (modeDecay n2 p).val ≤ (modeDecay n1 p).val := by
+  rw [modeDecay_val, modeDecay_val]
+  have hn_sq : n1 * n1 ≤ n2 * n2 := Nat.mul_le_mul hn hn
+  have hn_sq_rat : ((n1 * n1 : Nat) : Rat) ≤ ((n2 * n2 : Nat) : Rat) := by exact_mod_cast hn_sq
+  have h2p_nonneg : (0 : Rat) ≤ (2 : Rat) ^ p := by positivity
+  have h_frac : ((n1 * n1 : Nat) : Rat) / (2 : Rat) ^ p ≤ ((n2 * n2 : Nat) : Rat) / (2 : Rat) ^ p :=
+    div_le_div_of_nonneg_right hn_sq_rat h2p_nonneg
+  have h_d1_pos : (0 : Rat) < 1 + ((n1 * n1 : Nat) : Rat) / (2 : Rat) ^ p := by positivity
+  have h_d2_pos : (0 : Rat) < 1 + ((n2 * n2 : Nat) : Rat) / (2 : Rat) ^ p := by positivity
+  rw [div_le_div_iff₀ h_d2_pos h_d1_pos]
+  linarith
+
+/-- **Corollary (Monotonicity of Squared Wave Numbers)**:
     $n_1^2 \le n_2^2$ whenever $n_1 \le n_2$. -/
 theorem heat_high_frequency_suppression (n1 n2 : Nat) (hn : n1 ≤ n2) :
     n1 * n1 ≤ n2 * n2 :=
   Nat.mul_le_mul hn hn
 
+#print axioms modeDecay_val
+#print axioms modeDecay_zero_val
+#print axioms heat_decay_zero_step1
+#print axioms modeDecay_bounds
+#print axioms modeDecay_anti_mono
 #print axioms heat_high_frequency_suppression
 
 end HAomega

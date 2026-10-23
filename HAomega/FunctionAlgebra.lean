@@ -36,11 +36,73 @@ namespace HAomega
 
 open Rat
 
-/-! ## 1. Abstract Rational-Valued Representations -/
+/-! ## 1. Metric-Compatible Rational Representations (`MetricRep`) -/
 
-/-- A representation of $\mathbb{Q}$ with a metric-compatible approximation relation. -/
+/-- A representation of $\mathbb{Q}$ equipped with metric-compatible code operations
+    for addition and negation, satisfying the dyadic triangle inequality
+    ($2^{-(k+1)} + 2^{-(k+1)} \le 2^{-k}$) and negation isometry. -/
 structure MetricRep where
   rep : Rep Q
+  approx_mono : ∀ c k₁ k₂ q, k₁ ≤ k₂ → rep.approx c k₂ q → rep.approx c k₁ q
+  addCode : rep.Carrier → rep.Carrier → rep.Carrier
+  add_equiv : ∀ a₁ a₂ b₁ b₂,
+    rep.equiv a₁ a₂ → rep.equiv b₁ b₂ → rep.equiv (addCode a₁ b₁) (addCode a₂ b₂)
+  add_approx : ∀ c₁ c₂ k q₁ q₂,
+    rep.approx c₁ (k + 1) q₁ → rep.approx c₂ (k + 1) q₂ →
+    rep.approx (addCode c₁ c₂) k (Q.add q₁ q₂)
+  negCode : rep.Carrier → rep.Carrier
+  neg_equiv : ∀ c₁ c₂, rep.equiv c₁ c₂ → rep.equiv (negCode c₁) (negCode c₂)
+  neg_approx : ∀ c k q, rep.approx c k q → rep.approx (negCode c) k (Q.neg q)
+
+/-- The canonical metric representation of $\mathbb{Q}$ by rational codes with
+    $|c.\mathrm{val} - q.\mathrm{val}| \le 2^{-k}$. -/
+def RepQ : Rep Q where
+  Carrier := Q
+  approx := fun c k q ↦ |c.val - q.val| ≤ 1 / (2 : Rat) ^ k
+  equiv := fun c₁ c₂ ↦ c₁.val = c₂.val
+  equiv_refl := fun _ ↦ rfl
+  equiv_symm := fun _ _ h ↦ h.symm
+  equiv_trans := fun _ _ _ h1 h2 ↦ h1.trans h2
+  approx_congr := by
+    intro c₁ c₂ k q h
+    rw [h]
+
+/-- `RepQ` equipped with metric-compatible addition and negation operations. -/
+def MetricRepQ : MetricRep where
+  rep := RepQ
+  approx_mono := by
+    intro c k₁ k₂ q hk h
+    dsimp [RepQ] at h ⊢
+    exact le_trans h (inv_pow_le hk)
+  addCode := Q.add
+  add_equiv := by
+    intro a₁ a₂ b₁ b₂ ha hb
+    dsimp [RepQ] at ha hb ⊢
+    rw [Q.val_add, Q.val_add, ha, hb]
+  add_approx := by
+    intro c₁ c₂ k q₁ q₂ h1 h2
+    dsimp [RepQ] at h1 h2 ⊢
+    rw [Q.val_add, Q.val_add]
+    have h_split : c₁.val + c₂.val - (q₁.val + q₂.val) = (c₁.val - q₁.val) + (c₂.val - q₂.val) := by ring
+    rw [h_split]
+    have h_tri := abs_add_le' (c₁.val - q₁.val) (c₂.val - q₂.val)
+    have h_halve : 1 / (2 : Rat) ^ (k + 1) + 1 / (2 : Rat) ^ (k + 1) = 1 / (2 : Rat) ^ k := by
+      rw [halve_pow]; ring
+    linarith
+  negCode := Q.neg
+  neg_equiv := by
+    intro c₁ c₂ h
+    dsimp [RepQ] at h ⊢
+    rw [Q.val_neg, Q.val_neg, h]
+  neg_approx := by
+    intro c k q h
+    dsimp [RepQ] at h ⊢
+    rw [Q.val_neg, Q.val_neg]
+    have h_eq : -c.val - -q.val = -(c.val - q.val) := by ring
+    rw [h_eq, abs_neg]
+    exact h
+
+#print axioms MetricRepQ
 
 /-! ## 2. Pointwise Function Operations on Galois Adequate Operations -/
 
@@ -67,6 +129,51 @@ theorem modulusMax_def (μ₁ μ₂ : Nat → Nat) (k : Nat) :
   rfl
 
 #print axioms modulusMax_def
+
+/-- **Negation Adequacy (`GaloisAdequate.neg`)**:
+    If $F : X \to \mathbb{Q}$ is Galois adequate on $(R_X, M_Y.\mathrm{rep})$ with modulus $\mu_F$,
+    then $-F$ is Galois adequate with the exact same modulus $\mu_{-F}(k) = \mu_F(k)$. -/
+def GaloisAdequate.neg {X : Type} {RX : Rep X} (MY : MetricRep) {F : X → Q}
+    (hF : GaloisAdequate RX MY.rep F) :
+    GaloisAdequate RX MY.rep (fun x ↦ Q.neg (F x)) :=
+  { realize := fun c ↦ MY.negCode (hF.realize c)
+    map_equiv := fun c₁ c₂ h ↦ MY.neg_equiv _ _ (hF.map_equiv c₁ c₂ h)
+    mu := hF.mu
+    commutes := fun c k x h ↦ MY.neg_approx (hF.realize c) k (F x) (hF.commutes c k x h) }
+
+/-- **Addition Adequacy (`GaloisAdequate.add`)**:
+    If $F, G : X \to \mathbb{Q}$ are Galois adequate on $(R_X, M_Y.\mathrm{rep})$, then
+    $F + G$ is Galois adequate with modulus $\mu_{F+G}(k) = \max(\mu_F(k+1), \mu_G(k+1))$. -/
+def GaloisAdequate.add {X : Type} {RX : Rep X} (MY : MetricRep)
+    (hRX_mono : ∀ c k₁ k₂ x, k₁ ≤ k₂ → RX.approx c k₂ x → RX.approx c k₁ x)
+    {F G : X → Q}
+    (hF : GaloisAdequate RX MY.rep F) (hG : GaloisAdequate RX MY.rep G) :
+    GaloisAdequate RX MY.rep (fun x ↦ Q.add (F x) (G x)) :=
+  { realize := fun c ↦ MY.addCode (hF.realize c) (hG.realize c)
+    map_equiv := fun c₁ c₂ h ↦ MY.add_equiv _ _ _ _ (hF.map_equiv c₁ c₂ h) (hG.map_equiv c₁ c₂ h)
+    mu := fun k ↦ modulusMax hF.mu hG.mu (k + 1)
+    commutes := by
+      intro c k x h
+      have h1 : RX.approx c (hF.mu (k + 1)) x :=
+        hRX_mono c (hF.mu (k + 1)) (modulusMax hF.mu hG.mu (k + 1)) x (Nat.le_max_left _ _) h
+      have h2 : RX.approx c (hG.mu (k + 1)) x :=
+        hRX_mono c (hG.mu (k + 1)) (modulusMax hF.mu hG.mu (k + 1)) x (Nat.le_max_right _ _) h
+      exact MY.add_approx (hF.realize c) (hG.realize c) k (F x) (G x)
+        (hF.commutes c (k + 1) x h1) (hG.commutes c (k + 1) x h2) }
+
+/-- **Subtraction Adequacy (`GaloisAdequate.sub`)**:
+    If $F, G : X \to \mathbb{Q}$ are Galois adequate on $(R_X, M_Y.\mathrm{rep})$, then
+    $F - G$ is Galois adequate with modulus $\mu_{F-G}(k) = \max(\mu_F(k+1), \mu_G(k+1))$. -/
+def GaloisAdequate.sub {X : Type} {RX : Rep X} (MY : MetricRep)
+    (hRX_mono : ∀ c k₁ k₂ x, k₁ ≤ k₂ → RX.approx c k₂ x → RX.approx c k₁ x)
+    {F G : X → Q}
+    (hF : GaloisAdequate RX MY.rep F) (hG : GaloisAdequate RX MY.rep G) :
+    GaloisAdequate RX MY.rep (fun x ↦ Q.add (F x) (Q.neg (G x))) :=
+  GaloisAdequate.add MY hRX_mono hF (GaloisAdequate.neg MY hG)
+
+#print axioms GaloisAdequate.neg
+#print axioms GaloisAdequate.add
+#print axioms GaloisAdequate.sub
 
 /-! ## 3. Modulus Propagation for Composition Chains -/
 

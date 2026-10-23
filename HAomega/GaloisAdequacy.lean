@@ -304,11 +304,11 @@ def HasSmoothDataE0 (E : E0) : Prop :=
       Qle E.a x = true → Qle x E.b = true → Qle E.a y = true → Qle y E.b = true →
       Qle (Q.abs (Q.sub x y)) (D.toQ (D.pow2neg (ω k))) = true →
       Qle (Q.abs (Q.sub (E.ev n x) (E.ev n y))) (D.toQ (D.pow2neg k)) = true) ∧
-    (∃ F : Q → Q, ∀ (k n : Nat) (x h : Q), dq k h ≤ n →
+    (∃ F : Nat → Q → Q, ∀ (k n : Nat) (x h : Q), dq k h ≤ n →
       Qle E.a x = true → Qle x E.b = true →
       Qle E.a (Q.add x h) = true → Qle (Q.add x h) E.b = true →
       h.num ≠ 0 → Qle (Q.abs h) (D.toQ (D.pow2neg (δ k))) = true →
-      Qle (Q.abs (Q.sub (Q.div (Q.sub (E.ev n (Q.add x h)) (E.ev n x)) h) (F x)))
+      Qle (Q.abs (Q.sub (Q.div (Q.sub (E.ev n (Q.add x h)) (E.ev n x)) h) (F n x)))
         (D.toQ (D.pow2neg k)) = true)
 
 /-- Classical lift from smooth $E_0$ data to $E_1$. -/

@@ -1,10 +1,14 @@
-# The fifteen extracted programs of the HA^ω development
+# The twenty-six extracted programs of the HA^ω development
 
 Each section shows one certified realizer in three renderings.  The
 certified object is the System T term; soundness certifies it realizes
 its theorem, continuity that it denotes a continuous functional.
+Each section title records whether the computational witness is
+**proof-computed** (assembled by extraction from induction, case splits,
+or scaling/telescoping rules) or **witness-style** (where the theorem
+statement specifies the target recursion and the proof supplies it to `exI`).
 
-## 1. Fibonacci
+## 1. Fibonacci (witness-style)
 
 Theorem: `∀n. ∃y. y = fib n`  
 Realizer type: `N → (N × 1)`
@@ -27,7 +31,7 @@ Realizer type: `N → (N × 1)`
 (\x0 -> (((\x1 -> (fst ((\x2 -> (natRec (0, 1) (\x3 -> (\x4 -> ((\x5 -> ((snd x5), ((fst x5) + (snd x5)))) x4))) x2)) x1))) x0), ()))
 ```
 
-## 2. Fibonacci at type 2
+## 2. Fibonacci at type 2 (witness-style)
 
 Theorem: `∀f^(ℕ→ℕ). ∃y. y = fib (f (f 0))`  
 Realizer type: `(N → N) → (N × 1)`
@@ -73,7 +77,7 @@ Realizer type: `N → (N → (N × (1 × 1)))`
 (\x0 -> (natRec (\x1 -> (natRec (0, ((), ())) (\x2 -> (\x3 -> (1, ((), ())))) (fst ((\x2 -> (natRec (0, ((), ())) (\x3 -> (\x4 -> (1, ((), ())))) x2)) x1)))) (\x1 -> (\x2 -> (\x3 -> (natRec (0, ((), ())) (\x4 -> (\x5 -> (natRec (0, ((), ())) (\x6 -> (\x7 -> (1, ((), ())))) (fst ((\x6 -> (natRec (1, ((), ())) (\x7 -> (\x8 -> (natRec (1, ((), ())) (\x9 -> (\x10 -> (0, ((), ())))) (fst x8)))) x6)) ((((\x6 -> (natRec (\x7 -> (natRec 1 (\x8 -> (\x9 -> 0)) x7)) (\x7 -> (\x8 -> (\x9 -> (natRec 1 (\x10 -> (\x11 -> (((\x12 -> (\x13 -> ((\x14 -> (natRec 0 (\x15 -> (\x16 -> ((\x17 -> (natRec 1 (\x18 -> (\x19 -> 0)) x17)) x16))) x14)) (x12 + x13)))) (x8 x10)) (x8 (1 + x10))))) x9)))) x6)) x1) x4) + (((\x6 -> (natRec (\x7 -> (natRec 1 (\x8 -> (\x9 -> 0)) x7)) (\x7 -> (\x8 -> (\x9 -> (natRec 1 (\x10 -> (\x11 -> (((\x12 -> (\x13 -> ((\x14 -> (natRec 0 (\x15 -> (\x16 -> ((\x17 -> (natRec 1 (\x18 -> (\x19 -> 0)) x17)) x16))) x14)) (x12 + x13)))) (x8 x10)) (x8 (1 + x10))))) x9)))) x6)) x1) (1 + x4)))))))) x3)))) x0))
 ```
 
-## 4. Tower of Hanoi
+## 4. Tower of Hanoi (witness-style)
 
 Theorem: `∀n. ∃len ∃moves^(ℕ→ℕ). len = … ∧ moves = …`  
 Realizer type: `N → (N × ((N → N) × (1 × 1)))`
@@ -119,7 +123,7 @@ Realizer type: `N → (N → (N × ((N × 1) × ((N × 1) × (N → ((N × 1) �
 (\x0 -> (\x1 -> ((((((\x2 -> (natRec (\x3 -> (\x4 -> (\x5 -> (\x6 -> ((((\x7 -> (\x8 -> (\x9 -> (x8, (((\x10 -> (0, ())) x8), (((\x10 -> (1, ())) x8), (\x10 -> (\x11 -> (\x12 -> x12))))))))) x3) x4) ((((\x7 -> (\x8 -> (natRec (\x9 -> ()) (\x9 -> (\x10 -> (\x11 -> ()))) x8))) x3) x4) ((((\x7 -> (\x8 -> (natRec (\x9 -> ()) (\x9 -> (\x10 -> (\x11 -> ()))) x8))) (x3 + x4)) x5) x6))))))) (\x3 -> (\x4 -> (\x5 -> (\x6 -> (\x7 -> (\x8 -> (natRec ((((\x9 -> (\x10 -> (\x11 -> (x10, (((\x12 -> (0, ())) x10), (((\x12 -> (1, ())) x10), (\x12 -> (\x13 -> (\x14 -> x14))))))))) x5) x6) (fst (snd ((\x9 -> (natRec (0, ((), (0, ()))) (\x10 -> (\x11 -> (1, ((), (x10, ()))))) x9)) x5)))) (\x9 -> (\x10 -> (((\x11 -> (\x12 -> (natRec ((((\x13 -> (\x14 -> (\x15 -> (x13, (((\x16 -> (1, ())) x13), (((\x16 -> (0, ())) x13), (\x16 -> (\x17 -> (\x18 -> x17))))))))) x5) x6) (fst (snd ((\x13 -> (natRec (0, ((), (0, ()))) (\x14 -> (\x15 -> (1, ((), (x14, ()))))) x13)) x6)))) (\x13 -> (\x14 -> (((\x15 -> (\x16 -> (natRec (((\x17 -> (\x18 -> ((((((\x19 -> (\x20 -> (\x21 -> (\x22 -> (\x23 -> (((\x24 -> (\x25 -> (x25, ((fst x24), (((((((\x26 -> (\x27 -> (\x28 -> (\x29 -> (\x30 -> (((\x31 -> (\x32 -> (((\x33 -> (\x34 -> ((x32 + x34), ()))) (snd x30)) (fst x30)))) (snd x29)) (fst x29))))))) x25) x19) x21) (fst x24)) (fst (snd x24))), (\x26 -> (\x27 -> (\x28 -> ((((snd (snd x24)) x26) x27) ((((((\x29 -> (\x30 -> (\x31 -> (\x32 -> (\x33 -> (((\x34 -> (\x35 -> (((\x36 -> (\x37 -> (natRec (((\x38 -> (\x39 -> (x39, ((\x40 -> (((((\x41 -> (\x42 -> (\x43 -> (natRec (\x44 -> ()) (\x44 -> (\x45 -> (\x46 -> (x45 ((\x47 -> ()) ()))))) x43)))) x31) (((\x41 -> (\x42 -> (natRec 0 (\x43 -> (\x44 -> (x41 + x44))) x42))) x29) x39)) x30) (((\x41 -> (\x42 -> (natRec () (\x43 -> (\x44 -> ())) x42))) x31) x30))) x36)))) (snd (fst (snd (((\x38 -> (natRec (\x39 -> (0, ((x39, ((\x40 -> (natRec () (\x41 -> (\x42 -> ())) x40)) x39)), (0, ())))) (\x39 -> (\x40 -> (\x41 -> (natRec (((\x42 -> (\x43 -> (natRec (1, ((0, ()), (0, ()))) (\x44 -> (\x45 -> (((\x46 -> (\x47 -> (0, ((x47, (((\x48 -> (\x49 -> (natRec () (\x50 -> (\x51 -> ())) x49))) x39) x47)), (0, ()))))) (snd (snd (snd ((\x46 -> (natRec (0, ((), (0, ()))) (\x47 -> (\x48 -> (1, ((), (x47, ()))))) x46)) x43))))) (fst (snd (snd ((\x46 -> (natRec (0, ((), (0, ()))) (\x47 -> (\x48 -> (1, ((), (x47, ()))))) x46)) x43))))))) (fst ((\x44 -> (natRec (0, ((), (0, ()))) (\x45 -> (\x46 -> (1, ((), (x45, ()))))) x44)) x43))))) (snd (fst (snd (x40 x41))))) (fst (fst (snd (x40 x41))))) (\x42 -> (\x43 -> (((\x44 -> (\x45 -> (1, ((0, ()), ((1 + x45), ()))))) (snd (snd (snd (x40 x41))))) (fst (snd (snd (x40 x41))))))) (fst (x40 x41)))))) x38)) x35) x37))))) (fst (fst (snd (((\x38 -> (natRec (\x39 -> (0, ((x39, ((\x40 -> (natRec () (\x41 -> (\x42 -> ())) x40)) x39)), (0, ())))) (\x39 -> (\x40 -> (\x41 -> (natRec (((\x42 -> (\x43 -> (natRec (1, ((0, ()), (0, ()))) (\x44 -> (\x45 -> (((\x46 -> (\x47 -> (0, ((x47, (((\x48 -> (\x49 -> (natRec () (\x50 -> (\x51 -> ())) x49))) x39) x47)), (0, ()))))) (snd (snd (snd ((\x46 -> (natRec (0, ((), (0, ()))) (\x47 -> (\x48 -> (1, ((), (x47, ()))))) x46)) x43))))) (fst (snd (snd ((\x46 -> (natRec (0, ((), (0, ()))) (\x47 -> (\x48 -> (1, ((), (x47, ()))))) x46)) x43))))))) (fst ((\x44 -> (natRec (0, ((), (0, ()))) (\x45 -> (\x46 -> (1, ((), (x45, ()))))) x44)) x43))))) (snd (fst (snd (x40 x41))))) (fst (fst (snd (x40 x41))))) (\x42 -> (\x43 -> (((\x44 -> (\x45 -> (1, ((0, ()), ((1 + x45), ()))))) (snd (snd (snd (x40 x41))))) (fst (snd (snd (x40 x41))))))) (fst (x40 x41)))))) x38)) x35) x37))))) (\x38 -> (\x39 -> (((\x40 -> (\x41 -> (0, ((((\x42 -> (\x43 -> (natRec (\x44 -> ()) (\x44 -> (\x45 -> (\x46 -> ()))) x43))) x31) (((\x42 -> (\x43 -> (natRec 0 (\x44 -> (\x45 -> (x42 + x45))) x43))) x29) (1 + x41))) ())))) (snd (snd (snd (((\x40 -> (natRec (\x41 -> (0, ((x41, ((\x42 -> (natRec () (\x43 -> (\x44 -> ())) x42)) x41)), (0, ())))) (\x41 -> (\x42 -> (\x43 -> (natRec (((\x44 -> (\x45 -> (natRec (1, ((0, ()), (0, ()))) (\x46 -> (\x47 -> (((\x48 -> (\x49 -> (0, ((x49, (((\x50 -> (\x51 -> (natRec () (\x52 -> (\x53 -> ())) x51))) x41) x49)), (0, ()))))) (snd (snd (snd ((\x48 -> (natRec (0, ((), (0, ()))) (\x49 -> (\x50 -> (1, ((), (x49, ()))))) x48)) x45))))) (fst (snd (snd ((\x48 -> (natRec (0, ((), (0, ()))) (\x49 -> (\x50 -> (1, ((), (x49, ()))))) x48)) x45))))))) (fst ((\x46 -> (natRec (0, ((), (0, ()))) (\x47 -> (\x48 -> (1, ((), (x47, ()))))) x46)) x45))))) (snd (fst (snd (x42 x43))))) (fst (fst (snd (x42 x43))))) (\x44 -> (\x45 -> (((\x46 -> (\x47 -> (1, ((0, ()), ((1 + x47), ()))))) (snd (snd (snd (x42 x43))))) (fst (snd (snd (x42 x43))))))) (fst (x42 x43)))))) x40)) x35) x37))))) (fst (snd (snd (((\x40 -> (natRec (\x41 -> (0, ((x41, ((\x42 -> (natRec () (\x43 -> (\x44 -> ())) x42)) x41)), (0, ())))) (\x41 -> (\x42 -> (\x43 -> (natRec (((\x44 -> (\x45 -> (natRec (1, ((0, ()), (0, ()))) (\x46 -> (\x47 -> (((\x48 -> (\x49 -> (0, ((x49, (((\x50 -> (\x51 -> (natRec () (\x52 -> (\x53 -> ())) x51))) x41) x49)), (0, ()))))) (snd (snd (snd ((\x48 -> (natRec (0, ((), (0, ()))) (\x49 -> (\x50 -> (1, ((), (x49, ()))))) x48)) x45))))) (fst (snd (snd ((\x48 -> (natRec (0, ((), (0, ()))) (\x49 -> (\x50 -> (1, ((), (x49, ()))))) x48)) x45))))))) (fst ((\x46 -> (natRec (0, ((), (0, ()))) (\x47 -> (\x48 -> (1, ((), (x47, ()))))) x46)) x45))))) (snd (fst (snd (x42 x43))))) (fst (fst (snd (x42 x43))))) (\x44 -> (\x45 -> (((\x46 -> (\x47 -> (1, ((0, ()), ((1 + x47), ()))))) (snd (snd (snd (x42 x43))))) (fst (snd (snd (x42 x43))))))) (fst (x42 x43)))))) x40)) x35) x37))))))) (fst (((\x38 -> (natRec (\x39 -> (0, ((x39, ((\x40 -> (natRec () (\x41 -> (\x42 -> ())) x40)) x39)), (0, ())))) (\x39 -> (\x40 -> (\x41 -> (natRec (((\x42 -> (\x43 -> (natRec (1, ((0, ()), (0, ()))) (\x44 -> (\x45 -> (((\x46 -> (\x47 -> (0, ((x47, (((\x48 -> (\x49 -> (natRec () (\x50 -> (\x51 -> ())) x49))) x39) x47)), (0, ()))))) (snd (snd (snd ((\x46 -> (natRec (0, ((), (0, ()))) (\x47 -> (\x48 -> (1, ((), (x47, ()))))) x46)) x43))))) (fst (snd (snd ((\x46 -> (natRec (0, ((), (0, ()))) (\x47 -> (\x48 -> (1, ((), (x47, ()))))) x46)) x43))))))) (fst ((\x44 -> (natRec (0, ((), (0, ()))) (\x45 -> (\x46 -> (1, ((), (x45, ()))))) x44)) x43))))) (snd (fst (snd (x40 x41))))) (fst (fst (snd (x40 x41))))) (\x42 -> (\x43 -> (((\x44 -> (\x45 -> (1, ((0, ()), ((1 + x45), ()))))) (snd (snd (snd (x40 x41))))) (fst (snd (snd (x40 x41))))))) (fst (x40 x41)))))) x38)) x35) x37))))) (snd x33)) (fst x33)))) (snd x32)) (fst x32))))))) x26) x19) x21) x27) x28)))))))))) (snd x23)) (fst x23))))))) x5) x6) x18) x17) ((((x4 x5) x18) (x12 + x7)) ((\x19 -> ()) ()))))) (snd (fst (snd (((\x17 -> (natRec (\x18 -> (0, ((x18, ((\x19 -> (natRec () (\x20 -> (\x21 -> ())) x19)) x18)), (0, ())))) (\x18 -> (\x19 -> (\x20 -> (natRec (((\x21 -> (\x22 -> (natRec (1, ((0, ()), (0, ()))) (\x23 -> (\x24 -> (((\x25 -> (\x26 -> (0, ((x26, (((\x27 -> (\x28 -> (natRec () (\x29 -> (\x30 -> ())) x28))) x18) x26)), (0, ()))))) (snd (snd (snd ((\x25 -> (natRec (0, ((), (0, ()))) (\x26 -> (\x27 -> (1, ((), (x26, ()))))) x25)) x22))))) (fst (snd (snd ((\x25 -> (natRec (0, ((), (0, ()))) (\x26 -> (\x27 -> (1, ((), (x26, ()))))) x25)) x22))))))) (fst ((\x23 -> (natRec (0, ((), (0, ()))) (\x24 -> (\x25 -> (1, ((), (x24, ()))))) x23)) x22))))) (snd (fst (snd (x19 x20))))) (fst (fst (snd (x19 x20))))) (\x21 -> (\x22 -> (((\x23 -> (\x24 -> (1, ((0, ()), ((1 + x24), ()))))) (snd (snd (snd (x19 x20))))) (fst (snd (snd (x19 x20))))))) (fst (x19 x20)))))) x17)) x5) x6))))) (fst (fst (snd (((\x17 -> (natRec (\x18 -> (0, ((x18, ((\x19 -> (natRec () (\x20 -> (\x21 -> ())) x19)) x18)), (0, ())))) (\x18 -> (\x19 -> (\x20 -> (natRec (((\x21 -> (\x22 -> (natRec (1, ((0, ()), (0, ()))) (\x23 -> (\x24 -> (((\x25 -> (\x26 -> (0, ((x26, (((\x27 -> (\x28 -> (natRec () (\x29 -> (\x30 -> ())) x28))) x18) x26)), (0, ()))))) (snd (snd (snd ((\x25 -> (natRec (0, ((), (0, ()))) (\x26 -> (\x27 -> (1, ((), (x26, ()))))) x25)) x22))))) (fst (snd (snd ((\x25 -> (natRec (0, ((), (0, ()))) (\x26 -> (\x27 -> (1, ((), (x26, ()))))) x25)) x22))))))) (fst ((\x23 -> (natRec (0, ((), (0, ()))) (\x24 -> (\x25 -> (1, ((), (x24, ()))))) x23)) x22))))) (snd (fst (snd (x19 x20))))) (fst (fst (snd (x19 x20))))) (\x21 -> (\x22 -> (((\x23 -> (\x24 -> (1, ((0, ()), ((1 + x24), ()))))) (snd (snd (snd (x19 x20))))) (fst (snd (snd (x19 x20))))))) (fst (x19 x20)))))) x17)) x5) x6))))) (\x17 -> (\x18 -> (((\x19 -> (\x20 -> ((((((\x21 -> (\x22 -> (\x23 -> (\x24 -> (\x25 -> (((\x26 -> (\x27 -> (x27, (((((((\x28 -> (\x29 -> (\x30 -> (\x31 -> (\x32 -> (((\x33 -> (\x34 -> (((\x35 -> (\x36 -> ((x34 + x36), ()))) (snd x32)) (fst x32)))) (snd x31)) (fst x31))))))) x27) x22) (1 + x23)) (fst x26)) (fst (snd x26))), ((fst x26), (\x28 -> (\x29 -> (\x30 -> ((((snd (snd x26)) x28) x30) ((((((\x31 -> (\x32 -> (\x33 -> (\x34 -> (\x35 -> (((\x36 -> (\x37 -> (((\x38 -> (\x39 -> (natRec (((\x40 -> (\x41 -> (x41, ((\x42 -> (((((\x43 -> (\x44 -> (\x45 -> (natRec (\x46 -> ()) (\x46 -> (\x47 -> (\x48 -> (x47 ((\x49 -> ()) ()))))) x45)))) x33) (((\x43 -> (\x44 -> (natRec 0 (\x45 -> (\x46 -> (x43 + x46))) x44))) x31) x41)) x32) (((\x43 -> (\x44 -> (natRec () (\x45 -> (\x46 -> ())) x44))) x33) x32))) x38)))) (snd (fst (snd (((\x40 -> (natRec (\x41 -> (0, ((x41, ((\x42 -> (natRec () (\x43 -> (\x44 -> ())) x42)) x41)), (0, ())))) (\x41 -> (\x42 -> (\x43 -> (natRec (((\x44 -> (\x45 -> (natRec (1, ((0, ()), (0, ()))) (\x46 -> (\x47 -> (((\x48 -> (\x49 -> (0, ((x49, (((\x50 -> (\x51 -> (natRec () (\x52 -> (\x53 -> ())) x51))) x41) x49)), (0, ()))))) (snd (snd (snd ((\x48 -> (natRec (0, ((), (0, ()))) (\x49 -> (\x50 -> (1, ((), (x49, ()))))) x48)) x45))))) (fst (snd (snd ((\x48 -> (natRec (0, ((), (0, ()))) (\x49 -> (\x50 -> (1, ((), (x49, ()))))) x48)) x45))))))) (fst ((\x46 -> (natRec (0, ((), (0, ()))) (\x47 -> (\x48 -> (1, ((), (x47, ()))))) x46)) x45))))) (snd (fst (snd (x42 x43))))) (fst (fst (snd (x42 x43))))) (\x44 -> (\x45 -> (((\x46 -> (\x47 -> (1, ((0, ()), ((1 + x47), ()))))) (snd (snd (snd (x42 x43))))) (fst (snd (snd (x42 x43))))))) (fst (x42 x43)))))) x40)) x37) x39))))) (fst (fst (snd (((\x40 -> (natRec (\x41 -> (0, ((x41, ((\x42 -> (natRec () (\x43 -> (\x44 -> ())) x42)) x41)), (0, ())))) (\x41 -> (\x42 -> (\x43 -> (natRec (((\x44 -> (\x45 -> (natRec (1, ((0, ()), (0, ()))) (\x46 -> (\x47 -> (((\x48 -> (\x49 -> (0, ((x49, (((\x50 -> (\x51 -> (natRec () (\x52 -> (\x53 -> ())) x51))) x41) x49)), (0, ()))))) (snd (snd (snd ((\x48 -> (natRec (0, ((), (0, ()))) (\x49 -> (\x50 -> (1, ((), (x49, ()))))) x48)) x45))))) (fst (snd (snd ((\x48 -> (natRec (0, ((), (0, ()))) (\x49 -> (\x50 -> (1, ((), (x49, ()))))) x48)) x45))))))) (fst ((\x46 -> (natRec (0, ((), (0, ()))) (\x47 -> (\x48 -> (1, ((), (x47, ()))))) x46)) x45))))) (snd (fst (snd (x42 x43))))) (fst (fst (snd (x42 x43))))) (\x44 -> (\x45 -> (((\x46 -> (\x47 -> (1, ((0, ()), ((1 + x47), ()))))) (snd (snd (snd (x42 x43))))) (fst (snd (snd (x42 x43))))))) (fst (x42 x43)))))) x40)) x37) x39))))) (\x40 -> (\x41 -> (((\x42 -> (\x43 -> (0, ((((\x44 -> (\x45 -> (natRec (\x46 -> ()) (\x46 -> (\x47 -> (\x48 -> ()))) x45))) x33) (((\x44 -> (\x45 -> (natRec 0 (\x46 -> (\x47 -> (x44 + x47))) x45))) x31) (1 + x43))) ())))) (snd (snd (snd (((\x42 -> (natRec (\x43 -> (0, ((x43, ((\x44 -> (natRec () (\x45 -> (\x46 -> ())) x44)) x43)), (0, ())))) (\x43 -> (\x44 -> (\x45 -> (natRec (((\x46 -> (\x47 -> (natRec (1, ((0, ()), (0, ()))) (\x48 -> (\x49 -> (((\x50 -> (\x51 -> (0, ((x51, (((\x52 -> (\x53 -> (natRec () (\x54 -> (\x55 -> ())) x53))) x43) x51)), (0, ()))))) (snd (snd (snd ((\x50 -> (natRec (0, ((), (0, ()))) (\x51 -> (\x52 -> (1, ((), (x51, ()))))) x50)) x47))))) (fst (snd (snd ((\x50 -> (natRec (0, ((), (0, ()))) (\x51 -> (\x52 -> (1, ((), (x51, ()))))) x50)) x47))))))) (fst ((\x48 -> (natRec (0, ((), (0, ()))) (\x49 -> (\x50 -> (1, ((), (x49, ()))))) x48)) x47))))) (snd (fst (snd (x44 x45))))) (fst (fst (snd (x44 x45))))) (\x46 -> (\x47 -> (((\x48 -> (\x49 -> (1, ((0, ()), ((1 + x49), ()))))) (snd (snd (snd (x44 x45))))) (fst (snd (snd (x44 x45))))))) (fst (x44 x45)))))) x42)) x37) x39))))) (fst (snd (snd (((\x42 -> (natRec (\x43 -> (0, ((x43, ((\x44 -> (natRec () (\x45 -> (\x46 -> ())) x44)) x43)), (0, ())))) (\x43 -> (\x44 -> (\x45 -> (natRec (((\x46 -> (\x47 -> (natRec (1, ((0, ()), (0, ()))) (\x48 -> (\x49 -> (((\x50 -> (\x51 -> (0, ((x51, (((\x52 -> (\x53 -> (natRec () (\x54 -> (\x55 -> ())) x53))) x43) x51)), (0, ()))))) (snd (snd (snd ((\x50 -> (natRec (0, ((), (0, ()))) (\x51 -> (\x52 -> (1, ((), (x51, ()))))) x50)) x47))))) (fst (snd (snd ((\x50 -> (natRec (0, ((), (0, ()))) (\x51 -> (\x52 -> (1, ((), (x51, ()))))) x50)) x47))))))) (fst ((\x48 -> (natRec (0, ((), (0, ()))) (\x49 -> (\x50 -> (1, ((), (x49, ()))))) x48)) x47))))) (snd (fst (snd (x44 x45))))) (fst (fst (snd (x44 x45))))) (\x46 -> (\x47 -> (((\x48 -> (\x49 -> (1, ((0, ()), ((1 + x49), ()))))) (snd (snd (snd (x44 x45))))) (fst (snd (snd (x44 x45))))))) (fst (x44 x45)))))) x42)) x37) x39))))))) (fst (((\x40 -> (natRec (\x41 -> (0, ((x41, ((\x42 -> (natRec () (\x43 -> (\x44 -> ())) x42)) x41)), (0, ())))) (\x41 -> (\x42 -> (\x43 -> (natRec (((\x44 -> (\x45 -> (natRec (1, ((0, ()), (0, ()))) (\x46 -> (\x47 -> (((\x48 -> (\x49 -> (0, ((x49, (((\x50 -> (\x51 -> (natRec () (\x52 -> (\x53 -> ())) x51))) x41) x49)), (0, ()))))) (snd (snd (snd ((\x48 -> (natRec (0, ((), (0, ()))) (\x49 -> (\x50 -> (1, ((), (x49, ()))))) x48)) x45))))) (fst (snd (snd ((\x48 -> (natRec (0, ((), (0, ()))) (\x49 -> (\x50 -> (1, ((), (x49, ()))))) x48)) x45))))))) (fst ((\x46 -> (natRec (0, ((), (0, ()))) (\x47 -> (\x48 -> (1, ((), (x47, ()))))) x46)) x45))))) (snd (fst (snd (x42 x43))))) (fst (fst (snd (x42 x43))))) (\x44 -> (\x45 -> (((\x46 -> (\x47 -> (1, ((0, ()), ((1 + x47), ()))))) (snd (snd (snd (x42 x43))))) (fst (snd (snd (x42 x43))))))) (fst (x42 x43)))))) x40)) x37) x39))))) (snd x35)) (fst x35)))) (snd x34)) (fst x34))))))) x28) x22) (1 + x23)) x30) x29)))))))))) (snd x25)) (fst x25))))))) x5) x6) x20) x19) ((((x4 x6) (1 + x20)) (x16 + x7)) ((\x21 -> ()) ()))))) (snd (snd (snd (((\x19 -> (natRec (\x20 -> (0, ((x20, ((\x21 -> (natRec () (\x22 -> (\x23 -> ())) x21)) x20)), (0, ())))) (\x20 -> (\x21 -> (\x22 -> (natRec (((\x23 -> (\x24 -> (natRec (1, ((0, ()), (0, ()))) (\x25 -> (\x26 -> (((\x27 -> (\x28 -> (0, ((x28, (((\x29 -> (\x30 -> (natRec () (\x31 -> (\x32 -> ())) x30))) x20) x28)), (0, ()))))) (snd (snd (snd ((\x27 -> (natRec (0, ((), (0, ()))) (\x28 -> (\x29 -> (1, ((), (x28, ()))))) x27)) x24))))) (fst (snd (snd ((\x27 -> (natRec (0, ((), (0, ()))) (\x28 -> (\x29 -> (1, ((), (x28, ()))))) x27)) x24))))))) (fst ((\x25 -> (natRec (0, ((), (0, ()))) (\x26 -> (\x27 -> (1, ((), (x26, ()))))) x25)) x24))))) (snd (fst (snd (x21 x22))))) (fst (fst (snd (x21 x22))))) (\x23 -> (\x24 -> (((\x25 -> (\x26 -> (1, ((0, ()), ((1 + x26), ()))))) (snd (snd (snd (x21 x22))))) (fst (snd (snd (x21 x22))))))) (fst (x21 x22)))))) x19)) x5) x6))))) (fst (snd (snd (((\x19 -> (natRec (\x20 -> (0, ((x20, ((\x21 -> (natRec () (\x22 -> (\x23 -> ())) x21)) x20)), (0, ())))) (\x20 -> (\x21 -> (\x22 -> (natRec (((\x23 -> (\x24 -> (natRec (1, ((0, ()), (0, ()))) (\x25 -> (\x26 -> (((\x27 -> (\x28 -> (0, ((x28, (((\x29 -> (\x30 -> (natRec () (\x31 -> (\x32 -> ())) x30))) x20) x28)), (0, ()))))) (snd (snd (snd ((\x27 -> (natRec (0, ((), (0, ()))) (\x28 -> (\x29 -> (1, ((), (x28, ()))))) x27)) x24))))) (fst (snd (snd ((\x27 -> (natRec (0, ((), (0, ()))) (\x28 -> (\x29 -> (1, ((), (x28, ()))))) x27)) x24))))))) (fst ((\x25 -> (natRec (0, ((), (0, ()))) (\x26 -> (\x27 -> (1, ((), (x26, ()))))) x25)) x24))))) (snd (fst (snd (x21 x22))))) (fst (fst (snd (x21 x22))))) (\x23 -> (\x24 -> (((\x25 -> (\x26 -> (1, ((0, ()), ((1 + x26), ()))))) (snd (snd (snd (x21 x22))))) (fst (snd (snd (x21 x22))))))) (fst (x21 x22)))))) x19)) x5) x6))))))) (fst (((\x17 -> (natRec (\x18 -> (0, ((x18, ((\x19 -> (natRec () (\x20 -> (\x21 -> ())) x19)) x18)), (0, ())))) (\x18 -> (\x19 -> (\x20 -> (natRec (((\x21 -> (\x22 -> (natRec (1, ((0, ()), (0, ()))) (\x23 -> (\x24 -> (((\x25 -> (\x26 -> (0, ((x26, (((\x27 -> (\x28 -> (natRec () (\x29 -> (\x30 -> ())) x28))) x18) x26)), (0, ()))))) (snd (snd (snd ((\x25 -> (natRec (0, ((), (0, ()))) (\x26 -> (\x27 -> (1, ((), (x26, ()))))) x25)) x22))))) (fst (snd (snd ((\x25 -> (natRec (0, ((), (0, ()))) (\x26 -> (\x27 -> (1, ((), (x26, ()))))) x25)) x22))))))) (fst ((\x23 -> (natRec (0, ((), (0, ()))) (\x24 -> (\x25 -> (1, ((), (x24, ()))))) x23)) x22))))) (snd (fst (snd (x19 x20))))) (fst (fst (snd (x19 x20))))) (\x21 -> (\x22 -> (((\x23 -> (\x24 -> (1, ((0, ()), ((1 + x24), ()))))) (snd (snd (snd (x19 x20))))) (fst (snd (snd (x19 x20))))))) (fst (x19 x20)))))) x17)) x5) x6))))) (snd (snd (snd ((\x15 -> (natRec (0, ((), (0, ()))) (\x16 -> (\x17 -> (1, ((), (x16, ()))))) x15)) x6))))) (fst (snd (snd ((\x15 -> (natRec (0, ((), (0, ()))) (\x16 -> (\x17 -> (1, ((), (x16, ()))))) x15)) x6))))))) (fst ((\x13 -> (natRec (0, ((), (0, ()))) (\x14 -> (\x15 -> (1, ((), (x14, ()))))) x13)) x6))))) (snd (snd (snd ((\x11 -> (natRec (0, ((), (0, ()))) (\x12 -> (\x13 -> (1, ((), (x12, ()))))) x11)) x5))))) (fst (snd (snd ((\x11 -> (natRec (0, ((), (0, ()))) (\x12 -> (\x13 -> (1, ((), (x12, ()))))) x11)) x5))))))) (fst ((\x9 -> (natRec (0, ((), (0, ()))) (\x10 -> (\x11 -> (1, ((), (x10, ()))))) x9)) x5))))))))) x2)) ((x0 + x1) + 0)) x0) x1) 0) ())))
 ```
 
-## 6. Goodstein (TI(ε₀))
+## 6. Goodstein (TI(ε₀), proof-computed)
 
 Theorem: `∀m. ∃t. good(m, t) = 0`  
 Realizer type: `N → (N × 1)`
@@ -142,7 +146,7 @@ Realizer type: `N → (N × 1)`
 (\x0 -> (((((\x1 -> (tiRec (\x2 -> (\x3 -> (\x4 -> (\x5 -> (\x6 -> (natRec (x5, (fst (snd (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (goodN x4 x5)) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (goodN x4 x5)))), ((), (\x7 -> ())))))) (\x7 -> (\x8 -> (((((x3 (ordOfN (1 + (1 + (1 + x5))) (goodN x4 (1 + x5)))) ((\x9 -> ()) ((\x9 -> (\x10 -> ())) (snd (snd (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (goodN x4 x5)) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (goodN x4 x5)))), ((), (\x9 -> ())))))))) x4) (1 + x5)) ()))) (fst (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (goodN x4 x5)) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (goodN x4 x5)))), ((), (\x7 -> ())))))))))) x1 (\x2 -> (\x3 -> (\x4 -> (0, ())))))) (ordOfN 2 x0)) x0) 0) ()))
 ```
 
-## 7. Kirby–Paris Hydra (TI(ε₀))
+## 7. Kirby–Paris Hydra (TI(ε₀), proof-computed)
 
 Theorem: `∀h. ∃t. hydra(h, t) = 0`  
 Realizer type: `N → (N × 1)`
@@ -165,7 +169,7 @@ Realizer type: `N → (N × 1)`
 (\x0 -> (((((\x1 -> (tiRec (\x2 -> (\x3 -> (\x4 -> (\x5 -> (\x6 -> (natRec (x5, (fst (snd (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (hydraSeqN x4 x5)) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (hydraSeqN x4 x5)))), ((), (\x7 -> ())))))) (\x7 -> (\x8 -> (((((x3 (ordOfHydraN (hydraSeqN x4 (1 + x5)))) ((\x9 -> ()) (snd (snd (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (hydraSeqN x4 x5)) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (hydraSeqN x4 x5)))), ((), (\x9 -> ()))))))) x4) (1 + x5)) ()))) (fst (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (hydraSeqN x4 x5)) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (hydraSeqN x4 x5)))), ((), (\x7 -> ())))))))))) x1 (\x2 -> (\x3 -> (\x4 -> (0, ())))))) (ordOfHydraN x0)) x0) 0) ()))
 ```
 
-## 8. Sperner 1D (last-crossing scan)
+## 8. Sperner 1D (last-crossing scan, proof-computed)
 
 Theorem: `∀n ∀c^(ℕ→ℕ). c 0 = 0 → c n = 1 → ∃k. k < n ∧ c k ≠ c (k+1)`  
 Realizer type: `N → ((N → N) → (1 → (1 → (N × ((N × 1) × (1 → 1))))))`
@@ -188,7 +192,7 @@ Realizer type: `N → ((N → N) → (1 → (1 → (N × ((N × 1) × (1 → 1))
 (\x0 -> (\x1 -> (\x2 -> (\x3 -> (natRec (0, ((0, ()), (\x4 -> ()))) (\x4 -> (\x5 -> (snd (snd ((\x6 -> (natRec (0, (x2, (0, ((0, ()), (\x7 -> ()))))) (\x7 -> (\x8 -> (natRec (0, ((fst (snd (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (x1 (1 + x7))) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (x1 (1 + x7))))), ((), (\x9 -> ()))))), (0, ((0, ()), (\x9 -> ()))))) (\x9 -> (\x10 -> (natRec (1, ((), (x7, ((0, ()), (\x11 -> ((snd (snd (((\x12 -> (natRec 0 (\x13 -> (\x14 -> 1)) x12)) ((((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) (x1 (1 + x7))) 0) + (((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) 0) (x1 (1 + x7))))), ((), (\x12 -> ()))))) ())))))) (\x11 -> (\x12 -> (((\x13 -> (\x14 -> (1, ((), (x14, ((((\x15 -> (\x16 -> ((1 + x16), ()))) (snd (fst x13))) (fst (fst x13))), (snd x13))))))) (snd (snd (snd x8)))) (fst (snd (snd x8)))))) (fst x8)))) (fst (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (x1 (1 + x7))) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (x1 (1 + x7))))), ((), (\x9 -> ()))))))) x6)) x0))))) (fst ((\x4 -> (natRec (0, (x2, (0, ((0, ()), (\x5 -> ()))))) (\x5 -> (\x6 -> (natRec (0, ((fst (snd (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (x1 (1 + x5))) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (x1 (1 + x5))))), ((), (\x7 -> ()))))), (0, ((0, ()), (\x7 -> ()))))) (\x7 -> (\x8 -> (natRec (1, ((), (x5, ((0, ()), (\x9 -> ((snd (snd (((\x10 -> (natRec 0 (\x11 -> (\x12 -> 1)) x10)) ((((\x10 -> (\x11 -> (natRec x10 (\x12 -> (\x13 -> ((\x14 -> (natRec 0 (\x15 -> (\x16 -> x15)) x14)) x13))) x11))) (x1 (1 + x5))) 0) + (((\x10 -> (\x11 -> (natRec x10 (\x12 -> (\x13 -> ((\x14 -> (natRec 0 (\x15 -> (\x16 -> x15)) x14)) x13))) x11))) 0) (x1 (1 + x5))))), ((), (\x10 -> ()))))) ())))))) (\x9 -> (\x10 -> (((\x11 -> (\x12 -> (1, ((), (x12, ((((\x13 -> (\x14 -> ((1 + x14), ()))) (snd (fst x11))) (fst (fst x11))), (snd x11))))))) (snd (snd (snd x6)))) (fst (snd (snd x6)))))) (fst x6)))) (fst (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (x1 (1 + x5))) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (x1 (1 + x5))))), ((), (\x7 -> ()))))))) x4)) x0)))))))
 ```
 
-## 9. Hercules (strategy-quantified Hydra)
+## 9. Hercules (strategy-quantified Hydra, proof-computed)
 
 Theorem: `∀h ∀f^(ℕ→ℕ). ∃t. play(f, h, t) = 0`  
 Realizer type: `N → ((N → N) → (N × 1))`
@@ -211,7 +215,7 @@ Realizer type: `N → ((N → N) → (N × 1))`
 (\x0 -> (\x1 -> (((((\x2 -> (tiRec (\x3 -> (\x4 -> (\x5 -> (\x6 -> (\x7 -> (natRec (x6, (fst (snd (((\x8 -> (natRec 0 (\x9 -> (\x10 -> 1)) x8)) ((((\x8 -> (\x9 -> (natRec x8 (\x10 -> (\x11 -> ((\x12 -> (natRec 0 (\x13 -> (\x14 -> x13)) x12)) x11))) x9))) (natRec x5 (\x8 -> (\x9 -> (hydraStepN (x1 x8) x9))) x6)) 0) + (((\x8 -> (\x9 -> (natRec x8 (\x10 -> (\x11 -> ((\x12 -> (natRec 0 (\x13 -> (\x14 -> x13)) x12)) x11))) x9))) 0) (natRec x5 (\x8 -> (\x9 -> (hydraStepN (x1 x8) x9))) x6)))), ((), (\x8 -> ())))))) (\x8 -> (\x9 -> (((((x4 (ordOfHydraN (natRec x5 (\x10 -> (\x11 -> (hydraStepN (x1 x10) x11))) (1 + x6)))) ((\x10 -> ()) (snd (snd (((\x10 -> (natRec 0 (\x11 -> (\x12 -> 1)) x10)) ((((\x10 -> (\x11 -> (natRec x10 (\x12 -> (\x13 -> ((\x14 -> (natRec 0 (\x15 -> (\x16 -> x15)) x14)) x13))) x11))) (natRec x5 (\x10 -> (\x11 -> (hydraStepN (x1 x10) x11))) x6)) 0) + (((\x10 -> (\x11 -> (natRec x10 (\x12 -> (\x13 -> ((\x14 -> (natRec 0 (\x15 -> (\x16 -> x15)) x14)) x13))) x11))) 0) (natRec x5 (\x10 -> (\x11 -> (hydraStepN (x1 x10) x11))) x6)))), ((), (\x10 -> ()))))))) x5) (1 + x6)) ()))) (fst (((\x8 -> (natRec 0 (\x9 -> (\x10 -> 1)) x8)) ((((\x8 -> (\x9 -> (natRec x8 (\x10 -> (\x11 -> ((\x12 -> (natRec 0 (\x13 -> (\x14 -> x13)) x12)) x11))) x9))) (natRec x5 (\x8 -> (\x9 -> (hydraStepN (x1 x8) x9))) x6)) 0) + (((\x8 -> (\x9 -> (natRec x8 (\x10 -> (\x11 -> ((\x12 -> (natRec 0 (\x13 -> (\x14 -> x13)) x12)) x11))) x9))) 0) (natRec x5 (\x8 -> (\x9 -> (hydraStepN (x1 x8) x9))) x6)))), ((), (\x8 -> ())))))))))) x2 (\x3 -> (\x4 -> (\x5 -> (0, ())))))) (ordOfHydraN x0)) x0) 0) ())))
 ```
 
-## 10. Hercules, any head (the fully general game)
+## 10. Hercules, any head (the fully general game, proof-computed)
 
 Theorem: `∀h ∀f^(ℕ→ℕ) ∀g^(ℕ→ℕ). ∃t. playAt(g, f, h, t) = 0`  
 Realizer type: `N → ((N → N) → ((N → N) → (N × 1)))`
@@ -234,7 +238,7 @@ Realizer type: `N → ((N → N) → ((N → N) → (N × 1)))`
 (\x0 -> (\x1 -> (\x2 -> (((((\x3 -> (tiRec (\x4 -> (\x5 -> (\x6 -> (\x7 -> (\x8 -> (natRec (x7, (fst (snd (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (natRec x6 (\x9 -> (\x10 -> (playAtN (x2 x9) (x1 x9) x10))) x7)) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (natRec x6 (\x9 -> (\x10 -> (playAtN (x2 x9) (x1 x9) x10))) x7)))), ((), (\x9 -> ())))))) (\x9 -> (\x10 -> (((((x5 (ordOfHydraN (natRec x6 (\x11 -> (\x12 -> (playAtN (x2 x11) (x1 x11) x12))) (1 + x7)))) ((\x11 -> ()) (snd (snd (((\x11 -> (natRec 0 (\x12 -> (\x13 -> 1)) x11)) ((((\x11 -> (\x12 -> (natRec x11 (\x13 -> (\x14 -> ((\x15 -> (natRec 0 (\x16 -> (\x17 -> x16)) x15)) x14))) x12))) (natRec x6 (\x11 -> (\x12 -> (playAtN (x2 x11) (x1 x11) x12))) x7)) 0) + (((\x11 -> (\x12 -> (natRec x11 (\x13 -> (\x14 -> ((\x15 -> (natRec 0 (\x16 -> (\x17 -> x16)) x15)) x14))) x12))) 0) (natRec x6 (\x11 -> (\x12 -> (playAtN (x2 x11) (x1 x11) x12))) x7)))), ((), (\x11 -> ()))))))) x6) (1 + x7)) ()))) (fst (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (natRec x6 (\x9 -> (\x10 -> (playAtN (x2 x9) (x1 x9) x10))) x7)) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (natRec x6 (\x9 -> (\x10 -> (playAtN (x2 x9) (x1 x9) x10))) x7)))), ((), (\x9 -> ())))))))))) x3 (\x4 -> (\x5 -> (\x6 -> (0, ())))))) (ordOfHydraN x0)) x0) 0) ()))))
 ```
 
-## 11. Goodstein over the typed ordinals (TI(ε₀) on notations)
+## 11. Goodstein over the typed ordinals (TI(ε₀) on notations, proof-computed)
 
 Theorem: `∀m. ∃t. good(m, t) = 0   — §6's statement, proved on structural ordinals`  
 Realizer type: `N → (N × 1)`
@@ -257,7 +261,7 @@ Realizer type: `N → (N × 1)`
 (\x0 -> (((((\x1 -> (tiRecE (\x2 -> (\x3 -> (\x4 -> (\x5 -> (\x6 -> (natRec (x5, (fst (snd (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (goodN x4 x5)) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (goodN x4 x5)))), ((), (\x7 -> ())))))) (\x7 -> (\x8 -> (((((x3 (ordE (1 + (1 + (1 + x5))) (goodN x4 (1 + x5)))) ((\x9 -> ()) ((\x9 -> (\x10 -> ())) (snd (snd (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (goodN x4 x5)) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (goodN x4 x5)))), ((), (\x9 -> ())))))))) x4) (1 + x5)) ()))) (fst (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (goodN x4 x5)) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (goodN x4 x5)))), ((), (\x7 -> ())))))))))) x1 (\x2 -> (\x3 -> (\x4 -> (0, ())))))) (ordE 2 x0)) x0) 0) ()))
 ```
 
-## 12. Kirby–Paris on trees (nothing encoded)
+## 12. Kirby–Paris on trees (nothing encoded, proof-computed)
 
 Theorem: `∀h^hyd. ∃t. deadᴴ?(play(h, t)) = 0   — §7's theorem with tree states and notation measures`  
 Realizer type: `H → (N × 1)`
@@ -280,7 +284,7 @@ Realizer type: `H → (N × 1)`
 (\x0 -> (((((\x1 -> (tiRecE (\x2 -> (\x3 -> (\x4 -> (\x5 -> (\x6 -> (natRec (x5, (fst (snd (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (isLeafN (natRec x4 (\x7 -> (\x8 -> (hydraStep (1 + x7) x8))) x5))) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (isLeafN (natRec x4 (\x7 -> (\x8 -> (hydraStep (1 + x7) x8))) x5))))), ((), (\x7 -> ())))))) (\x7 -> (\x8 -> (((((x3 (ordEOfHydra (natRec x4 (\x9 -> (\x10 -> (hydraStep (1 + x9) x10))) (1 + x5)))) ((\x9 -> ()) (snd (snd (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (isLeafN (natRec x4 (\x9 -> (\x10 -> (hydraStep (1 + x9) x10))) x5))) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (isLeafN (natRec x4 (\x9 -> (\x10 -> (hydraStep (1 + x9) x10))) x5))))), ((), (\x9 -> ()))))))) x4) (1 + x5)) ()))) (fst (((\x7 -> (natRec 0 (\x8 -> (\x9 -> 1)) x7)) ((((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) (isLeafN (natRec x4 (\x7 -> (\x8 -> (hydraStep (1 + x7) x8))) x5))) 0) + (((\x7 -> (\x8 -> (natRec x7 (\x9 -> (\x10 -> ((\x11 -> (natRec 0 (\x12 -> (\x13 -> x12)) x11)) x10))) x8))) 0) (isLeafN (natRec x4 (\x7 -> (\x8 -> (hydraStep (1 + x7) x8))) x5))))), ((), (\x7 -> ())))))))))) x1 (\x2 -> (\x3 -> (\x4 -> (0, ())))))) (ordEOfHydra x0)) x0) 0) ()))
 ```
 
-## 13. Hercules, any head, on trees (nothing encoded anywhere)
+## 13. Hercules, any head, on trees (nothing encoded anywhere, proof-computed)
 
 Theorem: `∀h^hyd ∀f^(ℕ→ℕ) ∀g^(ℕ→ℕ). ∃t. deadᴴ?(playAt(g, f, h, t)) = 0`  
 Realizer type: `H → ((N → N) → ((N → N) → (N × 1)))`
@@ -303,7 +307,7 @@ Realizer type: `H → ((N → N) → ((N → N) → (N × 1)))`
 (\x0 -> (\x1 -> (\x2 -> (((((\x3 -> (tiRecE (\x4 -> (\x5 -> (\x6 -> (\x7 -> (\x8 -> (natRec (x7, (fst (snd (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (isLeafN (natRec x6 (\x9 -> (\x10 -> (playAt (x2 x9) (x1 x9) x10))) x7))) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (isLeafN (natRec x6 (\x9 -> (\x10 -> (playAt (x2 x9) (x1 x9) x10))) x7))))), ((), (\x9 -> ())))))) (\x9 -> (\x10 -> (((((x5 (ordEOfHydra (natRec x6 (\x11 -> (\x12 -> (playAt (x2 x11) (x1 x11) x12))) (1 + x7)))) ((\x11 -> ()) (snd (snd (((\x11 -> (natRec 0 (\x12 -> (\x13 -> 1)) x11)) ((((\x11 -> (\x12 -> (natRec x11 (\x13 -> (\x14 -> ((\x15 -> (natRec 0 (\x16 -> (\x17 -> x16)) x15)) x14))) x12))) (isLeafN (natRec x6 (\x11 -> (\x12 -> (playAt (x2 x11) (x1 x11) x12))) x7))) 0) + (((\x11 -> (\x12 -> (natRec x11 (\x13 -> (\x14 -> ((\x15 -> (natRec 0 (\x16 -> (\x17 -> x16)) x15)) x14))) x12))) 0) (isLeafN (natRec x6 (\x11 -> (\x12 -> (playAt (x2 x11) (x1 x11) x12))) x7))))), ((), (\x11 -> ()))))))) x6) (1 + x7)) ()))) (fst (((\x9 -> (natRec 0 (\x10 -> (\x11 -> 1)) x9)) ((((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) (isLeafN (natRec x6 (\x9 -> (\x10 -> (playAt (x2 x9) (x1 x9) x10))) x7))) 0) + (((\x9 -> (\x10 -> (natRec x9 (\x11 -> (\x12 -> ((\x13 -> (natRec 0 (\x14 -> (\x15 -> x14)) x13)) x12))) x10))) 0) (isLeafN (natRec x6 (\x9 -> (\x10 -> (playAt (x2 x9) (x1 x9) x10))) x7))))), ((), (\x9 -> ())))))))))) x3 (\x4 -> (\x5 -> (\x6 -> (0, ())))))) (ordEOfHydra x0)) x0) 0) ()))))
 ```
 
-## 14. Square roots by approximation (the discrete IVT, applied)
+## 14. Square roots by approximation (the discrete IVT, applied, proof-computed)
 
 Theorem: `∀q^ℚ ∀n ∀K. col(0)=0 → col(K)=1 → ∃k. k<K ∧ col(k) ≠ col(k+1)`  
 Realizer type: `Q → (N → (N → (1 → (1 → (N × ((N × 1) × (1 → 1)))))))`
@@ -326,7 +330,7 @@ Realizer type: `Q → (N → (N → (1 → (1 → (N × ((N × 1) × (1 → 1)))
 (\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> (((((\x5 -> (\x6 -> (\x7 -> (\x8 -> (natRec (0, ((0, ()), (\x9 -> ()))) (\x9 -> (\x10 -> (snd (snd ((\x11 -> (natRec (0, (x7, (0, ((0, ()), (\x12 -> ()))))) (\x12 -> (\x13 -> (natRec (0, ((fst (snd (((\x14 -> (natRec 0 (\x15 -> (\x16 -> 1)) x14)) ((((\x14 -> (\x15 -> (natRec x14 (\x16 -> (\x17 -> ((\x18 -> (natRec 0 (\x19 -> (\x20 -> x19)) x18)) x17))) x15))) (x6 (1 + x12))) 0) + (((\x14 -> (\x15 -> (natRec x14 (\x16 -> (\x17 -> ((\x18 -> (natRec 0 (\x19 -> (\x20 -> x19)) x18)) x17))) x15))) 0) (x6 (1 + x12))))), ((), (\x14 -> ()))))), (0, ((0, ()), (\x14 -> ()))))) (\x14 -> (\x15 -> (natRec (1, ((), (x12, ((0, ()), (\x16 -> ((snd (snd (((\x17 -> (natRec 0 (\x18 -> (\x19 -> 1)) x17)) ((((\x17 -> (\x18 -> (natRec x17 (\x19 -> (\x20 -> ((\x21 -> (natRec 0 (\x22 -> (\x23 -> x22)) x21)) x20))) x18))) (x6 (1 + x12))) 0) + (((\x17 -> (\x18 -> (natRec x17 (\x19 -> (\x20 -> ((\x21 -> (natRec 0 (\x22 -> (\x23 -> x22)) x21)) x20))) x18))) 0) (x6 (1 + x12))))), ((), (\x17 -> ()))))) ())))))) (\x16 -> (\x17 -> (((\x18 -> (\x19 -> (1, ((), (x19, ((((\x20 -> (\x21 -> ((1 + x21), ()))) (snd (fst x18))) (fst (fst x18))), (snd x18))))))) (snd (snd (snd x13)))) (fst (snd (snd x13)))))) (fst x13)))) (fst (((\x14 -> (natRec 0 (\x15 -> (\x16 -> 1)) x14)) ((((\x14 -> (\x15 -> (natRec x14 (\x16 -> (\x17 -> ((\x18 -> (natRec 0 (\x19 -> (\x20 -> x19)) x18)) x17))) x15))) (x6 (1 + x12))) 0) + (((\x14 -> (\x15 -> (natRec x14 (\x16 -> (\x17 -> ((\x18 -> (natRec 0 (\x19 -> (\x20 -> x19)) x18)) x17))) x15))) 0) (x6 (1 + x12))))), ((), (\x14 -> ()))))))) x11)) x5))))) (fst ((\x9 -> (natRec (0, (x7, (0, ((0, ()), (\x10 -> ()))))) (\x10 -> (\x11 -> (natRec (0, ((fst (snd (((\x12 -> (natRec 0 (\x13 -> (\x14 -> 1)) x12)) ((((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) (x6 (1 + x10))) 0) + (((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) 0) (x6 (1 + x10))))), ((), (\x12 -> ()))))), (0, ((0, ()), (\x12 -> ()))))) (\x12 -> (\x13 -> (natRec (1, ((), (x10, ((0, ()), (\x14 -> ((snd (snd (((\x15 -> (natRec 0 (\x16 -> (\x17 -> 1)) x15)) ((((\x15 -> (\x16 -> (natRec x15 (\x17 -> (\x18 -> ((\x19 -> (natRec 0 (\x20 -> (\x21 -> x20)) x19)) x18))) x16))) (x6 (1 + x10))) 0) + (((\x15 -> (\x16 -> (natRec x15 (\x17 -> (\x18 -> ((\x19 -> (natRec 0 (\x20 -> (\x21 -> x20)) x19)) x18))) x16))) 0) (x6 (1 + x10))))), ((), (\x15 -> ()))))) ())))))) (\x14 -> (\x15 -> (((\x16 -> (\x17 -> (1, ((), (x17, ((((\x18 -> (\x19 -> ((1 + x19), ()))) (snd (fst x16))) (fst (fst x16))), (snd x16))))))) (snd (snd (snd x11)))) (fst (snd (snd x11)))))) (fst x11)))) (fst (((\x12 -> (natRec 0 (\x13 -> (\x14 -> 1)) x12)) ((((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) (x6 (1 + x10))) 0) + (((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) 0) (x6 (1 + x10))))), ((), (\x12 -> ()))))))) x9)) x5))))))) x2) (\x5 -> (qLtN x0 (qMul (qMul (qOfNat x5) (dToQ ((\x6 -> (natRec (dOfNat 1) (\x7 -> (\x8 -> (dHalf x8))) x6)) x1))) (qMul (qOfNat x5) (dToQ ((\x6 -> (natRec (dOfNat 1) (\x7 -> (\x8 -> (dHalf x8))) x6)) x1))))))) x3) x4))))))
 ```
 
-## 15. Uniform continuity — the realizer is the modulus
+## 15. Uniform continuity — the realizer is the modulus (proof-computed)
 
 Theorem: `∀f^(ℚ→ℚ) ∀j. Lipschitz(f,j) → ∀n ∃M ∀x∀y. close(M,x,y) → close(n, f x, f y)`  
 Realizer type: `(Q → Q) → (N → ((Q → (Q → (N → (1 → 1)))) → (N → (N × (Q → (Q → (1 → 1)))))))`
@@ -347,5 +351,258 @@ Realizer type: `(Q → Q) → (N → ((Q → (Q → (N → (1 → 1)))) → (N �
 
 ```haskell
 (\x0 -> (\x1 -> (\x2 -> (\x3 -> ((x3 + x1), (\x4 -> (\x5 -> (\x6 -> ()))))))))
+```
+
+## 16. Formal antiderivative & termwise FTC1 (witness-style antiderivative, proof-computed cancellation D(I c)(n) - c(n) = 0)
+
+Theorem: `∀c^(ℕ→ℚ). ∃F^(ℕ→ℚ). F(0) = 0 ∧ ∀n. D(F)(n) - c(n) = 0`  
+Realizer type: `(N → Q) → ((N → Q) × (1 × (N → 1)))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. ⟨(λx1. rec[qℕ(0) | (λx2. (λx3. ((x0 x2) /q qℕ(S x2)))) | x1]), ⟨★, (λx1. ★)⟩⟩)
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. ⟨(λx1. rec[qℕ(0) | (λx2. (λx3. ((x0 x2) /q qℕ(S x2)))) | x1]), ⟨·, (λx1. ·)⟩⟩)
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> ((\x1 -> (natRec (qOfNat 0) (\x2 -> (\x3 -> (qDiv (x0 x2) (qOfNat (1 + x2))))) x1)), ((), (\x1 -> ()))))
+```
+
+## 17. Cauchy product convolution of formal power series (witness-style)
+
+Theorem: `∀a^(ℕ→ℚ) ∀b^(ℕ→ℚ). ∃c^(ℕ→ℚ). c = cauchyConv(a, b)`  
+Realizer type: `(N → Q) → ((N → Q) → ((N → Q) × 1))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. (λx1. ⟨(λx2. rec[qℕ(0) | (λx3. (λx4. (x4 +q ((x0 x3) *q (x1 rec[x2 | (λx5. (λx6. rec[0 | (λx7. (λx8. x7)) | x6])) | x3]))))) | S x2]), ★⟩))
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. (λx1. (λx2. rec[qℕ(0) | (λx3. (λx4. (x4 +q ((x0 x3) *q (x1 rec[x2 | (λx5. (λx6. rec[0 | (λx7. (λx8. x7)) | x6])) | x3]))))) | S x2])))
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (\x1 -> ((\x2 -> (natRec (qOfNat 0) (\x3 -> (\x4 -> (qAdd x4 (qMul (x0 x3) (x1 (natRec x2 (\x5 -> (\x6 -> (natRec 0 (\x7 -> (\x8 -> x7)) x6))) x3)))))) (1 + x2))), ())))
+```
+
+## 18. Taylor polynomial evaluator (witness-style)
+
+Theorem: `∀c^(ℕ→ℚ) ∀m ∀x^ℚ. ∃y^ℚ. y = Σ_{j<m} c_j · x^j`  
+Realizer type: `(N → Q) → (N → (Q → (Q × 1)))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. (λx1. (λx2. ⟨fst rec[⟨qℕ(0), qℕ(S 0)⟩ | (λx3. (λx4. ⟨(fst x4 +q ((x0 x3) *q snd x4)), (x2 *q snd x4)⟩)) | x1], ★⟩)))
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. (λx1. (λx2. fst rec[⟨qℕ(0), qℕ(S 0)⟩ | (λx3. (λx4. ⟨(fst x4 +q ((x0 x3) *q snd x4)), (x2 *q snd x4)⟩)) | x1])))
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (\x1 -> (\x2 -> ((fst (natRec ((qOfNat 0), (qOfNat 1)) (\x3 -> (\x4 -> ((qAdd (fst x4) (qMul (x0 x3) (snd x4))), (qMul x2 (snd x4))))) x1)), ()))))
+```
+
+## 19. Jet E₁ Cauchy convergence modulus by geometric series induction (proof-computed)
+
+Theorem: `∀c^(ℕ→ℚ) ∀B ∀x^ℚ. (∀n. |S_n(x)-S_{n+1}(x)| < 2^(B+3)·(2^-(n+1)-2^-(n+2))) → QArithLaws → ∀k ∃N ∀d₁ ∀d₂. close(k, S_{N+d₁}(x), S_{N+d₁+d₂+1}(x))`  
+Realizer type: `(N → Q) → (N → (Q → ((N → 1) → (1 → (N → (N × (N → (N → 1))))))))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. (λx1. (λx2. (λx3. (λx4. (λx5. ⟨(x5 + S S S x1), (λx6. (λx7. ★))⟩))))))
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. (λx1. (λx2. (λx3. (λx4. (λx5. ⟨(x5 + S S S x1), (λx6. (λx7. ·))⟩))))))
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> (\x5 -> ((x5 + (1 + (1 + (1 + x1)))), (\x6 -> (\x7 -> ())))))))))
+```
+
+## 20. Jet E₁ uniform continuity modulus (proof-computed)
+
+Theorem: `∀c^(ℕ→ℚ) ∀B₁ ∀x^ℚ ∀y^ℚ. (∀m. |S_m(x)-S_m(y)| ≤ 2^(B₁+1)·|x-y|) → ∀k ∃ω ∀m. close(ω,x,y) → close(k, S_m(x), S_m(y))`  
+Realizer type: `(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (N → (1 → 1))))))))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. (λx1. (λx2. (λx3. (λx4. (λx5. ⟨(x5 + S x1), (λx6. (λx7. ★))⟩))))))
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. (λx1. (λx2. (λx3. (λx4. (λx5. ⟨(x5 + S x1), (λx6. (λx7. ·))⟩))))))
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> (\x5 -> ((x5 + (1 + x1)), (\x6 -> (\x7 -> ())))))))))
+```
+
+## 21. Jet E₁ uniform differentiability modulus (proof-computed)
+
+Theorem: `∀c^(ℕ→ℚ) ∀B₂ ∀x^ℚ ∀h^ℚ. (∀m. |DQ_h(S_m,x)-S_m(Dc,x)| ≤ 2^(B₂+1)·|h|) → ∀k ∃δ ∀m. close(δ,h,0) → close(k, DQ_h(S_m,x), S_m(Dc,x))`  
+Realizer type: `(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (N → (1 → 1))))))))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. (λx1. (λx2. (λx3. (λx4. (λx5. ⟨(x5 + S x1), (λx6. (λx7. ★))⟩))))))
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. (λx1. (λx2. (λx3. (λx4. (λx5. ⟨(x5 + S x1), (λx6. (λx7. ·))⟩))))))
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> (\x5 -> ((x5 + (1 + x1)), (\x6 -> (\x7 -> ())))))))))
+```
+
+## 22. Order-1 Picard jet iteration for y' = y (proof-computed)
+
+Theorem: `∀k. ∃Y^(ℕ→ℚ). Y = P^k(Y_0)`  
+Realizer type: `N → ((N → Q) × 1)`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. ⟨rec[(λx1. rec[qℕ(S 0) | (λx2. (λx3. qℕ(0))) | x1]) | (λx1. (λx2. ((λx3. (λx4. rec[qℕ(S 0) | (λx5. (λx6. ((x3 x5) /q qℕ(S x5)))) | x4])) x2))) | x0], ★⟩)
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. rec[(λx1. rec[qℕ(S 0) | (λx2. (λx3. qℕ(0))) | x1]) | (λx1. (λx2. ((λx3. (λx4. rec[qℕ(S 0) | (λx5. (λx6. ((x3 x5) /q qℕ(S x5)))) | x4])) x2))) | x0])
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> ((natRec (\x1 -> (natRec (qOfNat 1) (\x2 -> (\x3 -> (qOfNat 0))) x1)) (\x1 -> (\x2 -> ((\x3 -> (\x4 -> (natRec (qOfNat 1) (\x5 -> (\x6 -> (qDiv (x3 x5) (qOfNat (1 + x5))))) x4))) x2))) x0), ()))
+```
+
+## 23. Nonlinear Riccati ODE y' = 1 + y² Picard jet solver with degree locking (proof-computed)
+
+Theorem: `∀k. ∃Y^(ℕ→ℚ). Y = P_Ric^k(Y_0) ∧ P_Ric(Y)(k) = Y(k)`  
+Realizer type: `N → ((N → Q) × (1 × 1))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. ⟨rec[(λx1. qℕ(0)) | (λx1. (λx2. ((λx3. ((λx4. (λx5. rec[qℕ(0) | (λx6. (λx7. ((x4 x6) /q qℕ(S x6)))) | x5])) (((λx4. (λx5. (λx6. ((x4 x6) +q (x5 x6))))) (λx4. rec[qℕ(S 0) | (λx5. (λx6. qℕ(0))) | x4])) (((λx4. (λx5. (λx6. rec[qℕ(0) | (λx7. (λx8. (x8 +q ((x4 x7) *q (x5 rec[x6 | (λx9. (λx10. rec[0 | (λx11. (λx12. x11)) | x10])) | x7]))))) | S x6]))) x3) x3)))) x2))) | x0], ★⟩)
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. rec[(λx1. qℕ(0)) | (λx1. (λx2. ((λx3. ((λx4. (λx5. rec[qℕ(0) | (λx6. (λx7. ((x4 x6) /q qℕ(S x6)))) | x5])) (((λx4. (λx5. (λx6. ((x4 x6) +q (x5 x6))))) (λx4. rec[qℕ(S 0) | (λx5. (λx6. qℕ(0))) | x4])) (((λx4. (λx5. (λx6. rec[qℕ(0) | (λx7. (λx8. (x8 +q ((x4 x7) *q (x5 rec[x6 | (λx9. (λx10. rec[0 | (λx11. (λx12. x11)) | x10])) | x7]))))) | S x6]))) x3) x3)))) x2))) | x0])
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> ((natRec (\x1 -> (qOfNat 0)) (\x1 -> (\x2 -> ((\x3 -> ((\x4 -> (\x5 -> (natRec (qOfNat 0) (\x6 -> (\x7 -> (qDiv (x4 x6) (qOfNat (1 + x6))))) x5))) (((\x4 -> (\x5 -> (\x6 -> (qAdd (x4 x6) (x5 x6))))) (\x4 -> (natRec (qOfNat 1) (\x5 -> (\x6 -> (qOfNat 0))) x4))) (((\x4 -> (\x5 -> (\x6 -> (natRec (qOfNat 0) (\x7 -> (\x8 -> (qAdd x8 (qMul (x4 x7) (x5 (natRec x6 (\x9 -> (\x10 -> (natRec 0 (\x11 -> (\x12 -> x11)) x10))) x7)))))) (1 + x6))))) x3) x3)))) x2))) x0), ()))
+```
+
+## 24. Nonlinear quadratic blow-up ODE y' = y² Picard jet solver with degree locking (proof-computed)
+
+Theorem: `∀k. ∃Y^(ℕ→ℚ). Y = P_Blowup^k(Y_0) ∧ P_Blowup(Y)(k) = Y(k)`  
+Realizer type: `N → ((N → Q) × (1 × 1))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. ⟨rec[(λx1. rec[qℕ(S 0) | (λx2. (λx3. qℕ(0))) | x1]) | (λx1. (λx2. ((λx3. (((λx4. (λx5. (λx6. ((x4 x6) +q (x5 x6))))) (λx4. rec[qℕ(S 0) | (λx5. (λx6. qℕ(0))) | x4])) ((λx4. (λx5. rec[qℕ(0) | (λx6. (λx7. ((x4 x6) /q qℕ(S x6)))) | x5])) (((λx4. (λx5. (λx6. rec[qℕ(0) | (λx7. (λx8. (x8 +q ((x4 x7) *q (x5 rec[x6 | (λx9. (λx10. rec[0 | (λx11. (λx12. x11)) | x10])) | x7]))))) | S x6]))) x3) x3)))) x2))) | x0], ★⟩)
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. rec[(λx1. rec[qℕ(S 0) | (λx2. (λx3. qℕ(0))) | x1]) | (λx1. (λx2. ((λx3. (((λx4. (λx5. (λx6. ((x4 x6) +q (x5 x6))))) (λx4. rec[qℕ(S 0) | (λx5. (λx6. qℕ(0))) | x4])) ((λx4. (λx5. rec[qℕ(0) | (λx6. (λx7. ((x4 x6) /q qℕ(S x6)))) | x5])) (((λx4. (λx5. (λx6. rec[qℕ(0) | (λx7. (λx8. (x8 +q ((x4 x7) *q (x5 rec[x6 | (λx9. (λx10. rec[0 | (λx11. (λx12. x11)) | x10])) | x7]))))) | S x6]))) x3) x3)))) x2))) | x0])
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> ((natRec (\x1 -> (natRec (qOfNat 1) (\x2 -> (\x3 -> (qOfNat 0))) x1)) (\x1 -> (\x2 -> ((\x3 -> (((\x4 -> (\x5 -> (\x6 -> (qAdd (x4 x6) (x5 x6))))) (\x4 -> (natRec (qOfNat 1) (\x5 -> (\x6 -> (qOfNat 0))) x4))) ((\x4 -> (\x5 -> (natRec (qOfNat 0) (\x6 -> (\x7 -> (qDiv (x4 x6) (qOfNat (1 + x6))))) x5))) (((\x4 -> (\x5 -> (\x6 -> (natRec (qOfNat 0) (\x7 -> (\x8 -> (qAdd x8 (qMul (x4 x7) (x5 (natRec x6 (\x9 -> (\x10 -> (natRec 0 (\x11 -> (\x12 -> x11)) x10))) x7)))))) (1 + x6))))) x3) x3)))) x2))) x0), ()))
+```
+
+## 25. 2D coupled nonlinear Duffing oscillator Picard jet solver with degree locking (proof-computed)
+
+Theorem: `∀k. ∃W^((ℕ→ℚ)×(ℕ→ℚ)). W = P_Duf^k(W_0) ∧ (fst (P_Duf W) k = fst W k ∧ snd (P_Duf W) k = snd W k)`  
+Realizer type: `N → (((N → Q) × (N → Q)) × (1 × (1 × 1)))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. ⟨rec[⟨(λx1. rec[qℕ(S 0) | (λx2. (λx3. qℕ(0))) | x1]), (λx1. qℕ(0))⟩ | (λx1. (λx2. ((λx3. ⟨(((λx4. (λx5. (λx6. ((x4 x6) +q (x5 x6))))) (λx4. rec[qℕ(S 0) | (λx5. (λx6. qℕ(0))) | x4])) ((λx4. (λx5. rec[qℕ(0) | (λx6. (λx7. ((x4 x6) /q qℕ(S x6)))) | x5])) snd x3)), ((λx4. (λx5. rec[qℕ(0) | (λx6. (λx7. ((x4 x6) /q qℕ(S x6)))) | x5])) (((λx4. (λx5. (λx6. ((x4 x6) -q (x5 x6))))) (((λx4. (λx5. (λx6. ((x4 x6) -q (x5 x6))))) (λx4. qℕ(0))) fst x3)) (((λx4. (λx5. (λx6. rec[qℕ(0) | (λx7. (λx8. (x8 +q ((x4 x7) *q (x5 rec[x6 | (λx9. (λx10. rec[0 | (λx11. (λx12. x11)) | x10])) | x7]))))) | S x6]))) fst x3) fst x3)))⟩) x2))) | x0], ★⟩)
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. rec[⟨(λx1. rec[qℕ(S 0) | (λx2. (λx3. qℕ(0))) | x1]), (λx1. qℕ(0))⟩ | (λx1. (λx2. ((λx3. ⟨(((λx4. (λx5. (λx6. ((x4 x6) +q (x5 x6))))) (λx4. rec[qℕ(S 0) | (λx5. (λx6. qℕ(0))) | x4])) ((λx4. (λx5. rec[qℕ(0) | (λx6. (λx7. ((x4 x6) /q qℕ(S x6)))) | x5])) snd x3)), ((λx4. (λx5. rec[qℕ(0) | (λx6. (λx7. ((x4 x6) /q qℕ(S x6)))) | x5])) (((λx4. (λx5. (λx6. ((x4 x6) -q (x5 x6))))) (((λx4. (λx5. (λx6. ((x4 x6) -q (x5 x6))))) (λx4. qℕ(0))) fst x3)) (((λx4. (λx5. (λx6. rec[qℕ(0) | (λx7. (λx8. (x8 +q ((x4 x7) *q (x5 rec[x6 | (λx9. (λx10. rec[0 | (λx11. (λx12. x11)) | x10])) | x7]))))) | S x6]))) fst x3) fst x3)))⟩) x2))) | x0])
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> ((natRec ((\x1 -> (natRec (qOfNat 1) (\x2 -> (\x3 -> (qOfNat 0))) x1)), (\x1 -> (qOfNat 0))) (\x1 -> (\x2 -> ((\x3 -> ((((\x4 -> (\x5 -> (\x6 -> (qAdd (x4 x6) (x5 x6))))) (\x4 -> (natRec (qOfNat 1) (\x5 -> (\x6 -> (qOfNat 0))) x4))) ((\x4 -> (\x5 -> (natRec (qOfNat 0) (\x6 -> (\x7 -> (qDiv (x4 x6) (qOfNat (1 + x6))))) x5))) (snd x3))), ((\x4 -> (\x5 -> (natRec (qOfNat 0) (\x6 -> (\x7 -> (qDiv (x4 x6) (qOfNat (1 + x6))))) x5))) (((\x4 -> (\x5 -> (\x6 -> (qSub (x4 x6) (x5 x6))))) (((\x4 -> (\x5 -> (\x6 -> (qSub (x4 x6) (x5 x6))))) (\x4 -> (qOfNat 0))) (fst x3))) (((\x4 -> (\x5 -> (\x6 -> (natRec (qOfNat 0) (\x7 -> (\x8 -> (qAdd x8 (qMul (x4 x7) (x5 (natRec x6 (\x9 -> (\x10 -> (natRec 0 (\x11 -> (\x12 -> x11)) x10))) x7)))))) (1 + x6))))) (fst x3)) (fst x3)))))) x2))) x0), ()))
+```
+
+## 26. Quadratic Newton–Schulz multiplicative jet inverter (witness-style)
+
+Theorem: `∀F^(ℕ→ℚ) ∀k. ∃Y^(ℕ→ℚ). Y = N_F^k(1)`  
+Realizer type: `(N → Q) → (N → ((N → Q) × 1))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. (λx1. ⟨rec[(λx2. rec[qℕ(S 0) | (λx3. (λx4. qℕ(0))) | x2]) | (λx2. (λx3. (((λx4. (λx5. (λx6. ((x4 x6) +q (x5 x6))))) x3) (((λx4. (λx5. (λx6. rec[qℕ(0) | (λx7. (λx8. (x8 +q ((x4 x7) *q (x5 rec[x6 | (λx9. (λx10. rec[0 | (λx11. (λx12. x11)) | x10])) | x7]))))) | S x6]))) x3) (((λx4. (λx5. (λx6. ((x4 x6) -q (x5 x6))))) (λx4. rec[qℕ(S 0) | (λx5. (λx6. qℕ(0))) | x4])) (((λx4. (λx5. (λx6. rec[qℕ(0) | (λx7. (λx8. (x8 +q ((x4 x7) *q (x5 rec[x6 | (λx9. (λx10. rec[0 | (λx11. (λx12. x11)) | x10])) | x7]))))) | S x6]))) x0) x3)))))) | x1], ★⟩))
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. (λx1. rec[(λx2. rec[qℕ(S 0) | (λx3. (λx4. qℕ(0))) | x2]) | (λx2. (λx3. (((λx4. (λx5. (λx6. ((x4 x6) +q (x5 x6))))) x3) (((λx4. (λx5. (λx6. rec[qℕ(0) | (λx7. (λx8. (x8 +q ((x4 x7) *q (x5 rec[x6 | (λx9. (λx10. rec[0 | (λx11. (λx12. x11)) | x10])) | x7]))))) | S x6]))) x3) (((λx4. (λx5. (λx6. ((x4 x6) -q (x5 x6))))) (λx4. rec[qℕ(S 0) | (λx5. (λx6. qℕ(0))) | x4])) (((λx4. (λx5. (λx6. rec[qℕ(0) | (λx7. (λx8. (x8 +q ((x4 x7) *q (x5 rec[x6 | (λx9. (λx10. rec[0 | (λx11. (λx12. x11)) | x10])) | x7]))))) | S x6]))) x0) x3)))))) | x1]))
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (\x1 -> ((natRec (\x2 -> (natRec (qOfNat 1) (\x3 -> (\x4 -> (qOfNat 0))) x2)) (\x2 -> (\x3 -> (((\x4 -> (\x5 -> (\x6 -> (qAdd (x4 x6) (x5 x6))))) x3) (((\x4 -> (\x5 -> (\x6 -> (natRec (qOfNat 0) (\x7 -> (\x8 -> (qAdd x8 (qMul (x4 x7) (x5 (natRec x6 (\x9 -> (\x10 -> (natRec 0 (\x11 -> (\x12 -> x11)) x10))) x7)))))) (1 + x6))))) x3) (((\x4 -> (\x5 -> (\x6 -> (qSub (x4 x6) (x5 x6))))) (\x4 -> (natRec (qOfNat 1) (\x5 -> (\x6 -> (qOfNat 0))) x4))) (((\x4 -> (\x5 -> (\x6 -> (natRec (qOfNat 0) (\x7 -> (\x8 -> (qAdd x8 (qMul (x4 x7) (x5 (natRec x6 (\x9 -> (\x10 -> (natRec 0 (\x11 -> (\x12 -> x11)) x10))) x7)))))) (1 + x6))))) x0) x3)))))) x1), ())))
 ```
 

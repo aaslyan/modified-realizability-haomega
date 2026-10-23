@@ -43,9 +43,9 @@ structure IVTProblem where
   h_neg : (A.f A.a).val ≤ 0
   h_pos : 0 ≤ (A.f A.b).val
 
-/-- Uniform grid step count: $N(k) = 2^{\omega(k+1)} + 1$. -/
+/-- Uniform grid step count: $N(k) = 2^{\omega(k)} \cdot (\lceil b - a \rceil + 1)$. -/
 def ivtGridSteps (A : A0) (k : Nat) : Nat :=
-  2 ^ (A.ω (k + 1)) * (ceilNatQ A.len + 1)
+  2 ^ (A.ω k) * (ceilNatQ A.len + 1)
 
 /-- $j$-th grid point $x_j = a + j \frac{b - a}{N}$. -/
 def ivtGridPoint (A : A0) (N : Nat) (j : Nat) : Q :=
@@ -122,6 +122,115 @@ theorem approx_ivt_thm (A : A0) (k : Nat) (x : Nat → Q) (N : Nat)
   exact ⟨j, hj_le, hxj, hxjp1⟩
 
 #print axioms approx_ivt_thm
+
+/-! ## 1b. Concrete Instantiation on Uniform Grids (`IVTProblem`) -/
+
+/-- The grid step count $N(k) = 2^{\omega(k)} (\lceil b - a \rceil + 1)$ is strictly positive. -/
+theorem ivtGridSteps_pos (A : A0) (k : Nat) : 0 < ivtGridSteps A k := by
+  unfold ivtGridSteps
+  exact Nat.mul_pos (pow_pos (by decide) _) (Nat.succ_pos _)
+
+/-- Rational value of the $j$-th grid point: $x_j = a + j \frac{b - a}{N}$. -/
+theorem ivtGridPoint_val (A : A0) (N j : Nat) (hN : 0 < N) :
+    (ivtGridPoint A N j).val = A.a.val + (j : Rat) * (A.b.val - A.a.val) / (N : Rat) := by
+  unfold ivtGridPoint A0.len
+  have hnum : (Q.ofNat N).num ≠ 0 := by
+    unfold Q.ofNat
+    simpa using by omega
+  rw [Q.val_add, Q.val_div _ _ hnum, Q.val_mul, Q.val_ofNat, Q.val_sub, Q.val_ofNat]
+
+/-- Every grid point $x_j$ for $0 \le j \le N$ lies inside $[a, b]$. -/
+theorem ivtGridPoint_in_ivl (A : A0) (N j : Nat) (hN : 0 < N) (hj : j ≤ N) :
+    Qle A.a (ivtGridPoint A N j) = true ∧ Qle (ivtGridPoint A N j) A.b = true := by
+  have hivl : A.a.val < A.b.val := (Q.ltN_eq_one_iff _ _).mp A.ivl
+  have hN_pos : (0 : Rat) < (N : Rat) := by exact_mod_cast hN
+  have hj_le : (j : Rat) ≤ (N : Rat) := by exact_mod_cast hj
+  have hj_nonneg : (0 : Rat) ≤ (j : Rat) := Nat.cast_nonneg j
+  have h_frac_nonneg : 0 ≤ (j : Rat) * (A.b.val - A.a.val) / (N : Rat) := by
+    apply div_nonneg
+    · exact mul_nonneg hj_nonneg (by linarith)
+    · exact le_of_lt hN_pos
+  have h_frac_le : (j : Rat) * (A.b.val - A.a.val) / (N : Rat) ≤ A.b.val - A.a.val := by
+    rw [div_le_iff₀ hN_pos]
+    calc (j : Rat) * (A.b.val - A.a.val)
+      _ ≤ (N : Rat) * (A.b.val - A.a.val) := mul_le_mul_of_nonneg_right hj_le (by linarith)
+      _ = (A.b.val - A.a.val) * (N : Rat) := mul_comm _ _
+  rw [Qle_eq_true_iff, Qle_eq_true_iff, ivtGridPoint_val A N j hN]
+  exact ⟨by linarith, by linarith⟩
+
+/-- Adjacent points on the `ivtGridSteps A k` grid are within $2^{-\omega(k)}$. -/
+theorem ivtGridPoint_step_le (A : A0) (k j : Nat) :
+    |(ivtGridPoint A (ivtGridSteps A k) j).val
+      - (ivtGridPoint A (ivtGridSteps A k) (j + 1)).val| ≤ 1 / 2 ^ (A.ω k) := by
+  have hN := ivtGridSteps_pos A k
+  have hN_pos : (0 : Rat) < (ivtGridSteps A k : Rat) := by exact_mod_cast hN
+  have hivl : A.a.val < A.b.val := (Q.ltN_eq_one_iff _ _).mp A.ivl
+  rw [ivtGridPoint_val A _ j hN, ivtGridPoint_val A _ (j + 1) hN]
+  have h_diff : A.a.val + (j : Rat) * (A.b.val - A.a.val) / (ivtGridSteps A k : Rat)
+      - (A.a.val + ((j + 1 : Nat) : Rat) * (A.b.val - A.a.val) / (ivtGridSteps A k : Rat))
+      = -((A.b.val - A.a.val) / (ivtGridSteps A k : Rat)) := by
+    push_cast
+    ring
+  rw [h_diff, abs_neg, abs_of_pos (div_pos (by linarith) hN_pos)]
+  have h_ceil := ceilNatQ_spec A.len
+  have h_len : A.len.val = A.b.val - A.a.val := Q.val_sub _ _
+  rw [h_len] at h_ceil
+  have h_bound : (A.b.val - A.a.val) * 2 ^ (A.ω k) ≤ (ivtGridSteps A k : Rat) := by
+    unfold ivtGridSteps
+    push_cast
+    have h_c1 : A.b.val - A.a.val ≤ (ceilNatQ A.len : Rat) + 1 := by linarith
+    have h_pow_pos : (0 : Rat) ≤ 2 ^ (A.ω k) := by positivity
+    calc (A.b.val - A.a.val) * 2 ^ (A.ω k)
+      _ ≤ ((ceilNatQ A.len : Rat) + 1) * 2 ^ (A.ω k) :=
+        mul_le_mul_of_nonneg_right h_c1 h_pow_pos
+      _ = 2 ^ (A.ω k) * ((ceilNatQ A.len : Rat) + 1) := mul_comm _ _
+  rw [div_le_div_iff₀ hN_pos (by positivity)]
+  linarith
+
+/-- **Theorem (Constructive Uniform-Grid Approximate IVT for `IVTProblem`)**:
+    For every `P : IVTProblem` and every target precision $k$, the uniform grid
+    with `N = ivtGridSteps P.A k` steps contains an adjacent bracket $(x_j, x_{j+1})$
+    where both endpoints satisfy `isApproxZero P.A k`. -/
+theorem IVTProblem.grid_approx_zero (P : IVTProblem) (k : Nat) :
+    ∃ j, j < ivtGridSteps P.A k ∧
+      isApproxZero P.A k (ivtGridPoint P.A (ivtGridSteps P.A k) j) ∧
+      isApproxZero P.A k (ivtGridPoint P.A (ivtGridSteps P.A k) (j + 1)) := by
+  set N := ivtGridSteps P.A k
+  have hN : 0 < N := ivtGridSteps_pos P.A k
+  set M := N - 1
+  have hMN : M + 1 = N := Nat.sub_add_cancel hN
+  have hx_in : ∀ j, j ≤ M + 1 →
+      Qle P.A.a (ivtGridPoint P.A N j) = true ∧ Qle (ivtGridPoint P.A N j) P.A.b = true := by
+    intro j hj
+    exact ivtGridPoint_in_ivl P.A N j hN (by omega)
+  have h0_val : (ivtGridPoint P.A N 0).val = P.A.a.val := by
+    rw [ivtGridPoint_val P.A N 0 hN]
+    simp
+  have hN_val : (ivtGridPoint P.A N (M + 1)).val = P.A.b.val := by
+    rw [hMN, ivtGridPoint_val P.A N N hN]
+    have hN_ne : (N : Rat) ≠ 0 := by exact_mod_cast (ne_of_gt hN)
+    field_simp
+    ring
+  have hivl : P.A.a.val ≤ P.A.b.val := le_of_lt ((Q.ltN_eq_one_iff _ _).mp P.A.ivl)
+  have h0_f : (P.A.f (ivtGridPoint P.A N 0)).val = (P.A.f P.A.a).val := by
+    have hin := hx_in 0 (by omega)
+    exact f_val_congr P.A ((Qle_eq_true_iff _ _).mp hin.1) ((Qle_eq_true_iff _ _).mp hin.2)
+      le_rfl hivl h0_val
+  have hN_f : (P.A.f (ivtGridPoint P.A N (M + 1))).val = (P.A.f P.A.b).val := by
+    have hin := hx_in (M + 1) le_rfl
+    exact f_val_congr P.A ((Qle_eq_true_iff _ _).mp hin.1) ((Qle_eq_true_iff _ _).mp hin.2)
+      hivl le_rfl hN_val
+  have h0 : (P.A.f (ivtGridPoint P.A N 0)).val ≤ 0 := by linarith [P.h_neg]
+  have hM1 : 0 ≤ (P.A.f (ivtGridPoint P.A N (M + 1))).val := by linarith [P.h_pos]
+  have h_step : ∀ j, j ≤ M →
+      |(ivtGridPoint P.A N j).val - (ivtGridPoint P.A N (j + 1)).val| ≤ 1 / 2 ^ (P.A.ω k) :=
+    fun j _ ↦ ivtGridPoint_step_le P.A k j
+  obtain ⟨j, hj_le, hxj, hxjp1⟩ := approx_ivt_thm P.A k (ivtGridPoint P.A N) M hx_in h0 hM1 h_step
+  have hin_j := hx_in j (by omega)
+  have hin_jp1 := hx_in (j + 1) (by omega)
+  exact ⟨j, by omega, ⟨hin_j.1, hin_j.2, hxj⟩, ⟨hin_jp1.1, hin_jp1.2, hxjp1⟩⟩
+
+#print axioms IVTProblem.grid_approx_zero
 
 /-! ## 2. Secant Slope Root Isolation -/
 

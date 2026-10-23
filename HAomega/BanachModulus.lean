@@ -268,6 +268,141 @@ def banachStoppingN (T : Q → Q) (x0 : Q) (k0 : Nat) (n : Nat) : Nat :=
     T x0 k0) (fun _ _ _ _ ↦ ())) ())
   (realizer n).1
 
+/-! ## 6. Full Banach Fixed-Point & Stopping-Rule Extraction (`banachFixedPointD`) -/
+
+/-- Realizer type of the full Banach fixed-point synthesis:
+    `Nat → Nat × (Q × (Unit × (Nat → Unit)))`. -/
+abbrev banachFixedPointRealizerTy : Ty :=
+  .arrow .nat (.prod .nat (.prod .rat (.prod .unit (.arrow .nat .unit))))
+
+/-- Formula for full Banach fixed-point and stopping-criterion synthesis:
+    $\forall n : \mathbb{N}. \; \exists N : \mathbb{N}. \; \exists y : \mathbb{Q}. \;
+      y = T^N(x_0) \;\wedge\; \forall d : \mathbb{N}. \; \text{close}(n, x_{N+d}, x_{N+d+1}) = 1$. -/
+abbrev banachFixedPointConcl (Γ : List Ty) :
+    Formula (.nat :: .rat :: (.arrow .rat .rat) :: Γ) banachFixedPointRealizerTy :=
+  let ctx1 : List Ty := .rat :: .nat :: .nat :: .nat :: .rat :: (.arrow .rat .rat) :: Γ
+  let y_var : Tm ctx1 .rat := .var .here
+  let N_var1 : Tm ctx1 .nat := .var (.there .here)
+  let x0_var1 : Tm ctx1 .rat := .var (.there (.there (.there (.there .here))))
+  let T_var1 : Tm ctx1 (.arrow .rat .rat) := .var (.there (.there (.there (.there (.there .here)))))
+  let ctx2 : List Ty := .nat :: .rat :: .nat :: .nat :: .nat :: .rat :: (.arrow .rat .rat) :: Γ
+  let d_var : Tm ctx2 .nat := .var .here
+  let N_var2 : Tm ctx2 .nat := .var (.there (.there .here))
+  let n_var2 : Tm ctx2 .nat := .var (.there (.there (.there .here)))
+  let x0_var2 : Tm ctx2 .rat := .var (.there (.there (.there (.there (.there .here)))))
+  let T_var2 : Tm ctx2 (.arrow .rat .rat) := .var (.there (.there (.there (.there (.there (.there .here))))))
+  let m_var : Tm ctx2 .nat := .add N_var2 d_var
+  let xm : Tm ctx2 .rat := iterAt T_var2 x0_var2 m_var
+  let xm1 : Tm ctx2 .rat := iterAt T_var2 x0_var2 (.succ m_var)
+  .all .nat (.ex .nat (.ex .rat
+    (.and (.eq y_var (iterAt T_var1 x0_var1 N_var1))
+          (.all .nat (.eq (.app (.app (.app qclose n_var2) xm) xm1) (.succ .zero))))))
+
+/-- **Theorem (Banach Fixed-Point & Stopping-Criterion Synthesis in `Deriv`)**:
+    Synthesizes BOTH the stopping iteration count $N(n) = n$ AND the approximate
+    fixed-point iterate $y_n = T^n(x_0)$ inside `Deriv`, proving both its evaluation equation
+    and the geometric orbit tail bound $\forall d, \text{close}(n, x_{N+d}, x_{N+d+1}) = 1$. -/
+def banachFixedPointD {Γ as : List Ty} {Δ : Ctx Γ as} :
+    Deriv Δ (.all (.arrow .rat .rat) (.all .rat (.all .nat
+      (.imp (banachContractPremise Γ)
+        (.imp (banachSeedPremise Γ)
+          (banachFixedPointConcl Γ)))))) := by
+  refine Deriv.allI (Deriv.allI (Deriv.allI (Deriv.impI (Deriv.impI ?_))))
+  refine Deriv.allI ?_
+  let topCtxTy : List Ty := .nat :: .nat :: .rat :: (.arrow .rat .rat) :: Γ
+  let n_top : Tm topCtxTy .nat := .var .here
+  let x0_top : Tm topCtxTy .rat := .var (.there (.there .here))
+  let T_top : Tm topCtxTy (.arrow .rat .rat) := .var (.there (.there (.there .here)))
+  -- Witness 1: stopping iteration count N = n
+  refine Deriv.exI (τ := .nat) n_top ?_
+  deriv_norm
+  -- Witness 2: approximate fixed point y = iterAt T x0 n
+  refine Deriv.exI (τ := .rat) (iterAt T_top x0_top n_top) ?_
+  deriv_norm
+  refine Deriv.andI (Deriv.eqRefl (iterAt T_top x0_top n_top)) ?_
+  refine Deriv.allI ?_
+  let ctxTy : List Ty := .nat :: .nat :: .nat :: .rat :: (.arrow .rat .rat) :: Γ
+  let d : Tm ctxTy .nat := .var .here
+  let n : Tm ctxTy .nat := .var (.there .here)
+  let k0 : Tm ctxTy .nat := .var (.there (.there .here))
+  let x0 : Tm ctxTy .rat := .var (.there (.there (.there .here)))
+  let T : Tm ctxTy (.arrow .rat .rat) := .var (.there (.there (.there (.there .here))))
+  let innerCtx := banachInnerCtx Γ Δ
+  let xm : Tm ctxTy .rat := iterAt T x0 (.add n d)
+  let xm1 : Tm ctxTy .rat := iterAt T x0 (.succ (.add n d))
+  let orbitInv : Formula (.nat :: ctxTy) .unit :=
+    let m_var : Tm (.nat :: ctxTy) .nat := .var .here
+    let k0_var : Tm (.nat :: ctxTy) .nat := .var (.there (.there (.there .here)))
+    let x0_var : Tm (.nat :: ctxTy) .rat := .var (.there (.there (.there (.there .here))))
+    let T_var : Tm (.nat :: ctxTy) (.arrow .rat .rat) := .var (.there (.there (.there (.there (.there .here)))))
+    let scale : Tm (.nat :: ctxTy) .nat := .add m_var k0_var
+    let xm_m : Tm (.nat :: ctxTy) .rat := iterAt T_var x0_var m_var
+    let xm1_m : Tm (.nat :: ctxTy) .rat := iterAt T_var x0_var (.succ m_var)
+    .eq (.app (.app (.app qclose scale) xm_m) xm1_m) (.succ .zero)
+  have hOrbit : Deriv innerCtx (.all .nat orbitInv) := by
+    refine Deriv.ind ?_ ?_
+    · deriv_norm
+      have heq_scale : Deriv innerCtx (.eq (.add .zero k0) k0) := by
+        have h := zeroPlusD (Δ := innerCtx)
+        have h' := Deriv.allE k0 h
+        deriv_norm at h'
+        exact h'
+      have heq_xm : Deriv innerCtx (.eq (iterAt T x0 .zero) x0) := iterAtZero T x0
+      have heq_xm1 : Deriv innerCtx (.eq (iterAt T x0 (.succ .zero)) (.app T x0)) := by
+        have hsucc := iterAtSucc (Δ := innerCtx) T x0 .zero
+        have hcong := Deriv.congArg T (iterAtZero (Δ := innerCtx) T x0)
+        exact Deriv.transE hsucc hcong
+      have hSeed : Deriv innerCtx (.eq (.app (.app (.app qclose k0) x0) (.app T x0)) (.succ .zero)) := Deriv.ax
+      exact qcloseTransport heq_scale.symmE heq_xm.symmE heq_xm1.symmE hSeed
+    · refine Deriv.allI (Deriv.impI ?_)
+      let stepCtxTy : List Ty := .nat :: ctxTy
+      let m_s : Tm stepCtxTy .nat := .var .here
+      let k0_s : Tm stepCtxTy .nat := .var (.there (.there (.there .here)))
+      let x0_s : Tm stepCtxTy .rat := .var (.there (.there (.there (.there .here))))
+      let T_s : Tm stepCtxTy (.arrow .rat .rat) := .var (.there (.there (.there (.there (.there .here)))))
+      let u : Tm stepCtxTy .rat := iterAt T_s x0_s m_s
+      let v : Tm stepCtxTy .rat := iterAt T_s x0_s (.succ m_s)
+      let scale : Tm stepCtxTy .nat := .add m_s k0_s
+      have hContr : Deriv (.cons orbitInv innerCtx.wk) (((banachContractPremise Γ).wk (σ := .nat)).wk (σ := .nat)).wk := by
+        deriv_assumption
+      have h1 := Deriv.allE u hContr
+      deriv_norm at h1
+      have h2 := Deriv.allE v h1
+      deriv_norm at h2
+      have h3 := Deriv.allE scale h2
+      deriv_norm at h3
+      have hIH : Deriv (.cons orbitInv innerCtx.wk) orbitInv := Deriv.ax
+      have hStepClose := Deriv.impE h3 hIH
+      have heq_scale : Deriv (.cons orbitInv innerCtx.wk) (.eq (.succ (.add m_s k0_s)) (.add (.succ m_s) k0_s)) :=
+        scaleSuccStep m_s k0_s
+      have heq_u : Deriv (.cons orbitInv innerCtx.wk) (.eq (.app T_s (iterAt T_s x0_s m_s)) (iterAt T_s x0_s (.succ m_s))) :=
+        Deriv.symmE (iterAtSucc T_s x0_s m_s)
+      have heq_v : Deriv (.cons orbitInv innerCtx.wk) (.eq (.app T_s (iterAt T_s x0_s (.succ m_s))) (iterAt T_s x0_s (.succ (.succ m_s)))) :=
+        Deriv.symmE (iterAtSucc T_s x0_s (.succ m_s))
+      exact qcloseTransport heq_scale heq_u heq_v hStepClose
+  have hInst := Deriv.allE (.add n d) hOrbit
+  have heq_assoc : Deriv innerCtx (.eq (.add (.add n d) k0) (.add n (.add d k0))) := by
+    have h := plusAssocD (Δ := innerCtx)
+    have h' := Deriv.allE k0 (Deriv.allE d (Deriv.allE n h))
+    deriv_norm at h'
+    exact h'
+  have hReassoc : Deriv innerCtx (.eq (.app (.app (.app qclose (.add n (.add d k0))) xm) xm1) (.succ .zero)) :=
+    qcloseTransport heq_assoc (Deriv.eqRefl xm) (Deriv.eqRefl xm1) hInst
+  exact Deriv.convQCloseMono n (.add d k0) xm xm1 hReassoc
+
+/-- **The extracted Banach fixed-point solver and stopping rule.**
+    Feed it contraction `T`, seed `x0`, initial scale `k0`, and precision `n`;
+    returns the pair `(N(n), T^(N(n))(x0))` synthesized directly by `extractClosed banachFixedPointD`. -/
+def banachFixedPointSol (T : Q → Q) (x0 : Q) (k0 : Nat) (n : Nat) : Nat × Q :=
+  let realizer := (((((extractClosed (banachFixedPointD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
+    T x0 k0) (fun _ _ _ _ ↦ ())) ())
+  let res := realizer n
+  (res.1, res.2.1)
+
+/-- **The extracted Banach approximate fixed point** $y_n = T^{N(n)}(x_0)$. -/
+def banachExtractedIter (T : Q → Q) (x0 : Q) (k0 : Nat) (n : Nat) : Q :=
+  (banachFixedPointSol T x0 k0 n).2
+
 /-! ## Kernel-Verified Stopping Tables and Boundary Checks -/
 
 -- Picard operator T(y) = 1 + y/2 on Q with x0 = 1, fixed point y* = 2:
@@ -318,7 +453,19 @@ def picardT3 (y : Q) : Q := Q.div y (Q.ofNat 2)
 #guard (List.range 6).map (banachStoppingN picardT3 (Q.ofNat 1) 0)
   == [0, 1, 2, 3, 4, 5]
 
+-- 5. Full Extracted Banach Solver (`banachFixedPointSol` / `banachExtractedIter`):
+-- Simultaneously extracts both the certified stopping count N(n) = n and the approximate fixed point T^n(x0):
+#guard banachFixedPointSol picardT (Q.ofNat 1) 0 0 == (0, Q.ofNat 1)
+#guard banachFixedPointSol picardT (Q.ofNat 1) 0 1 == (1, Q.of 3 2)
+#guard banachFixedPointSol picardT (Q.ofNat 1) 0 2 == (2, Q.of 7 4)
+#guard banachFixedPointSol picardT (Q.ofNat 1) 0 3 == (3, Q.of 15 8)
+#guard banachFixedPointSol picardT (Q.ofNat 1) 0 4 == (4, Q.of 31 16)
+#guard banachExtractedIter picardT2 (Q.ofNat 5) 0 3 == Q.of 47 8
+
 #print axioms banachContractionD
 #print axioms banachStoppingN
+#print axioms banachFixedPointD
+#print axioms banachFixedPointSol
+#print axioms banachExtractedIter
 
 end HAomega

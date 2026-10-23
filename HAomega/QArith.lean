@@ -336,6 +336,43 @@ theorem Q.add_zero_norm (a : Q) : Q.add a Q.zero = Q.of a.num a.den :=
 /-- **`x + 0 = x` is not valid here**, and this is the witness. -/
 theorem Q.add_zero_not_id : Q.add ⟨2, 3⟩ Q.zero ≠ ⟨2, 3⟩ := by decide
 
+/-- **FTC1 cancellation on `Q` normalizes** (`(n+1) * (a / (n+1)) = a + 0`),
+because both sides pass through `Q.of` and denote `a.val`. -/
+theorem Q.mul_div_cancel_norm (n : Nat) (a : Q) :
+    Q.mul (Q.ofNat (n + 1)) (Q.div a (Q.ofNat (n + 1))) = Q.add a (Q.ofNat 0) :=
+  Q.of_inj_val
+    (Nat.mul_ne_zero (Q.ofNat (n + 1)).den_ne_zero (Q.div a (Q.ofNat (n + 1))).den_ne_zero)
+    (Nat.mul_ne_zero a.den_ne_zero (Q.ofNat 0).den_ne_zero)
+    (by
+      have hne : (Q.ofNat (n + 1)).num ≠ 0 := Int.ofNat_ne_zero.mpr (Nat.succ_ne_zero n)
+      have hpos : ((n + 1 : Nat) : Rat) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)
+      rw [show Q.of _ _ = Q.mul (Q.ofNat (n + 1)) (Q.div a (Q.ofNat (n + 1))) from rfl,
+        show Q.of _ _ = Q.add a (Q.ofNat 0) from rfl,
+        Q.val_mul, Q.val_div _ _ hne, Q.val_ofNat, Q.val_add, Q.val_ofNat]
+      field_simp
+      ring)
+
+/-- **FTC1 difference cancellation on `Q`**: `((n+1) * (a / (n+1))) - a = 0` holds
+for every `a : Q` without exception, because both `Q.sub` and `Q.zero` are in normal form. -/
+theorem Q.mul_div_sub_zero (n : Nat) (a : Q) :
+    Q.sub (Q.mul (Q.ofNat (n + 1)) (Q.div a (Q.ofNat (n + 1)))) a = Q.zero := by
+  have h : Q.sub (Q.mul (Q.ofNat (n + 1)) (Q.div a (Q.ofNat (n + 1)))) a = Q.of 0 1 := by
+    refine Q.of_inj_val
+      (Nat.mul_ne_zero (Q.mul (Q.ofNat (n + 1)) (Q.div a (Q.ofNat (n + 1)))).den_ne_zero (Q.neg a).den_ne_zero)
+      one_ne_zero ?_
+    have hne : (Q.ofNat (n + 1)).num ≠ 0 := Int.ofNat_ne_zero.mpr (Nat.succ_ne_zero n)
+    have hpos : ((n + 1 : Nat) : Rat) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)
+    rw [show Q.of _ _ = Q.sub (Q.mul (Q.ofNat (n + 1)) (Q.div a (Q.ofNat (n + 1)))) a from rfl,
+      Q.val_sub, Q.val_mul, Q.val_div _ _ hne, Q.val_ofNat, Q.val_of _ _ one_ne_zero]
+    field_simp
+    ring
+  rw [h]; rfl
+
+/-- **`(n+1) * (a / (n+1)) = a` is not valid on unnormalized `Q`**, for the exact same
+reason as `add_zero_not_id`: `Q.mul` normalizes via `Q.of`, whereas `⟨2, 3⟩` is unnormalized (`2/4`). -/
+theorem Q.mul_div_not_id :
+    Q.mul (Q.ofNat 1) (Q.div ⟨2, 3⟩ (Q.ofNat 1)) ≠ ⟨2, 3⟩ := by decide
+
 /-! ## Order laws — the half the ordered-field rule base needs beyond the ring
 laws.  All three are one `linarith` past the order bridge. -/
 

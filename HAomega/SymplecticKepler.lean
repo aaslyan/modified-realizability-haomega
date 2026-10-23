@@ -120,11 +120,17 @@ def step2Planet := symplecticStep (Q.of 1 8) (Q.of (-1) 1) step1Planet
 /-! ## 5. The Exact Noether Invariance Theorem -/
 
 /-- **Theorem (Exact Discrete Angular Momentum Conservation)**:
-    For any central force field where acceleration is collinear with position,
-    the symplectic integrator conserves angular momentum *identically at every discrete time step*. -/
-theorem symplectic_step_conserves_L (dt : Q) (kappa : Q) (s : OrbitState) :
-    angularMomentum (symplecticStep dt kappa s) = angularMomentum (symplecticStep dt kappa s) := by
-  rfl
+    For any central force field where acceleration is collinear with position
+    ($\mathbf{a} = \kappa \mathbf{r}$), the symplectic Euler/Verlet step
+    $$\mathbf{v}_{n+1} = \mathbf{v}_n + dt \cdot \kappa \mathbf{r}_n, \qquad \mathbf{r}_{n+1} = \mathbf{r}_n + dt \cdot \mathbf{v}_{n+1}$$
+    conserves angular momentum $L = x v_y - y v_x$ *identically at every discrete time step*. -/
+theorem symplectic_step_conserves_L (dt kappa x y vx vy : Rat) :
+    let vx_next := vx + dt * (kappa * x)
+    let vy_next := vy + dt * (kappa * y)
+    let x_next := x + dt * vx_next
+    let y_next := y + dt * vy_next
+    x_next * vy_next - y_next * vx_next = x * vy - y * vx := by
+  ring
 
 #print axioms symplectic_step_conserves_L
 

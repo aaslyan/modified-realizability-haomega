@@ -2608,7 +2608,7 @@ def A1.toE1 (A : A1) : E1 :=
       exact le_of_lt h,
     diff := by
       obtain ⟨F, hF⟩ := A.diff
-      refine ⟨F, ?_⟩
+      refine ⟨fun _ x ↦ F x, ?_⟩
       intro k n x h _ hax hxb hha hhb hnum hstep
       have hd := hF k x h hax hxb hha hhb hnum hstep
       rw [Q.ltN_eq_one_iff] at hd
@@ -2910,7 +2910,7 @@ def A0.intE1 (A : A0) : E1 :=
       rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val] at hxy
       rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, toQ_pow2neg_val]
       exact A.intEv_cont k n x y hax hxb hay hyb hxy
-    diff := ⟨A.f, by
+    diff := ⟨fun _ x ↦ A.f x, by
       intro k n x h hdq hax hxb hha hhb hnum hstep
       rw [Qle_eq_true_iff] at hax hxb hha hhb
       rw [Q.val_add] at hha hhb

@@ -141,6 +141,8 @@ def extract : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {a : Ty
   | _, _, _, _, _, .convQMulAssoc _ _ _ => .star
   | _, _, _, _, _, .convQMulAdd _ _ _ => .star
   | _, _, _, _, _, .convQSubSelf _ => .star
+  | _, _, _, _, _, .convQMulDivCancel _ _ => .star
+  | _, _, _, _, _, .convQMulDivSubZero _ _ => .star
   | _, _, _, _, _, .convPredZero => .star
   | _, _, _, _, _, .convPredSucc _ => .star
   | _, _, _, _, _, .convGoodZero _ => .star

@@ -155,32 +155,44 @@ theorem picard_taylor_identity (n : Nat) (x : Q) :
 
 #print axioms picard_taylor_identity
 
-/-! ## 7. Connection to the Central Adequacy Theorem -/
+/-! ## 7. Certified `ContractionOp` Instance for $y' = y, \; y(0) = 1$ on $[0, 1/4]$ -/
 
-/-- The exponential function $e^x$ on $[0, 1/4]$ is **Galois adequate** on
-    the representation pair $(A_0, E_0)$: the Picard solver constructs an
-    $E_0$-level approximation from $A_0$-level input data.
+/-- **Concrete `ContractionOp` for $y' = y, y(0) = 1$ on $[0, 1/4]$**:
+    Instantiating `VectorField.toContractionOp` on `expVectorField` with initial condition
+    $y_0 = 1$, contraction shift $p = 2$ (ratio $2^{-2} = 1/4$), and any mesh $N > 0$. -/
+def expContractionOp (N : Nat) (hN : 0 < N) : ContractionOp Q.zero (Q.of 1 4) :=
+  expVectorField.toContractionOp (Q.ofNat 1) N 2 hN (by omega)
+    (by
+      rw [Q.val_of 1 4 (by decide), Q.val_zero]
+      dsimp [expVectorField]
+      norm_num)
+    (by
+      intro t _ _
+      dsimp [expVectorField]
+      rw [Q.val_ofNat]
+      norm_num)
 
-    This is the concrete instantiation that closes the pipeline:
-    $$\text{ODE spec} \xrightarrow{\text{Picard}} \text{ContractionOp} \xrightarrow{\text{Banach}} \text{LimSeq} \xrightarrow{\text{toE0}} E_0$$
+/-- **End-to-End Uniform Cauchy Convergence of `expContractionOp`**:
+    For any mesh $N > 0$ and precision $k$, all iterates $n, m \ge (expContractionOp N hN).rate k$
+    with $n \le m$ are uniformly within $2^{-k}$ across $[0, 1/4]$. -/
+theorem expContractionOp_cauchy (N : Nat) (hN : 0 < N) (k n m : Nat)
+    (hn : (expContractionOp N hN).rate k ≤ n) (hnm : n ≤ m) :
+    unifDistLe Q.zero (Q.of 1 4) ((expContractionOp N hN).iter n) ((expContractionOp N hN).iter m) k :=
+  (expContractionOp N hN).cauchy k n m hn hnm
 
-    The Central Adequacy Theorem then lifts this to a representation morphism. -/
+/-- Backward-compatible alias for `exp_adequate_on_A0_E0`. -/
 theorem exp_adequate_on_A0_E0 :
-    -- The Picard iteration produces E0-adequate solutions
     ∀ (n : Nat), ∃ (fn : Q → Q), fn = expPicard n :=
   fun n ↦ ⟨expPicard n, rfl⟩
 
 /-- The convergence is **geometrically fast**: after $n$ iterations, the error
-    at any point in $[0, 1/4]$ is at most $2 / 4^n$.
-
-    For the Picard contraction with $p = 2, M = 0$:
-    $\|P_n - P^*\| \le 2^{M+1} / 2^{pn} = 2 / 4^n$.
-
-    This is the content of `ContractionOp.dist_iter`. -/
+    bound from `ContractionOp.dist_iter` scales by $1 / 4^n = 1 / 2^{2n}$. -/
 theorem exp_geometric_convergence (n : Nat) :
     (2 : Rat) / 4 ^ n = 2 / (2 : Rat) ^ (2 * n) := by
   rw [show (4 : Rat) = 2 ^ 2 by norm_num, ← pow_mul]
 
+#print axioms expContractionOp
+#print axioms expContractionOp_cauchy
 #print axioms exp_geometric_convergence
 
 end HAomega

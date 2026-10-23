@@ -123,19 +123,66 @@ theorem iterateOp_equiv {X : Type} {M : RepMetricSpace X} (T : RepContraction M)
 
 #print axioms iterateOp_equiv
 
+/-- **Theorem (Geometric Contraction of Consecutive Iterates)**:
+    Along the iteration sequence $c_n = T^n(c_0)$ of a `RepContraction`, the code distance
+    between consecutive iterates decays geometrically by $(p/q)^n$:
+    $$d_k(c_n, c_{n+1}) \le \left(\frac{p}{q}\right)^n d_k(c_0, T(c_0)).$$ -/
+theorem RepContraction.consec_dist_le {X : Type} {M : RepMetricSpace X}
+    (T : RepContraction M) (c0 : M.rep.Carrier) (k n : Nat) :
+    (M.codeDist (iterateOp T c0 n) (iterateOp T c0 (n + 1)) k).val
+      ≤ ((T.ratioNum : Rat) / (T.ratioDen : Rat)) ^ n *
+        (M.codeDist c0 (T.op c0) k).val := by
+  have hden_pos : (0 : Rat) < (T.ratioDen : Rat) := by exact_mod_cast T.den_pos
+  have hnum : (Q.ofNat T.ratioDen).num ≠ 0 := by
+    have := T.den_pos
+    unfold Q.ofNat; simpa using by omega
+  have hratio_nn : 0 ≤ (T.ratioNum : Rat) / (T.ratioDen : Rat) :=
+    div_nonneg (Nat.cast_nonneg _) (le_of_lt hden_pos)
+  induction n with
+  | zero =>
+    dsimp [iterateOp]
+    simp
+  | succ n ih =>
+    dsimp [iterateOp]
+    have hc := T.contracts (iterateOp T c0 n) (T.op (iterateOp T c0 n)) k
+    rw [Qle_eq_true_iff, Q.val_mul, Q.val_div _ _ hnum, Q.val_ofNat, Q.val_ofNat] at hc
+    calc (M.codeDist (T.op (iterateOp T c0 n)) (T.op (T.op (iterateOp T c0 n))) k).val
+      _ ≤ ((T.ratioNum : Rat) / (T.ratioDen : Rat)) *
+          (M.codeDist (iterateOp T c0 n) (T.op (iterateOp T c0 n)) k).val := hc
+      _ ≤ ((T.ratioNum : Rat) / (T.ratioDen : Rat)) *
+          (((T.ratioNum : Rat) / (T.ratioDen : Rat)) ^ n * (M.codeDist c0 (T.op c0) k).val) :=
+        mul_le_mul_of_nonneg_left ih hratio_nn
+      _ = ((T.ratioNum : Rat) / (T.ratioDen : Rat)) ^ (n + 1) * (M.codeDist c0 (T.op c0) k).val := by
+        rw [pow_succ', mul_assoc]
+
+#print axioms RepContraction.consec_dist_le
+
 /-! ## 5. The Abstract Banach Fixed-Point Theorem -/
 
-/-- **Theorem (Abstract Banach Fixed-Point — Existence)**:
+/-- **Theorem (Abstract Banach Fixed-Point — Limit Approximation & Contraction Step)**:
     On a represented complete metric space $(X, d, R)$, any contraction operator $T$
-    with ratio $q < 1$ produces a code $c^*$ via the iteration limit such that
-    $T(c^*) \sim c^*$ in the code equivalence. -/
+    applied to a Cauchy sequence `h_cauchy` of iterates $T^n(c_0)$ produces a limit code
+    `fixedCode = compl.limit h_cauchy` that is $2^{-k}$-close to the tail iterate
+    $c_{N(k+1)}$, and whose image $T(c_{N(k+1)}) = c_{N(k+1)+1}$ is $2^{-(k+1)}$-close
+    to $c_{N(k+1)}$. -/
 theorem banach_fixed_point_existence {X : Type} (M : RepMetricSpace X)
     (compl : RepComplete M) (T : RepContraction M)
     (c0 : M.rep.Carrier)
-    (h_cauchy : RepCauchySeq M) (_h_seq : h_cauchy.seq = iterateOp T c0) :
-    -- The limit exists and is a code in the carrier
-    ∃ (fixedCode : M.rep.Carrier), fixedCode = compl.limit h_cauchy :=
-  ⟨compl.limit h_cauchy, rfl⟩
+    (h_cauchy : RepCauchySeq M) (h_seq : h_cauchy.seq = iterateOp T c0) :
+    ∃ (fixedCode : M.rep.Carrier),
+      fixedCode = compl.limit h_cauchy ∧
+      (∀ k : Nat,
+        Qle (M.codeDist (iterateOp T c0 (h_cauchy.cauchyMod (k + 1))) fixedCode k)
+            (Q.div (Q.ofInt 1) (Q.ofNat (2 ^ k))) = true ∧
+        Qle (M.codeDist (iterateOp T c0 (h_cauchy.cauchyMod (k + 1)))
+                        (T.op (iterateOp T c0 (h_cauchy.cauchyMod (k + 1)))) (k + 1))
+            (Q.div (Q.ofInt 1) (Q.ofNat (2 ^ (k + 1)))) = true) := by
+  refine ⟨compl.limit h_cauchy, rfl, fun k ↦ ⟨?_, ?_⟩⟩
+  · have h_close := compl.limitClose h_cauchy k
+    rwa [h_seq] at h_close
+  · have h_step := h_cauchy.isCauchy (k + 1) (h_cauchy.cauchyMod (k + 1))
+      (h_cauchy.cauchyMod (k + 1) + 1) le_rfl (by omega)
+    rwa [h_seq] at h_step
 
 #print axioms banach_fixed_point_existence
 
@@ -153,15 +200,15 @@ theorem iteration_equiv_stable {X : Type} {M : RepMetricSpace X}
 /-! ## 6. Picard–Lindelöf as Instantiation -/
 
 /-- **Theorem (Picard–Lindelöf from Abstract Banach)**:
-    The Picard iteration operator on $(C[a,b], \|\cdot\|_\infty)$ is a contraction
-    (under Lipschitz conditions), so the abstract Banach theorem applies directly.
-
-    This theorem states the *structural form* of the instantiation: the Picard solver
-    from `HAomega.Picard` is an instance of the abstract contraction framework. -/
-theorem picard_is_contraction_instance :
-    -- The concrete Picard solver from HAomega.Picard computes via contraction iteration
-    ∀ (pd : PicardData), pd.solution = pd.solution :=
-  fun _ ↦ rfl
+    For every `pd : PicardData`, the extracted $E_0$ solution `pd.solution` evaluates at
+    level $n$ to `pd.C.iter n`, and any two levels $n, m \ge pd.C.rate k$ ($n \le m$)
+    are uniformly within $2^{-k}$ across $[pd.a, pd.b]$. -/
+theorem picard_is_contraction_instance (pd : PicardData) (k n m : Nat)
+    (hn : pd.C.rate k ≤ n) (hnm : n ≤ m) (x : Q)
+    (hxa : Qle pd.a x = true) (hxb : Qle x pd.b = true) :
+    pd.solution.ev n x = pd.C.iter n x ∧
+    |(pd.solution.ev n x).val - (pd.solution.ev m x).val| ≤ 1 / (2 : Rat) ^ k :=
+  ⟨rfl, pd.C.cauchy k n m hn hnm x hxa hxb⟩
 
 #print axioms picard_is_contraction_instance
 
@@ -174,6 +221,46 @@ theorem contraction_comp_ratio {X : Type} {M : RepMetricSpace X}
     T1.ratioNum * T2.ratioNum < T1.ratioDen * T2.ratioDen := by
   exact Nat.mul_lt_mul_of_lt_of_lt T1.ratio_lt T2.ratio_lt
 
+/-- **Full Composition of `RepContraction`s**:
+    Composing $T_2 \circ T_1$ produces a certified `RepContraction M` with ratio
+    $(p_1 \cdot p_2) / (q_1 \cdot q_2) < 1$. -/
+def RepContraction.comp {X : Type} {M : RepMetricSpace X}
+    (T2 T1 : RepContraction M) : RepContraction M where
+  op := fun c ↦ T2.op (T1.op c)
+  ratioNum := T2.ratioNum * T1.ratioNum
+  ratioDen := T2.ratioDen * T1.ratioDen
+  ratio_lt := Nat.mul_lt_mul_of_lt_of_lt T2.ratio_lt T1.ratio_lt
+  den_pos := Nat.mul_pos T2.den_pos T1.den_pos
+  map_equiv := fun c1 c2 h ↦ T2.map_equiv _ _ (T1.map_equiv c1 c2 h)
+  contracts := by
+    intro c1 c2 k
+    have h2 := T2.contracts (T1.op c1) (T1.op c2) k
+    have h1 := T1.contracts c1 c2 k
+    have hden2 : (0 : Rat) < (T2.ratioDen : Rat) := by exact_mod_cast T2.den_pos
+    have hden1 : (0 : Rat) < (T1.ratioDen : Rat) := by exact_mod_cast T1.den_pos
+    have hnum2 : (Q.ofNat T2.ratioDen).num ≠ 0 := by
+      have := T2.den_pos; unfold Q.ofNat; simpa using by omega
+    have hnum1 : (Q.ofNat T1.ratioDen).num ≠ 0 := by
+      have := T1.den_pos; unfold Q.ofNat; simpa using by omega
+    have hnum12 : (Q.ofNat (T2.ratioDen * T1.ratioDen)).num ≠ 0 := by
+      have hpos : 0 < T2.ratioDen * T1.ratioDen := Nat.mul_pos T2.den_pos T1.den_pos
+      unfold Q.ofNat
+      exact Int.ofNat_ne_zero.mpr (ne_of_gt hpos)
+    rw [Qle_eq_true_iff, Q.val_mul, Q.val_div _ _ hnum2, Q.val_ofNat, Q.val_ofNat] at h2
+    rw [Qle_eq_true_iff, Q.val_mul, Q.val_div _ _ hnum1, Q.val_ofNat, Q.val_ofNat] at h1
+    rw [Qle_eq_true_iff, Q.val_mul, Q.val_div _ _ hnum12, Q.val_ofNat, Q.val_ofNat]
+    have h_r2_nn : 0 ≤ (T2.ratioNum : Rat) / (T2.ratioDen : Rat) :=
+      div_nonneg (Nat.cast_nonneg _) (le_of_lt hden2)
+    have h_chain := le_trans h2 (mul_le_mul_of_nonneg_left h1 h_r2_nn)
+    have h_eq : ((T2.ratioNum : Rat) / (T2.ratioDen : Rat)) *
+        (((T1.ratioNum : Rat) / (T1.ratioDen : Rat)) * (M.codeDist c1 c2 k).val)
+        = (((T2.ratioNum * T1.ratioNum : Nat) : Rat) / ((T2.ratioDen * T1.ratioDen : Nat) : Rat)) *
+          (M.codeDist c1 c2 k).val := by
+      push_cast
+      ring
+    linarith
+
 #print axioms contraction_comp_ratio
+#print axioms RepContraction.comp
 
 end HAomega

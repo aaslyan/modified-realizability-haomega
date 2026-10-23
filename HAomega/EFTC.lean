@@ -358,11 +358,11 @@ structure E1 extends E0 where
       Qle a x = true → Qle x b = true → Qle a y = true → Qle y b = true →
       Qle (Q.abs (Q.sub x y)) (D.toQ (D.pow2neg (ω k))) = true →
       Qle (Q.abs (Q.sub (ev n x) (ev n y))) (D.toQ (D.pow2neg k)) = true
-  diff : ∃ F : Q → Q, ∀ (k n : Nat) (x h : Q), dq k h ≤ n →
+  diff : ∃ F : Nat → Q → Q, ∀ (k n : Nat) (x h : Q), dq k h ≤ n →
       Qle a x = true → Qle x b = true →
       Qle a (Q.add x h) = true → Qle (Q.add x h) b = true →
       h.num ≠ 0 → Qle (Q.abs h) (D.toQ (D.pow2neg (δ k))) = true →
-      Qle (Q.abs (Q.sub (Q.div (Q.sub (ev n (Q.add x h)) (ev n x)) h) (F x)))
+      Qle (Q.abs (Q.sub (Q.div (Q.sub (ev n (Q.add x h)) (ev n x)) h) (F n x)))
         (D.toQ (D.pow2neg k)) = true
 
 /-! ### Cell counts that split a grid exactly

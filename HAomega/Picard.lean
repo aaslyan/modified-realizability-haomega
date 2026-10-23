@@ -299,4 +299,215 @@ theorem picard_integral_contracts {a b : Q} (V : VectorField a b) (p : Nat) (_hp
 
 #print axioms picard_integral_contracts
 
+/-- Sample point $t_i = a + i \frac{x - a}{N}$ lies in $[a, b]$ whenever $x \in [a, b]$ and $i \le N$. -/
+theorem rPt_mem_of_mem {a b x : Q} (N i : Nat) (hN : 0 < N) (hi : i ≤ N)
+    (hxa : Qle a x = true) (hxb : Qle x b = true) :
+    Qle a (rPt a (Q.sub x a) N i) = true ∧ Qle (rPt a (Q.sub x a) N i) b = true := by
+  rw [Qle_eq_true_iff] at hxa hxb
+  have hN_pos : (0 : Rat) < (N : Rat) := by exact_mod_cast hN
+  have hnum : (Q.ofNat N).num ≠ 0 := by
+    unfold Q.ofNat; simpa using by omega
+  have hval : (rPt a (Q.sub x a) N i).val = a.val + (i : Rat) * ((x.val - a.val) / (N : Rat)) := by
+    unfold rPt rStep
+    rw [Q.val_add, Q.val_mul, Q.val_ofNat, Q.val_div _ _ hnum, Q.val_sub, Q.val_ofNat]
+  have hi_nn : (0 : Rat) ≤ (i : Rat) := Nat.cast_nonneg i
+  have hi_le : (i : Rat) ≤ (N : Rat) := by exact_mod_cast hi
+  have hstep_nn : 0 ≤ (x.val - a.val) / (N : Rat) := div_nonneg (by linarith) (le_of_lt hN_pos)
+  have hmul_nn : 0 ≤ (i : Rat) * ((x.val - a.val) / (N : Rat)) := mul_nonneg hi_nn hstep_nn
+  have hmul_le : (i : Rat) * ((x.val - a.val) / (N : Rat)) ≤ x.val - a.val := by
+    calc (i : Rat) * ((x.val - a.val) / (N : Rat))
+      _ ≤ (N : Rat) * ((x.val - a.val) / (N : Rat)) := mul_le_mul_of_nonneg_right hi_le hstep_nn
+      _ = x.val - a.val := mul_div_cancel₀ _ (ne_of_gt hN_pos)
+  rw [Qle_eq_true_iff, Qle_eq_true_iff, hval]
+  exact ⟨by linarith, by linarith⟩
+
+/-- The discrete Riemann-sum Picard integral operator:
+    $$\mathcal{T}_N(y)(x) = y_{\mathrm{init}} + \frac{x - a}{N} \sum_{i=0}^{N-1} f\left(t_i, y(t_i)\right).$$ -/
+def VectorField.picardOp {a b : Q} (V : VectorField a b) (yInit : Q) (N : Nat)
+    (y : Q → Q) (x : Q) : Q :=
+  let h := Q.sub x a
+  Q.add yInit (Q.mul (rStep h N) (sumQ (fun i ↦ V.f (rPt a h N i) (y (rPt a h N i))) N))
+
+/-- **Theorem (Picard Operator Uniform Contraction on Samplers)**:
+    For any `V : VectorField a b`, initial value `yInit`, and mesh $N > 0$, if
+    $b - a \le 2^{-(V.L + p)}$, then `V.picardOp yInit N` contracts uniform distances
+    bounded by $2^M / 2^k$ down to $2^M / 2^{k+p}$. -/
+theorem VectorField.picardOp_contracts {a b : Q} (V : VectorField a b)
+    (yInit : Q) (N p M : Nat) (hN : 0 < N)
+    (h_time : b.val - a.val ≤ 1 / (2 : Rat) ^ (V.L + p))
+    (y z : Q → Q) (k : Nat)
+    (h_yz : ∀ t : Q, Qle a t = true → Qle t b = true →
+      |(y t).val - (z t).val| ≤ (2 : Rat) ^ M / 2 ^ k)
+    (x : Q) (hxa : Qle a x = true) (hxb : Qle x b = true) :
+    |(V.picardOp yInit N y x).val - (V.picardOp yInit N z x).val|
+      ≤ (2 : Rat) ^ M / 2 ^ (k + p) := by
+  have hxa_v : a.val ≤ x.val := (Qle_eq_true_iff _ _).mp hxa
+  have hxb_v : x.val ≤ b.val := (Qle_eq_true_iff _ _).mp hxb
+  have hN_pos : (0 : Rat) < (N : Rat) := by exact_mod_cast hN
+  have hnum : (Q.ofNat N).num ≠ 0 := by
+    unfold Q.ofNat; simpa using by omega
+  set h := Q.sub x a
+  have hrStep : (rStep h N).val = (x.val - a.val) / (N : Rat) := by
+    unfold rStep
+    rw [Q.val_div _ _ hnum, Q.val_sub, Q.val_ofNat]
+  have hrStep_nn : 0 ≤ (rStep h N).val := by
+    rw [hrStep]; exact div_nonneg (by linarith) (le_of_lt hN_pos)
+  dsimp [VectorField.picardOp]
+  rw [Q.val_add, Q.val_add, Q.val_mul, Q.val_mul]
+  have h_cancel : yInit.val + (rStep h N).val * (sumQ (fun i ↦ V.f (rPt a h N i) (y (rPt a h N i))) N).val
+      - (yInit.val + (rStep h N).val * (sumQ (fun i ↦ V.f (rPt a h N i) (z (rPt a h N i))) N).val)
+      = (rStep h N).val * ((sumQ (fun i ↦ V.f (rPt a h N i) (y (rPt a h N i))) N).val
+        - (sumQ (fun i ↦ V.f (rPt a h N i) (z (rPt a h N i))) N).val) := by ring
+  rw [h_cancel, abs_mul, abs_of_nonneg hrStep_nn, sumQ_val, sumQ_val, ← Finset.sum_sub_distrib]
+  have h_sum_abs : |∑ i ∈ Finset.range N,
+      ((V.f (rPt a h N i) (y (rPt a h N i))).val - (V.f (rPt a h N i) (z (rPt a h N i))).val)|
+      ≤ ∑ i ∈ Finset.range N,
+      |(V.f (rPt a h N i) (y (rPt a h N i))).val - (V.f (rPt a h N i) (z (rPt a h N i))).val| :=
+    Finset.abs_sum_le_sum_abs _ _
+  have h_term : ∀ i ∈ Finset.range N,
+      |(V.f (rPt a h N i) (y (rPt a h N i))).val - (V.f (rPt a h N i) (z (rPt a h N i))).val|
+        ≤ (2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k) := by
+    intro i hi
+    have hi_le : i ≤ N := le_of_lt (Finset.mem_range.mp hi)
+    obtain ⟨hta, htb⟩ := rPt_mem_of_mem N i hN hi_le hxa hxb
+    have h_lip := V.lip_y (rPt a h N i) (y (rPt a h N i)) (z (rPt a h N i)) hta htb
+    have h_d := h_yz (rPt a h N i) hta htb
+    calc |(V.f (rPt a h N i) (y (rPt a h N i))).val - (V.f (rPt a h N i) (z (rPt a h N i))).val|
+      _ ≤ (2 : Rat) ^ V.L * |(y (rPt a h N i)).val - (z (rPt a h N i)).val| := h_lip
+      _ ≤ (2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k) :=
+        mul_le_mul_of_nonneg_left h_d (by positivity)
+  have h_sum_bound : ∑ i ∈ Finset.range N,
+      |(V.f (rPt a h N i) (y (rPt a h N i))).val - (V.f (rPt a h N i) (z (rPt a h N i))).val|
+      ≤ (N : Rat) * ((2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k)) := by
+    calc ∑ i ∈ Finset.range N,
+          |(V.f (rPt a h N i) (y (rPt a h N i))).val - (V.f (rPt a h N i) (z (rPt a h N i))).val|
+      _ ≤ ∑ _i ∈ Finset.range N, ((2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k)) :=
+        Finset.sum_le_sum h_term
+      _ = (N : Rat) * ((2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k)) := by
+        rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+  have h_prod : (rStep h N).val *
+      |∑ i ∈ Finset.range N,
+        ((V.f (rPt a h N i) (y (rPt a h N i))).val - (V.f (rPt a h N i) (z (rPt a h N i))).val)|
+      ≤ (x.val - a.val) * ((2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k)) := by
+    calc (rStep h N).val *
+          |∑ i ∈ Finset.range N,
+            ((V.f (rPt a h N i) (y (rPt a h N i))).val - (V.f (rPt a h N i) (z (rPt a h N i))).val)|
+      _ ≤ (rStep h N).val * ((N : Rat) * ((2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k))) :=
+        mul_le_mul_of_nonneg_left (le_trans h_sum_abs h_sum_bound) hrStep_nn
+      _ = (x.val - a.val) * ((2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k)) := by
+        rw [hrStep]
+        field_simp
+  have h_x_le_b : (x.val - a.val) * ((2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k))
+      ≤ (b.val - a.val) * ((2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k)) :=
+    mul_le_mul_of_nonneg_right (by linarith) (by positivity)
+  have h_time_scale : (b.val - a.val) * ((2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k))
+      ≤ (2 : Rat) ^ M / 2 ^ (k + p) := by
+    calc (b.val - a.val) * ((2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k))
+      _ ≤ (1 / (2 : Rat) ^ (V.L + p)) * ((2 : Rat) ^ V.L * ((2 : Rat) ^ M / 2 ^ k)) :=
+        mul_le_mul_of_nonneg_right h_time (by positivity)
+      _ = (2 : Rat) ^ M / 2 ^ (k + p) := by
+        rw [show V.L + p = V.L + p by rfl, pow_add, show k + p = k + p by rfl, pow_add]
+        have : (0 : Rat) < 2 ^ V.L := by positivity
+        have : (0 : Rat) < 2 ^ p := by positivity
+        have : (0 : Rat) < 2 ^ k := by positivity
+        field_simp
+  linarith
+
+/-- **Constructing a `ContractionOp` directly from a `VectorField`**:
+    Given a `VectorField a b`, initial condition `yInit`, and mesh $N > 0$ on an interval
+    with $b - a \le 2^{-(V.L + p)} \le 1$, the Picard operator `V.picardOp yInit N` forms a
+    certified `ContractionOp a b`. -/
+def VectorField.toContractionOp {a b : Q} (V : VectorField a b)
+    (yInit : Q) (N p : Nat) (hN : 0 < N) (hp : 1 ≤ p)
+    (h_time : b.val - a.val ≤ 1 / (2 : Rat) ^ (V.L + p))
+    (h_bound0 : ∀ t : Q, Qle a t = true → Qle t b = true →
+      |(V.f t yInit).val| ≤ (2 : Rat) ^ V.B) :
+    ContractionOp a b where
+  T := V.picardOp yInit N
+  p := p
+  hp := hp
+  y0 := fun _ ↦ yInit
+  M := V.B
+  h_step0 := by
+    intro x hxa hxb
+    have hxa_v : a.val ≤ x.val := (Qle_eq_true_iff _ _).mp hxa
+    have hxb_v : x.val ≤ b.val := (Qle_eq_true_iff _ _).mp hxb
+    have hN_pos : (0 : Rat) < (N : Rat) := by exact_mod_cast hN
+    have hnum : (Q.ofNat N).num ≠ 0 := by
+      unfold Q.ofNat; simpa using by omega
+    set h := Q.sub x a
+    have hrStep : (rStep h N).val = (x.val - a.val) / (N : Rat) := by
+      unfold rStep
+      rw [Q.val_div _ _ hnum, Q.val_sub, Q.val_ofNat]
+    have hrStep_nn : 0 ≤ (rStep h N).val := by
+      rw [hrStep]; exact div_nonneg (by linarith) (le_of_lt hN_pos)
+    dsimp [VectorField.picardOp]
+    rw [Q.val_add, Q.val_mul]
+    have h_sub : yInit.val - (yInit.val + (rStep h N).val * (sumQ (fun i ↦ V.f (rPt a h N i) yInit) N).val)
+        = -((rStep h N).val * (sumQ (fun i ↦ V.f (rPt a h N i) yInit) N).val) := by ring
+    rw [h_sub, abs_neg, abs_mul, abs_of_nonneg hrStep_nn, sumQ_val]
+    have h_abs_sum : |∑ i ∈ Finset.range N, (V.f (rPt a h N i) yInit).val|
+        ≤ ∑ i ∈ Finset.range N, |(V.f (rPt a h N i) yInit).val| :=
+      Finset.abs_sum_le_sum_abs _ _
+    have h_term : ∀ i ∈ Finset.range N, |(V.f (rPt a h N i) yInit).val| ≤ (2 : Rat) ^ V.B := by
+      intro i hi
+      have hi_le : i ≤ N := le_of_lt (Finset.mem_range.mp hi)
+      obtain ⟨hta, htb⟩ := rPt_mem_of_mem N i hN hi_le hxa hxb
+      exact h_bound0 (rPt a h N i) hta htb
+    have h_sum_le : ∑ i ∈ Finset.range N, |(V.f (rPt a h N i) yInit).val| ≤ (N : Rat) * (2 : Rat) ^ V.B := by
+      calc ∑ i ∈ Finset.range N, |(V.f (rPt a h N i) yInit).val|
+        _ ≤ ∑ _i ∈ Finset.range N, (2 : Rat) ^ V.B := Finset.sum_le_sum h_term
+        _ = (N : Rat) * (2 : Rat) ^ V.B := by
+          rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+    have h_prod : (rStep h N).val * |∑ i ∈ Finset.range N, (V.f (rPt a h N i) yInit).val|
+        ≤ (x.val - a.val) * (2 : Rat) ^ V.B := by
+      calc (rStep h N).val * |∑ i ∈ Finset.range N, (V.f (rPt a h N i) yInit).val|
+        _ ≤ (rStep h N).val * ((N : Rat) * (2 : Rat) ^ V.B) :=
+          mul_le_mul_of_nonneg_left (le_trans h_abs_sum h_sum_le) hrStep_nn
+        _ = (x.val - a.val) * (2 : Rat) ^ V.B := by rw [hrStep]; field_simp
+    have h_ba_le1 : b.val - a.val ≤ 1 := by
+      have h_pow_ge1 : (1 : Rat) ≤ 2 ^ (V.L + p) := one_le_pow₀ (by norm_num)
+      have h_inv_le1 : 1 / (2 : Rat) ^ (V.L + p) ≤ 1 := div_le_self (by norm_num) h_pow_ge1
+      linarith
+    have h_xa_le1 : x.val - a.val ≤ 1 := by linarith
+    calc (rStep h N).val * |∑ i ∈ Finset.range N, (V.f (rPt a h N i) yInit).val|
+      _ ≤ (x.val - a.val) * (2 : Rat) ^ V.B := h_prod
+      _ ≤ 1 * (2 : Rat) ^ V.B := mul_le_mul_of_nonneg_right h_xa_le1 (by positivity)
+      _ = (2 : Rat) ^ V.B := one_mul _
+  contract := fun y z k h_yz x hxa hxb ↦
+    V.picardOp_contracts yInit N p V.B hN h_time y z k h_yz x hxa hxb
+
+/-! ## 5. Regularity Promotion (`EFTC1`): $A_0 \xrightarrow{\circ} A_0 \xrightarrow{\int} E_1$ -/
+
+/-- **Regularity Promotion for Picard Integral Trajectories**:
+    Given composable $A_0$ data `cd : CompData` (representing the trajectory $y = cd.G \in A_0$
+    and autonomous vector field $f = cd.F \in A_0$), the integrated trajectory
+    $\int_a^x f(y(t))\,dt$ is promoted via `CompData.comp` and `A0.intE1` to an
+    $E_1$-representation whose uniform derivative witness is $x \mapsto f(y(x))$. -/
+def picardPromoteE1 (cd : CompData) : E1 :=
+  (cd.comp).intE1
+
+/-- **Theorem (Regularity Promotion Derivative Identity)**:
+    The $E_1$-promoted integral `picardPromoteE1 cd` has uniform derivative equal to the
+    composite vector field $x \mapsto cd.F.f(cd.G.f(x))$ on $[a, b]$. -/
+theorem picardPromoteE1_has_composite_deriv (cd : CompData) :
+    ∀ (k n : Nat) (x h : Q), (picardPromoteE1 cd).dq k h ≤ n →
+      Qle cd.G.a x = true → Qle x cd.G.b = true →
+      Qle cd.G.a (Q.add x h) = true → Qle (Q.add x h) cd.G.b = true →
+      h.num ≠ 0 → Qle (Q.abs h) (D.toQ (D.pow2neg ((picardPromoteE1 cd).δ k))) = true →
+      Qle (Q.abs (Q.sub (Q.div (Q.sub ((picardPromoteE1 cd).ev n (Q.add x h))
+        ((picardPromoteE1 cd).ev n x)) h) (cd.F.f (cd.G.f x))))
+        (D.toQ (D.pow2neg k)) = true := by
+  intro k n x h hdq hax hxb hha hhb hnum hstep
+  rw [Qle_eq_true_iff] at hax hxb hha hhb
+  rw [Q.val_add] at hha hhb
+  rw [Qle_eq_true_iff, Q.val_abs, toQ_pow2neg_val] at hstep
+  rw [Qle_eq_true_iff, Q.val_abs, Q.val_sub, Q.val_div _ _ hnum, Q.val_sub, toQ_pow2neg_val]
+  exact A0.intEv_diff cd.comp k n x h hnum hax hxb hha hhb hstep hdq
+
+#print axioms VectorField.picardOp_contracts
+#print axioms VectorField.toContractionOp
+#print axioms picardPromoteE1
+#print axioms picardPromoteE1_has_composite_deriv
+
 end HAomega

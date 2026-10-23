@@ -7,28 +7,23 @@ import HAomega.QAnalysis
 import HAomega.GaloisAdequacy
 
 /-!
-# Constructive Cauchy–Kowalevski Analytic PDE Engine
+# Bivariate Power-Series Recurrence for Linear Advection ($u_t = u_x$)
 
-This module formalizes the **Constructive Cauchy–Kowalevski Theorem** for real-analytic
-partial differential equations, synthesizing exact bivariate power-series solutions:
-$$u_t(t, x) = F(t, x, u, u_x), \qquad u(0, x) = \phi(x)$$
+This module implements the formal power-series coefficient recurrence for the linear
+advection PDE:
+$$u_t(t, x) = u_x(t, x), \qquad u(0, x) = \phi(x)$$
 
-## Theoretical Results
+## Scope and Results
 
 1. **Bivariate Power Series Representation (`Poly2D`)**:
-   A 2D polynomial/power-series truncated at order $N$:
-   $$u(t, x) = \sum_{j=0}^N \sum_{k=0}^N c_{j, k} \frac{t^j x^k}{j! \, k!}$$
-
-2. **Cauchy–Kowalevski Recurrence Generator**:
-   For the linear advection equation $u_t = u_x$ with initial data $\phi(x) = \sum a_k x^k / k!$:
-   $$c_{j+1, k} = c_{j, k+1}$$
-   which recursively determines all time derivatives from the spatial initial data.
-
-3. **Constructive Majorant Bound**:
-   Proves that the formal power series converges locally with geometric majorant bounds.
-
-4. **Verified Kernel Calculations**:
-   Exact power series solutions verified in Lean's kernel.
+   Truncated 2D coefficient table `coeffs[j][k]` representing $c_{j, k}$ in
+   $\sum_{j,k} c_{j, k} \frac{t^j x^k}{j!\,k!}$.
+2. **Coefficient Shift Recurrence (`ckAdvectionNextRow`, `ckAdvectionSolver`)**:
+   Computes $c_{j+1, k} = c_{j, k+1}$ from spatial initial data by list shifting.
+3. **Row Shift Theorem (`ck_next_row_length`) & Kernel Checks**:
+   Verifies the coefficient shift and evaluates the truncated series for $\phi(x) = e^x$ via `#guard`.
+   (General nonlinear majorant convergence belongs to the classical Cauchy–Kowalevski background
+   and is not formalized here.)
 -/
 
 namespace HAomega
@@ -51,13 +46,14 @@ def ckAdvectionNextRow (currentRow : List Q) : List Q :=
   | [] => []
   | _ :: rest => rest
 
+/-- Recursive generator for $M$ time-derivative rows from `currentRow`. -/
+def ckAdvectionLoop : Nat → List Q → List (List Q)
+  | 0, currentRow => [currentRow]
+  | n + 1, currentRow => currentRow :: ckAdvectionLoop n (ckAdvectionNextRow currentRow)
+
 /-- Full Cauchy–Kowalevski generator: generates $M$ time derivative orders from initial data $u(0, x)$. -/
 def ckAdvectionSolver (initData : List Q) (M : Nat) : Poly2D :=
-  let rec loop (remaining : Nat) (currentRow : List Q) : List (List Q) :=
-    match remaining with
-    | 0 => [currentRow]
-    | n + 1 => currentRow :: loop n (ckAdvectionNextRow currentRow)
-  ⟨loop M initData⟩
+  ⟨ckAdvectionLoop M initData⟩
 
 /-! ## 3. Verified Kernel Calculations -/
 
@@ -81,15 +77,66 @@ def advectionSol := ckAdvectionSolver expInitData 3
 -- Time order 3 (t³): [1, 1, 1]
 #guard advectionSol.coeffs.getD 3 [] == [Q.ofNat 1, Q.ofNat 1, Q.ofNat 1]
 
-/-! ## 4. The Cauchy–Kowalevski Galois Adequacy Theorem -/
+/-! ## 4. Coefficient Shift & Method of Characteristics Theorems -/
 
-/-- **Theorem (Cauchy–Kowalevski Galois Adequacy)**:
-    The Cauchy–Kowalevski recurrence algorithm is Galois adequate:
-    for any analytic initial data, it extracts the exact bivariate Taylor solution. -/
+/-- Each time-derivative step consumes one spatial derivative order:
+    `ckAdvectionNextRow (c :: rest) = rest`. -/
+theorem ck_advection_shift_cons (c : Q) (rest : List Q) :
+    ckAdvectionNextRow (c :: rest) = rest :=
+  rfl
+
+/-- `ckAdvectionNextRow` is equivalent to `List.drop 1`. -/
+theorem ckAdvectionNextRow_eq_drop (row : List Q) :
+    ckAdvectionNextRow row = row.drop 1 := by
+  cases row <;> rfl
+
+/-- The Cauchy–Kowalevski table up to order $M$ has exactly $M + 1$ time rows. -/
+theorem ckAdvectionLoop_length (M : Nat) (row : List Q) :
+    (ckAdvectionLoop M row).length = M + 1 := by
+  induction M generalizing row with
+  | zero => rfl
+  | succ n ih =>
+    simp [ckAdvectionLoop, ih]
+
+/-- **Theorem (Row Shift Characterization)**:
+    For every time order $j \le M$, the $j$-th row of `ckAdvectionLoop M row`
+    is `row.drop j`. -/
+theorem ckAdvectionLoop_getD (M : Nat) (row : List Q) (j : Nat) (hj : j ≤ M) :
+    (ckAdvectionLoop M row).getD j [] = row.drop j := by
+  induction M generalizing row j with
+  | zero =>
+    have hj0 : j = 0 := by omega
+    subst hj0
+    rfl
+  | succ n ih =>
+    cases j with
+    | zero => rfl
+    | succ j' =>
+      have hj' : j' ≤ n := by omega
+      change (ckAdvectionLoop n (ckAdvectionNextRow row)).getD j' [] = row.drop (j' + 1)
+      rw [ih (ckAdvectionNextRow row) j' hj', ckAdvectionNextRow_eq_drop, List.drop_drop,
+          Nat.add_comm 1 j']
+
+/-- **Theorem (Discrete Characteristics / D'Alembert Identity for $u_t = u_x$)**:
+    For the advection equation $u_t = u_x$ with initial Taylor coefficients $c_{0, k} = \text{initData}[k]$,
+    every space-time Taylor coefficient $c_{j, k}$ ($j \le M$) satisfies the exact shift identity
+    $$c_{j, k} = c_{0, j + k}.$$ -/
+theorem ck_advection_characteristics (initData : List Q) (M j k : Nat) (hj : j ≤ M) :
+    ((ckAdvectionSolver initData M).coeffs.getD j []).getD k Q.zero =
+    initData.getD (j + k) Q.zero := by
+  unfold ckAdvectionSolver
+  rw [ckAdvectionLoop_getD M initData j hj]
+  simp [List.getD, List.getElem?_drop]
+
+/-- Total definition of `ckAdvectionSolver`. -/
 theorem ck_solver_galois_adequate (initData : List Q) (M : Nat) :
     ∃ (sol : Poly2D), sol = ckAdvectionSolver initData M :=
   ⟨ckAdvectionSolver initData M, rfl⟩
 
+#print axioms ck_advection_shift_cons
+#print axioms ckAdvectionLoop_length
+#print axioms ckAdvectionLoop_getD
+#print axioms ck_advection_characteristics
 #print axioms ck_solver_galois_adequate
 
 end HAomega

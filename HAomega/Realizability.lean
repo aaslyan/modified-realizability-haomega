@@ -304,6 +304,13 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
   reaches a gcd.  See `Q.sub_self`. -/
   | convQSubSelf {Γ as} {Δ : Ctx Γ as} (t : Tm Γ .rat) :
       Deriv Δ (.eq (.qsub t t) (.qnat .zero))
+  /-- `(n+1) * (a / (n+1)) = a + 0` on `Q` (normalized FTC1 cancellation; bare `= a`
+  fails on unnormalized `⟨2, 3⟩` for the same reason as `add_zero_not_id`). -/
+  | convQMulDivCancel {Γ as} {Δ : Ctx Γ as} (n : Tm Γ .nat) (a : Tm Γ .rat) :
+      Deriv Δ (.eq (.qmul (.qnat (.succ n)) (.qdiv a (.qnat (.succ n)))) (.qadd a (.qnat .zero)))
+  /-- `((n+1) * (a / (n+1))) − a = 0` on `Q` (exact FTC1 difference cancellation for all `a : Q`). -/
+  | convQMulDivSubZero {Γ as} {Δ : Ctx Γ as} (n : Tm Γ .nat) (a : Tm Γ .rat) :
+      Deriv Δ (.eq (.qsub (.qmul (.qnat (.succ n)) (.qdiv a (.qnat (.succ n)))) a) (.qnat .zero))
   /-- `0 < 1/(t+1)` — the positivity a Cauchy bound needs.  The bound is a
   reciprocal rather than `2⁻ᵗ` because `1/(t+1)` is built from constructors the
   core already has, and because its normalization degenerates (`gcd 1 d = 1`);

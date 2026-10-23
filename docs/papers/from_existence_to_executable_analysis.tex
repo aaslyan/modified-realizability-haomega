@@ -1,0 +1,481 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!65!black,
+  citecolor=green!45!black,
+  urlcolor=blue!75!black
+}
+
+\lstdefinelanguage{Lean}{
+  keywords={structure, extends, def, noncomputable, theorem, lemma, inductive,
+    where, let, in, match, with, fun, if, then, else, Prop, Type},
+  sensitive=true
+}
+
+\lstset{
+  language=Lean,
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  commentstyle=\color{gray!70!black},
+  keywordstyle=\color{blue!70!black}\bfseries,
+  stringstyle=\color{teal!70!black},
+  frame=single,
+  frameround=tttt,
+  backgroundcolor=\color{gray!5}
+}
+
+\setlist{itemsep=3pt,topsep=5pt,parsep=0pt}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\HAomega}{\ensuremath{\mathrm{HA}^{\omega}}}
+\newcommand{\SystemT}{\ensuremath{\mathrm{System\ T}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Q}{\ensuremath{\mathbb{Q}}}
+\newcommand{\Rep}{\ensuremath{\mathbf{Rep}}}
+\newcommand{\mr}{\ensuremath{\;\mathbf{mr}\;}}
+\newcommand{\Deriv}{\ensuremath{\mathrm{Deriv}}}
+\newcommand{\Tm}{\ensuremath{\mathrm{Tm}}}
+\newcommand{\extractClosed}{\ensuremath{\mathrm{extractClosed}}}
+\newcommand{\lean}[1]{\texttt{\nolinkurl{#1}}}
+
+\title{\textbf{From Existence Proofs to Executable Analysis:\\
+Modified Realizability for \texorpdfstring{\HAomega}{HAomega} in Lean 4}}
+\author{Ara Aslyan}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We describe a Lean 4 development that turns constructive object-level proofs
+into executable programs.  The formal core is a deep embedding of finite-type
+Heyting arithmetic, with an intrinsically typed language of Godel System T
+terms, a natural-deduction calculus, Kreisel modified realizability, a
+certified extraction map, and code emitters for functional target languages.
+The development is accompanied by exact rational numerical examples drawn
+from Picard iteration and classical dynamical systems.  These examples are not
+presented as new theorems of dynamics; their role is to show that the
+proof-theoretic pipeline reaches running symbolic numerical code.
+
+The central methodological point is axiom budgeting.  The extracted program
+artifacts can be generated and evaluated without non-logical axioms in the
+clean arithmetic examples, while the semantic soundness theorem and many
+ambient analysis theorems have explicit Lean kernel footprints involving
+\lean{propext}, \lean{Classical.choice}, and \lean{Quot.sound}.  For
+constructive analysis this accounting becomes a calibration device: the
+passage from continuous data with a uniform-continuity modulus to differentiable
+data with explicit derivative moduli is measured by the footprint of
+\lean{A0.toA1}.  The result is a proof-to-program framework in which both the
+executable content of proofs and the represented data required by theorems are
+made explicit.
+\end{abstract}
+
+\section{Introduction}
+
+Constructive proof theory gives a precise form to a familiar slogan: an
+existence proof can contain an algorithm.  Realizability and functional
+interpretations make that slogan mathematical by assigning computational
+witnesses to proofs of existential and universal statements
+\cite{godel1958,kreisel1959,kohlenbach2008}.  Mechanized theorem proving adds
+a further demand: the extraction procedure itself should be checked, not merely
+trusted as an external program.
+
+This article is written from a series of public showcase posts about a Lean 4
+repository formalizing modified realizability for \HAomega.  Those posts
+emphasize visible computations: exact rational Picard iterations, harmonic
+oscillator approximations to sine and cosine, algebraic invariants for
+Lotka--Volterra and Kepler systems, and dissipative or divergence identities
+for Duffing, Van der Pol, and Lorenz systems.  The paper-level thesis is
+slightly different and more precise:
+
+\begin{quote}
+A constructive derivation in a deeply embedded arithmetic can be translated
+into a typed executable term, and the classical assumptions needed to justify
+semantic correctness can be measured separately from the executable artifact.
+\end{quote}
+
+The development has three contributions.
+
+\begin{enumerate}
+\item It formalizes the syntax, typing, proof rules, modified-realizability
+semantics, and extraction function for a finite-type arithmetic inside Lean 4.
+\item It uses Lean's kernel axiom reporting as a discipline: extracted
+programs, semantic soundness, and analysis bridges are not assigned one
+blanket foundational status, but are measured declaration by declaration.
+\item It organizes computable analysis by represented data.  The difference
+between a continuous representation and a differentiable representation is not
+the underlying mathematical function alone, but the moduli and witnesses that
+the representation carries.
+\end{enumerate}
+
+The local build used while preparing this draft completed successfully at
+7,899 jobs.  The exact count is not a mathematical contribution; it is included
+only to identify the checked artifact state.
+
+\section{The Formal Core}
+
+The formal core separates object logic from Lean's ambient logic.  Terms,
+formulas, derivations, realizers, and extracted programs are all represented as
+Lean data.
+
+\subsection{System T Terms}
+
+The type language contains natural numbers, unit, products, and function
+types:
+\[
+  \sigma,\tau ::= \mathrm{nat}\mid \mathrm{unit}\mid
+  \sigma\times\tau\mid \sigma\to\tau .
+\]
+Terms are intrinsically typed: a term has type \lean{Tm Gamma tau}, indexed by
+its object-language context and result type.  Thus a malformed object program
+cannot be constructed.
+
+\begin{lstlisting}[language=Lean]
+inductive Tm : List Ty -> Ty -> Type where
+  | var    : Var Gamma tau -> Tm Gamma tau
+  | lam    : Tm (sigma :: Gamma) tau -> Tm Gamma (.arrow sigma tau)
+  | app    : Tm Gamma (.arrow sigma tau) -> Tm Gamma sigma -> Tm Gamma tau
+  | zero   : Tm Gamma .nat
+  | succ   : Tm Gamma .nat -> Tm Gamma .nat
+  | recNat : Tm Gamma tau ->
+      Tm Gamma (.arrow .nat (.arrow tau tau)) ->
+      Tm Gamma .nat -> Tm Gamma tau
+  | pair   : Tm Gamma sigma -> Tm Gamma tau -> Tm Gamma (.prod sigma tau)
+  | fst    : Tm Gamma (.prod sigma tau) -> Tm Gamma sigma
+  | snd    : Tm Gamma (.prod sigma tau) -> Tm Gamma tau
+  | star   : Tm Gamma .unit
+\end{lstlisting}
+
+The actual repository extends this core with rational arithmetic and additional
+term constructors used by the numerical examples.
+
+\subsection{Object-Level Derivations}
+
+\lean{Deriv} is the natural-deduction calculus for the embedded \HAomega.
+Rules include implication, conjunction, universal and existential quantifiers,
+equality reasoning, and induction over natural numbers.  A derivation is not a
+Lean theorem directly proving an ambient proposition; it is a proof object in
+the formalized object logic.
+
+This distinction matters.  It lets the development inspect the proof as data,
+translate it into a realizer, and prove a separate soundness theorem connecting
+object-level derivability to Lean-level semantic truth.
+
+\subsection{Modified Realizability}
+
+Kreisel modified realizability assigns each formula a realizer type and a
+predicate describing when a value realizes the formula.  Computational content
+appears exactly where the logic demands it: a proof of an existential statement
+contains a witness, and a proof of a universal statement contains a function.
+
+\begin{lstlisting}[language=Lean]
+def MR : (phi : Formula Gamma a) ->
+    Env Gamma -> (realizerTy phi).interp -> Prop
+  | .eq s t,   e, _ => s.eval e = t.eval e
+  | .and p q,  e, r => MR p e r.1 /\ MR q e r.2
+  | .imp p q,  e, r => forall x, MR p e x -> MR q e (r x)
+  | .all sigma p, e, r =>
+      forall x : sigma.interp, MR p (Env.cons x e) (r x)
+  | .ex sigma p, e, r => MR p (Env.cons r.1 e) r.2
+\end{lstlisting}
+
+\section{Extraction and the Smallest Complete Example}
+
+The extraction map sends object-level derivations to System T terms:
+\[
+  \extractClosed(D) : \Tm\ []\ (\operatorname{realizerTy}(\varphi))
+\]
+for a closed derivation \(D : \Deriv\ []\ \varphi\).
+
+The cleanest reproducible example is the declaration
+\lean{doublingRealizer} in \lean{HAomega/AnalysisDeriv.lean}.  The derivation
+\lean{doublingRecDeriv} proves the totality of an iteration sequence with
+initial value \(1\) and step \(x\mapsto x+x\).  Extraction produces a closed
+System T program whose witness component computes \(2^n\).
+
+\begin{lstlisting}[language=Lean]
+def doublingStepTm : Tm [] (.arrow .nat .nat) :=
+  .lam (.add (.var .here) (.var .here))
+
+def doublingRecDeriv :
+    Deriv .nil (.all .nat (iterInv .nat [] (.succ .zero) doublingStepTm)) :=
+  iterSequenceD .nat (.succ .zero) doublingStepTm
+
+def doublingRealizer : Tm [] (.arrow .nat (.prod .nat .unit)) :=
+  extractClosed doublingRecDeriv
+
+def doublingExtracted (n : Nat) : Nat :=
+  ((extractClosed doublingRecDeriv).eval Env.nil n).1
+\end{lstlisting}
+
+The Lean file checks the following values by kernel reduction:
+\[
+0\mapsto 1,\quad
+1\mapsto 2,\quad
+2\mapsto 4,\quad
+3\mapsto 8,\quad
+4\mapsto 16,\quad
+5\mapsto 32,\quad
+10\mapsto 1024 .
+\]
+
+This example is deliberately modest.  Its value is provenance: the derivation,
+extraction, evaluation, and axiom report all refer to named declarations in
+the repository.
+
+\section{Axiom Footprints}
+
+The development should not be summarized by the sentence ``everything is
+axiom-free.''  That is false for many ambient analysis theorems.  The correct
+claim is a separation.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{p{0.26\linewidth}p{0.25\linewidth}p{0.40\linewidth}}
+\toprule
+\textbf{Declaration or layer} & \textbf{Role} & \textbf{Measured footprint} \\
+\midrule
+\lean{extractClosed} & syntactic extraction & no non-logical axioms \\
+\lean{doublingRealizer} & extracted arithmetic realizer & no non-logical axioms \\
+\lean{soundnessClosed} & semantic soundness & \lean{propext}, \lean{Classical.choice}, \lean{Quot.sound} \\
+\lean{eftc1}, \lean{eftc2_thm} & analysis theorems & \lean{propext}, \lean{Classical.choice}, \lean{Quot.sound} \\
+dynamical-system identities & algebraic/rational examples & generally \lean{propext}, \lean{Classical.choice}, \lean{Quot.sound} \\
+\bottomrule
+\end{tabular}
+\caption{The useful claim is not a blanket zero-axiom slogan, but a measured
+separation between executable artifacts and semantic or analytic bridges.}
+\end{table}
+
+This axiom accounting is one of the main methodological contributions.  It
+makes the computational artifact and the proof of its semantic adequacy
+separate objects of study.
+
+\section{Representations as Data Budgets}
+
+The analysis layer asks a calibration question:
+
+\begin{quote}
+How much represented data must a theorem carry before its constructive proof
+yields executable numerical content?
+\end{quote}
+
+The representation \(A_0\) carries an exact rational evaluator together with a
+modulus of uniform continuity.  The representation \(A_1\) carries additional
+derivative data and a modulus of differentiability.  The first fundamental
+theorem, as formalized by \lean{eftc1}, is available at the \(A_0\) level:
+integration needs the continuity modulus.  The second fundamental theorem, as
+formalized by \lean{eftc2_thm}, is available at the \(A_1\) level: it requires
+the additional differentiability data.
+
+The bridge
+\begin{lstlisting}[language=Lean]
+noncomputable def A0.toA1 (A : A0) (h : HasUnifDeriv A) : A1
+\end{lstlisting}
+uses classical choice to select missing witnesses.  This is the precise place
+where the informal slogan ``the modulus is the content'' becomes formal.  The
+mathematical function is not enough; the representation must carry the
+quantitative data needed by the theorem.
+
+\begin{remark}
+The safe formulation is that the axiom footprint of \lean{A0.toA1} exhibits
+the gap identified by Myhill's computability result \cite{myhill1971}.  It
+does not constitute an internal formal proof of Myhill's negative theorem,
+because the present object theory does not include a computability predicate
+able to state that negative result.
+\end{remark}
+
+\section{Galois Adequacy}
+
+The repository also contains an algebraic layer of represented spaces.  A
+representation packages a carrier of codes, an approximation relation, and an
+equivalence relation on codes.  Morphisms preserve approximation with an
+explicit precision transformer.  A retract preorder \(R_1 \preceq R_2\)
+organizes when one representation can be used through another.
+
+The bridge theorem \lean{central_adequacy_theorem} connects the
+proof-theoretic and representation-theoretic layers.  Given a closed \HAomega
+derivation of a \(\forall\exists\)-formula and a local compatibility
+specification \lean{RepAdequacySpec}, the theorem packages the extracted code
+as a representation-level adequate realizer.
+
+This is the point at which the work differs from ordinary examples of
+symbolic computation.  The emitted code is downstream of a formal derivation,
+and the representation layer records how much precision must be requested from
+input codes to produce an output approximation.
+
+\section{Executable Analysis Case Studies}
+
+The showcase posts are best read as examples of the executable end of the
+pipeline.
+
+\paragraph{Harmonic oscillator.}
+The harmonic oscillator
+\[
+  y''+y=0
+\]
+is represented as a first-order system and iterated by an exact rational
+Picard operator over polynomial coefficient lists.  Lean checks, among other
+values, the approximations
+\[
+  \cos(1/2) \approx 337/384,\qquad
+  \sin(1/2) \approx 1841/3840 .
+\]
+The formal claim is exact rational Picard computation and checked arithmetic,
+not a new theorem about trigonometric functions.
+
+\paragraph{Van der Pol.}
+The file \lean{VanDerPol.lean} proves the divergence/trace identity
+\lean{vanderpol_divergence_trace} and checks rational Picard trajectory
+values.  The global limit-cycle theorem belongs to the mathematical
+background, not to the current formal claim.
+
+\paragraph{Lotka--Volterra.}
+The file \lean{LotkaVolterra.lean} proves the algebraic cancellation
+\lean{lotka_volterra_invariant_cancel} and checks initial rational
+trajectory responses.  The invariant gives the example its mathematical
+meaning; the formal artifact is the cancellation identity plus kernel-checked
+computation.
+
+\paragraph{Duffing.}
+The file \lean{Duffing.lean} proves \lean{duffing_energy_dissipation_id},
+expressing the dissipative energy identity, and checks rational Picard values.
+The current formal scope is the identity and the computations, not a full
+basin-of-attraction analysis.
+
+\paragraph{Lorenz.}
+The file \lean{Lorenz.lean} proves \lean{lorenz_volume_contraction_rate}.  A
+paper should not say that Lean proves the existence of a strange attractor
+here; it proves the divergence identity and computes exact initial Picard
+segments.
+
+\paragraph{Kepler.}
+The file \lean{Kepler.lean} proves \lean{kepler_angular_momentum_conserved}.
+The separate symplectic integrator checks angular momentum preservation for
+selected discrete trajectories.  The formal contribution is conservation plus
+exact rational computation.
+
+\subsection{Differential-Integral Jet Algebras and Proof-Computed vs.\ Witness-Style Realizers}
+
+Beyond finite-degree polynomial stepping, the modules \lean{ClosedCalculus.lean},
+\lean{HolonomicCS.lean}, \lean{MajorantDom.lean}, \lean{JetCauchyDeriv.lean},
+and \lean{ClosedFourierODE.lean} formalize formal power series jets
+\(\lean{JetTy} = \mathrm{nat}\to\mathrm{rat}\) inside \SystemT\ together with
+two Cauchy-majorized value-level algebras:
+\begin{itemize}
+\item \lean{AnalyticJet} (\(|c_n|\cdot n! \le 2^M(2^R)^n\), entire functions of
+exponential type on \([-1,1]\)), and
+\item \lean{RadiusJet} (\(|c_n| \le 2^M(2^R)^n\), local Cauchy--Hadamard germs of
+radius \(\rho = 2^{-R}\), closed under addition, Cauchy multiplication,
+differentiation, integration, \(1/(1-G)\) inversion, composition, and nonlinear
+Picard fixed points).
+\end{itemize}
+Both algebras embed into the approximating differentiable representation
+\(\lean{E1}\) (\lean{AnalyticJet.toE1}, \lean{RadiusJet.toE1}), where
+\(\lean{E1.diff}\) quantifies over an approximating derivative family
+\(\exists F : \N\to\Q\to\Q\) rather than an exact rational function.
+
+Across the twenty-six extracted programs cataloged in \lean{ShowAll.lean} and
+\lean{EXTRACTED_HAOMEGA.md}, we distinguish two classes of object-level
+derivations:
+\begin{enumerate}
+\item \textbf{Proof-computed realizers}, where the specification names no
+algorithm and the computational witness is synthesized by extraction from
+induction or scaling rules:
+\begin{itemize}
+\item \lean{jetCauchyModulusGenuineD} (\lean{HAomega/JetCauchyDeriv.lean})
+starts from an \(N\)-free, per-term majorant hypothesis
+\(\forall n,\; |S_n(x)-S_{n+1}(x)| < 2^{B+3}(2^{-(n+1)}-2^{-(n+2)})\) and
+derives the multi-step tail bound by object-level induction (\lean{Deriv.ind})
+on \(d_2\), telescoping cancellation, and precision weakening to extract the
+Cauchy modulus \(N(k) = k + (B + 3)\), with the hypothesis discharged for both
+\lean{AnalyticJet} and \lean{RadiusJet};
+\item \lean{jetContModulusD} and \lean{jetDiffModulusD} extract the continuity
+modulus \(\omega(k) = k + (B_1 + 1)\) and differentiability modulus
+\(\delta(k) = k + (B_2 + 1)\) via \lean{Deriv.convQLipScale}, discharged for
+both \lean{AnalyticJet} and \lean{RadiusJet};
+\item \lean{riccatiPicardD}, \lean{quadBlowupPicardD}, and \lean{duffingPicardD}
+extract the Order-1 Picard jet solvers for \(y'=1+y^2\), \(y'=y^2\), and the 2D
+coupled Duffing system together with their diagonal degree-locking certificates
+\(\mathcal{P}(Y_k)(k) = Y_k(k)\) by \lean{Deriv.ind}.
+\end{itemize}
+\item \textbf{Witness-style realizers}, where the theorem statement names the
+target recursion and the derivation supplies it to \lean{Deriv.exI}:
+\lean{ftcAntiderivD} (which hands \lean{tmJetInteg} to \lean{exI} and derives
+termwise cancellation \(\mathcal{D}(\mathcal{I}c)(n) - c(n) = 0\) via
+\lean{Deriv.convQMulDivSubZero}), \lean{jetMulD}, \lean{jetEvalPolyD}, and the
+quadratic Newton--Schulz jet inverter \lean{newtonJetInvD} (linked to
+\lean{RadiusJet.invOneSub} by \lean{extractedNewtonJetInv_agree}).
+\end{enumerate}
+
+\section{Related Work}
+
+This work is adjacent to several established lines.  Minlog provides program
+extraction from constructive proofs, including examples in exact real
+computation, but its extraction implementation is external to Lean's kernel
+\cite{schwichtenberg2012,berger1998}.  C-CoRN formalizes constructive analysis
+inside Coq's ambient type theory \cite{cruzfilipe2004}; the present work
+instead emphasizes a deep object logic and an internal extraction theorem.
+Kohlenbach's proof mining program and Cheval's Lean formalization of
+Dialectica-style proof mining are close in proof-theoretic spirit
+\cite{kohlenbach2008,cheval2023}; the present development uses modified
+realizability and tracks extracted terms directly.
+
+Represented-space approaches such as Incone \cite{steinberg2017,steinberg2022}
+and Weihrauch reducibility \cite{weihrauch2000,brattka2021} are closest to the
+analysis and representation layer.  The intended distinction is that this
+repository combines represented spaces with a deep \HAomega proof calculus and
+an extraction-to-realizer bridge, while Weihrauch theory primarily orders
+computational problems rather than the represented data budget itself.
+
+\section{Limitations}
+
+Several boundaries should be explicit.
+
+\begin{itemize}
+\item The development does not prove PA-independence of Goodstein or
+Kirby--Paris style statements.
+\item It does not internally prove Myhill's negative theorem; it exhibits the
+relevant gap as an axiom dependency of a bridge construction.
+\item The dynamical-system case studies do not currently prove global limit
+cycles, strange attractors, or basin convergence.
+\item Picard and numerical terms should not be called extracted unless the
+specific artifact is the result of \lean{extractClosed} applied to a
+\lean{Deriv}.
+\item Build counts are audit metadata, not evidence of mathematical novelty.
+\end{itemize}
+
+\section{Conclusion}
+
+The project shows that constructive proof extraction, exact symbolic numerical
+computation, code emission, and axiom-footprint accounting can be maintained in
+one checked Lean artifact.  The most durable contribution is not any one
+numerical example.  It is the discipline of separating proof syntax, extracted
+programs, semantic soundness, and represented data, so that the computational
+content of a theorem can be inspected rather than inferred.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

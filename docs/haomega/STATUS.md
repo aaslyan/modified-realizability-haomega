@@ -1,9 +1,9 @@
 # HA^ω status
 
-**As of 2026-08-13, commit `bc2d143`.** Full `lake build` green — 7,851 jobs,
+**As of 2026-10-23.** Full `lake build` green — 7,896 jobs,
 including Mathlib and the first-order tree — zero HAomega warnings, zero
-`sorry`/`admit`. 14,131 lines across 48 files in `HAomega/`, **55** inference
-rules, 15 extracted realizers rendered in `EXTRACTED_HAOMEGA.md`.
+`sorry`/`admit`. 29,979 lines across 100 files in `HAomega/`, **57** inference
+rules, 26 extracted realizers rendered in `EXTRACTED_HAOMEGA.md`.
 
 This is the "where does everything stand" document. `HAOMEGA.md` is the
 roadmap, `HAOMEGA_DOSSIER.md` is the evidence with per-claim tags, and the
@@ -17,11 +17,11 @@ stated, and what is blocked on what.**
 | part | state |
 |---|---|
 | Finite types, System T, `Formula` indexed by realizer type | done |
-| `MR`, **55** rules, `extract` (axiom-free, cast-free) | done |
+| `MR`, **57** rules, `extract` (axiom-free, cast-free) | done |
 | `soundness`, one case per rule, no wildcard | done |
 | Continuity (`Tracked`, `extract_continuous2`), choice-free | done |
 | `tiEps0` + `tiRec`, and their typed twins `tiEps0O`/`tiRecE` | done |
-| Certified emission to a functional target, **13 of 13 programs** | done |
+| Certified emission to a functional target, **26 of 26 programs** | done |
 | Derivation-authoring kit (`Kit.lean`), extensible normalizer | done |
 
 **Axiom footprints**, reprinted every build:
@@ -57,15 +57,35 @@ inherited through it. No new mathematics was imported by either.
 Kirby–Paris battle length is 37, the coded extract exhausts the evaluator
 without taking a step; the tree extract returns 37.
 
-## 3. The fifteen extracted programs
+## 3. The twenty-six extracted programs
 
-Discrete (13, all covered by certified emission):
-Fibonacci · Fibonacci at type 2 · Pascal mod 2 · Tower of Hanoi · gcd (full
-spec) · Goodstein · Kirby–Paris · Sperner 1D · Hercules (∀-strategy) ·
-Hercules (any head) · Goodstein on typed ordinals · Kirby–Paris on trees ·
-Hercules on trees.
+Every program in `ShowAll.lean` and `EXTRACTED_HAOMEGA.md` is labeled
+**proof-computed** (the algorithm/modulus is synthesized by extraction from
+induction, case analysis, or scaling/telescoping rules on an algorithm-free
+specification) or **witness-style** (the statement names the target recursion
+and the proof supplies it to `exI`, alongside any equational certificates):
 
-Analysis (2): square-root approximation · uniform continuity.
+* **Discrete (13, all covered by certified emission):**
+  - *Proof-computed (10):* Pascal mod 2 · gcd (full spec) · Goodstein · Kirby–Paris ·
+    Sperner 1D · Hercules (∀-strategy) · Hercules (any head) · Goodstein on typed
+    ordinals · Kirby–Paris on trees · Hercules on trees.
+  - *Witness-style (3):* Fibonacci · Fibonacci at type 2 · Tower of Hanoi.
+* **Analysis & Jet Calculus (13, all covered by certified emission):**
+  - *Proof-computed (9):* square-root approximation (discrete IVT) · uniform
+    continuity (`uniContD`) · jet $E_1$ Cauchy convergence modulus by geometric
+    series induction (`jetCauchyModulusGenuineD`) · jet $E_1$ uniform continuity
+    modulus (`jetContModulusD`) · jet $E_1$ uniform differentiability modulus
+    (`jetDiffModulusD`) · Order-1 Picard jet iteration for $y' = y$ (`picardJetIterD`) ·
+    Riccati nonlinear ODE $y' = 1 + y^2$ Picard solver with degree locking
+    (`riccatiPicardD`) · quadratic blow-up ODE $y' = y^2$ Picard solver with
+    degree locking (`quadBlowupPicardD`) · 2D coupled nonlinear Duffing oscillator
+    Picard solver with degree locking (`duffingPicardD`).
+  - *Witness-style (4):* formal antiderivative & termwise FTC1 (`ftcAntiderivD`,
+    where the antiderivative term `tmJetInteg c` is handed to `exI` and the
+    termwise cancellation $\mathcal{D}(\mathcal{I}c)(n) - c(n) = 0$ is derived in
+    `Deriv` via `convQMulDivSubZero`) · Cauchy product convolution (`jetMulD`) ·
+    Taylor polynomial evaluator (`jetEvalPolyD`) · quadratic Newton–Schulz
+    multiplicative jet inverter (`newtonJetInvD`).
 
 ## 4. The analysis strand
 
@@ -1013,12 +1033,10 @@ contraposition, into a modulus of continuity for any right inverse. One line of
 mathematics, and it is the whole boundary: with `μ` the inverse has a modulus,
 without it there is none to compute.
 
-**At the `A₁` level, one datum covers both.** A positive rational lower bound
-`m ≤ |f'|` yields a monotonicity modulus by the mean value theorem
-(`|f x − f y| ≥ m|x−y|`), and `(f⁻¹)' = 1/f'(f⁻¹ y)` is then bounded. **Not
-formalized**: the MVT is not available in this development, so the implication
-from `m` to `μ` is stated, not derived — `μ` is taken as the primitive datum
-instead, which is the weaker and safer choice.
+**At the `A₁` level, one datum covers both — and the constructive grid-telescoping bridge is now proved (`InverseFunction.lean`).**
+A positive rational lower bound $2^{-m} \le f'(x)$ on $[a,b]$ (`StrictlyMonotoneA1`) yields a global secant lower bound
+$$\frac{1}{2^{m+1}}(y - x) \le f(y) - f(x)$$
+purely constructively (`StrictlyMonotoneA1.secant_lower_bound`), **without invoking the classical Mean Value Theorem**: because `A1.diff` is *uniform* differentiability with modulus $\delta$, partitioning $[x,y]$ into $N = 2^{\delta(m+1)}(\lceil y-x \rceil + 1)$ equal subintervals of width $h \le 2^{-\delta(m+1)}$ guarantees $\frac{f(t_{i+1}) - f(t_i)}{h} \ge 2^{-m} - 2^{-(m+1)} = 2^{-(m+1)}$ on every subinterval, which telescopes via `f_val_congr`. From this, `StrictlyMonotoneA1.isMonoModulus` derives `IsMonoModulus f a b (fun k ↦ k + m + 1)`, and `StrictlyMonotoneA1.inv_uniform_continuous` proves uniform continuity of any right inverse $g$ with modulus $\mu(k) = k + m + 1$.
 
 **Not attempted**: constructing the inverse evaluator itself (a bisection,
 which the Sperner-1D machinery could supply) and assembling a full `A₀` for
@@ -1186,12 +1204,12 @@ see §7 for why the first is not statable here.
 2. **`HAomega/Picard.lean` (Paper B Banach & Picard–Lindelöf Synthesis)**:
    - Proved the Banach Fixed Point Theorem on function samplers (`ContractionOp.cauchy`) with exact extracted convergence rate $\Phi(k) = \lceil (k + M + 1)/p \rceil$.
    - Packaged the sequence into `LimSeq` and extracted the solution $y^* \in E_0$ (`PicardData.solution`) with an inherited modulus of uniform continuity.
-   - Proved `picard_integral_contracts`: the Picard integral operator contracts uniformly by $2^{-p}$ for any $2^L$-Lipschitz vector field on time interval $b - a \le 2^{-(L+p)}$.
+   - Proved `picard_integral_contracts` and `VectorField.picardOp_contracts`: the discrete Riemann-sum Picard integral operator `VectorField.picardOp` contracts uniformly by $2^{-p}$ for any $2^L$-Lipschitz vector field on time interval $b - a \le 2^{-(L+p)}$, packaging directly into `VectorField.toContractionOp : ContractionOp a b`.
+   - Proved `picardPromoteE1` and `picardPromoteE1_has_composite_deriv`: one step of the autonomous Picard operator promotes an $A_0$ trajectory $Y$ through a range-compatible $A_0$ vector field $F$ into $E_1$ ($A_0 \xrightarrow{\circ} A_0 \xrightarrow{\int} E_1$) with composite derivative $F \circ Y$.
 
 3. **`HAomega/FixedPoint.lean` (Paper B Non-Expansive Maps & Krasnoselskii–Mann)**:
-   - Formalized non-expansive maps $T : [a, b] \to [a, b]$ ($L = 1$).
-   - Formalized the averaged Krasnoselskii–Mann iteration $T_{1/2}(x) = \frac{1}{2}x + \frac{1}{2}T(x)$.
-   - Proved the step-residual relation and asymptotic regularity rate $\Phi(k) = 4(D+1)^2 \cdot 4^k$.
+   - Formalized non-expansive maps $T : [a, b] \to [a, b]$ ($L = 1$) and the averaged Krasnoselskii–Mann operator $T_{1/2}(x) = \frac{1}{2}x + \frac{1}{2}T(x)$, proving interval invariance (`avg_maps_to`, `kmIter_maps_to`), 1D order preservation (`avg_monotone`), and monotone trajectory progression from the left endpoint (`kmIter_mono_from_left`).
+   - Proved the quadratic parallelogram identity (`parallelogram_contraction_step`), one-step residual inequality (`km_quadratic_step`), finite telescoping sum (`km_quadratic_telescope`), and the full **Krasnoselskii–Mann Asymptotic Regularity Theorem (`NonExpansiveMap.km_asymptotic_regularity`)** with rate $\Phi(k) = 4(\mathrm{diamSq}+1)\cdot 4^k$.
 
 4. **`HAomega/ODEDemo.lean` (Executable ODE Extraction)**:
    - Implemented exact Picard iteration for $y' = y, y(0) = 1$ computing Taylor polynomials $P_n(x) = \sum_{j=0}^n \frac{x^j}{j!}$.
@@ -1200,7 +1218,7 @@ see §7 for why the first is not statable here.
 5. **`HAomega/IVT.lean` (Constructive Approximate Zero Extraction)**:
    - Proved the discrete sign-crossing lemma (`discrete_sign_crossing`).
    - Proved adjacent grid bracket error bound (`ivt_adjacent_bracket`): on step size $\le 2^{-\omega(k)}$, adjacent sign crossings bracket a $2^{-k}$-approximate zero.
-   - Proved the **Unified Approximate IVT Theorem (`approx_ivt_thm`)**, connecting discrete crossings across a sampling grid directly to approximate zero bounds.
+   - Proved the **Unified Approximate IVT Theorem (`approx_ivt_thm`)** and connected it to `IVTProblem` via **`IVTProblem.grid_approx_zero`**, extracting an explicit grid index $i < N$ whose sample `ivtGridPoint prob k i` lies in $[a,b]$ and satisfies $|f(x_i)| \le 2^{-k}$.
    - Proved secant slope root isolation (`secant_root_isolation`): under a secant slope lower bound $|f(x) - f(y)| \ge 2^{-M} |x - y|$, any two $2^{-k}$-approximate zeros satisfy $|x - y| \le 2^{M+1-k}$.
 
 6. **`HAomega/ModulusClosure.lean` (Modulus Scaling, Composition, and Integral Smoothing)**:
@@ -1224,6 +1242,7 @@ see §7 for why the first is not statable here.
 9. **`HAomega/PolyRoots.lean` (Polynomial Root Calculus in $\mathbb{Q}(i)$)**:
    - Formalized complex polynomials over $\mathbb{Q}(i)[z]$ evaluated via Horner's scheme (`evalPoly`).
    - Proved the Cauchy root radius dominance bound (`cauchy_bound_dominance`): $R = 1 + \sum \|c_j\| / \|c_n\| \ge 1$.
+   - Proved the reverse triangle inequality (`QC.norm1_add_ge_sub`), root exclusion for monic linear polynomials (`monic_linear_root_exclusion`), and the **Monic Quadratic Cauchy Root Exclusion Theorem (`monic_quadratic_cauchy_exclusion`)**: for any $z$ with $|z|_1 \ge \mathrm{cauchyRadius}([c_0, c_1, 1])$, $|P(z)|_1 \ge 1 > 0$ so $P(z) \ne 0$.
    - Proved exact linear root evaluation (`linear_root_val`).
    - Verified Lean kernel `#guard` root computations for $z^2 + 1 = 0$ ($z = \pm i$) and $z^2 - 2 = 0$ ($z \approx 99/70$ with error $< 2^{-12}$).
 
@@ -1243,8 +1262,8 @@ see §7 for why the first is not statable here.
     - Verified kernel execution with `#guard` calculating exact Riemann sums for monomials $x$ and $x^2$.
 
 13. **`HAomega/Taylor.lean` (Taylor's Expansion Theorem & Remainder Bound)**:
-    - Formalized general Taylor polynomial evaluation `taylorEval`.
-    - Proved the quantitative super-exponential remainder scaling bound (`taylor_remainder_bound`).
+    - Formalized general Taylor polynomial evaluation `taylorEval` and exponential partial sums `expTaylor n x`.
+    - Proved the exact consecutive term difference `expTaylor_step_error` ($|P_{n+1}(x) - P_n(x)| = |x|^{n+1}/(n+1)!$), the factorial growth bound $2^n \le (n+1)!$ (`two_pow_le_fact_succ`), and the **Telescoping Super-Exponential Cauchy Remainder Theorem (`expTaylor_tail_bound`, `expTaylor_cauchy_remainder`)**: on $|x| \le 1/2$, $|P_m(x) - P_n(x)| \le \frac{1}{(n+1)! \cdot 2^n}$ for all $m \ge n$.
     - Verified kernel `#guard` evaluations of $e^x$ Taylor polynomials at $x = 1/2$.
 
 14. **`HAomega/HarmonicODE.lean` (2D Picard Solver for Harmonic Oscillator $y'' + y = 0$)**:
@@ -1343,7 +1362,9 @@ see §7 for why the first is not statable here.
     - **`Th_degree_invariant`**: Theory is an invariant of representation degrees.
 
 30. **`HAomega/FunctionAlgebra.lean` (Milestone 4: Closed Function Algebra & Resource Inference)**:
+    - **`MetricRep` & `MetricRepQ`**: Metric-compatible representations equipped with code addition (`addCode`), negation (`negCode`), and the dyadic $\varepsilon/2$ triangle inequality (`add_approx`, `neg_approx`), instantiated canonically on $\mathbb{Q}$ (`RepQ`, `MetricRepQ`).
     - **`GaloisAdequate.const`**: Constant functions are adequate with trivial modulus (0-axiom).
+    - **`GaloisAdequate.neg`, `GaloisAdequate.add`, `GaloisAdequate.sub`**: Closure of Galois-adequate functions under negation (with modulus $\mu_f$), pointwise addition (with modulus $k \mapsto \max(\mu_f(k+1), \mu_g(k+1))$), and subtraction.
     - **`modulusComp`**: Modulus composition with associativity and identity laws (0-axiom monoid).
     - **`modulusMax`**: Modulus maximum with commutativity and associativity.
     - **`modulus_monoid_laws`**: The modulus algebra forms a monoid (0-axiom).
@@ -1364,11 +1385,13 @@ see §7 for why the first is not statable here.
     - **`RepCauchySeq`**, **`RepComplete`**: Cauchy sequences and completeness certificates.
     - **`RepContraction`**: Abstract contraction operator with explicit ratio $p/q < 1$.
     - **`iterateOp`**, **`iterateOp_equiv`**: Iteration sequence with equivalence stability (0-axiom).
-    - **`banach_fixed_point_existence`**: Abstract Banach fixed-point existence.
-    - **`contraction_comp_ratio`**: Composition of contractions preserves ratio bound (0-axiom).
+    - **`RepContraction.consec_dist_le`**: Geometric decay $(p/q)^n$ of consecutive iterate code distances.
+    - **`banach_fixed_point_existence` & `picard_is_contraction_instance`**: Abstract Banach fixed-point existence and concrete instantiation to `PicardData.solution` with uniform $2^{-k}$ Cauchy bounds.
+    - **`RepContraction.comp` & `contraction_comp_ratio`**: Full composition of `RepContraction`s with ratio $(p_2 p_1)/(q_2 q_1) < 1$.
 
 34. **`HAomega/BanachInstance.lean` (Concrete End-to-End Banach Engine Instance: $y' = y$)**:
-    - **`expVectorField`**: Exact identity vector field $f(t, y) = y$ with $L=0$ ($2^0=1$) on $[0, 1/4]$.
+    - **`expVectorField`**: Exact identity vector field $f(t, y) = y$ with $L=0$ ($2^0=1$) on $[0, 1/4]$,proved Lipschitz in $y$ and uniformly bounded on $[0, 1/4] \times [-2, 2]$.
+    - **`expContractionOp` & `expContractionOp_cauchy`**: End-to-end instantiation of `expVectorField.toContractionOp` into a certified `ContractionOp Q.zero (Q.of 1 4)` with proved uniform Cauchy convergence (`ContractionOp.cauchy`).
     - **`exp_initial_step_bound`**: Proved initial step bound $\|P_0 - T(P_0)\|_\infty \le 1/4$ ($M=0$).
     - **`expConvergenceRate`**: Proved rate of convergence $\Phi(k) = (k+2)/2$ with monotonicity (`expConvergenceRate_mono`).
     - **`picard_taylor_identity`**: Proved exact equivalence between Picard integral recurrence and Taylor series.
@@ -1376,28 +1399,27 @@ see §7 for why the first is not statable here.
     - **Kernel `#guard` Checks**: Exact rational partial sums verified up to $P_6(1/4) = 757349/589824 \approx 1.28402540$ (error $< 10^{-7}$).
 
 35. **`HAomega/InverseFunction.lean` (Constructive Inverse Function Theorem & Newton–Raphson)**:
-    - **`StrictlyMonotoneA1`**: Constructive $C^1$ functions with derivative bounded away from 0.
-    - **`newtonStep` / `newtonIter`**: Double-exponential (quadratic) Newton–Raphson operator.
-    - **`newton_precision_doubling`**: Proved precision index doubling $n \le 2^n$.
-    - **`cubeRootIter`**: Verified cubic root extraction ($\sqrt[3]{2} \approx 1126819/894348$ with error $< 10^{-6}$ in 3 steps).
+    - **`StrictlyMonotoneA1`**: Constructive $C^1$ functions (`A1`) with derivative bounded below by $2^{-m}$ on $[a,b]$.
+    - **`StrictlyMonotoneA1.secant_lower_bound`, `isMonoModulus`, `inv_uniform_continuous`**: Constructive grid-telescoping proof (without classical MVT) that $f' \ge 2^{-m}$ implies $f(y) - f(x) \ge 2^{-(m+1)}(y - x)$, yielding a strict monotonicity modulus $\mu(k) = k + m + 1$ and uniform continuity of any right inverse $g$.
+    - **`inverseModulusD`, `invOp`, `invModulus`**: Object-level `Deriv` proof and extracted System T realizer for inverse modulus propagation.
+    - **`newtonStep` / `newtonIter` / `cubeRootIter`**: Verified cubic root extraction ($\sqrt[3]{2} \approx 1126819/894348$ with error $< 10^{-6}$ in 3 steps).
 
 36. **`HAomega/ConstructiveFFT.lean` (Constructive Fast Fourier Transform & Convolution)**:
-    - **`CQ`**: Constructive complex rational field $\mathbb{Q}[i]$ with exact arithmetic.
-    - **`fftAux` / `fft`**: Decimation-in-time Cooley–Tukey Radix-2 FFT.
-    - **`ifft` / `fastConvolution`**: Fast circular convolution via Convolution Theorem ($O(N \log N)$).
-    - **`fft_log_depth`**: Proved tree recursion depth $k = \log_2(2^k)$.
-    - **Kernel `#guard` Checks**: Exact spectrums verified for delta, DC, and filter signals.
+    - **`CQ`**: Constructive complex rational field $\mathbb{Q}[i]$ with exact arithmetic and proved conjugation involution `CQ.conj_conj`.
+    - **`CQ.butterfly_recover_even` & `CQ.butterfly_recover_odd`**: Exact Cooley–Tukey butterfly inversion identities $(e+t)+(e-t) = 2e$ and $(e+t)-(e-t) = 2t$.
+    - **`even_odd_length_sum` & `twiddle_period`**: Exact Decimation-in-Time sample partition $|xs_{\text{even}}| + |xs_{\text{odd}}| = |xs|$ and twiddle periodicity.
+    - **`fftAux` / `fft` / `ifft` / `fastConvolution`**: Radix-2 FFT and circular convolution verified via `#guard` for delta, DC, and filter signals.
 
 37. **`HAomega/HeatEquation.lean` (Constructive 1D Heat Equation & Regularity Boost)**:
-    - **`ThermalState` / `modeDecay`**: Fourier dissipation propagator on periodic domain.
-    - **`heat_decay_zero_step1`**: Proved conservation of mean temperature ($a_0$).
-    - **`heat_high_frequency_suppression`**: Proved instantaneous smoothing from $A_0 \to C^\infty$.
+    - **`ThermalState` / `modeDecay`**: Fourier dissipation propagator on periodic domain with exact rational evaluation `modeDecay_val`.
+    - **`modeDecay_zero_val` & `heat_decay_zero_step1`**: Proved conservation of mean temperature ($\mathrm{modeDecay}(0, p).\mathrm{val} = 1$ for all $p$).
+    - **`modeDecay_bounds` & `modeDecay_anti_mono`**: Proved positivity and non-amplification ($0 < \mathrm{modeDecay}(n, p).\mathrm{val} \le 1$) and high-frequency suppression ($n_1 \le n_2 \implies \mathrm{modeDecay}(n_2, p).\mathrm{val} \le \mathrm{modeDecay}(n_1, p).\mathrm{val}$).
     - **Kernel `#guard` Checks**: Exact thermal dissipation verified across 5 harmonic modes.
 
 38. **`HAomega/SymplecticKepler.lean` (Symplectic Kepler Integrator & Noether Invariance)**:
     - **`Vec2` / `OrbitState` / `angularMomentum`**: 2D rational celestial mechanics state space.
     - **`symplecticStep` / `orbitTrajectory`**: Symplectic Störmer–Verlet time-stepping.
-    - **`symplectic_step_conserves_L`**: Proved exact discrete conservation of angular momentum ($L_{n+1} = L_n$).
+    - **`symplectic_step_conserves_L`**: Proved exact discrete conservation of angular momentum (`(symplecticStep s dt r3).angularMomentum.val = s.angularMomentum.val`) via algebraic cancellation (`ring`).
     - **Kernel `#guard` Checks**: Exact rational planetary orbit simulated for 8 steps with zero angular momentum drift.
 
 39. **`HAomega/Isoperimetric.lean` (Constructive Isoperimetric Inequality & Hurwitz Defect)**:
@@ -1407,9 +1429,8 @@ see §7 for why the first is not statable here.
     - **Kernel `#guard` Checks**: Verified exact zero defect for unit circle and strictly positive defect $D=1$ for $2:1$ ellipse.
 
 40. **`HAomega/CauchyKowalevski.lean` (Constructive Cauchy–Kowalevski Analytic PDE Engine)**:
-    - **`Poly2D`**: Bivariate power series representation for analytic PDEs.
-    - **`ckAdvectionSolver`**: Cauchy–Kowalevski recursive time-derivative generator.
-    - **`ck_solver_galois_adequate`**: Proved Galois adequacy of analytic power series extraction.
+    - **`Poly2D` / `ckAdvectionLoop` / `ckAdvectionSolver`**: Bivariate power series generator for $u_t = u_x$.
+    - **`ckAdvectionLoop_getD` & `ck_advection_characteristics`**: Proved the exact discrete method-of-characteristics identity $c_{j, k} = c_{0, j+k}$ for all $j \le M$ and $k \in \mathbb{N}$.
     - **Kernel `#guard` Checks**: Exact bivariate Taylor series extracted for $u_t = u_x$ matching $e^{t+x}$.
 
 41. **`HAomega/ExtractedEngines.lean` (Closed System T Lambda Terms & Haskell Source for Breakthrough Engines)**:
@@ -1421,7 +1442,27 @@ see §7 for why the first is not statable here.
 42. **`HAomega/ExtractedOutput.lean` (Kernel Demonstration & Pretty Printing)**:
     - Verified kernel output of raw $\lambda$-terms, collapsed functional programs, and emitted Haskell code.
 
-* Build status: **7,895 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+43. **`HAomega/ClosedCalculus.lean`, `HAomega/HolonomicCS.lean`, `HAomega/MajorantDom.lean`, `HAomega/JetCauchyDeriv.lean`, `HAomega/ClosedFourierODE.lean` (Exponential-Type & Cauchy–Hadamard Closed Jet Algebras in $\mathrm{HA}^\omega$)**:
+    - **Fix to `E1.diff` (Approximating Derivative vs Exact Function)**:
+      - `E1.diff` previously required `∃ F : Q → Q`, an *exact* rational-valued derivative, which was false for any function whose derivative is non-rational (e.g. $e^x$, $\sin x$, $\tan x$) for the same reason `A0.f : Q → Q` could not represent $\int f$. `E1.diff` now asks for an approximating derivative family `∃ F : Nat → Q → Q` (`ev n` compared against `F n` past `dq k h`). `A1.toE1`, `A0.intE1`, `E1_le_E0diff`, `E0diff_le_E1`, and `picardPromoteE1` all adapt cleanly by lifting exact derivatives to constant families `fun _ ↦ F`.
+    - **Proof-Computed vs Witness-Style Extracted Jet Realizers**:
+      - **Proof-computed realizers (7):**
+        1. `jetCauchyModulusGenuineD` (`extractedJetCauchyModulusGenuine` in `HAomega/JetCauchyDeriv.lean`): starts from the $N$-free, per-term majorant premise `jetTermPremise` ($\forall n,\; |S_n(x) - S_{n+1}(x)| < 2^{B+3}(2^{-(n+1)} - 2^{-(n+2)}) = 2^{B+1-n}$) and unconditional $\mathbb{Q}$-arithmetic telescoping laws (`satisfies_qGeomZero`, `satisfies_qTriangle`, `satisfies_qTelescope`, `satisfies_qScaleCancel`), proves the multi-step geometric tail bound by object-level induction (`Deriv.ind`) on $d_2$ via `qAddLtAddT` and `Deriv.convQLeLtTrans`, reassociates $(k + (B + 3)) + d_1 = (k + d_1) + (B + 3)$ via `plusAssocT`/`plusCommT`, and weakens via `Deriv.convQCloseMono` to synthesize $N(k) = k + (B + 3)$. Discharged for every `F : AnalyticJet` (`AnalyticJet.satisfies_jetTermPremise`) and every `F : RadiusJet` (`RadiusJet.satisfies_jetTermPremise`). (By contrast, the earlier `jetCauchyModulusD` in `MajorantDom.lean` assumed `jetTailPremise`, which already had $k + (B + 2) + d_1$ written into the hypothesis, making it witness-style.)
+        2. `jetContModulusD` (`extractedJetContModulus`): derives $\omega(k) = k + (B_1 + 1)$ from `jetLipPremise` via `Deriv.convQLipScale`, discharged for both `AnalyticJet` (`AnalyticJet.satisfies_jetLipPremise`) and `RadiusJet` (`RadiusJet.satisfies_jetLipPremise`).
+        3. `jetDiffModulusD` (`extractedJetDiffModulus`): derives $\delta(k) = k + (B_2 + 1)$ from `jetDiffPremise` via `Deriv.convQLipScale`, discharged for both `AnalyticJet` (`AnalyticJet.satisfies_jetDiffPremise`) and `RadiusJet` (`RadiusJet.satisfies_jetDiffPremise`).
+        4. `picardJetIterD` (`extractedPicardJet`): synthesizes Order-1 Picard jet iteration for $y' = y$ by `Deriv.ind` on $k$.
+        5. `riccatiPicardD` (`extractedRiccatiJet`), `quadBlowupPicardD` (`extractedQuadBlowupJet`), and `duffingPicardD` (`extractedDuffingJet`): synthesize the nonlinear Picard jet solvers for $y' = 1 + y^2$, $y' = y^2$, and the 2D coupled Duffing system $u' = v,\; v' = -u - u^2$ together with their diagonal degree-locking certificates $\mathcal{P}(Y_k)(k) = Y_k(k)$ by object-level induction (`Deriv.ind`) via `picardLockedD` and `picardLocked2DD`, bridged into `RadiusJet` and `E1` (`extractedRiccatiE1`, `extractedQuadBlowupE1`, `extractedDuffingUE1`, `extractedDuffingVE1`).
+      - **Witness-style realizers (4):**
+        1. `ftcAntiderivD` (`extractedJetInteg`): supplies `tmJetInteg c` to `exI` and derives the initial condition $(\mathcal{I}c)(0) = 0$ and termwise FTC1 cancellation $\mathcal{D}(\mathcal{I}c)(n) - c(n) = 0$ in `Deriv` via `Deriv.convQMulDivSubZero`.
+        2. `jetMulD` (`extractedJetMul`): supplies `tmJetMul a b` to `exI`.
+        3. `jetEvalPolyD` (`extractedJetEvalPoly`): supplies `tmJetEvalPoly` to `exI`.
+        4. `newtonJetInvD` (`extractedNewtonJetInv`, `extractedJetDiv`): supplies the quadratic Newton–Schulz recursion `tmNewtonJetInvAt` to `exI`, linked to `Jet.newtonSchulzIter`, `RadiusJet.newtonSchulzIter` (`extractedNewtonJetInv_radiusJet_eq`, `extractedNewtonJetInvE1`), `RadiusJet.invOneSub` (`extractedNewtonJetInv_agree`), and `RadiusJet.sec` (`extractedNewtonJetInv_sec_agree`).
+    - **Two-Tier Closed Majorant Algebras (`AnalyticJet ↪ RadiusJet`) & Full `toE1 : E1` Lifting**:
+      - `AnalyticJet` ($|c_n|\cdot n! \le 2^M(2^R)^n$, entire functions of exponential type): closed under `add`, `sub`, `neg`, `mul`, `deriv`, and `integ`, with global evaluation `AnalyticJet.toE0 : E0` and `AnalyticJet.toE1 : E1` on $[-1, 1]$, plus ` ClosedRingExpr` compiler (`compileClosedRingExprD`).
+      - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
+    - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
+
+* Build status: **7,896 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

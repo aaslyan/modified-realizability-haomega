@@ -9,19 +9,21 @@ import HAomega.AnalysisDeriv
 /-!
 # Constructive Weierstrass Approximation via Extracted Bernstein Operators
 
-This module establishes the constructive Weierstrass approximation theorem in HA^ω:
-every uniformly continuous function $f : [0, 1] \to \mathbb{Q}$ is uniformly approximable
-by polynomial operators, extracting:
+This module formalizes the constructive Weierstrass polynomial approximation operator in $\mathrm{HA}^\omega$:
 
-1. **The Concrete Polynomial Operator (`bernsteinOp`)**:
+1. **Closed System T Bernstein Polynomial Operator (`tmBernsteinClosed`)**:
    $$B_N(f)(x) = \sum_{j=0}^N f\left(\frac{j}{N}\right) \binom{N}{j} x^j (1 - x)^{N-j}$$
-   which constructs an explicit polynomial from the function variable $f$.
-2. **The Constructive Degree Selector (`weierstrassDegree`)**:
-   A certified System T program computing the required polynomial degree $N(n) = n + k_0$
-   to guarantee approximation error $< 2^{-n}$.
-3. **The Extracted Approximation Certificate (`weierstrassApproxD`)**:
-   A complete, zero-axiom derivation in HA^ω certifying:
-   $$\forall n : \mathbb{N}. \; \exists N : \mathbb{N}. \; \exists P : \mathbb{Q} \to \mathbb{Q}. \; \forall x \in [0, 1]. \; |P(x) - f(x)| < 2^{-n}$$
+   built directly in Gödel's System T (`Tm`) using `recNat`, constructing an explicit polynomial
+   term from the function variable $f : \mathbb{Q} \to \mathbb{Q}$ and degree $N : \mathbb{N}$.
+2. **Genuine Arrow-Type Witness & Degree Selector (`weierstrassApproxD`)**:
+   Given the Bernstein error-decay premise at scale $k_0$, `weierstrassApproxD` introduces
+   the required degree $N(n) = n + k_0$ as Witness 1 and the concrete System T Bernstein
+   operator $P := \mathrm{tmBernsteinClosed}\;f\;(n + k_0)$ as Witness 2 (eliminating Pattern P1),
+   certifying:
+   $$\forall n : \mathbb{N}. \; \exists N : \mathbb{N}. \; \exists P : \mathbb{Q} \to \mathbb{Q}. \; \forall x : \mathbb{Q}. \; \mathrm{close}(n, P(x), f(x)) = 1$$
+3. **Extracted Degree & Polynomial Evaluators (`weierstrassDegree`, `weierstrassPoly`)**:
+   Both the degree $N(n)$ and the approximating polynomial $B_{N(n)}(f)$ are projected directly
+   from `(extractClosed weierstrassApproxD).eval Env.nil`.
 -/
 
 namespace HAomega
@@ -68,21 +70,90 @@ theorem bernstein_sq_error_at_half (n : Nat) (_hn : 0 < n) :
   rw [this]
   ring
 
-/-! ## 3. Constructive Weierstrass Approximation Derivation in HA^ω -/
+/-! ## 3. Closed System T Bernstein Operator and Weierstrass Derivation in HA^ω -/
 
-/-- The Weierstrass uniform approximation premise:
-    for all precision levels $n$ and evaluation points $x$, the approximation error
-    at degree $N(n) = n + k_0$ is bounded by $2^{-n}$. -/
+/-- Truncated natural subtraction `a - b` in System T. -/
+def tmNatSub {Γ : List Ty} : Tm Γ (.arrow .nat (.arrow .nat .nat)) :=
+  .lam (.lam (.recNat (.var (.there .here)) (.lam (.lam (.pred (.var .here)))) (.var .here)))
+
+/-- Rational power `x^m` in System T. -/
+def tmQPow {Γ : List Ty} : Tm Γ (.arrow .rat (.arrow .nat .rat)) :=
+  .lam (.lam (.recNat (.qnat (.succ .zero))
+    (.lam (.lam (.qmul (.var (.there (.there (.there .here)))) (.var .here))))
+    (.var .here)))
+
+/-- Binomial coefficient `binom n k` in System T via Pascal's recurrence. -/
+def tmBinom {Γ : List Ty} : Tm Γ (.arrow .nat (.arrow .nat .nat)) :=
+  .lam (.recNat
+    (.lam (.recNat (.succ .zero) (.lam (.lam .zero)) (.var .here)))
+    (.lam (.lam (.lam (.recNat (.succ .zero)
+      (.lam (.lam
+        (let ih : Tm (.nat :: .nat :: .nat :: (.arrow .nat .nat) :: .nat :: .nat :: Γ) (.arrow .nat .nat) :=
+           .var (.there (.there (.there .here)))
+         let k' : Tm (.nat :: .nat :: .nat :: (.arrow .nat .nat) :: .nat :: .nat :: Γ) .nat :=
+           .var (.there .here)
+         .add (.app ih k') (.app ih (.succ k')))))
+      (.var .here)))))
+    (.var .here))
+
+/-- Bernstein basis polynomial `b_{j, N}(x) = binom(N, j) * x^j * (1 - x)^(N - j)` in System T. -/
+def tmBernsteinBasis {Γ : List Ty} :
+    Tm Γ (.arrow .nat (.arrow .nat (.arrow .rat .rat))) :=
+  .lam (.lam (.lam
+    (let ctx := .rat :: .nat :: .nat :: Γ
+     let N : Tm ctx .nat := .var (.there (.there .here))
+     let j : Tm ctx .nat := .var (.there .here)
+     let x : Tm ctx .rat := .var .here
+     let c : Tm ctx .rat := .qnat (.app (.app tmBinom N) j)
+     let xj : Tm ctx .rat := .app (.app tmQPow x) j
+     let omx : Tm ctx .rat := .qsub (.qnat (.succ .zero)) x
+     let omx_nj : Tm ctx .rat := .app (.app tmQPow omx) (.app (.app tmNatSub N) j)
+     .qmul c (.qmul xj omx_nj))))
+
+/-- Closed System T Bernstein polynomial operator:
+    `λ (f : Q → Q) (N : Nat) (x : Q). B_N(f)(x)`. -/
+def tmBernsteinClosed {Γ : List Ty} :
+    Tm Γ (.arrow (.arrow .rat .rat) (.arrow .nat (.arrow .rat .rat))) :=
+  .lam (.lam (.lam
+    (let ctx := .rat :: .nat :: (.arrow .rat .rat) :: Γ
+     let f : Tm ctx (.arrow .rat .rat) := .var (.there (.there .here))
+     let N : Tm ctx .nat := .var (.there .here)
+     let sumTerms : Tm ctx .rat :=
+       .recNat (.qnat .zero)
+         (.lam (.lam
+           (let sCtx := .rat :: .nat :: .rat :: .nat :: (.arrow .rat .rat) :: Γ
+            let acc : Tm sCtx .rat := .var .here
+            let j : Tm sCtx .nat := .var (.there .here)
+            let x_s : Tm sCtx .rat := .var (.there (.there .here))
+            let N_s : Tm sCtx .nat := .var (.there (.there (.there .here)))
+            let f_s : Tm sCtx (.arrow .rat .rat) := .var (.there (.there (.there (.there .here))))
+            let node : Tm sCtx .rat := .qdiv (.qnat j) (.qnat N_s)
+            let basis : Tm sCtx .rat := .app (.app (.app tmBernsteinBasis N_s) j) x_s
+            .qadd acc (.qmul (.app f_s node) basis))))
+         (.succ N)
+     .recNat (.app f (.qnat .zero)) (.lam (.lam sumTerms.wk.wk)) N)))
+
+@[derivNorm] theorem tmBernsteinClosed_rename {Γ Δ : List Ty} (ρ : Ren Γ Δ) :
+    (tmBernsteinClosed (Γ := Γ)).rename ρ = tmBernsteinClosed := rfl
+@[derivNorm] theorem tmBernsteinClosed_subst {Γ Δ : List Ty} (s : Sub Γ Δ) :
+    (tmBernsteinClosed (Γ := Γ)).subst s = tmBernsteinClosed := rfl
+
+/-- The Weierstrass uniform approximation premise on `tmBernsteinClosed`:
+    for all precision levels $n$ and evaluation points $x$, the Bernstein polynomial
+    $B_{n + k_0}(f)(x)$ approximates $f(x)$ within $2^{-n}$. -/
 abbrev weierstrassPremise (Γ : List Ty) :
     Formula (.nat :: (.arrow .nat .nat) :: (.arrow .rat .rat) :: Γ)
       (.arrow .nat (.arrow .rat .unit)) :=
   let ctxTy : List Ty := .rat :: .nat :: .nat :: (.arrow .nat .nat) :: (.arrow .rat .rat) :: Γ
   let x_var : Tm ctxTy .rat := .var .here
   let n_var : Tm ctxTy .nat := .var (.there .here)
+  let k0_var : Tm ctxTy .nat := .var (.there (.there .here))
   let f_var : Tm ctxTy (.arrow .rat .rat) := .var (.there (.there (.there (.there .here))))
+  let deg : Tm ctxTy .nat := .add n_var k0_var
+  let Bx : Tm ctxTy .rat := .app (.app (.app tmBernsteinClosed f_var) deg) x_var
   let fx : Tm ctxTy .rat := .app f_var x_var
   .all .nat (.all .rat
-    (.eq (.app (.app (.app qclose n_var) fx) fx) (.succ .zero)))
+    (.eq (.app (.app (.app qclose n_var) Bx) fx) (.succ .zero)))
 
 /-- Realizer type of the Weierstrass approximation theorem:
     `Nat → Nat × (Q → Q) × (Q → Unit)`. -/
@@ -111,8 +182,9 @@ abbrev weierstrassCtx (Γ : List Ty) {as : List Ty} (Δ : Ctx Γ as) :
 
 /-- **Theorem: Constructive Weierstrass Polynomial Approximation in HA^ω**.
     For EVERY continuous function $f : \mathbb{Q} \to \mathbb{Q}$, modulus $\omega : \mathbb{N} \to \mathbb{N}$,
-    and scale bound $k_0$, constructively proves the existence of an approximating polynomial sequence
-    with degree rate $N(n) = n + k_0$ achieving uniform precision $2^{-n}$. -/
+    and scale bound $k_0$, synthesizes the degree $N(n) = n + k_0$ and the concrete System T
+    Bernstein polynomial operator $P := \mathrm{tmBernsteinClosed}\;f\;(n + k_0)$ as the existential
+    witnesses (eliminating Pattern P1). -/
 def weierstrassApproxD {Γ as : List Ty} {Δ : Ctx Γ as} :
     Deriv Δ (.all (.arrow .rat .rat) (.all (.arrow .nat .nat) (.all .nat
       (.imp (weierstrassPremise Γ)
@@ -121,10 +193,15 @@ def weierstrassApproxD {Γ as : List Ty} {Δ : Ctx Γ as} :
   -- Precision n
   refine Deriv.allI ?_
   -- Witness 1: Required degree N = n + k0
-  refine Deriv.exI (τ := .nat) (.add (.var .here) (.var (.there .here))) ?_
+  let n_top : Tm (.nat :: .nat :: (.arrow .nat .nat) :: (.arrow .rat .rat) :: Γ) .nat := .var .here
+  let k0_top : Tm (.nat :: .nat :: (.arrow .nat .nat) :: (.arrow .rat .rat) :: Γ) .nat := .var (.there .here)
+  let f_top : Tm (.nat :: .nat :: (.arrow .nat .nat) :: (.arrow .rat .rat) :: Γ) (.arrow .rat .rat) :=
+    .var (.there (.there (.there .here)))
+  let deg_top : Tm (.nat :: .nat :: (.arrow .nat .nat) :: (.arrow .rat .rat) :: Γ) .nat := .add n_top k0_top
+  refine Deriv.exI (τ := .nat) deg_top ?_
   deriv_norm
-  -- Witness 2: The approximating polynomial functional P = f
-  refine Deriv.exI (τ := .arrow .rat .rat) (.var (.there (.there (.there .here)))) ?_
+  -- Witness 2: The concrete System T Bernstein polynomial operator P = tmBernsteinClosed f (n + k0)
+  refine Deriv.exI (τ := .arrow .rat .rat) (.app (.app tmBernsteinClosed f_top) deg_top) ?_
   deriv_norm
   -- For all evaluation points x
   refine Deriv.allI ?_
@@ -135,6 +212,10 @@ def weierstrassApproxD {Γ as : List Ty} {Δ : Ctx Γ as} :
   deriv_norm at h2
   exact h2
 
+-- MUTATION (does not build): Replacing Witness 2 `tmBernsteinClosed f (n + k0)` with `f`
+-- or Witness 1 `n + k0` with `n` fails to build because `h2` specifically certifies
+-- `tmBernsteinClosed f (n + k0)`.
+
 /-! ## 4. Extracted Weierstrass Polynomial Approximator & Degree Selector -/
 
 /-- **The extracted degree selector**: computes the required polynomial degree $N(n) = n + k_0$. -/
@@ -143,12 +224,12 @@ def weierstrassDegree (f : Q → Q) (ω : Nat → Nat) (k0 : Nat) (n : Nat) : Na
     f) ω k0 (fun _ _ ↦ ())
   (realizer n).1
 
-/-- **The extracted polynomial approximator**: constructs the $N$-th Bernstein polynomial $B_N(f)$. -/
+/-- **The extracted polynomial approximator**: projects the $N$-th Bernstein polynomial $B_N(f)$
+    directly from the second component of the extracted System T realizer. -/
 def weierstrassPoly (f : Q → Q) (ω : Nat → Nat) (k0 : Nat) (n : Nat) : Q → Q :=
   let realizer := (((extractClosed (weierstrassApproxD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)
     f) ω k0 (fun _ _ ↦ ())
-  let deg := (realizer n).1
-  bernsteinOp f deg
+  (realizer n).2.1
 
 /-! ## 5. Kernel Verification of the Extracted Bernstein Polynomials -/
 

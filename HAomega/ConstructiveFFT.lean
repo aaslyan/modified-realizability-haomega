@@ -179,24 +179,92 @@ def filterSignal : List CQ :=
 
 #guard fastConvolution deltaSignal filterSignal == filterSignal
 
-/-! ## 6. Complexity & Galois Adequacy -/
+/-! ## 6. Algebraic Butterfly Inversion, Partition & Complexity Theorems -/
 
-/-- **Theorem (FFT Divide-and-Conquer Complexity)**:
-    The number of recursive stages for a signal of length $N = 2^k$ is exactly $k = \log_2(N)$,
-    reducing operation count from $O(N^2)$ to $O(N \log N)$. -/
+/-- Double negation on `Q` is the identity (`-(-q) = q`). -/
+theorem Q.neg_neg_eq (q : Q) : Q.neg (Q.neg q) = q := by
+  cases q with
+  | mk num den =>
+    simp only [Q.neg, Q.mk.injEq, and_true]
+    exact Int.neg_neg num
+
+/-- **Theorem (Involution of Complex Conjugation)**:
+    $\overline{\overline{z}} = z$ for every $z \in \mathbb{Q}[i]$. -/
+theorem CQ.conj_conj (z : CQ) : CQ.conj (CQ.conj z) = z := by
+  cases z with
+  | mk re im =>
+    simp [CQ.conj, Q.neg_neg_eq]
+
+/-- **Theorem (Cooley–Tukey Butterfly Even Recovery)**:
+    For any complex butterfly inputs $e, t \in \mathbb{Q}[i]$ with outputs
+    $X_+ = e + t$ and $X_- = e - t$, their sum recovers $2 e$:
+    $$(X_+ + X_-).\mathrm{re}.\mathrm{val} = 2\,e.\mathrm{re}.\mathrm{val} \quad\wedge\quad
+      (X_+ + X_-).\mathrm{im}.\mathrm{val} = 2\,e.\mathrm{im}.\mathrm{val}.$$ -/
+theorem CQ.butterfly_recover_even (e t : CQ) :
+    ((CQ.add e t).add (CQ.sub e t)).re.val = 2 * e.re.val ∧
+    ((CQ.add e t).add (CQ.sub e t)).im.val = 2 * e.im.val := by
+  dsimp [CQ.add, CQ.sub, CQ.neg]
+  refine ⟨?_, ?_⟩
+  · rw [Q.val_add, Q.val_add, Q.val_add, Q.val_neg]
+    ring
+  · rw [Q.val_add, Q.val_add, Q.val_add, Q.val_neg]
+    ring
+
+/-- **Theorem (Cooley–Tukey Butterfly Odd/Twiddle Recovery)**:
+    For any complex butterfly inputs $e, t \in \mathbb{Q}[i]$ with outputs
+    $X_+ = e + t$ and $X_- = e - t$, their difference recovers $2 t$:
+    $$(X_+ - X_-).\mathrm{re}.\mathrm{val} = 2\,t.\mathrm{re}.\mathrm{val} \quad\wedge\quad
+      (X_+ - X_-).\mathrm{im}.\mathrm{val} = 2\,t.\mathrm{im}.\mathrm{val}.$$ -/
+theorem CQ.butterfly_recover_odd (e t : CQ) :
+    ((CQ.add e t).sub (CQ.sub e t)).re.val = 2 * t.re.val ∧
+    ((CQ.add e t).sub (CQ.sub e t)).im.val = 2 * t.im.val := by
+  dsimp [CQ.add, CQ.sub, CQ.neg]
+  refine ⟨?_, ?_⟩
+  · rw [Q.val_add, Q.val_add, Q.val_neg, Q.val_add, Q.val_neg]
+    ring
+  · rw [Q.val_add, Q.val_add, Q.val_neg, Q.val_add, Q.val_neg]
+    ring
+
+/-- **Theorem (Decimation-in-Time Signal Partition)**:
+    Splitting any signal `xs` into `evenElements xs` and `oddElements xs`
+    preserves total sample count:
+    $$|\text{evenElements}(xs)| + |\text{oddElements}(xs)| = |xs|.$$ -/
+theorem even_odd_length_sum {α : Type} :
+    ∀ xs : List α, (evenElements xs).length + (oddElements xs).length = xs.length
+  | [] => rfl
+  | [_] => rfl
+  | _ :: _ :: xs => by
+    simp only [evenElements, oddElements, List.length_cons]
+    have ih := even_odd_length_sum xs
+    omega
+
+/-- **Theorem (Twiddle Factor Periodicity)**:
+    The exact $N=2$ and $N=4$ twiddle factors are periodic with periods $2$ and $4$. -/
+theorem twiddle_period (k : Nat) :
+    twiddle 2 (k + 2) = twiddle 2 k ∧ twiddle 4 (k + 4) = twiddle 4 k := by
+  refine ⟨?_, ?_⟩
+  · unfold twiddle
+    simp [Nat.add_mod_right]
+  · unfold twiddle
+    simp [Nat.add_mod_right]
+
+/-- **Theorem (FFT Divide-and-Conquer Recursion Depth)**:
+    For $N = 2^k$, the binary halving depth $\log_2(2^k)$ is $k$. -/
 theorem fft_log_depth (k : Nat) :
     Nat.log2 (2 ^ k) = k :=
   Nat.log2_two_pow
 
-#print axioms fft_log_depth
-
-/-- **Theorem (Convolution Theorem Galois Realizer)**:
-    Fast convolution is Galois adequate: the FFT-based algorithm exactly
-    realizes continuous algebraic polynomial multiplication. -/
+/-- Totality witness for `fastConvolution` on any two complex rational signal lists. -/
 theorem convolution_galois_adequate (x y : List CQ) :
     ∃ (res : List CQ), res = fastConvolution x y :=
   ⟨fastConvolution x y, rfl⟩
 
+#print axioms CQ.conj_conj
+#print axioms CQ.butterfly_recover_even
+#print axioms CQ.butterfly_recover_odd
+#print axioms even_odd_length_sum
+#print axioms twiddle_period
+#print axioms fft_log_depth
 #print axioms convolution_galois_adequate
 
 end HAomega

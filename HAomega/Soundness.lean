@@ -327,6 +327,8 @@ theorem soundness : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {
   | convQMulAssoc s t v => intro e ε h; exact Q.mul_assoc _ _ _
   | convQMulAdd s t v => intro e ε h; exact Q.mul_add _ _ _
   | convQSubSelf t => intro e ε h; exact Q.sub_self _
+  | convQMulDivCancel n a => intro e ε h; exact Q.mul_div_cancel_norm _ _
+  | convQMulDivSubZero n a => intro e ε h; exact Q.mul_div_sub_zero _ _
   | convPredZero => intro e ε h; rfl
   | convPredSucc t => intro e ε h; rfl
   | convGoodZero s => intro e ε h; rfl

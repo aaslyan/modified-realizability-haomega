@@ -52,7 +52,11 @@ abbrev iterInv (τ : Ty) (Γ : List Ty) (y0 : Tm Γ τ) (step : Tm Γ (.arrow τ
 
 /-- **Theorem (Object-Level General Iteration Derivation)**:
     For any step term $F : \tau \to \tau$ and initial state $y_0 : \tau$,
-    constructs a complete, valid natural deduction proof of $\forall n : \mathrm{nat}. \; \exists y : \tau. \; y = \mathrm{iterTm}\ \tau\ y_0\ F\ n$. -/
+    constructs a natural deduction proof of $\forall n : \mathrm{nat}. \; \exists y : \tau. \; y = \mathrm{iterTm}\ \tau\ y_0\ F\ n$.
+    **Witness-style:** the proof is `allI (exI (iterTm …) eqRefl)` — the iterate is
+    handed to `exI`, there is no `Deriv.ind`, and the extracted `recNat` is the one
+    written in `iterTm`. For solvers whose recursion comes from the proof, see
+    `genSolveD` (`PolyODESolve.lean`) and `genSolve2D` (`PolyODESystem.lean`). -/
 def iterSequenceD (τ : Ty)
     (y0 : Tm [] τ) (step : Tm [] (.arrow τ τ)) :
     Deriv Ctx.nil (.all .nat (iterInv τ [] y0 step)) := by

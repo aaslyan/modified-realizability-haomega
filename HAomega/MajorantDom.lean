@@ -2557,7 +2557,11 @@ abbrev jetCauchyInnerCtx (Γ : List Ty) {as : List Ty} (Δ : Ctx Γ as) :
 /-- **Theorem ($\forall k\, \exists N$ Jet Cauchy Convergence Modulus in `Deriv`, `jetCauchyModulusD`)**:
     For every coefficient stream $c : \mathrm{JetTy}$, majorant exponent $B : \mathrm{nat}$, and point
     $x : \mathrm{rat}$, derives in $\mathrm{HA}^\omega$ from `jetTailPremise` and `convQCloseMono`
-    that the partial sums `tmJetEvalPoly c` are Cauchy with explicit modulus $N(k) = k + (B + 2)$. -/
+    that the partial sums `tmJetEvalPoly c` are Cauchy with explicit modulus $N(k) = k + (B + 2)$.
+    **Superseded, circular:** `jetTailPremise` already states the tail bound at
+    $k + (B+2) + d_1$, so the derivation only instantiates its hypothesis. Use
+    `jetCauchyModulusGenuineD` (`JetCauchyDeriv.lean`), which derives the tail bound by
+    `Deriv.ind` from a per-term, $N$-free premise. Kept for the record. -/
 def jetCauchyModulusD {Γ as : List Ty} {Δ : Ctx Γ as} :
     Deriv Δ (.all JetTy (.all .nat (.all .rat
       (.imp (jetTailPremise Γ) (jetCauchyConcl Γ))))) := by

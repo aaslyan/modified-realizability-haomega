@@ -554,7 +554,8 @@ def tmRiccatiStep {Γ : List Ty} : Tm Γ (.arrow JetTy JetTy) :=
 
 /-- **Natural Deduction Proof (`riccatiPicardD`) in `Deriv`**:
     Synthesizes the Order-1 Picard sequence $Y_{k+1} = \mathcal{I}(1 + Y_k^2)$ starting from $Y_0 = 0$
-    by mathematical induction (`iterSequenceD JetTy`) at the arrow type `JetTy = .arrow .nat .rat`! -/
+    via `iterSequenceD JetTy` at the arrow type `JetTy = .arrow .nat .rat`. Witness-style: the
+    iterate is handed to `exI` (no `Deriv.ind`); the proof-computed solver is `riccatiSolveD`. -/
 def riccatiPicardD :
     Deriv .nil (.all .nat (iterInv JetTy [] tmZeroJet tmRiccatiStep)) :=
   iterSequenceD JetTy tmZeroJet tmRiccatiStep

@@ -1,5 +1,11 @@
 # HAomega fact dossier
 
+> **Snapshot.** This dossier audits commit `e7f4483` (2026-08-08) and is kept as
+> that record; it is not maintained. The current state — including the
+> proof-computed ODE solvers, the Fourier layer and the computed moduli added
+> since — is in `docs/haomega/STATUS.md`; the closed-universe roadmap is
+> `docs/CLOSED_UNIVERSE_PLAN.md` §0.
+
 **Scope:** the `HAomega/` library of `modified-realizability-haomega`,
 branch `haomega`, at commit `e7f4483` (+ the fixes this dossier mandated).
 **Standard:** every claim below traces to a build result or a direct source

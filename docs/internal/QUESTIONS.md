@@ -122,6 +122,23 @@ all delivered, as are Phases E and F.  Item 12 is engineering, not
 mathematics; items 13–16 are design points, recorded rather than silently
 chosen.  Item 18 gates the HA^ω closed universe's algebra laws.)*
 
+19. **HA^ω closed universe: which class is "the universe"?**  *Raised
+   2026-10-23, deferred by the user until the current plan is finished.*
+   "Closed" is meant algebraically: every operation is total on the class, so
+   every output is a valid input. Trigonometric polynomials are not closed
+   under `∫` (`∫1 = x`); inverse and composition have domain conditions.
+   Candidates (closure facts as recalled, to be verified before citing):
+   (a) **exponential polynomials** `Σ p_k(x)e^{λ_k x}` — finite data, all of
+   `+ − × d/dx ∫` total, Taylor and Fourier as two views, laws most tractable;
+   not closed under `÷`, `∘`.
+   (b) **GPAC / polynomial-ODE functions** — exactly what `genSolveD`/
+   `genSolve2D` generate; closed under `+ − × d/dx ∫`, `÷` (nonzero base
+   value), `∘`, inverse functions; closure provable as compilers on ODE
+   systems + `genSolve_unique_val`, without item 18; elements are infinite
+   streams, so in-logic laws are harder; needs n-variable systems (`JExprN`).
+   Recommendation (2026-10-23): (b) as the universe, (a) as a finite,
+   decidable sub-universe for the in-logic laws.
+
 18. **HA^ω closed universe: what does `=` on `rat` mean for the algebra laws?**
    *Raised 2026-10-23, kept open by the user's choice.*  The hand-rolled `Q`
    is unnormalized and `Deriv`'s `.eq` at `rat` is structural equality, so

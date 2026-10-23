@@ -158,6 +158,13 @@ three labels, according to where its computational content comes from:
     coefficients of `sin(mx)`, `cos(mx)`; `genSolve2_mode_trig`: they agree with
     the Fourier layer's `toJet` of `sinMode`/`cosMode` — the Taylor and Fourier
     sides meet at a proof-computed object (value theorems, with `Classical.choice`).
+  - *The Fourier layer in System T:* `TrigPolyTerms.lean`. Degree-`≤ N`
+    polynomials encoded as streams `j ↦ c_{j−N}` of rational pairs (`TrigTy`);
+    `tmTrigAdd`, `tmTrigDeriv`, `tmTrigInteg` (mean-zero), `tmTrigMul`
+    (guarded convolution) and `tmTrigToJet` are System T terms with **no
+    axioms**, each proved to evaluate to the encoding of the value-level
+    operation (`tmTrig*_spec`, value theorems). Note `∫` is partial on
+    trigonometric polynomials (`∫1 = x` is not periodic).
   - *Uniqueness:* `PolyODEUnique.lean`. `genSolve_unique_val` /
     `genSolve2_unique_val`: any value-level solution `Z` of `Y = A + ∫F(Y)`
     (resp. the system) agrees with the `k`-th proof-computed iterate below
@@ -1584,7 +1591,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,922 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,923 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

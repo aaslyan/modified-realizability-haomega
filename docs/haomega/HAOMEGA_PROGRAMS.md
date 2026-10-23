@@ -5,17 +5,19 @@ development's seven programs. This file indexes this branch's, and says plainly
 what is and is not claimed.
 
 **Read this first: machinery and case studies are both complete.**
-Extraction, soundness and continuity hold for every derivation, and **eleven
-extracted programs run**: the first-order repo's seven, plus three theorems
-that repo cannot state — `herculesD` (strategy-quantified Hydra),
-`herculesAnyD` (the fully general any-head game), and the higher-type
-Fibonacci — plus `goodsteinOD`, `hydraHD` and `herculesTD`: Goodstein,
-Kirby–Paris and the fully general Hercules game re-proved over the typed
-ordinal and hydra layers, with nothing encoded anywhere. Pascal was the first whose algorithm the proof computes
-rather than receives. The three-view rendering of every realizer (raw object /
-collapsed program / Haskell) is `EXTRACTED_HAOMEGA.md`, regenerated at each
-build; the detailed sections below cover the first six, and the coverage
-table covers all thirteen.
+Extraction, soundness and continuity hold for every derivation, and **twenty-six
+extracted programs run**: thirteen discrete programs (the first-order repo's
+seven, plus three theorems that repo cannot state — `herculesD`,
+`herculesAnyD`, and the higher-type Fibonacci — plus `goodsteinOD`, `hydraHD`
+and `herculesTD`: Goodstein, Kirby–Paris and the fully general Hercules game
+re-proved over the typed ordinal and hydra layers, with nothing encoded
+anywhere) and thirteen analysis & formal-power-series jet programs (including
+the discrete-IVT square-root search, uniform continuity, the three $E_1$ jet
+moduli, Order-1 Picard jet solvers, and Newton–Schulz jet inversion). The
+three-view rendering of every realizer (raw object / collapsed program /
+Haskell) is `EXTRACTED_HAOMEGA.md`, regenerated at each build; the detailed
+sections below cover the first six, and the coverage table covers all
+twenty-six with an explicit **proof-computed** vs. **witness-style** split.
 
 ## The uniform core
 
@@ -245,17 +247,29 @@ is assembled by the induction (Pascal-style).
 | **Kirby–Paris, typed trees** | ✗ (one sort — trees must be coded) | ✅ **`hydraHD`**: `∀h^hyd ∃t. deadᴴ?(play(h,t)) = 0`, state a tree and measure an `Eps0`. The extract has **zero** coded operations and computes the published length **37** at the hydra where the coded `hydraX` overflows the interpreter (`HydraTyped.lean`, `HydraTree.lean`) | — |
 | **Goodstein, typed ordinals** | ✗ (one sort — ordinals must be coded) | ✅ **`goodsteinOD`**: the same `∀m ∃t. good(m,t) = 0`, proved by `tiEps0O` on the structural notations of `OrdCnf.lean`; the extract contains **no coded ordinal** (`ordᵒ`/`tiRecᵒ` only) and returns the same stopping times, build-guarded against `goodsteinX` | — |
 | **Hercules, any head (fully general)** | ✗ (unstatable) | ✅ **`herculesAnyD`**: `∀h ∀f ∀g. ∃t. playAt(g,f,h,t) = 0` — head choice *and* replication quantified, on the computable surgery `hcutAt` whose descent is H7's `play_descends` on codes (`HydraSurgery.lean`, `HerculesAny.lean`); extracted `herculesAnyX` agrees with `herculesX` at the leftmost strategy | — |
+| **Square-root approximation** | ✗ | ✅ **`sqrtApproxD`** (`SquareRoot.lean`, proof-computed): discrete IVT applied to `x² ≤ q`; bound `K` discharged in `QAnalysis.lean` | — |
+| **Uniform continuity** | ✗ | ✅ **`uniContD`** (`UniformContinuity.lean`, proof-computed): extracts modulus `M(n) = n + j` via `convQLipScale` | — |
+| **Formal antiderivative & termwise FTC1** | ✗ | ✅ **`ftcAntiderivD`** (`ClosedCalculus.lean`, witness-style antiderivative + proof-computed cancellation `D(I c)(n) - c(n) = 0`) | — |
+| **Cauchy product convolution** | ✗ | ✅ **`jetMulD`** (`MajorantDom.lean`, witness-style): `extractedJetMul` on `JetTy = nat → rat` | — |
+| **Taylor polynomial evaluator** | ✗ | ✅ **`jetEvalPolyD`** (`MajorantDom.lean`, witness-style): `extractedJetEvalPoly` on `JetTy` | — |
+| **Jet $E_1$ Cauchy convergence modulus** | ✗ | ✅ **`jetCauchyModulusGenuineD`** (`JetCauchyDeriv.lean`, proof-computed): proves geometric tail bound by `Deriv.ind` on $d_2$ from $N$-free per-term `jetTermPremise`, extracting $N(k) = k + (B + 3)$; discharged for `AnalyticJet` and `RadiusJet` | — |
+| **Jet $E_1$ uniform continuity modulus** | ✗ | ✅ **`jetContModulusD`** (`MajorantDom.lean`, proof-computed): extracts $\omega(k) = k + (B_1 + 1)$ via `convQLipScale`; discharged for `AnalyticJet` and `RadiusJet` | — |
+| **Jet $E_1$ uniform differentiability modulus** | ✗ | ✅ **`jetDiffModulusD`** (`MajorantDom.lean`, proof-computed): extracts $\delta(k) = k + (B_2 + 1)$ via `convQLipScale`; discharged for `AnalyticJet` and `RadiusJet` | — |
+| **Order-1 Picard jet iteration ($y' = y$)** | ✗ | ✅ **`picardJetIterD`** (`HolonomicCS.lean`, proof-computed): `Deriv.ind` at arrow type `JetTy` | — |
+| **Riccati ODE ($y' = 1 + y^2$) Picard solver** | ✗ | ✅ **`riccatiPicardD`** (`ClosedFourierODE.lean`, proof-computed): `Deriv.ind` with diagonal degree locking $\mathcal{P}(Y_k)(k) = Y_k(k)$, synthesizing $\tan x$ | — |
+| **Quadratic blow-up ODE ($y' = y^2$) Picard solver** | ✗ | ✅ **`quadBlowupPicardD`** (`ClosedFourierODE.lean`, proof-computed): `Deriv.ind` with diagonal degree locking, synthesizing $\frac{1}{1-x}$ | — |
+| **2D coupled Duffing Picard solver** | ✗ | ✅ **`duffingPicardD`** (`ClosedFourierODE.lean`, proof-computed): `Deriv.ind` with 2D diagonal degree locking on `JetTy × JetTy` | — |
+| **Quadratic Newton–Schulz jet inverter** | ✗ | ✅ **`newtonJetInvD`** (`ClosedFourierODE.lean`, witness-style): `extractedNewtonJetInv`, linked to `RadiusJet.invOneSub` by `extractedNewtonJetInv_agree` | — |
 
 ## Honest summary
 
-- **Machinery: complete.** 45 rules, `extract` (axiom-free, cast-free),
+- **Machinery: complete.** 57 rules, `extract` (axiom-free, cast-free),
   `soundness` (one case per rule), continuity (`[propext, Quot.sound]`,
-  choice-free).
-- **Case studies: eleven extracted programs** — the seven first-order
-  programs ported, plus the higher-type Fibonacci and both Hercules theorems
-  (replication-only and fully general), all unstatable first-order, plus
-  Goodstein, Kirby–Paris and the general Hercules game a second time each
-  over the typed ordinal and hydra layers.
+  choice-free), certified emission (`HsSemantics.hsOf_correct`) covering all
+  26 extracted programs.
+- **Case studies: twenty-six extracted programs** — 13 discrete programs and
+  13 analysis & formal-power-series jet programs, rendered in three views in
+  `EXTRACTED_HAOMEGA.md`.
 - **The typed ordinal layer** (`OrdCnf.lean`) gives ε₀-notations their own
   base type: structural comparison and normal form, well-foundedness
   *inherited* from the certified coded order through `toCode`. Measured
@@ -266,7 +280,22 @@ is assembled by the induction (Pascal-style).
   there the encoding *was* the bottleneck: `hydraHX` runs the published
   37-step Kirby–Paris battle at a hydra where the coded `hydraX` overflows
   the interpreter without taking a step.
-- **Proof-computed vs. witness-style.** Pascal's decision tag, gcd's stage-2
-  maximality realizer, and Sperner's last-crossing scan come out of the
-  proofs; the two Fibonacci programs and Hanoi remain witness-style — their
-  statements name the algorithm.
+- **Proof-computed vs. witness-style across all 26 programs.**
+  - *Proof-computed (19):* Pascal's decision tag (`pasRealizer`), gcd's stage-2
+    maximality realizer (`gcdTheoremD`), the six transfinite-induction
+    termination realizers (`goodsteinD`, `hydraD`, `herculesD`, `herculesAnyD`,
+    `goodsteinOD`, `hydraHD`, `herculesTD`), Sperner's last-crossing scan
+    (`spernerD`) and square-root search (`sqrtApproxD`), the uniform-continuity
+    modulus (`uniContD`), the three jet $E_1$ moduli (`jetCauchyModulusGenuineD`
+    by `Deriv.ind` on $d_2$ over the $N$-free per-term majorant `jetTermPremise`,
+    and `jetContModulusD`/`jetDiffModulusD` via `convQLipScale`), and the four
+    Order-1 Picard jet solvers (`picardJetIterD`, `riccatiPicardD`,
+    `quadBlowupPicardD`, `duffingPicardD`, with diagonal degree locking proved
+    by `Deriv.ind`).
+  - *Witness-style (7):* the two Fibonacci programs (`fibRealizer`,
+    `hiRealizer`), Tower of Hanoi (`hanoiDeriv`), formal antiderivative
+    (`ftcAntiderivD`, whose antiderivative witness `tmJetInteg c` is handed to
+    `exI` while termwise cancellation $\mathcal{D}(\mathcal{I}c)(n) - c(n) = 0$
+    is derived via `convQMulDivSubZero`), Cauchy product convolution (`jetMulD`),
+    Taylor polynomial evaluation (`jetEvalPolyD`), and the Newton–Schulz jet
+    inverter (`newtonJetInvD`).

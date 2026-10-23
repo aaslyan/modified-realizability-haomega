@@ -133,6 +133,11 @@ three labels, according to where its computational content comes from:
     on `v`), by `Deriv.ind`; extract = Picard iteration from `initN`
     (`extractClosed_genSolveND_fst`); uniqueness `genSolveN_unique_val`.
     Catalog #36 is a three-variable instance (`x' = y, y' = z, z' = x`).
+    `PolyODESystemNInstances.lean`: `genSolveD` and `genSolve2D` are the one- and
+    two-equation instances of `genSolveND` (via `JExpr.toN`, `JExpr2.toN`), as
+    exact `Q`-valued functions (`genSolveND_one_eq`, `genSolveND_two_eq`,
+    `[propext, Quot.sound]`) — so every ODE solver in the catalog factors
+    through the single n-variable solver.
     `genSolveND`/extraction `[propext, Quot.sound]`.
   - *Inverses (closed-universe pillar 4):* `ShiftSolve.lean`. On the
     unnormalized `Q` the guard `G(0)·Y(i)` of `Y = 1 + G·Y` is not structurally
@@ -1599,7 +1604,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,925 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,926 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

@@ -96,9 +96,14 @@ three labels, according to where its computational content comes from:
 
   The four Picard entries all instantiate `iterSequenceD`, which proves
   `∀k ∃Y. Y = recNat Y₀ step k` by `exI` and `eqRefl`, with no induction. They
-  carry **no** degree-locking conjunct. Degree locking is the separate
-  metatheory lemma `picard_jetAgree_lock` (`ClosedCalculus.lean`), stated for a
-  generic `sysTPicardStep` and not yet instantiated at these three steps.
+  carry **no** degree-locking conjunct. Degree locking is proved separately, in
+  the metatheory, for all four extracted solvers (`PicardLocking.lean`:
+  `extractedPicardJet_lock`, `extractedRiccatiJet_lock`,
+  `extractedQuadBlowupJet_lock`, `extractedDuffingJet_lock`, all
+  `[propext, Quot.sound]`): iterate `k+1` agrees with iterate `k` below degree
+  `k`, from per-step contractivity (`tm*Step_contractive`) and the generic
+  `contractive_iter_lock` / `contractive_pair_iter_lock`. Stating it inside
+  `Deriv` is open.
 
 ## 4. The analysis strand
 
@@ -1468,13 +1473,13 @@ see §7 for why the first is not statable here.
         2. `jetMulD` (`extractedJetMul`): supplies `tmJetMul a b` to `exI`.
         3. `jetEvalPolyD` (`extractedJetEvalPoly`): supplies `tmJetEvalPoly` to `exI`.
         4. `newtonJetInvD` (`extractedNewtonJetInv`, `extractedJetDiv`): supplies the quadratic Newton–Schulz recursion `tmNewtonJetInvAt` to `exI`, linked to `Jet.newtonSchulzIter`, `RadiusJet.newtonSchulzIter` (`extractedNewtonJetInv_radiusJet_eq`, `extractedNewtonJetInvE1`), `RadiusJet.invOneSub` (`extractedNewtonJetInv_agree`), and `RadiusJet.sec` (`extractedNewtonJetInv_sec_agree`).
-        5. `picardJetIterD`, `riccatiPicardD`, `quadBlowupPicardD`, `duffingPicardD` (`extractedPicardJet`, `extractedRiccatiJet`, `extractedQuadBlowupJet`, `extractedDuffingJet`): each is `iterSequenceD`, which supplies `recNat Y₀ step k` to `exI` and closes with `eqRefl` — no `Deriv.ind`, and no degree-locking conjunct. The extracts are bridged into `RadiusJet` and `E1` (`extractedRiccatiE1`, `extractedQuadBlowupE1`, `extractedDuffingUE1`, `extractedDuffingVE1`). Degree locking is proved only in the metatheory, generically (`picard_jetAgree_lock` for `sysTPicardStep`), and is not instantiated at these steps. (An earlier version of this entry cited derivations `picardLockedD`/`picardLocked2DD`; no such derivations exist.)
+        5. `picardJetIterD`, `riccatiPicardD`, `quadBlowupPicardD`, `duffingPicardD` (`extractedPicardJet`, `extractedRiccatiJet`, `extractedQuadBlowupJet`, `extractedDuffingJet`): each is `iterSequenceD`, which supplies `recNat Y₀ step k` to `exI` and closes with `eqRefl` — no `Deriv.ind`, and no degree-locking conjunct. The extracts are bridged into `RadiusJet` and `E1` (`extractedRiccatiE1`, `extractedQuadBlowupE1`, `extractedDuffingUE1`, `extractedDuffingVE1`). Degree locking is proved in the metatheory for all four extracts in `PicardLocking.lean` (`extracted*_lock`, `[propext, Quot.sound]`); it is not a conjunct of these derivations. (An earlier version of this entry cited derivations `picardLockedD`/`picardLocked2DD`; no such derivations exist.)
     - **Two-Tier Closed Majorant Algebras (`AnalyticJet ↪ RadiusJet`) & Full `toE1 : E1` Lifting**:
       - `AnalyticJet` ($|c_n|\cdot n! \le 2^M(2^R)^n$, entire functions of exponential type): closed under `add`, `sub`, `neg`, `mul`, `deriv`, and `integ`, with global evaluation `AnalyticJet.toE0 : E0` and `AnalyticJet.toE1 : E1` on $[-1, 1]$, plus ` ClosedRingExpr` compiler (`compileClosedRingExprD`).
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,904 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,905 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

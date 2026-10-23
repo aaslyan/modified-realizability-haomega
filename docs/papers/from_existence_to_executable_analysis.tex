@@ -436,7 +436,10 @@ Picard iterations \lean{picardJetIterD}, \lean{riccatiPicardD},
 \(\forall k\,\exists Y.\; Y = \mathcal{P}^k(Y_0)\) by supplying the iterate.
 Degree locking --- that \(k\) Picard steps fix \(k\) Taylor coefficients --- is
 proved in the metatheory for a generic guarded step
-(\lean{picard_jetAgree_lock}); it is not part of these derivations.
+(\lean{picard_jetAgree_lock}) and instantiated at all four extracted solvers
+(\lean{HAomega/PicardLocking.lean}): iterate \(k+1\) agrees with iterate \(k\)
+below degree \(k\). These are theorems about the extracted programs, not part
+of the derivations.
 \end{enumerate}
 
 \section{Related Work}

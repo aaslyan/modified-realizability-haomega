@@ -441,7 +441,10 @@ jet \(A\) and every right-hand side \(F\) built from \(Y\), constants,
 by induction, resting on a prefix lemma (\lean{JExpr.prefixT}) derived by
 recursion on \(F\); its extract is the Picard iteration. The same holds
 for systems in two jet variables (\lean{genSolve2D}); sine and cosine arise as
-its instance \(u' = v,\ v' = -u\), the Duffing oscillator as another.
+its instance \(u' = v,\ v' = -u\), the Duffing oscillator as another. Finally
+\lean{genSolveND} handles systems of any size: a list of equations
+\((A_v, F_v)\), with equation \(v\) selected inside \SystemT\ by recursion on
+\(v\).
 \item \textbf{Explicit witness, derived correctness}, where the specification
 names no algorithm, but the derivation writes the witness at \lean{Deriv.exI}
 and the subsequent induction or scaling rules prove contentless equations, so

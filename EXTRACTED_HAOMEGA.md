@@ -1,4 +1,4 @@
-# The thirty-five extracted programs of the HA^ω development
+# The thirty-six extracted programs of the HA^ω development
 
 Each section shows one certified realizer in three renderings.  The
 certified object is the System T term; soundness certifies it realizes
@@ -814,5 +814,28 @@ Realizer type: `(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (
 
 ```haskell
 (\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> ((\x5 -> (\x6 -> (((\x7 -> (\x8 -> (x8, (\x9 -> (\x10 -> (((x7 0) x9) x10)))))) (snd (x5 x6))) (fst (x5 x6))))) (\x5 -> (natRec ((1 + x1), (\x6 -> (\x7 -> (\x8 -> ())))) (\x6 -> (\x7 -> (((\x8 -> (\x9 -> ((1 + x9), (\x10 -> (\x11 -> (\x12 -> (((x8 (1 + x10)) x11) x12))))))) (snd x7)) (fst x7)))) x5))))))))
+```
+
+## 36. A three-variable system x' = y, y' = z, z' = x from the general n-variable solver (proof-computed)
+
+Theorem: `∀k. ∃W^(ℕ→(ℕ→ℚ)). ∀v < 3. ∀i < k. P(W)(v)(i) = W(v)(i)    (P(W)(v) = A_v + ∫F_v(W))`  
+Realizer type: `N → ((N → (N → Q)) × (N → (N → (1 → (N → (N → (1 → 1)))))))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. rec[⟨(λx1. rec[(λx2. rec[qℕ(S 0) | (λx3. (λx4. qℕ(0))) | x2]) | (λx2. (λx3. rec[(λx4. qℕ(0)) | (λx4. (λx5. rec[(λx6. qℕ(0)) | (λx6. (λx7. (λx8. qℕ(0)))) | x4])) | x2])) | x1]), (λx1. (λx2. (λx3. (λx4. (λx5. (λx6. ★))))))⟩ | (λx1. (λx2. (((λx3. (λx4. ⟨((λx5. (λx6. rec[(((λx7. (λx8. (λx9. ((x7 x9) +q (x8 x9))))) (λx7. rec[qℕ(S 0) | (λx8. (λx9. qℕ(0))) | x7])) ((λx7. (λx8. rec[qℕ(0) | (λx9. (λx10. ((x7 x9) /q qℕ(S x9)))) | x8])) (x5 S 0))) | (λx7. (λx8. rec[(((λx9. (λx10. (λx11. ((x9 x11) +q (x10 x11))))) (λx9. qℕ(0))) ((λx9. (λx10. rec[qℕ(0) | (λx11. (λx12. ((x9 x11) /q qℕ(S x11)))) | x10])) (x5 S S 0))) | (λx9. (λx10. rec[(((λx11. (λx12. (λx13. ((x11 x13) +q (x12 x13))))) (λx11. qℕ(0))) ((λx11. (λx12. rec[qℕ(0) | (λx13. (λx14. ((x11 x13) /q qℕ(S x13)))) | x12])) (x5 0))) | (λx11. (λx12. (λx13. qℕ(0)))) | x9])) | x7])) | x6])) x4), (λx5. (λx6. (λx7. (λx8. rec[(λx9. (λx10. ★)) | (λx9. (λx10. (λx11. (λx12. ★)))) | x8]))))⟩)) snd x2) fst x2))) | x0])
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. rec[⟨(λx1. rec[(λx2. rec[qℕ(S 0) | (λx3. (λx4. qℕ(0))) | x2]) | (λx2. (λx3. rec[(λx4. qℕ(0)) | (λx4. (λx5. rec[(λx6. qℕ(0)) | (λx6. (λx7. (λx8. qℕ(0)))) | x4])) | x2])) | x1]), (λx1. (λx2. (λx3. (λx4. (λx5. (λx6. ·))))))⟩ | (λx1. (λx2. (((λx3. (λx4. ⟨((λx5. (λx6. rec[(((λx7. (λx8. (λx9. ((x7 x9) +q (x8 x9))))) (λx7. rec[qℕ(S 0) | (λx8. (λx9. qℕ(0))) | x7])) ((λx7. (λx8. rec[qℕ(0) | (λx9. (λx10. ((x7 x9) /q qℕ(S x9)))) | x8])) (x5 S 0))) | (λx7. (λx8. rec[(((λx9. (λx10. (λx11. ((x9 x11) +q (x10 x11))))) (λx9. qℕ(0))) ((λx9. (λx10. rec[qℕ(0) | (λx11. (λx12. ((x9 x11) /q qℕ(S x11)))) | x10])) (x5 S S 0))) | (λx9. (λx10. rec[(((λx11. (λx12. (λx13. ((x11 x13) +q (x12 x13))))) (λx11. qℕ(0))) ((λx11. (λx12. rec[qℕ(0) | (λx13. (λx14. ((x11 x13) /q qℕ(S x13)))) | x12])) (x5 0))) | (λx11. (λx12. (λx13. qℕ(0)))) | x9])) | x7])) | x6])) x4), (λx5. (λx6. (λx7. (λx8. rec[(λx9. (λx10. ·)) | (λx9. (λx10. (λx11. (λx12. ·)))) | x8]))))⟩)) snd x2) fst x2))) | x0])
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (natRec ((\x1 -> (natRec (\x2 -> (natRec (qOfNat 1) (\x3 -> (\x4 -> (qOfNat 0))) x2)) (\x2 -> (\x3 -> (natRec (\x4 -> (qOfNat 0)) (\x4 -> (\x5 -> (natRec (\x6 -> (qOfNat 0)) (\x6 -> (\x7 -> (\x8 -> (qOfNat 0)))) x4))) x2))) x1)), (\x1 -> (\x2 -> (\x3 -> (\x4 -> (\x5 -> (\x6 -> ()))))))) (\x1 -> (\x2 -> (((\x3 -> (\x4 -> (((\x5 -> (\x6 -> (natRec (((\x7 -> (\x8 -> (\x9 -> (qAdd (x7 x9) (x8 x9))))) (\x7 -> (natRec (qOfNat 1) (\x8 -> (\x9 -> (qOfNat 0))) x7))) ((\x7 -> (\x8 -> (natRec (qOfNat 0) (\x9 -> (\x10 -> (qDiv (x7 x9) (qOfNat (1 + x9))))) x8))) (x5 1))) (\x7 -> (\x8 -> (natRec (((\x9 -> (\x10 -> (\x11 -> (qAdd (x9 x11) (x10 x11))))) (\x9 -> (qOfNat 0))) ((\x9 -> (\x10 -> (natRec (qOfNat 0) (\x11 -> (\x12 -> (qDiv (x9 x11) (qOfNat (1 + x11))))) x10))) (x5 2))) (\x9 -> (\x10 -> (natRec (((\x11 -> (\x12 -> (\x13 -> (qAdd (x11 x13) (x12 x13))))) (\x11 -> (qOfNat 0))) ((\x11 -> (\x12 -> (natRec (qOfNat 0) (\x13 -> (\x14 -> (qDiv (x11 x13) (qOfNat (1 + x13))))) x12))) (x5 0))) (\x11 -> (\x12 -> (\x13 -> (qOfNat 0)))) x9))) x7))) x6))) x4), (\x5 -> (\x6 -> (\x7 -> (\x8 -> (natRec (\x9 -> (\x10 -> ())) (\x9 -> (\x10 -> (\x11 -> (\x12 -> ())))) x8)))))))) (snd x2)) (fst x2)))) x0))
 ```
 

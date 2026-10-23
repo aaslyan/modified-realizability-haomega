@@ -44,7 +44,7 @@ To keep genuine curiosity high from page 1, the book uses an **interleaved 4-bea
 - **Goal**: Hook the reader in Chapter 0 with three live experiments before any heavy definitions:
   1. *Mystery 1 (Proofs as Programs)*: Run two proofs of 1D Sperner's Lemma on the same coloring and watch them return *different* crossings.
   2. *Mystery 2 (The Infinite Input)*: Pass an infinite function $f : \mathbb{N} \to \mathbb{N}$ into the extracted type-2 Fibonacci realizer $\text{fib}(f(f(0)))$ (`HigherType.lean`) — how did a finite program consume an infinite object? Because it only probed $f$ at two points ($0$ and $f(0)$) — **continuity**!
-  3. *Mystery 3 (The Forbidden Functional)*: Exhibit `zeroTest : (ℕ → ℕ) → ℕ` (which returns $1$ iff $f$ is everywhere zero) and state the theorem that **no derivation in $\text{HA}^\omega$ can ever extract to it**.
+  3. *Mystery 3 (The Forbidden Functional)*: Exhibit `notAllZero : (ℕ → ℕ) → ℕ` (`HAomega/Collapse.lean`; returns $0$ iff $f$ is everywhere zero, $1$ otherwise) and state the theorem that **no derivation in $\text{HA}^\omega$ can ever extract to it**.
 - **Lean Modules**: [`HAomega/HigherType.lean`](../HAomega/HigherType.lean), [`HAomega/Sperner.lean`](../HAomega/Sperner.lean), [`HAomega/Continuity.lean`](../HAomega/Continuity.lean)
 
 ---
@@ -66,7 +66,7 @@ To keep genuine curiosity high from page 1, the book uses an **interleaved 4-bea
   - **Kreisel (1959)**: Realizers are *typed total functionals* in System T (`tyOf φ`); a realizer of $\psi \to \chi$ must be total on *all* inputs of type $\text{tyOf}(\psi)$, even non-realizers!
   - Why Kreisel's modification explains two concrete features of our codebase: why [`Ty.dfltVal`](../HAomega/Syntax.lean) is needed in `botE` / `tiRec`, and why root-finding (`sqrtApproxD`) requires an explicit Archimedean bound $K$ instead of unbounded search.
 - **Beat 4 (Experiment)**: Inspect the 40-line `extract` function and prove `soundness`.
-- **Lean Modules**: [`Realizability/Core/Realizability.lean`](../Realizability/Core/Realizability.lean), [`Realizability/Core/Extraction.lean`](../Realizability/Core/Extraction.lean), [`Realizability/Core/Soundness.lean`](../Realizability/Core/Soundness.lean), [`HAomega/Extraction.lean`](../HAomega/Extraction.lean)
+- **Lean Modules**: [`Realizability/Core/ModifiedRealizes.lean`](../Realizability/Core/ModifiedRealizes.lean), [`Realizability/Core/Extraction.lean`](../Realizability/Core/Extraction.lean), [`Realizability/Core/Soundness.lean`](../Realizability/Core/Soundness.lean), [`HAomega/Extraction.lean`](../HAomega/Extraction.lean)
 
 ---
 
@@ -100,7 +100,7 @@ To keep genuine curiosity high from page 1, the book uses an **interleaved 4-bea
   - The logical-relation bridge `Tracked τ X` in `HAomega/Continuity.lean`: using `Continuous2` at the base and lifting across products and arrows by structural induction on `Tm` (`eval_tracked` $\implies$ `extract_continuous2`), completely choice-free (`[propext, Quot.sound]`).
   - Why the modulus must depend on the oracle: proving `no_constant_modulus` for `hiProgram`.
   - Why `tiRec` (transfinite recursion) is continuous (`extract_tracked`) even though it has no compositional formula for its modulus.
-- **Beat 4 (Experiment)**: Define the discontinuous zero-test functional (`zeroTest`), prove it is not `Continuous2`, and conclude by `extract_continuous2` that **no formal derivation in $\text{HA}^\omega$ can ever extract to it**.
+- **Beat 4 (Experiment)**: Use the discontinuous zero-test functional `notAllZero` (`HAomega/Collapse.lean`), proved not `Continuous2` there (`not_continuous2_notAllZero`, `notAllZero_not_extractable`), and conclude by `extract_continuous2` that **no formal derivation in $\text{HA}^\omega$ can ever extract to it**.
 - **Lean Modules**: [`HAomega/Continuity.lean`](../HAomega/Continuity.lean), [`HAomega/HigherType.lean`](../HAomega/HigherType.lean), [`HAomega/Modulus.lean`](../HAomega/Modulus.lean), [`Realizability/Core/Transport.lean`](../Realizability/Core/Transport.lean)
 
 ---

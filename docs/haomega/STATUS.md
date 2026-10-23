@@ -1,9 +1,10 @@
 # HA^ω status
 
-**As of 2026-10-23.** Full `lake build` green — 7,896 jobs,
+**As of 2026-10-23.** Full `lake build` green — 7,916 jobs,
 including Mathlib and the first-order tree — zero HAomega warnings, zero
-`sorry`/`admit`. 29,979 lines across 100 files in `HAomega/`, **57** inference
-rules, 32 extracted realizers rendered in `EXTRACTED_HAOMEGA.md`.
+`sorry`/`admit`. 33,530 lines across 108 files in `HAomega/`, **60** inference
+rules (constructors of `Deriv`), 32 extracted realizers rendered in
+`EXTRACTED_HAOMEGA.md`.
 
 This is the "where does everything stand" document. `HAOMEGA.md` is the
 roadmap, `HAOMEGA_DOSSIER.md` is the evidence with per-claim tags, and the
@@ -17,11 +18,11 @@ stated, and what is blocked on what.**
 | part | state |
 |---|---|
 | Finite types, System T, `Formula` indexed by realizer type | done |
-| `MR`, **57** rules, `extract` (axiom-free, cast-free) | done |
+| `MR`, **60** rules, `extract` (axiom-free, cast-free) | done |
 | `soundness`, one case per rule, no wildcard | done |
 | Continuity (`Tracked`, `extract_continuous2`), choice-free | done |
 | `tiEps0` + `tiRec`, and their typed twins `tiEps0O`/`tiRecE` | done |
-| Certified emission to a functional target, **26 of 26 programs** | done |
+| Certified emission to a functional target, **32 of 32 programs** | done |
 | Derivation-authoring kit (`Kit.lean`), extensible normalizer | done |
 
 **Axiom footprints**, reprinted every build:
@@ -808,7 +809,9 @@ Turning any of these lemmas into `Deriv` rules — conversion equations in
 `Syntax.lean` plus cases in `extract`/`soundness`/`eval_tracked`/`hsOf` per
 the per-rule discipline — is **not done**; everything above is meta-level.
 `EFTC`'s claims are refuted rather than proved, and repairing them needs
-changes to `A1` and to `omega'`, not more arithmetic. The `Modulus.lean` row
+changes to `A1` and to `omega'`, not more arithmetic. *(Superseded: those
+changes were made and both directions are now proved — `eftc2_thm` and `eftc1`,
+see §1's table and §7. This paragraph is kept as the record of that stage.)* The `Modulus.lean` row
 of §5 is untouched.
 
 *Audit note:* the site list this document previously gave for the `den`

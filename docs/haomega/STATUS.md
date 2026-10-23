@@ -105,7 +105,16 @@ three labels, according to where its computational content comes from:
     operators built from `Y`, closed constants, `+`, `−`, `×`, `∫`) and derives
     `JExpr.prefixT` inside `Deriv` by structural recursion: for every `F`, if
     `y, y'` agree at indices `≤ n` then so do `F(y), F(y')`
-    (`[propext, Quot.sound]`). The generic solver built on it is in progress.
+    (`[propext, Quot.sound]`).
+  - *The general solver:* `PolyODESolve.lean`, `genSolveD A F`, for **every**
+    closed initial jet `A` and **every** `F : JExpr`, proves
+    `∀k ∃Y. ∀i ∀d. i + succ d = k → P(Y)(i) = Y(i)` with `P(Y) = A + ∫F(Y)`, by
+    `Deriv.ind` on `k` (witnesses `A` and `P(Y)`), using `JExpr.prefixT`. One
+    derivation gives a proof-computed solver for every polynomial–integral ODE
+    `y = A + ∫F(y)` in one jet variable; `extractClosed_genSolveD_fst` shows the
+    extract is the Picard iteration `P^k(A)`. Both `[propext, Quot.sound]`.
+    Systems (several jet variables, e.g. Duffing, sin/cos as a pair) are not
+    covered by `JExpr`.
   - *Explicit witness, derived correctness (4):* uniform continuity
     (`uniContD`, $M(n) = n + j$) · jet $E_1$ Cauchy modulus
     (`jetCauchyModulusGenuineD`, $N(k) = k + (B+3)$, tail bound derived by
@@ -1509,7 +1518,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,911 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,912 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

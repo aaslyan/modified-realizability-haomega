@@ -418,6 +418,12 @@ only on the factors' coefficients up to the same index. The Riccati equation
 \(y' = 1 + y^2\) (\lean{riccatiSolveD}) and the Duffing system
 \(u' = v,\ v' = -u - u^2\) (\lean{duffingSolveD}, on pairs of jets) follow by
 the same argument.
+All the scalar cases are instances of one derivation: for every closed initial
+jet \(A\) and every right-hand side \(F\) built from \(Y\), constants,
+\(+\), \(-\), \(\times\) and \(\mathcal{I}\), \lean{genSolveD} proves
+\(\forall k\,\exists Y.\,\forall i < k.\; (A + \mathcal{I}F(Y))(i) = Y(i)\)
+by induction, resting on a prefix lemma (\lean{JExpr.prefixT}) derived by
+recursion on \(F\); its extract is the Picard iteration.
 \item \textbf{Explicit witness, derived correctness}, where the specification
 names no algorithm, but the derivation writes the witness at \lean{Deriv.exI}
 and the subsequent induction or scaling rules prove contentless equations, so

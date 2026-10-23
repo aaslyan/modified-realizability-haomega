@@ -131,9 +131,10 @@ recommendations.  Items get moved to "Resolved" when you answer them.
    streams, so in-logic laws are harder; needs n-variable systems (`JExprN`).
    Recommendation (2026-10-23): (b) as the universe, (a) as a finite,
    decidable sub-universe for the in-logic laws.
-   **Decision:** the universe is `InUniverse` (HAomega/UniverseTrial.lean): a
-   predicate on jets, "a component of the solution of a well-formed
-   polynomial–integral system". Jets stay the representation, so every
+   **Decision:** the universe is `InGPAC` (HAomega/UniverseGPAC.lean): a
+   predicate on jets, "a component of the solution of a polynomial–integral
+   system with constant data" (the first trial, `InUniverse`, allowed arbitrary
+   closed jets as data and so contained every System T jet). Jets stay the representation, so every
    existing proof stands. Closure is proved operation by operation by
    building a combined system and applying `genSolveN_unique_val`
    (`InUniverse_add` first). Exponential polynomials remain the intended

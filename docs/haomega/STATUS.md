@@ -3,7 +3,7 @@
 **As of 2026-10-23.** Full `lake build` green — 7,896 jobs,
 including Mathlib and the first-order tree — zero HAomega warnings, zero
 `sorry`/`admit`. 29,979 lines across 100 files in `HAomega/`, **57** inference
-rules, 27 extracted realizers rendered in `EXTRACTED_HAOMEGA.md`.
+rules, 28 extracted realizers rendered in `EXTRACTED_HAOMEGA.md`.
 
 This is the "where does everything stand" document. `HAOMEGA.md` is the
 roadmap, `HAOMEGA_DOSSIER.md` is the evidence with per-claim tags, and the
@@ -57,7 +57,7 @@ inherited through it. No new mathematics was imported by either.
 Kirby–Paris battle length is 37, the coded extract exhausts the evaluator
 without taking a step; the tree extract returns 37.
 
-## 3. The twenty-seven extracted programs
+## 3. The twenty-eight extracted programs
 
 Every program in `ShowAll.lean` and `EXTRACTED_HAOMEGA.md` carries one of
 three labels, according to where its computational content comes from:
@@ -77,8 +77,8 @@ three labels, according to where its computational content comes from:
     Sperner 1D · Hercules (∀-strategy) · Hercules (any head) · Goodstein on typed
     ordinals · Kirby–Paris on trees · Hercules on trees.
   - *Witness-style (3):* Fibonacci · Fibonacci at type 2 · Tower of Hanoi.
-* **Analysis & Jet Calculus (14, all covered by certified emission):**
-  - *Proof-computed (2):* square-root approximation (discrete IVT, via Sperner 1D) ·
+* **Analysis & Jet Calculus (15, all covered by certified emission):**
+  - *Proof-computed (3):* square-root approximation (discrete IVT, via Sperner 1D) ·
     jet solver for `y' = y` from an algorithm-free specification
     (`picardExpSolveD`, `PicardExpSolve.lean`, catalog #27). The statement
     `∀k ∃Y. ∀i ∀d. i + succ d = k → P(Y)(i) = Y(i)` (with `P(Y) = 1 + ∫Y`) says
@@ -87,8 +87,14 @@ three labels, according to where its computational content comes from:
     `k`, and never mentions the iterate. The extract is a `rec` over `k`, equal
     to `extractedPicardJet` (`extractClosed_picardExpSolveD_fst`); both
     `[propext, Quot.sound]`. The first jet program whose solver comes from its
-    proof. Out of scope: the differential form `D(Y)(i) = Y(i)` and the
-    nonlinear steps.
+    proof. · jet solver for the nonlinear `y' = y²` (`quadBlowupSolveD`,
+    `QuadBlowupSolve.lean`, catalog #28): same specification shape with
+    `P(Y) = 1 + ∫(Y·Y)`. Here `P(Y)(j+1)` depends on the whole prefix of `Y`,
+    so the proof rests on `jetMulPrefixT`, derived inside `Deriv`: Cauchy-product
+    coefficient `n` depends only on the factors' coefficients at indices `≤ n`
+    (via a partial-sum induction and the monus lemma `tmNatSubAddCancelD`).
+    Extract equals `extractedQuadBlowupJet`; all `[propext, Quot.sound]`.
+    Out of scope: the differential form `D(Y)(i) = Y(i)`; Riccati and Duffing.
   - *Explicit witness, derived correctness (4):* uniform continuity
     (`uniContD`, $M(n) = n + j$) · jet $E_1$ Cauchy modulus
     (`jetCauchyModulusGenuineD`, $N(k) = k + (B+3)$, tail bound derived by
@@ -1492,7 +1498,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,907 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,908 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

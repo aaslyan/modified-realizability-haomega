@@ -16,11 +16,12 @@ import HAomega.ClosedFourierODE
 import HAomega.PicardExpSolve
 import HAomega.QuadBlowupSolve
 import HAomega.RiccatiSolve
+import HAomega.DuffingSolve
 
 /-!
 # Every extracted program, in three views
 
-For each of the twenty-nine case studies this module renders the realizer three
+For each of the thirty case studies this module renders the realizer three
 ways and writes `EXTRACTED_HAOMEGA.md`:
 
 1. **the high-level object** — the raw extracted realizer, the element of the
@@ -76,6 +77,7 @@ def R26 := extractClosed newtonJetInvD
 def R27 := extractClosed picardExpSolveD
 def R28 := extractClosed quadBlowupSolveD
 def R29 := extractClosed riccatiSolveD
+def R30 := extractClosed duffingSolveD
 
 private def section' (title thm ty : String)
     {Γ : List Ty} {τ : Ty} (t : Tm Γ τ) : String :=
@@ -90,7 +92,7 @@ private def section' (title thm ty : String)
   "```haskell\n" ++ EmitHaskell.hsTm t 0 ++ "\n```\n\n"
 
 def showAll : String :=
-  "# The twenty-nine extracted programs of the HA^ω development\n\n" ++
+  "# The thirty extracted programs of the HA^ω development\n\n" ++
   "Each section shows one certified realizer in three renderings.  The\n" ++
   "certified object is the System T term; soundness certifies it realizes\n" ++
   "its theorem, continuity that it denotes a continuous functional.\n" ++
@@ -178,18 +180,21 @@ def showAll : String :=
     "N → ((N → Q) × (N → (N → (1 → 1))))" R28 ++
   section' "29. Jet solver for the Riccati equation y' = 1 + y² (tan) from an algorithm-free specification (proof-computed)"
     "∀k. ∃Y^(ℕ→ℚ). ∀i ∀d. i + succ d = k → P(Y)(i) = Y(i)    (P(Y) = ∫(1 + Y·Y))"
-    "N → ((N → Q) × (N → (N → (1 → 1))))" R29
+    "N → ((N → Q) × (N → (N → (1 → 1))))" R29 ++
+  section' "30. Jet solver for the Duffing system u' = v, v' = -u - u² from an algorithm-free specification (proof-computed)"
+    "∀k. ∃W^((ℕ→ℚ)×(ℕ→ℚ)). ∀i ∀d. i + succ d = k → P(W)₁(i) = W₁(i) ∧ P(W)₂(i) = W₂(i)    (P(u,v) = (1 + ∫v, ∫(0 - u - u·u)))"
+    "N → (((N → Q) × (N → Q)) × (N → (N → (1 → (1 × 1)))))" R30
 
 -- **Coverage of the certified-emission theorem** (`HsSemantics.hsOf_correct`):
--- all twenty-nine programs are supported by the certified emitter!
+-- all thirty programs are supported by the certified emitter!
 #guard [hsSupported R1, hsSupported R2, hsSupported R3, hsSupported R4,
         hsSupported R5, hsSupported R6, hsSupported R7, hsSupported R8,
         hsSupported R9, hsSupported R10, hsSupported R11, hsSupported R12,
         hsSupported R13, hsSupported R14, hsSupported R15, hsSupported R16,
         hsSupported R17, hsSupported R18, hsSupported R19, hsSupported R20,
         hsSupported R21, hsSupported R22, hsSupported R23, hsSupported R24,
-        hsSupported R25, hsSupported R26, hsSupported R27, hsSupported R28, hsSupported R29]
-  == List.replicate 29 true
+        hsSupported R25, hsSupported R26, hsSupported R27, hsSupported R28, hsSupported R29, hsSupported R30]
+  == List.replicate 30 true
 
 #eval IO.FS.writeFile "EXTRACTED_HAOMEGA.md" showAll
 #eval IO.println ("written: " ++ toString showAll.length ++ " chars")

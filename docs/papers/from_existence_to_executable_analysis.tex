@@ -396,7 +396,7 @@ Both algebras embed into the approximating differentiable representation
 \(\lean{E1.diff}\) quantifies over an approximating derivative family
 \(\exists F : \N\to\Q\to\Q\) rather than an exact rational function.
 
-Across the twenty-nine extracted programs cataloged in \lean{ShowAll.lean} and
+Across the thirty extracted programs cataloged in \lean{ShowAll.lean} and
 \lean{EXTRACTED_HAOMEGA.md}, we distinguish three classes of object-level
 derivations, by where the computational content comes from:
 \begin{enumerate}
@@ -415,7 +415,9 @@ The same holds for the nonlinear \(y' = y^2\) (\lean{quadBlowupSolveD},
 \(\mathcal{P}(Y) = 1 + \mathcal{I}(Y\cdot Y)\)), where the induction rests on a
 prefix lemma derived inside the calculus: a Cauchy-product coefficient depends
 only on the factors' coefficients up to the same index. The Riccati equation
-\(y' = 1 + y^2\) (\lean{riccatiSolveD}) follows by the same argument.
+\(y' = 1 + y^2\) (\lean{riccatiSolveD}) and the Duffing system
+\(u' = v,\ v' = -u - u^2\) (\lean{duffingSolveD}, on pairs of jets) follow by
+the same argument.
 \item \textbf{Explicit witness, derived correctness}, where the specification
 names no algorithm, but the derivation writes the witness at \lean{Deriv.exI}
 and the subsequent induction or scaling rules prove contentless equations, so

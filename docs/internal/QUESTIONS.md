@@ -120,7 +120,26 @@ recommendations.  Items get moved to "Resolved" when you answer them.
 *(nothing blocking; the roadmap's phases and the Hydra project's six are
 all delivered, as are Phases E and F.  Item 12 is engineering, not
 mathematics; items 13–16 are design points, recorded rather than silently
-chosen.)*
+chosen.  Item 18 gates the HA^ω closed universe's algebra laws.)*
+
+18. **HA^ω closed universe: what does `=` on `rat` mean for the algebra laws?**
+   *Raised 2026-10-23, kept open by the user's choice.*  The hand-rolled `Q`
+   is unnormalized and `Deriv`'s `.eq` at `rat` is structural equality, so
+   value-true identities can be false as stated (`Q.add_zero_not_id`,
+   `Q.mul_div_not_id`; FTC1 holds only as `D(∫f)(n) = f(n) + 0`).  The
+   closed universe's algebra laws inside `Deriv` (FTC2, product and chain
+   rules, `exp' = exp`, `sin' = cos`, `sin² + cos² = 1`) all run into this.
+   Options:
+   (a) **normalized `Q`**: reduce by gcd inside the System T terms, so `=`
+   is value equality; heavier terms and extracts, foundations change.
+   (b) **a value-equality predicate `≈` on `rat`** with its own rules
+   (refl/symm/trans, congruence for the operations, `≈`-versions of the ring
+   laws, justified by `Q.val`); terms stay cheap; laws are stated with `≈`.
+   Recommendation: (b) — it keeps the universe small and the extracts fast,
+   and mirrors how constructive analysis treats reals.  Work that does not
+   need the laws proceeds meanwhile: the proof-computed solvers (integral
+   form, structural `=`), inverse/composition as guarded fixed points, and
+   the Fourier layer's definitions.
 
 16. **Lucas: should it be internalized in the fragment?**  *Raised and
    answered 2026-07-30, on delivering Phase G.*  Phase G proves

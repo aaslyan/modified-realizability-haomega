@@ -4,6 +4,37 @@
 
 ---
 
+## 0. The Goal: a Minimal Closed Universe of Analysis
+
+The target is a small, closed universe inside $\mathrm{HA}^\omega$ in which
+$+, -, \times, \frac{d}{dx}, \int$, $\exp$, $\sin$, $\cos$, Taylor series and
+Fourier series all live, with the algebraic laws among them *provable in the
+object logic* and every existence statement yielding an extracted program.
+The sections below record what is mechanized so far; this section records the
+goal and where we stand (2026-10-23).
+
+| Pillar | State |
+| :--- | :--- |
+| 1. **Objects and operations.** Jets $\mathbb{N}\to\mathbb{Q}$ with `tmJetAdd/Sub/Mul/Deriv/Integ`, exp/sin/cos jets, as System T terms | done |
+| 2. **Generation by proof-computed ODE solving.** The universe as the closure of constants under $+,-,\times,\int$ and solving $y = A + \int F(y)$ | single equations done (`genSolveD`, `PolyODESolve.lean`, every $F$; #27–#30); two-variable systems (sin/cos, Duffing) in progress (`PolyODESystem.lean`) |
+| 3. **Algebra laws inside `Deriv`.** FTC2, product and chain rules, $\exp' = \exp$, $\sin' = \cos$, $\sin^2+\cos^2 = 1$ | only FTC1 (`jetFTC1_*_D`). **Blocked on the equality question** (QUESTIONS.md item 18, kept open) |
+| 4. **Closure under $\div$ and $\circ$.** $1/(1-G)$ and $F(G)$ for $G(0)=0$ | metatheory (`RadiusJet.invOneSub`, `compZero`); in `Deriv` only a witness-style Newton inverse. Next: as proof-computed guarded fixed points ($Y = 1 + G\cdot Y$), which do not need the laws |
+| 5. **Evaluation.** Bounds and moduli from jets to values at points | metatheory (`toE0`/`toE1`); in `Deriv` the moduli are explicit witnesses with derived correctness |
+| 6. **Fourier layer.** Trigonometric series as coefficient streams, $\frac{d}{dx}$, $\int$, convolution, the Taylor $\leftrightarrow$ Fourier bridge via $\sin(kx), \cos(kx)$ | absent (only the 4-point DFT, FFT, single `FourierMode`s) |
+
+**Order of work.** Pillar 2 (systems) → pillar 4 (inverse, composition) →
+pillar 6 (Fourier definitions and operations) → pillar 3 once item 18 is
+decided → pillar 5 in the logic.
+
+**Presentation of the finished parts.** Until the universe is complete, the
+delivered pillars are presented as program extraction from proofs worked out in
+practice: algorithm-free specifications, proofs by induction, certified
+extracts, with the proof-computed / explicit-witness / witness-style
+classification kept explicit. This is a way to present the parts, not a
+replacement for the goal.
+
+---
+
 ## 1. Prior Art and What Is Mechanized Here
 
 ### 1.1. Prior Art in Computable Analysis and Stream Calculus

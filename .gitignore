@@ -21,3 +21,5 @@ docs/papers/*.blg
 docs/papers/*.log
 docs/papers/*.out
 docs/papers/*.pdf
+docs/papers/*.fls
+docs/papers/*.fdb_latexmk

@@ -1,4 +1,4 @@
-# The thirty-two extracted programs of the HA^ω development
+# The thirty-three extracted programs of the HA^ω development
 
 Each section shows one certified realizer in three renderings.  The
 certified object is the System T term; soundness certifies it realizes
@@ -745,5 +745,28 @@ Realizer type: `N → ((N → Q) × (N → (N → (1 → 1))))`
 
 ```haskell
 (\x0 -> (natRec ((\x1 -> (natRec (qOfNat 1) (\x2 -> (\x3 -> (qOfNat 0))) x1)), (\x1 -> (\x2 -> (\x3 -> ())))) (\x1 -> (\x2 -> (((\x3 -> (\x4 -> (((\x5 -> (((\x6 -> (\x7 -> (\x8 -> (qAdd (x6 x8) (x7 x8))))) (\x6 -> (natRec (qOfNat 1) (\x7 -> (\x8 -> (qOfNat 0))) x6))) ((\x6 -> (\x7 -> (natRec (qOfNat 0) (\x8 -> (\x9 -> (x6 x8))) x7))) (((\x6 -> (\x7 -> (\x8 -> (natRec (qOfNat 0) (\x9 -> (\x10 -> (qAdd x10 (qMul (x6 x9) (x7 (natRec x8 (\x11 -> (\x12 -> (natRec 0 (\x13 -> (\x14 -> x13)) x12))) x9)))))) (1 + x8))))) (((\x6 -> (\x7 -> (\x8 -> (qAdd (x6 x8) (x7 x8))))) (\x6 -> (natRec (qOfNat 1) (\x7 -> (\x8 -> (qOfNat 0))) x6))) ((\x6 -> (\x7 -> (natRec (qOfNat 0) (\x8 -> (\x9 -> (x6 x8))) x7))) (\x6 -> (natRec (qOfNat 1) (\x7 -> (\x8 -> (qOfNat 0))) x6))))) x5)))) x4), (\x5 -> (natRec (\x6 -> (\x7 -> ())) (\x6 -> (\x7 -> (\x8 -> (\x9 -> ())))) x5))))) (snd x2)) (fst x2)))) x0))
+```
+
+## 33. Jet E₁ Cauchy convergence modulus computed by induction on the precision (proof-computed)
+
+Theorem: `∀c^(ℕ→ℚ) ∀B ∀x^ℚ. (∀n. |S_n(x)-S_{n+1}(x)| < 2^(B+3)·(2^-(n+1)-2^-(n+2))) → QArithLaws → HalvingLaws → ∀k ∃N ∀d₁ ∀d₂. close(k, S_{N+d₁}(x), S_{N+d₁+d₂}(x))`  
+Realizer type: `(N → Q) → (N → (Q → ((N → 1) → (1 → (1 → (N → (N × (N → (N → 1)))))))))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. (λx1. (λx2. (λx3. (λx4. (λx5. ((λx6. (λx7. (((λx8. (λx9. ⟨x9, (λx10. (λx11. ★))⟩)) snd (x6 x7)) fst (x6 x7)))) (λx6. rec[⟨S S S x1, fst x5⟩ | (λx7. (λx8. (((λx9. (λx10. ⟨S x10, (λx11. (λx12. ((((snd x5 (x10 + x11)) x12) x7) ((x9 x11) x12))))⟩)) snd x8) fst x8))) | x6]))))))))
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. (λx1. (λx2. (λx3. (λx4. (λx5. ((λx6. (λx7. (((λx8. (λx9. ⟨x9, (λx10. (λx11. ·))⟩)) snd (x6 x7)) fst (x6 x7)))) (λx6. rec[⟨S S S x1, fst x5⟩ | (λx7. (λx8. (((λx9. (λx10. ⟨S x10, (λx11. (λx12. ((((snd x5 (x10 + x11)) x12) x7) ((x9 x11) x12))))⟩)) snd x8) fst x8))) | x6]))))))))
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> (\x5 -> ((\x6 -> (\x7 -> (((\x8 -> (\x9 -> (x9, (\x10 -> (\x11 -> ()))))) (snd (x6 x7))) (fst (x6 x7))))) (\x6 -> (natRec ((1 + (1 + (1 + x1))), (fst x5)) (\x7 -> (\x8 -> (((\x9 -> (\x10 -> ((1 + x10), (\x11 -> (\x12 -> (((((snd x5) (x10 + x11)) x12) x7) ((x9 x11) x12))))))) (snd x8)) (fst x8)))) x6)))))))))
 ```
 

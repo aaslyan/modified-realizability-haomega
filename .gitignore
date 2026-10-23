@@ -13,3 +13,11 @@ paper/*.bbl
 paper/*.blg
 paper/fonttest.*
 __pycache__/
+
+# LaTeX build output
+docs/papers/*.aux
+docs/papers/*.bbl
+docs/papers/*.blg
+docs/papers/*.log
+docs/papers/*.out
+docs/papers/*.pdf

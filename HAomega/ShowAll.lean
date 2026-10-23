@@ -29,11 +29,14 @@ ways and writes `EXTRACTED_HAOMEGA.md`:
    translation `hsOf`, whose operational semantics soundness is proved in
    `HsSemantics.hsOf_correct`).
 
-Each program's title explicitly labels whether its computational content is
-**proof-computed** (synthesized from `Deriv.ind`, case analysis, or scaling /
-telescoping derivations on an algorithm-free specification) or **witness-style**
-(where the theorem statement names the target term and the proof supplies it to
-`exI`, alongside any equational certificates).
+Each program's title labels where its computational content comes from:
+**proof-computed** (the program's recursion is assembled by extraction from
+`Deriv.ind`, `tiEps0` or case analysis, on a specification that names no
+algorithm); **explicit witness, derived correctness** (the specification names
+no algorithm, but the proof writes the witness term at `exI` and the induction
+or scaling rules only certify it, so they contribute no computation); or
+**witness-style** (the theorem statement names the target term and the proof
+supplies it to `exI`, alongside any equational certificates).
 
 The three views are three renderings of *one* certified object per theorem —
 nothing is re-proved or re-extracted between them.
@@ -85,10 +88,13 @@ def showAll : String :=
   "Each section shows one certified realizer in three renderings.  The\n" ++
   "certified object is the System T term; soundness certifies it realizes\n" ++
   "its theorem, continuity that it denotes a continuous functional.\n" ++
-  "Each section title records whether the computational witness is\n" ++
-  "**proof-computed** (assembled by extraction from induction, case splits,\n" ++
-  "or scaling/telescoping rules) or **witness-style** (where the theorem\n" ++
-  "statement specifies the target recursion and the proof supplies it to `exI`).\n\n" ++
+  "Each section title records where the computational witness comes from:\n" ++
+  "**proof-computed** (the recursion is assembled by extraction from induction,\n" ++
+  "`tiEps0` or case splits, on a specification that names no algorithm);\n" ++
+  "**explicit witness, derived correctness** (the specification names no\n" ++
+  "algorithm, but the proof writes the witness at `exI` and the induction or\n" ++
+  "scaling rules only certify it); or **witness-style** (the theorem statement\n" ++
+  "names the target term and the proof supplies it to `exI`).\n\n" ++
   section' "1. Fibonacci (witness-style)" "∀n. ∃y. y = fib n" "N → (N × 1)" R1 ++
   section' "2. Fibonacci at type 2 (witness-style)" "∀f^(ℕ→ℕ). ∃y. y = fib (f (f 0))"
     "(N → N) → (N × 1)" R2 ++
@@ -122,10 +128,10 @@ def showAll : String :=
   section' "14. Square roots by approximation (the discrete IVT, applied, proof-computed)"
     "∀q^ℚ ∀n ∀K. col(0)=0 → col(K)=1 → ∃k. k<K ∧ col(k) ≠ col(k+1)"
     "Q → (N → (N → (1 → (1 → (N × ((N × 1) × (1 → 1)))))))" R14 ++
-  section' "15. Uniform continuity — the realizer is the modulus (proof-computed)"
+  section' "15. Uniform continuity — the realizer is the modulus (explicit witness, derived correctness)"
     "∀f^(ℚ→ℚ) ∀j. Lipschitz(f,j) → ∀n ∃M ∀x∀y. close(M,x,y) → close(n, f x, f y)"
     "(Q → Q) → (N → ((Q → (Q → (N → (1 → 1)))) → (N → (N × (Q → (Q → (1 → 1)))))))" R15 ++
-  section' "16. Formal antiderivative & termwise FTC1 (witness-style antiderivative, proof-computed cancellation D(I c)(n) - c(n) = 0)"
+  section' "16. Formal antiderivative & termwise FTC1 (witness-style antiderivative; cancellation D(I c)(n) - c(n) = 0 derived)"
     "∀c^(ℕ→ℚ). ∃F^(ℕ→ℚ). F(0) = 0 ∧ ∀n. D(F)(n) - c(n) = 0"
     "(N → Q) → ((N → Q) × (1 × (N → 1)))" R16 ++
   section' "17. Cauchy product convolution of formal power series (witness-style)"
@@ -134,27 +140,27 @@ def showAll : String :=
   section' "18. Taylor polynomial evaluator (witness-style)"
     "∀c^(ℕ→ℚ) ∀m ∀x^ℚ. ∃y^ℚ. y = Σ_{j<m} c_j · x^j"
     "(N → Q) → (N → (Q → (Q × 1)))" R18 ++
-  section' "19. Jet E₁ Cauchy convergence modulus by geometric series induction (proof-computed)"
+  section' "19. Jet E₁ Cauchy convergence modulus, tail bound by geometric series induction (explicit witness, derived correctness)"
     "∀c^(ℕ→ℚ) ∀B ∀x^ℚ. (∀n. |S_n(x)-S_{n+1}(x)| < 2^(B+3)·(2^-(n+1)-2^-(n+2))) → QArithLaws → ∀k ∃N ∀d₁ ∀d₂. close(k, S_{N+d₁}(x), S_{N+d₁+d₂+1}(x))"
     "(N → Q) → (N → (Q → ((N → 1) → (1 → (N → (N × (N → (N → 1))))))))" R19 ++
-  section' "20. Jet E₁ uniform continuity modulus (proof-computed)"
+  section' "20. Jet E₁ uniform continuity modulus (explicit witness, derived correctness)"
     "∀c^(ℕ→ℚ) ∀B₁ ∀x^ℚ ∀y^ℚ. (∀m. |S_m(x)-S_m(y)| ≤ 2^(B₁+1)·|x-y|) → ∀k ∃ω ∀m. close(ω,x,y) → close(k, S_m(x), S_m(y))"
     "(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (N → (1 → 1))))))))" R20 ++
-  section' "21. Jet E₁ uniform differentiability modulus (proof-computed)"
+  section' "21. Jet E₁ uniform differentiability modulus (explicit witness, derived correctness)"
     "∀c^(ℕ→ℚ) ∀B₂ ∀x^ℚ ∀h^ℚ. (∀m. |DQ_h(S_m,x)-S_m(Dc,x)| ≤ 2^(B₂+1)·|h|) → ∀k ∃δ ∀m. close(δ,h,0) → close(k, DQ_h(S_m,x), S_m(Dc,x))"
     "(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (N → (1 → 1))))))))" R21 ++
-  section' "22. Order-1 Picard jet iteration for y' = y (proof-computed)"
+  section' "22. Order-1 Picard jet iteration for y' = y (witness-style)"
     "∀k. ∃Y^(ℕ→ℚ). Y = P^k(Y_0)"
     "N → ((N → Q) × 1)" R22 ++
-  section' "23. Nonlinear Riccati ODE y' = 1 + y² Picard jet solver with degree locking (proof-computed)"
-    "∀k. ∃Y^(ℕ→ℚ). Y = P_Ric^k(Y_0) ∧ P_Ric(Y)(k) = Y(k)"
-    "N → ((N → Q) × (1 × 1))" R23 ++
-  section' "24. Nonlinear quadratic blow-up ODE y' = y² Picard jet solver with degree locking (proof-computed)"
-    "∀k. ∃Y^(ℕ→ℚ). Y = P_Blowup^k(Y_0) ∧ P_Blowup(Y)(k) = Y(k)"
-    "N → ((N → Q) × (1 × 1))" R24 ++
-  section' "25. 2D coupled nonlinear Duffing oscillator Picard jet solver with degree locking (proof-computed)"
-    "∀k. ∃W^((ℕ→ℚ)×(ℕ→ℚ)). W = P_Duf^k(W_0) ∧ (fst (P_Duf W) k = fst W k ∧ snd (P_Duf W) k = snd W k)"
-    "N → (((N → Q) × (N → Q)) × (1 × (1 × 1)))" R25 ++
+  section' "23. Nonlinear Riccati ODE y' = 1 + y² Picard jet iteration (witness-style)"
+    "∀k. ∃Y^(ℕ→ℚ). Y = P_Ric^k(Y_0)"
+    "N → ((N → Q) × 1)" R23 ++
+  section' "24. Nonlinear quadratic blow-up ODE y' = y² Picard jet iteration (witness-style)"
+    "∀k. ∃Y^(ℕ→ℚ). Y = P_Blowup^k(Y_0)"
+    "N → ((N → Q) × 1)" R24 ++
+  section' "25. 2D coupled nonlinear Duffing oscillator Picard jet iteration (witness-style)"
+    "∀k. ∃W^((ℕ→ℚ)×(ℕ→ℚ)). W = P_Duf^k(W_0)"
+    "N → (((N → Q) × (N → Q)) × 1)" R25 ++
   section' "26. Quadratic Newton–Schulz multiplicative jet inverter (witness-style)"
     "∀F^(ℕ→ℚ) ∀k. ∃Y^(ℕ→ℚ). Y = N_F^k(1)"
     "(N → Q) → (N → ((N → Q) × 1))" R26

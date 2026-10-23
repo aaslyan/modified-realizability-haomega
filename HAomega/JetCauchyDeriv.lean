@@ -9,13 +9,14 @@ import HAomega.GcdFull
 import HAomega.HsSemantics
 
 /-!
-# Proof-Computed Jet Cauchy Modulus via Telescoping Induction in `Deriv` (`JetCauchyDeriv.lean`)
+# Jet Cauchy Modulus with Correctness Derived by Telescoping Induction in `Deriv` (`JetCauchyDeriv.lean`)
 
 In `MajorantDom.lean`, the initial `jetCauchyModulusD` took a witness-style multi-step tail
 hypothesis (`jetTailPremise`) that already mentioned $k + (B + 2) + d_1$.
 
-This module replaces that with a **genuine proof-computed derivation** (`jetCauchyModulusGenuineD`)
-whose jet hypothesis (`jetTermPremise`) is **per-term and $N$-free**:
+This module replaces that with a derivation (`jetCauchyModulusGenuineD`) that writes the modulus
+$N(k) = k + (B+3)$ at `exI` and **derives** its correctness; the induction proves contentless
+equations, so it certifies the modulus without contributing computation. Its jet hypothesis (`jetTermPremise`) is **per-term and $N$-free**:
 $$\forall n : \mathbb{N},\quad |S_n(x) - S_{n+1}(x)| < 2^{B+3} \cdot \bigl(2^{-(n+1)} - 2^{-(n+2)}\bigr) = 2^{B+1-n},$$
 which is the single-term majorant $|c_n x^n| < 2^{B+1-n}$ read at $x$.
 
@@ -320,7 +321,7 @@ theorem satisfies_qScaleCancel (B s d2 : Nat) :
     positivity
   linarith
 
-/-! ## 4. Proof-Computed Jet Cauchy Modulus by `Deriv.ind` on $d_2$ (`jetCauchyModulusGenuineD`) -/
+/-! ## 4. Jet Cauchy Modulus Certified by `Deriv.ind` on $d_2$ (`jetCauchyModulusGenuineD`) -/
 
 /-- Context at the innermost point of `jetCauchyModulusGenuineD`. -/
 abbrev jetCauchyGenuineInnerCtx (Γ : List Ty) {as : List Ty} (Δ : Ctx Γ as) :
@@ -334,13 +335,13 @@ abbrev jetCauchyGenuineInnerCtx (Γ : List Ty) {as : List Ty} (Δ : Ctx Γ as) :
     (.cons ((((jetTermPremise Γ).wk (σ := .nat)).wk (σ := .nat)).wk (σ := .nat))
       ((((((Δ.wk).wk).wk).wk).wk).wk))
 
-/-- **Theorem (Proof-Computed $\forall k\, \exists N$ Jet Cauchy Modulus in `Deriv`, `jetCauchyModulusGenuineD`)**:
+/-- **Theorem ($\forall k\, \exists N$ Jet Cauchy Modulus in `Deriv` with Derived Correctness, `jetCauchyModulusGenuineD`)**:
     For every coefficient stream $c : \mathrm{JetTy}$, majorant exponent $B : \mathrm{nat}$, and point
     $x : \mathrm{rat}$ satisfying the **per-term majorant bound** `jetTermPremise`:
     $$\forall n : \mathrm{nat},\quad |S_n(x) - S_{n+1}(x)| < 2^{B+3} \cdot \bigl(2^{-(n+1)} - 2^{-(n+2)}\bigr),$$
     derives in $\mathrm{HA}^\omega$ **by mathematical induction (`Deriv.ind`) on $d_2$** (summing the
     telescoping geometric series via `qAddLtAdd`, triangle inequality `convQLeLtTrans`, and telescoping
-    cancellation) that the partial sums `tmJetEvalPoly c` are Cauchy with synthesized modulus
+    cancellation) that the partial sums `tmJetEvalPoly c` are Cauchy with the modulus (written at `exI`)
     $N(k) = k + (B + 3)$. -/
 def jetCauchyModulusGenuineD {Γ as : List Ty} {Δ : Ctx Γ as} :
     Deriv Δ (.all JetTy (.all .nat (.all .rat
@@ -476,7 +477,7 @@ def jetCauchyModulusGenuineD {Γ as : List Ty} {Δ : Ctx Γ as} :
 
 /-! ## 5. Extracted System T Realizer, Kleene–Kreisel Continuity, and Premise Discharges -/
 
-/-- **The Proof-Computed Extracted System T Jet Cauchy Modulus (`extractedJetCauchyModulusGenuine`)**:
+/-- **The Extracted System T Jet Cauchy Modulus (`extractedJetCauchyModulusGenuine`)**:
     Extracted directly via `extractClosed jetCauchyModulusGenuineD` (`[propext, Quot.sound]`). -/
 def extractedJetCauchyModulusGenuine (c : Nat → Q) (B : Nat) (x : Q) (k : Nat) : Nat :=
   ((((extractClosed (jetCauchyModulusGenuineD (Γ := []) (Δ := Ctx.nil))).eval Env.nil)

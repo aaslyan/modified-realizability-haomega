@@ -3,10 +3,13 @@
 Each section shows one certified realizer in three renderings.  The
 certified object is the System T term; soundness certifies it realizes
 its theorem, continuity that it denotes a continuous functional.
-Each section title records whether the computational witness is
-**proof-computed** (assembled by extraction from induction, case splits,
-or scaling/telescoping rules) or **witness-style** (where the theorem
-statement specifies the target recursion and the proof supplies it to `exI`).
+Each section title records where the computational witness comes from:
+**proof-computed** (the recursion is assembled by extraction from induction,
+`tiEps0` or case splits, on a specification that names no algorithm);
+**explicit witness, derived correctness** (the specification names no
+algorithm, but the proof writes the witness at `exI` and the induction or
+scaling rules only certify it); or **witness-style** (the theorem statement
+names the target term and the proof supplies it to `exI`).
 
 ## 1. Fibonacci (witness-style)
 
@@ -330,7 +333,7 @@ Realizer type: `Q → (N → (N → (1 → (1 → (N × ((N × 1) × (1 → 1)))
 (\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> (((((\x5 -> (\x6 -> (\x7 -> (\x8 -> (natRec (0, ((0, ()), (\x9 -> ()))) (\x9 -> (\x10 -> (snd (snd ((\x11 -> (natRec (0, (x7, (0, ((0, ()), (\x12 -> ()))))) (\x12 -> (\x13 -> (natRec (0, ((fst (snd (((\x14 -> (natRec 0 (\x15 -> (\x16 -> 1)) x14)) ((((\x14 -> (\x15 -> (natRec x14 (\x16 -> (\x17 -> ((\x18 -> (natRec 0 (\x19 -> (\x20 -> x19)) x18)) x17))) x15))) (x6 (1 + x12))) 0) + (((\x14 -> (\x15 -> (natRec x14 (\x16 -> (\x17 -> ((\x18 -> (natRec 0 (\x19 -> (\x20 -> x19)) x18)) x17))) x15))) 0) (x6 (1 + x12))))), ((), (\x14 -> ()))))), (0, ((0, ()), (\x14 -> ()))))) (\x14 -> (\x15 -> (natRec (1, ((), (x12, ((0, ()), (\x16 -> ((snd (snd (((\x17 -> (natRec 0 (\x18 -> (\x19 -> 1)) x17)) ((((\x17 -> (\x18 -> (natRec x17 (\x19 -> (\x20 -> ((\x21 -> (natRec 0 (\x22 -> (\x23 -> x22)) x21)) x20))) x18))) (x6 (1 + x12))) 0) + (((\x17 -> (\x18 -> (natRec x17 (\x19 -> (\x20 -> ((\x21 -> (natRec 0 (\x22 -> (\x23 -> x22)) x21)) x20))) x18))) 0) (x6 (1 + x12))))), ((), (\x17 -> ()))))) ())))))) (\x16 -> (\x17 -> (((\x18 -> (\x19 -> (1, ((), (x19, ((((\x20 -> (\x21 -> ((1 + x21), ()))) (snd (fst x18))) (fst (fst x18))), (snd x18))))))) (snd (snd (snd x13)))) (fst (snd (snd x13)))))) (fst x13)))) (fst (((\x14 -> (natRec 0 (\x15 -> (\x16 -> 1)) x14)) ((((\x14 -> (\x15 -> (natRec x14 (\x16 -> (\x17 -> ((\x18 -> (natRec 0 (\x19 -> (\x20 -> x19)) x18)) x17))) x15))) (x6 (1 + x12))) 0) + (((\x14 -> (\x15 -> (natRec x14 (\x16 -> (\x17 -> ((\x18 -> (natRec 0 (\x19 -> (\x20 -> x19)) x18)) x17))) x15))) 0) (x6 (1 + x12))))), ((), (\x14 -> ()))))))) x11)) x5))))) (fst ((\x9 -> (natRec (0, (x7, (0, ((0, ()), (\x10 -> ()))))) (\x10 -> (\x11 -> (natRec (0, ((fst (snd (((\x12 -> (natRec 0 (\x13 -> (\x14 -> 1)) x12)) ((((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) (x6 (1 + x10))) 0) + (((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) 0) (x6 (1 + x10))))), ((), (\x12 -> ()))))), (0, ((0, ()), (\x12 -> ()))))) (\x12 -> (\x13 -> (natRec (1, ((), (x10, ((0, ()), (\x14 -> ((snd (snd (((\x15 -> (natRec 0 (\x16 -> (\x17 -> 1)) x15)) ((((\x15 -> (\x16 -> (natRec x15 (\x17 -> (\x18 -> ((\x19 -> (natRec 0 (\x20 -> (\x21 -> x20)) x19)) x18))) x16))) (x6 (1 + x10))) 0) + (((\x15 -> (\x16 -> (natRec x15 (\x17 -> (\x18 -> ((\x19 -> (natRec 0 (\x20 -> (\x21 -> x20)) x19)) x18))) x16))) 0) (x6 (1 + x10))))), ((), (\x15 -> ()))))) ())))))) (\x14 -> (\x15 -> (((\x16 -> (\x17 -> (1, ((), (x17, ((((\x18 -> (\x19 -> ((1 + x19), ()))) (snd (fst x16))) (fst (fst x16))), (snd x16))))))) (snd (snd (snd x11)))) (fst (snd (snd x11)))))) (fst x11)))) (fst (((\x12 -> (natRec 0 (\x13 -> (\x14 -> 1)) x12)) ((((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) (x6 (1 + x10))) 0) + (((\x12 -> (\x13 -> (natRec x12 (\x14 -> (\x15 -> ((\x16 -> (natRec 0 (\x17 -> (\x18 -> x17)) x16)) x15))) x13))) 0) (x6 (1 + x10))))), ((), (\x12 -> ()))))))) x9)) x5))))))) x2) (\x5 -> (qLtN x0 (qMul (qMul (qOfNat x5) (dToQ ((\x6 -> (natRec (dOfNat 1) (\x7 -> (\x8 -> (dHalf x8))) x6)) x1))) (qMul (qOfNat x5) (dToQ ((\x6 -> (natRec (dOfNat 1) (\x7 -> (\x8 -> (dHalf x8))) x6)) x1))))))) x3) x4))))))
 ```
 
-## 15. Uniform continuity — the realizer is the modulus (proof-computed)
+## 15. Uniform continuity — the realizer is the modulus (explicit witness, derived correctness)
 
 Theorem: `∀f^(ℚ→ℚ) ∀j. Lipschitz(f,j) → ∀n ∃M ∀x∀y. close(M,x,y) → close(n, f x, f y)`  
 Realizer type: `(Q → Q) → (N → ((Q → (Q → (N → (1 → 1)))) → (N → (N × (Q → (Q → (1 → 1)))))))`
@@ -353,7 +356,7 @@ Realizer type: `(Q → Q) → (N → ((Q → (Q → (N → (1 → 1)))) → (N �
 (\x0 -> (\x1 -> (\x2 -> (\x3 -> ((x3 + x1), (\x4 -> (\x5 -> (\x6 -> ()))))))))
 ```
 
-## 16. Formal antiderivative & termwise FTC1 (witness-style antiderivative, proof-computed cancellation D(I c)(n) - c(n) = 0)
+## 16. Formal antiderivative & termwise FTC1 (witness-style antiderivative; cancellation D(I c)(n) - c(n) = 0 derived)
 
 Theorem: `∀c^(ℕ→ℚ). ∃F^(ℕ→ℚ). F(0) = 0 ∧ ∀n. D(F)(n) - c(n) = 0`  
 Realizer type: `(N → Q) → ((N → Q) × (1 × (N → 1)))`
@@ -422,7 +425,7 @@ Realizer type: `(N → Q) → (N → (Q → (Q × 1)))`
 (\x0 -> (\x1 -> (\x2 -> ((fst (natRec ((qOfNat 0), (qOfNat 1)) (\x3 -> (\x4 -> ((qAdd (fst x4) (qMul (x0 x3) (snd x4))), (qMul x2 (snd x4))))) x1)), ()))))
 ```
 
-## 19. Jet E₁ Cauchy convergence modulus by geometric series induction (proof-computed)
+## 19. Jet E₁ Cauchy convergence modulus, tail bound by geometric series induction (explicit witness, derived correctness)
 
 Theorem: `∀c^(ℕ→ℚ) ∀B ∀x^ℚ. (∀n. |S_n(x)-S_{n+1}(x)| < 2^(B+3)·(2^-(n+1)-2^-(n+2))) → QArithLaws → ∀k ∃N ∀d₁ ∀d₂. close(k, S_{N+d₁}(x), S_{N+d₁+d₂+1}(x))`  
 Realizer type: `(N → Q) → (N → (Q → ((N → 1) → (1 → (N → (N × (N → (N → 1))))))))`
@@ -445,7 +448,7 @@ Realizer type: `(N → Q) → (N → (Q → ((N → 1) → (1 → (N → (N × (
 (\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> (\x5 -> ((x5 + (1 + (1 + (1 + x1)))), (\x6 -> (\x7 -> ())))))))))
 ```
 
-## 20. Jet E₁ uniform continuity modulus (proof-computed)
+## 20. Jet E₁ uniform continuity modulus (explicit witness, derived correctness)
 
 Theorem: `∀c^(ℕ→ℚ) ∀B₁ ∀x^ℚ ∀y^ℚ. (∀m. |S_m(x)-S_m(y)| ≤ 2^(B₁+1)·|x-y|) → ∀k ∃ω ∀m. close(ω,x,y) → close(k, S_m(x), S_m(y))`  
 Realizer type: `(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (N → (1 → 1))))))))`
@@ -468,7 +471,7 @@ Realizer type: `(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (
 (\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> (\x5 -> ((x5 + (1 + x1)), (\x6 -> (\x7 -> ())))))))))
 ```
 
-## 21. Jet E₁ uniform differentiability modulus (proof-computed)
+## 21. Jet E₁ uniform differentiability modulus (explicit witness, derived correctness)
 
 Theorem: `∀c^(ℕ→ℚ) ∀B₂ ∀x^ℚ ∀h^ℚ. (∀m. |DQ_h(S_m,x)-S_m(Dc,x)| ≤ 2^(B₂+1)·|h|) → ∀k ∃δ ∀m. close(δ,h,0) → close(k, DQ_h(S_m,x), S_m(Dc,x))`  
 Realizer type: `(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (N → (1 → 1))))))))`
@@ -491,7 +494,7 @@ Realizer type: `(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (
 (\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> (\x5 -> ((x5 + (1 + x1)), (\x6 -> (\x7 -> ())))))))))
 ```
 
-## 22. Order-1 Picard jet iteration for y' = y (proof-computed)
+## 22. Order-1 Picard jet iteration for y' = y (witness-style)
 
 Theorem: `∀k. ∃Y^(ℕ→ℚ). Y = P^k(Y_0)`  
 Realizer type: `N → ((N → Q) × 1)`
@@ -514,10 +517,10 @@ Realizer type: `N → ((N → Q) × 1)`
 (\x0 -> ((natRec (\x1 -> (natRec (qOfNat 1) (\x2 -> (\x3 -> (qOfNat 0))) x1)) (\x1 -> (\x2 -> ((\x3 -> (\x4 -> (natRec (qOfNat 1) (\x5 -> (\x6 -> (qDiv (x3 x5) (qOfNat (1 + x5))))) x4))) x2))) x0), ()))
 ```
 
-## 23. Nonlinear Riccati ODE y' = 1 + y² Picard jet solver with degree locking (proof-computed)
+## 23. Nonlinear Riccati ODE y' = 1 + y² Picard jet iteration (witness-style)
 
-Theorem: `∀k. ∃Y^(ℕ→ℚ). Y = P_Ric^k(Y_0) ∧ P_Ric(Y)(k) = Y(k)`  
-Realizer type: `N → ((N → Q) × (1 × 1))`
+Theorem: `∀k. ∃Y^(ℕ→ℚ). Y = P_Ric^k(Y_0)`  
+Realizer type: `N → ((N → Q) × 1)`
 
 **1. High-level extracted object** (raw realizer; `★` = erased certificate):
 
@@ -537,10 +540,10 @@ Realizer type: `N → ((N → Q) × (1 × 1))`
 (\x0 -> ((natRec (\x1 -> (qOfNat 0)) (\x1 -> (\x2 -> ((\x3 -> ((\x4 -> (\x5 -> (natRec (qOfNat 0) (\x6 -> (\x7 -> (qDiv (x4 x6) (qOfNat (1 + x6))))) x5))) (((\x4 -> (\x5 -> (\x6 -> (qAdd (x4 x6) (x5 x6))))) (\x4 -> (natRec (qOfNat 1) (\x5 -> (\x6 -> (qOfNat 0))) x4))) (((\x4 -> (\x5 -> (\x6 -> (natRec (qOfNat 0) (\x7 -> (\x8 -> (qAdd x8 (qMul (x4 x7) (x5 (natRec x6 (\x9 -> (\x10 -> (natRec 0 (\x11 -> (\x12 -> x11)) x10))) x7)))))) (1 + x6))))) x3) x3)))) x2))) x0), ()))
 ```
 
-## 24. Nonlinear quadratic blow-up ODE y' = y² Picard jet solver with degree locking (proof-computed)
+## 24. Nonlinear quadratic blow-up ODE y' = y² Picard jet iteration (witness-style)
 
-Theorem: `∀k. ∃Y^(ℕ→ℚ). Y = P_Blowup^k(Y_0) ∧ P_Blowup(Y)(k) = Y(k)`  
-Realizer type: `N → ((N → Q) × (1 × 1))`
+Theorem: `∀k. ∃Y^(ℕ→ℚ). Y = P_Blowup^k(Y_0)`  
+Realizer type: `N → ((N → Q) × 1)`
 
 **1. High-level extracted object** (raw realizer; `★` = erased certificate):
 
@@ -560,10 +563,10 @@ Realizer type: `N → ((N → Q) × (1 × 1))`
 (\x0 -> ((natRec (\x1 -> (natRec (qOfNat 1) (\x2 -> (\x3 -> (qOfNat 0))) x1)) (\x1 -> (\x2 -> ((\x3 -> (((\x4 -> (\x5 -> (\x6 -> (qAdd (x4 x6) (x5 x6))))) (\x4 -> (natRec (qOfNat 1) (\x5 -> (\x6 -> (qOfNat 0))) x4))) ((\x4 -> (\x5 -> (natRec (qOfNat 0) (\x6 -> (\x7 -> (qDiv (x4 x6) (qOfNat (1 + x6))))) x5))) (((\x4 -> (\x5 -> (\x6 -> (natRec (qOfNat 0) (\x7 -> (\x8 -> (qAdd x8 (qMul (x4 x7) (x5 (natRec x6 (\x9 -> (\x10 -> (natRec 0 (\x11 -> (\x12 -> x11)) x10))) x7)))))) (1 + x6))))) x3) x3)))) x2))) x0), ()))
 ```
 
-## 25. 2D coupled nonlinear Duffing oscillator Picard jet solver with degree locking (proof-computed)
+## 25. 2D coupled nonlinear Duffing oscillator Picard jet iteration (witness-style)
 
-Theorem: `∀k. ∃W^((ℕ→ℚ)×(ℕ→ℚ)). W = P_Duf^k(W_0) ∧ (fst (P_Duf W) k = fst W k ∧ snd (P_Duf W) k = snd W k)`  
-Realizer type: `N → (((N → Q) × (N → Q)) × (1 × (1 × 1)))`
+Theorem: `∀k. ∃W^((ℕ→ℚ)×(ℕ→ℚ)). W = P_Duf^k(W_0)`  
+Realizer type: `N → (((N → Q) × (N → Q)) × 1)`
 
 **1. High-level extracted object** (raw realizer; `★` = erased certificate):
 

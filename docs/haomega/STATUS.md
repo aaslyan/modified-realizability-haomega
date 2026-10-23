@@ -59,11 +59,18 @@ without taking a step; the tree extract returns 37.
 
 ## 3. The twenty-six extracted programs
 
-Every program in `ShowAll.lean` and `EXTRACTED_HAOMEGA.md` is labeled
-**proof-computed** (the algorithm/modulus is synthesized by extraction from
-induction, case analysis, or scaling/telescoping rules on an algorithm-free
-specification) or **witness-style** (the statement names the target recursion
-and the proof supplies it to `exI`, alongside any equational certificates):
+Every program in `ShowAll.lean` and `EXTRACTED_HAOMEGA.md` carries one of
+three labels, according to where its computational content comes from:
+
+- **proof-computed**: the program's recursion is assembled by extraction from
+  `Deriv.ind`, `tiEps0` or case analysis, on a specification that names no
+  algorithm;
+- **explicit witness, derived correctness**: the specification names no
+  algorithm, but the proof writes the witness term at `exI`; the induction or
+  scaling rules that follow prove contentless equations, so they certify the
+  witness without contributing computation;
+- **witness-style**: the statement names the target term and the proof supplies
+  it to `exI`, alongside any equational certificates.
 
 * **Discrete (13, all covered by certified emission):**
   - *Proof-computed (10):* Pascal mod 2 · gcd (full spec) · Goodstein · Kirby–Paris ·
@@ -71,21 +78,27 @@ and the proof supplies it to `exI`, alongside any equational certificates):
     ordinals · Kirby–Paris on trees · Hercules on trees.
   - *Witness-style (3):* Fibonacci · Fibonacci at type 2 · Tower of Hanoi.
 * **Analysis & Jet Calculus (13, all covered by certified emission):**
-  - *Proof-computed (9):* square-root approximation (discrete IVT) · uniform
-    continuity (`uniContD`) · jet $E_1$ Cauchy convergence modulus by geometric
-    series induction (`jetCauchyModulusGenuineD`) · jet $E_1$ uniform continuity
-    modulus (`jetContModulusD`) · jet $E_1$ uniform differentiability modulus
-    (`jetDiffModulusD`) · Order-1 Picard jet iteration for $y' = y$ (`picardJetIterD`) ·
-    Riccati nonlinear ODE $y' = 1 + y^2$ Picard solver with degree locking
-    (`riccatiPicardD`) · quadratic blow-up ODE $y' = y^2$ Picard solver with
-    degree locking (`quadBlowupPicardD`) · 2D coupled nonlinear Duffing oscillator
-    Picard solver with degree locking (`duffingPicardD`).
-  - *Witness-style (4):* formal antiderivative & termwise FTC1 (`ftcAntiderivD`,
+  - *Proof-computed (1):* square-root approximation (discrete IVT, via Sperner 1D).
+  - *Explicit witness, derived correctness (4):* uniform continuity
+    (`uniContD`, $M(n) = n + j$) · jet $E_1$ Cauchy modulus
+    (`jetCauchyModulusGenuineD`, $N(k) = k + (B+3)$, tail bound derived by
+    `Deriv.ind` on $d_2$) · jet $E_1$ uniform continuity modulus
+    (`jetContModulusD`) · jet $E_1$ uniform differentiability modulus
+    (`jetDiffModulusD`).
+  - *Witness-style (8):* formal antiderivative & termwise FTC1 (`ftcAntiderivD`,
     where the antiderivative term `tmJetInteg c` is handed to `exI` and the
     termwise cancellation $\mathcal{D}(\mathcal{I}c)(n) - c(n) = 0$ is derived in
     `Deriv` via `convQMulDivSubZero`) · Cauchy product convolution (`jetMulD`) ·
-    Taylor polynomial evaluator (`jetEvalPolyD`) · quadratic Newton–Schulz
-    multiplicative jet inverter (`newtonJetInvD`).
+    Taylor polynomial evaluator (`jetEvalPolyD`) · Picard jet iteration for
+    $y' = y$ (`picardJetIterD`) · Riccati $y' = 1 + y^2$ (`riccatiPicardD`) ·
+    quadratic blow-up $y' = y^2$ (`quadBlowupPicardD`) · 2D Duffing oscillator
+    (`duffingPicardD`) · quadratic Newton–Schulz jet inverter (`newtonJetInvD`).
+
+  The four Picard entries all instantiate `iterSequenceD`, which proves
+  `∀k ∃Y. Y = recNat Y₀ step k` by `exI` and `eqRefl`, with no induction. They
+  carry **no** degree-locking conjunct. Degree locking is the separate
+  metatheory lemma `picard_jetAgree_lock` (`ClosedCalculus.lean`), stated for a
+  generic `sysTPicardStep` and not yet instantiated at these three steps.
 
 ## 4. The analysis strand
 
@@ -1445,24 +1458,23 @@ see §7 for why the first is not statable here.
 43. **`HAomega/ClosedCalculus.lean`, `HAomega/HolonomicCS.lean`, `HAomega/MajorantDom.lean`, `HAomega/JetCauchyDeriv.lean`, `HAomega/ClosedFourierODE.lean` (Exponential-Type & Cauchy–Hadamard Closed Jet Algebras in $\mathrm{HA}^\omega$)**:
     - **Fix to `E1.diff` (Approximating Derivative vs Exact Function)**:
       - `E1.diff` previously required `∃ F : Q → Q`, an *exact* rational-valued derivative, which was false for any function whose derivative is non-rational (e.g. $e^x$, $\sin x$, $\tan x$) for the same reason `A0.f : Q → Q` could not represent $\int f$. `E1.diff` now asks for an approximating derivative family `∃ F : Nat → Q → Q` (`ev n` compared against `F n` past `dq k h`). `A1.toE1`, `A0.intE1`, `E1_le_E0diff`, `E0diff_le_E1`, and `picardPromoteE1` all adapt cleanly by lifting exact derivatives to constant families `fun _ ↦ F`.
-    - **Proof-Computed vs Witness-Style Extracted Jet Realizers**:
-      - **Proof-computed realizers (7):**
-        1. `jetCauchyModulusGenuineD` (`extractedJetCauchyModulusGenuine` in `HAomega/JetCauchyDeriv.lean`): starts from the $N$-free, per-term majorant premise `jetTermPremise` ($\forall n,\; |S_n(x) - S_{n+1}(x)| < 2^{B+3}(2^{-(n+1)} - 2^{-(n+2)}) = 2^{B+1-n}$) and unconditional $\mathbb{Q}$-arithmetic telescoping laws (`satisfies_qGeomZero`, `satisfies_qTriangle`, `satisfies_qTelescope`, `satisfies_qScaleCancel`), proves the multi-step geometric tail bound by object-level induction (`Deriv.ind`) on $d_2$ via `qAddLtAddT` and `Deriv.convQLeLtTrans`, reassociates $(k + (B + 3)) + d_1 = (k + d_1) + (B + 3)$ via `plusAssocT`/`plusCommT`, and weakens via `Deriv.convQCloseMono` to synthesize $N(k) = k + (B + 3)$. Discharged for every `F : AnalyticJet` (`AnalyticJet.satisfies_jetTermPremise`) and every `F : RadiusJet` (`RadiusJet.satisfies_jetTermPremise`). (By contrast, the earlier `jetCauchyModulusD` in `MajorantDom.lean` assumed `jetTailPremise`, which already had $k + (B + 2) + d_1$ written into the hypothesis, making it witness-style.)
+    - **Classification of the Extracted Jet Realizers** (none is proof-computed; see §3):
+      - **Explicit witness, derived correctness (3):** the modulus is written at `exI`; the derivation proves it correct.
+        1. `jetCauchyModulusGenuineD` (`extractedJetCauchyModulusGenuine` in `HAomega/JetCauchyDeriv.lean`): starts from the $N$-free, per-term majorant premise `jetTermPremise` ($\forall n,\; |S_n(x) - S_{n+1}(x)| < 2^{B+3}(2^{-(n+1)} - 2^{-(n+2)}) = 2^{B+1-n}$) and unconditional $\mathbb{Q}$-arithmetic telescoping laws (`satisfies_qGeomZero`, `satisfies_qTriangle`, `satisfies_qTelescope`, `satisfies_qScaleCancel`), proves the multi-step geometric tail bound by object-level induction (`Deriv.ind`) on $d_2$ via `qAddLtAddT` and `Deriv.convQLeLtTrans`, reassociates $(k + (B + 3)) + d_1 = (k + d_1) + (B + 3)$ via `plusAssocT`/`plusCommT`, and weakens via `Deriv.convQCloseMono` to certify $N(k) = k + (B + 3)$, which is written at `exI` before the induction (the induction proves contentless equations, so the extracted program is the constant-shape `λk. k + (B+3)`). The four $\mathbb{Q}$-laws enter as the extra hypothesis `qGeomArithPremise`, each proved in the metatheory, not as `Deriv` rules. Discharged for every `F : AnalyticJet` (`AnalyticJet.satisfies_jetTermPremise`) and every `F : RadiusJet` (`RadiusJet.satisfies_jetTermPremise`). (By contrast, the earlier `jetCauchyModulusD` in `MajorantDom.lean` assumed `jetTailPremise`, which already had $k + (B + 2) + d_1$ written into the hypothesis, making it witness-style.)
         2. `jetContModulusD` (`extractedJetContModulus`): derives $\omega(k) = k + (B_1 + 1)$ from `jetLipPremise` via `Deriv.convQLipScale`, discharged for both `AnalyticJet` (`AnalyticJet.satisfies_jetLipPremise`) and `RadiusJet` (`RadiusJet.satisfies_jetLipPremise`).
         3. `jetDiffModulusD` (`extractedJetDiffModulus`): derives $\delta(k) = k + (B_2 + 1)$ from `jetDiffPremise` via `Deriv.convQLipScale`, discharged for both `AnalyticJet` (`AnalyticJet.satisfies_jetDiffPremise`) and `RadiusJet` (`RadiusJet.satisfies_jetDiffPremise`).
-        4. `picardJetIterD` (`extractedPicardJet`): synthesizes Order-1 Picard jet iteration for $y' = y$ by `Deriv.ind` on $k$.
-        5. `riccatiPicardD` (`extractedRiccatiJet`), `quadBlowupPicardD` (`extractedQuadBlowupJet`), and `duffingPicardD` (`extractedDuffingJet`): synthesize the nonlinear Picard jet solvers for $y' = 1 + y^2$, $y' = y^2$, and the 2D coupled Duffing system $u' = v,\; v' = -u - u^2$ together with their diagonal degree-locking certificates $\mathcal{P}(Y_k)(k) = Y_k(k)$ by object-level induction (`Deriv.ind`) via `picardLockedD` and `picardLocked2DD`, bridged into `RadiusJet` and `E1` (`extractedRiccatiE1`, `extractedQuadBlowupE1`, `extractedDuffingUE1`, `extractedDuffingVE1`).
-      - **Witness-style realizers (4):**
+      - **Witness-style realizers (8):**
         1. `ftcAntiderivD` (`extractedJetInteg`): supplies `tmJetInteg c` to `exI` and derives the initial condition $(\mathcal{I}c)(0) = 0$ and termwise FTC1 cancellation $\mathcal{D}(\mathcal{I}c)(n) - c(n) = 0$ in `Deriv` via `Deriv.convQMulDivSubZero`.
         2. `jetMulD` (`extractedJetMul`): supplies `tmJetMul a b` to `exI`.
         3. `jetEvalPolyD` (`extractedJetEvalPoly`): supplies `tmJetEvalPoly` to `exI`.
         4. `newtonJetInvD` (`extractedNewtonJetInv`, `extractedJetDiv`): supplies the quadratic Newton–Schulz recursion `tmNewtonJetInvAt` to `exI`, linked to `Jet.newtonSchulzIter`, `RadiusJet.newtonSchulzIter` (`extractedNewtonJetInv_radiusJet_eq`, `extractedNewtonJetInvE1`), `RadiusJet.invOneSub` (`extractedNewtonJetInv_agree`), and `RadiusJet.sec` (`extractedNewtonJetInv_sec_agree`).
+        5. `picardJetIterD`, `riccatiPicardD`, `quadBlowupPicardD`, `duffingPicardD` (`extractedPicardJet`, `extractedRiccatiJet`, `extractedQuadBlowupJet`, `extractedDuffingJet`): each is `iterSequenceD`, which supplies `recNat Y₀ step k` to `exI` and closes with `eqRefl` — no `Deriv.ind`, and no degree-locking conjunct. The extracts are bridged into `RadiusJet` and `E1` (`extractedRiccatiE1`, `extractedQuadBlowupE1`, `extractedDuffingUE1`, `extractedDuffingVE1`). Degree locking is proved only in the metatheory, generically (`picard_jetAgree_lock` for `sysTPicardStep`), and is not instantiated at these steps. (An earlier version of this entry cited derivations `picardLockedD`/`picardLocked2DD`; no such derivations exist.)
     - **Two-Tier Closed Majorant Algebras (`AnalyticJet ↪ RadiusJet`) & Full `toE1 : E1` Lifting**:
       - `AnalyticJet` ($|c_n|\cdot n! \le 2^M(2^R)^n$, entire functions of exponential type): closed under `add`, `sub`, `neg`, `mul`, `deriv`, and `integ`, with global evaluation `AnalyticJet.toE0 : E0` and `AnalyticJet.toE1 : E1` on $[-1, 1]$, plus ` ClosedRingExpr` compiler (`compileClosedRingExprD`).
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,896 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,904 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

@@ -376,7 +376,7 @@ The separate symplectic integrator checks angular momentum preservation for
 selected discrete trajectories.  The formal contribution is conservation plus
 exact rational computation.
 
-\subsection{Differential-Integral Jet Algebras and Proof-Computed vs.\ Witness-Style Realizers}
+\subsection{Differential-Integral Jet Algebras and the Classification of Their Realizers}
 
 Beyond finite-degree polynomial stepping, the modules \lean{ClosedCalculus.lean},
 \lean{HolonomicCS.lean}, \lean{MajorantDom.lean}, \lean{JetCauchyDeriv.lean},
@@ -397,36 +397,46 @@ Both algebras embed into the approximating differentiable representation
 \(\exists F : \N\to\Q\to\Q\) rather than an exact rational function.
 
 Across the twenty-six extracted programs cataloged in \lean{ShowAll.lean} and
-\lean{EXTRACTED_HAOMEGA.md}, we distinguish two classes of object-level
-derivations:
+\lean{EXTRACTED_HAOMEGA.md}, we distinguish three classes of object-level
+derivations, by where the computational content comes from:
 \begin{enumerate}
 \item \textbf{Proof-computed realizers}, where the specification names no
-algorithm and the computational witness is synthesized by extraction from
-induction or scaling rules:
+algorithm and the program's recursion is assembled by extraction from
+induction, \lean{tiEps0}, or case analysis. These are the discrete case
+studies (gcd, Goodstein, Kirby--Paris, Sperner, Hercules) and the
+square-root approximation; none of the jet realizers is in this class.
+\item \textbf{Explicit witness, derived correctness}, where the specification
+names no algorithm, but the derivation writes the witness at \lean{Deriv.exI}
+and the subsequent induction or scaling rules prove contentless equations, so
+they certify the witness without contributing computation:
 \begin{itemize}
 \item \lean{jetCauchyModulusGenuineD} (\lean{HAomega/JetCauchyDeriv.lean})
-starts from an \(N\)-free, per-term majorant hypothesis
-\(\forall n,\; |S_n(x)-S_{n+1}(x)| < 2^{B+3}(2^{-(n+1)}-2^{-(n+2)})\) and
-derives the multi-step tail bound by object-level induction (\lean{Deriv.ind})
-on \(d_2\), telescoping cancellation, and precision weakening to extract the
-Cauchy modulus \(N(k) = k + (B + 3)\), with the hypothesis discharged for both
-\lean{AnalyticJet} and \lean{RadiusJet};
-\item \lean{jetContModulusD} and \lean{jetDiffModulusD} extract the continuity
+writes the Cauchy modulus \(N(k) = k + (B + 3)\) and justifies it from an
+\(N\)-free, per-term majorant hypothesis
+\(\forall n,\; |S_n(x)-S_{n+1}(x)| < 2^{B+3}(2^{-(n+1)}-2^{-(n+2)})\),
+deriving the multi-step tail bound by object-level induction (\lean{Deriv.ind})
+on \(d_2\), telescoping cancellation, and precision weakening. Four closed
+\(\mathbb{Q}\)-laws (zero bound, triangle inequality, telescoping, scale
+cancellation) enter as a hypothesis proved in the metatheory. The majorant
+hypothesis is discharged for both \lean{AnalyticJet} and \lean{RadiusJet};
+\item \lean{jetContModulusD} and \lean{jetDiffModulusD} write the continuity
 modulus \(\omega(k) = k + (B_1 + 1)\) and differentiability modulus
-\(\delta(k) = k + (B_2 + 1)\) via \lean{Deriv.convQLipScale}, discharged for
-both \lean{AnalyticJet} and \lean{RadiusJet};
-\item \lean{riccatiPicardD}, \lean{quadBlowupPicardD}, and \lean{duffingPicardD}
-extract the Order-1 Picard jet solvers for \(y'=1+y^2\), \(y'=y^2\), and the 2D
-coupled Duffing system together with their diagonal degree-locking certificates
-\(\mathcal{P}(Y_k)(k) = Y_k(k)\) by \lean{Deriv.ind}.
+\(\delta(k) = k + (B_2 + 1)\) and certify them via \lean{Deriv.convQLipScale},
+discharged for both \lean{AnalyticJet} and \lean{RadiusJet}.
 \end{itemize}
 \item \textbf{Witness-style realizers}, where the theorem statement names the
-target recursion and the derivation supplies it to \lean{Deriv.exI}:
+target term and the derivation supplies it to \lean{Deriv.exI}:
 \lean{ftcAntiderivD} (which hands \lean{tmJetInteg} to \lean{exI} and derives
 termwise cancellation \(\mathcal{D}(\mathcal{I}c)(n) - c(n) = 0\) via
-\lean{Deriv.convQMulDivSubZero}), \lean{jetMulD}, \lean{jetEvalPolyD}, and the
+\lean{Deriv.convQMulDivSubZero}), \lean{jetMulD}, \lean{jetEvalPolyD}, the
 quadratic Newton--Schulz jet inverter \lean{newtonJetInvD} (linked to
-\lean{RadiusJet.invOneSub} by \lean{extractedNewtonJetInv_agree}).
+\lean{RadiusJet.invOneSub} by \lean{extractedNewtonJetInv_agree}), and the
+Picard iterations \lean{picardJetIterD}, \lean{riccatiPicardD},
+\lean{quadBlowupPicardD}, \lean{duffingPicardD}, which prove
+\(\forall k\,\exists Y.\; Y = \mathcal{P}^k(Y_0)\) by supplying the iterate.
+Degree locking --- that \(k\) Picard steps fix \(k\) Taylor coefficients --- is
+proved in the metatheory for a generic guarded step
+(\lean{picard_jetAgree_lock}); it is not part of these derivations.
 \end{enumerate}
 
 \section{Related Work}

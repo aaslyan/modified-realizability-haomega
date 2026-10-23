@@ -138,6 +138,17 @@ three labels, according to where its computational content comes from:
     constant `G'` (`expCompD G` for `exp`). Its agreement with the metatheory's
     `Jet.compZero` is **checked at instances by `#guard` (evidence), not
     proved**: that needs a chain-rule theorem for `compZero`.
+  - *The Fourier layer, value level (closed-universe pillar 6):*
+    `TrigPoly.lean`. Trigonometric polynomials `Σ_{|k|≤N} c_k e^{ikx}` over
+    Gaussian rationals `CQ`, exactly closed under `+`, `×` (convolution),
+    `d/dx` and the mean-zero `∫` (infinite series are not: a product
+    coefficient is an infinite sum). The Taylor bridge `toJet` and the
+    operations are axiom-free. Proved, as values: `toJet_deriv` (`toJet`
+    commutes with `d/dx`), `toJet_mul` (real polynomials: convolution ↦ Cauchy
+    product), `deriv_integ` (`d/dx ∘ ∫ = id` on mean-zero), `toJet_modes`
+    (`cos(kx)`, `sin(kx)` ↦ `cosFreq k`, `sinFreq k`, frequencies `≥ 1`).
+    All `[propext, Classical.choice, Quot.sound]` — metatheory value theorems;
+    the System T layer is next.
   - *Explicit witness, derived correctness (4):* uniform continuity
     (`uniContD`, $M(n) = n + j$) · jet $E_1$ Cauchy modulus
     (`jetCauchyModulusGenuineD`, $N(k) = k + (B+3)$, tail bound derived by
@@ -1543,7 +1554,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,916 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,917 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

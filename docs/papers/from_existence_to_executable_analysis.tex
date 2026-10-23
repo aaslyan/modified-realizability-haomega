@@ -486,7 +486,9 @@ is taken to be the shift \(x\cdot F\), which needs no division.
 the jet Cauchy theorem is also proved by induction on the precision \(k\)
 (\lean{jetCauchyModulusComputedD}): if the tail bound from \(N\) is below
 \(2^{-k}\), advancing \(N\) by one halves it. The extracted modulus is the
-recursion this induction produces.
+recursion this induction produces. The continuity and differentiability
+moduli are computed the same way (\lean{jetContModulusComputedD},
+\lean{jetDiffModulusComputedD}), without further rational laws.
 \item \textbf{Composition.} \(f\circ(G - G(0))\) for an ODE-defined \(f\) solves
 \(Y = f(0) + \mathcal{I}(G'\cdot F(Y))\), an instance of \lean{genSolveD} with the
 constant jet \(G'\). For \(f = \exp\) the extract is proved equal to the

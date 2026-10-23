@@ -1,4 +1,4 @@
-# The thirty-three extracted programs of the HA^ω development
+# The thirty-five extracted programs of the HA^ω development
 
 Each section shows one certified realizer in three renderings.  The
 certified object is the System T term; soundness certifies it realizes
@@ -768,5 +768,51 @@ Realizer type: `(N → Q) → (N → (Q → ((N → 1) → (1 → (1 → (N → 
 
 ```haskell
 (\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> (\x5 -> ((\x6 -> (\x7 -> (((\x8 -> (\x9 -> (x9, (\x10 -> (\x11 -> ()))))) (snd (x6 x7))) (fst (x6 x7))))) (\x6 -> (natRec ((1 + (1 + (1 + x1))), (fst x5)) (\x7 -> (\x8 -> (((\x9 -> (\x10 -> ((1 + x10), (\x11 -> (\x12 -> (((((snd x5) (x10 + x11)) x12) x7) ((x9 x11) x12))))))) (snd x8)) (fst x8)))) x6)))))))))
+```
+
+## 34. Jet E₁ uniform continuity modulus computed by induction on the precision (proof-computed)
+
+Theorem: `∀c^(ℕ→ℚ) ∀B₁ ∀x^ℚ ∀y^ℚ. (∀m. |S_m(x)-S_m(y)| ≤ 2^(B₁+1)·|x-y|) → ∀k ∃ω ∀m. close(ω,x,y) → close(k, S_m(x), S_m(y))`  
+Realizer type: `(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (N → (1 → 1))))))))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. (λx1. (λx2. (λx3. (λx4. ((λx5. (λx6. (((λx7. (λx8. ⟨x8, (λx9. (λx10. (((x7 0) x9) x10)))⟩)) snd (x5 x6)) fst (x5 x6)))) (λx5. rec[⟨S x1, (λx6. (λx7. (λx8. ★)))⟩ | (λx6. (λx7. (((λx8. (λx9. ⟨S x9, (λx10. (λx11. (λx12. (((x8 S x10) x11) x12))))⟩)) snd x7) fst x7))) | x5])))))))
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. (λx1. (λx2. (λx3. (λx4. ((λx5. (λx6. (((λx7. (λx8. ⟨x8, (λx9. (λx10. (((x7 0) x9) x10)))⟩)) snd (x5 x6)) fst (x5 x6)))) (λx5. rec[⟨S x1, (λx6. (λx7. (λx8. ·)))⟩ | (λx6. (λx7. (((λx8. (λx9. ⟨S x9, (λx10. (λx11. (λx12. (((x8 S x10) x11) x12))))⟩)) snd x7) fst x7))) | x5])))))))
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> ((\x5 -> (\x6 -> (((\x7 -> (\x8 -> (x8, (\x9 -> (\x10 -> (((x7 0) x9) x10)))))) (snd (x5 x6))) (fst (x5 x6))))) (\x5 -> (natRec ((1 + x1), (\x6 -> (\x7 -> (\x8 -> ())))) (\x6 -> (\x7 -> (((\x8 -> (\x9 -> ((1 + x9), (\x10 -> (\x11 -> (\x12 -> (((x8 (1 + x10)) x11) x12))))))) (snd x7)) (fst x7)))) x5))))))))
+```
+
+## 35. Jet E₁ uniform differentiability modulus computed by induction on the precision (proof-computed)
+
+Theorem: `∀c^(ℕ→ℚ) ∀B₂ ∀x^ℚ ∀h^ℚ. (∀m. |DQ_h(S_m,x)-S_m(Dc,x)| ≤ 2^(B₂+1)·|h|) → ∀k ∃δ ∀m. close(δ,h,0) → close(k, DQ_h(S_m,x), S_m(Dc,x))`  
+Realizer type: `(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (N → (1 → 1))))))))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. (λx1. (λx2. (λx3. (λx4. ((λx5. (λx6. (((λx7. (λx8. ⟨x8, (λx9. (λx10. (((x7 0) x9) x10)))⟩)) snd (x5 x6)) fst (x5 x6)))) (λx5. rec[⟨S x1, (λx6. (λx7. (λx8. ★)))⟩ | (λx6. (λx7. (((λx8. (λx9. ⟨S x9, (λx10. (λx11. (λx12. (((x8 S x10) x11) x12))))⟩)) snd x7) fst x7))) | x5])))))))
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. (λx1. (λx2. (λx3. (λx4. ((λx5. (λx6. (((λx7. (λx8. ⟨x8, (λx9. (λx10. (((x7 0) x9) x10)))⟩)) snd (x5 x6)) fst (x5 x6)))) (λx5. rec[⟨S x1, (λx6. (λx7. (λx8. ·)))⟩ | (λx6. (λx7. (((λx8. (λx9. ⟨S x9, (λx10. (λx11. (λx12. (((x8 S x10) x11) x12))))⟩)) snd x7) fst x7))) | x5])))))))
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (\x1 -> (\x2 -> (\x3 -> (\x4 -> ((\x5 -> (\x6 -> (((\x7 -> (\x8 -> (x8, (\x9 -> (\x10 -> (((x7 0) x9) x10)))))) (snd (x5 x6))) (fst (x5 x6))))) (\x5 -> (natRec ((1 + x1), (\x6 -> (\x7 -> (\x8 -> ())))) (\x6 -> (\x7 -> (((\x8 -> (\x9 -> ((1 + x9), (\x10 -> (\x11 -> (\x12 -> (((x8 (1 + x10)) x11) x12))))))) (snd x7)) (fst x7)))) x5))))))))
 ```
 

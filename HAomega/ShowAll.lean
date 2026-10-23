@@ -20,11 +20,12 @@ import HAomega.DuffingSolve
 import HAomega.PolyODESystem
 import HAomega.ComposeSolve
 import HAomega.JetCauchyComputed
+import HAomega.JetModuliComputed
 
 /-!
 # Every extracted program, in three views
 
-For each of the thirty-three case studies this module renders the realizer three
+For each of the thirty-five case studies this module renders the realizer three
 ways and writes `EXTRACTED_HAOMEGA.md`:
 
 1. **the high-level object** — the raw extracted realizer, the element of the
@@ -81,6 +82,8 @@ def R27 := extractClosed picardExpSolveD
 def R28 := extractClosed quadBlowupSolveD
 def R29 := extractClosed riccatiSolveD
 def R30 := extractClosed duffingSolveD
+def R34 := extractClosed (jetContModulusComputedD (Γ := []) (Δ := Ctx.nil))
+def R35 := extractClosed (jetDiffModulusComputedD (Γ := []) (Δ := Ctx.nil))
 def R33 := extractClosed (jetCauchyModulusComputedD (Γ := []) (Δ := Ctx.nil))
 def R32 := extractClosed (shiftSolveD tmConstOneJet (.mul (.const tmOnePlusX) .var))
 def R31 := extractClosed (genSolve2D tmZeroJet tmConstOneJet .varV (.sub (.const tmZeroJet) .varU))
@@ -98,7 +101,7 @@ private def section' (title thm ty : String)
   "```haskell\n" ++ EmitHaskell.hsTm t 0 ++ "\n```\n\n"
 
 def showAll : String :=
-  "# The thirty-three extracted programs of the HA^ω development\n\n" ++
+  "# The thirty-five extracted programs of the HA^ω development\n\n" ++
   "Each section shows one certified realizer in three renderings.  The\n" ++
   "certified object is the System T term; soundness certifies it realizes\n" ++
   "its theorem, continuity that it denotes a continuous functional.\n" ++
@@ -198,18 +201,24 @@ def showAll : String :=
     "N → ((N → Q) × (N → (N → (1 → 1))))" R32 ++
   section' "33. Jet E₁ Cauchy convergence modulus computed by induction on the precision (proof-computed)"
     "∀c^(ℕ→ℚ) ∀B ∀x^ℚ. (∀n. |S_n(x)-S_{n+1}(x)| < 2^(B+3)·(2^-(n+1)-2^-(n+2))) → QArithLaws → HalvingLaws → ∀k ∃N ∀d₁ ∀d₂. close(k, S_{N+d₁}(x), S_{N+d₁+d₂}(x))"
-    "(N → Q) → (N → (Q → ((N → 1) → (1 → (1 → (N → (N × (N → (N → 1)))))))))" R33
+    "(N → Q) → (N → (Q → ((N → 1) → (1 → (1 → (N → (N × (N → (N → 1)))))))))" R33 ++
+  section' "34. Jet E₁ uniform continuity modulus computed by induction on the precision (proof-computed)"
+    "∀c^(ℕ→ℚ) ∀B₁ ∀x^ℚ ∀y^ℚ. (∀m. |S_m(x)-S_m(y)| ≤ 2^(B₁+1)·|x-y|) → ∀k ∃ω ∀m. close(ω,x,y) → close(k, S_m(x), S_m(y))"
+    "(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (N → (1 → 1))))))))" R34 ++
+  section' "35. Jet E₁ uniform differentiability modulus computed by induction on the precision (proof-computed)"
+    "∀c^(ℕ→ℚ) ∀B₂ ∀x^ℚ ∀h^ℚ. (∀m. |DQ_h(S_m,x)-S_m(Dc,x)| ≤ 2^(B₂+1)·|h|) → ∀k ∃δ ∀m. close(δ,h,0) → close(k, DQ_h(S_m,x), S_m(Dc,x))"
+    "(N → Q) → (N → (Q → (Q → ((N → 1) → (N → (N × (N → (1 → 1))))))))" R35
 
 -- **Coverage of the certified-emission theorem** (`HsSemantics.hsOf_correct`):
--- all thirty-three programs are supported by the certified emitter!
+-- all thirty-five programs are supported by the certified emitter!
 #guard [hsSupported R1, hsSupported R2, hsSupported R3, hsSupported R4,
         hsSupported R5, hsSupported R6, hsSupported R7, hsSupported R8,
         hsSupported R9, hsSupported R10, hsSupported R11, hsSupported R12,
         hsSupported R13, hsSupported R14, hsSupported R15, hsSupported R16,
         hsSupported R17, hsSupported R18, hsSupported R19, hsSupported R20,
         hsSupported R21, hsSupported R22, hsSupported R23, hsSupported R24,
-        hsSupported R25, hsSupported R26, hsSupported R27, hsSupported R28, hsSupported R29, hsSupported R30, hsSupported R31, hsSupported R32, hsSupported R33]
-  == List.replicate 33 true
+        hsSupported R25, hsSupported R26, hsSupported R27, hsSupported R28, hsSupported R29, hsSupported R30, hsSupported R31, hsSupported R32, hsSupported R33, hsSupported R34, hsSupported R35]
+  == List.replicate 35 true
 
 #eval IO.FS.writeFile "EXTRACTED_HAOMEGA.md" showAll
 #eval IO.println ("written: " ++ toString showAll.length ++ " chars")

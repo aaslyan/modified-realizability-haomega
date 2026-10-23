@@ -71,7 +71,7 @@ Modified Realizability for \texorpdfstring{\HAomega}{HAomega} in Lean 4}}
 \begin{abstract}
 We describe a Lean 4 development that turns constructive object-level proofs
 into executable programs.  The formal core is a deep embedding of finite-type
-Heyting arithmetic, with an intrinsically typed language of Godel System T
+Heyting arithmetic, with an intrinsically typed language of G\"odel System T
 terms, a natural-deduction calculus, Kreisel modified realizability, a
 certified extraction map, and code emitters for functional target languages.
 The development is accompanied by exact rational numerical examples drawn
@@ -90,6 +90,17 @@ data with explicit derivative moduli is measured by the footprint of
 \lean{A0.toA1}.  The result is a proof-to-program framework in which both the
 executable content of proofs and the represented data required by theorems are
 made explicit.
+
+For ordinary differential equations the pipeline produces solvers from proofs
+whose statements name no algorithm. One derivation proves, for every closed
+initial jet \(A\) and every polynomial--integral right-hand side \(F\), that
+\(y = A + \int F(y)\) has a Taylor jet solving it below every degree; the proof
+is an induction, and its extract is the Picard iteration. Instances include
+\(\exp\), \(\tan\) (Riccati), \(y' = y^2\), and, for two-variable systems,
+\(\sin\) and \(\cos\) and the Duffing oscillator; the extracts are proved to
+compute the unique solution's coefficients. Every program in the catalog is
+labelled by where its content comes from --- computed by the proof, an
+explicit witness whose correctness is derived, or handed in by the statement.
 \end{abstract}
 
 \section{Introduction}
@@ -128,10 +139,15 @@ blanket foundational status, but are measured declaration by declaration.
 between a continuous representation and a differentiable representation is not
 the underlying mathematical function alone, but the moduli and witnesses that
 the representation carries.
+\item It extracts ODE solvers from proofs of algorithm-free specifications: a
+single induction yields a solver for every polynomial--integral equation
+\(y = A + \int F(y)\) and every two-variable system, with the extracted
+programs proved to compute the unique solution, and with Cauchy, continuity and
+differentiability moduli likewise computed by induction on the precision.
 \end{enumerate}
 
 The local build used while preparing this draft completed successfully at
-7,899 jobs.  The exact count is not a mathematical contribution; it is included
+7,923 jobs.  The exact count is not a mathematical contribution; it is included
 only to identify the checked artifact state.
 
 \section{The Formal Core}
@@ -529,6 +545,20 @@ analysis and representation layer.  The intended distinction is that this
 repository combines represented spaces with a deep \HAomega proof calculus and
 an extraction-to-realizer bridge, while Weihrauch theory primarily orders
 computational problems rather than the represented data budget itself.
+
+Treating a function through its stream of Taylor coefficients, with
+differentiation and integration as stream operations, is classical:
+Pavlovi\'c and Escard\'o give a coinductive formalization of elementary
+calculus covering Taylor series and ordinary differential equations
+\cite{pavlovic1998}, and McIlroy implements power-series algorithms, including
+solutions of differential equations, as lazy functional programs
+\cite{mcilroy1999}. Our jets are such streams; what is added here is that the
+solvers are extracted from object-level proofs and certified. Polynomial
+ordinary differential equations are also a model of computation: Bournez,
+Gra\c{c}a and Pouly characterize polynomial time by solutions of polynomial
+ODEs of polynomial length \cite{bournez2017}. The class of right-hand sides our
+general solver accepts is polynomial in the unknown jets, which places the
+extracted solvers in that setting; we make no complexity claim.
 
 \section{Limitations}
 

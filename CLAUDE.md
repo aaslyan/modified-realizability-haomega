@@ -107,6 +107,16 @@ The two recursing combinators are the ones to imitate when adding another: `indR
 - The transports and extraction combinators are **computable** (no `noncomputable`).  That is load-bearing for Phase D3: without it `#eval` on the extract fails outright.  Don't reintroduce the marker.
 - The Goodstein descent is **derived**, not imported (Phase D5).  What is imported is three single-symbol schemas — `ordBump`, `ordPredLt`, `bumpNeZero` — each discharged by exactly one Phase-D1 theorem.  Preserve that 1:1 correspondence: an added schema without a matching theorem, or a schema that is itself about a Goodstein *step*, undoes the phase.
 
+### The HA^ω layer (`HAomega/`)
+
+A second, finite-type development built by the same `lean_lib` glob (`HAomega/*.lean`): intrinsically typed System T `Tm Γ τ` with `rat`/`dyad` base types (hand-rolled `Q` in `Rationals.lean`), `Formula` indexed by realizer type, `Deriv` (60 rules, `Realizability.lean`), `MR`, `extract`/`extractClosed` (`Extraction.lean`), `soundness` (`Soundness.lean`), continuity `eval_tracked`/`extract_tracked` (`Continuity.lean`), certified Haskell emission `hsOf`/`hsOf_correct` (`HsSemantics.lean`). The authoritative record is `docs/haomega/STATUS.md`; the closed-universe goal and roadmap are `docs/CLOSED_UNIVERSE_PLAN.md` §0; the program catalog is `HAomega/ShowAll.lean`, which writes `EXTRACTED_HAOMEGA.md` on every build.
+
+- **Axiom budget:** `extract` is axiom-free; `Tm.eval`, continuity, every derivation and every running extract are `[propext, Quot.sound]`; `soundness` and value-level correctness theorems may add `Classical.choice` (it enters through Mathlib's `Rat` behind `Q.val`). A program-producing definition must never touch `Q.val`.
+- **Per-rule discipline:** a new `Deriv` rule needs its constructor plus a case in `extract` and in `soundness` (no wildcards). A new `Tm` constructor additionally needs cases in `Tm.eval`, renaming/substitution and their lemmas, `eval_tracked`, and the Haskell emitter.
+- **`=` on `rat` is structural** on the unnormalized `Q`: value-true identities can be false as stated (`Q.add_zero_not_id`, `Q.mul_div_not_id`). State results so they hold structurally (integral form, the shift guard `tmJetShift` instead of `G·Y` with `G(0)=0`), or use `Q.val` in metatheory theorems. What `=` should mean for the algebra laws is open (`docs/internal/QUESTIONS.md` item 18).
+- **Label every catalog program honestly:** *proof-computed* (the recursion comes from `Deriv.ind`/`tiEps0`/case analysis on a specification naming no algorithm), *explicit witness, derived correctness* (witness written at `exI`, correctness derived), or *witness-style* (the statement names the answer). Do not call a program proof-computed because its *correctness* proof uses induction.
+- **Before adding a helper, grep for its name:** branches that are later imported together (e.g. by `ShowAll.lean`) clash on duplicate declarations.
+
 ## Documentation discipline
 
 - **docs/first-order/HYDRA.md** is the self-contained account of the Hydra project (H1–H9): the three headline statements, the single imported schema, what is out of scope, the phase map, the trace, and the reproduction commands. Keep it in step with docs/first-order/STATUS.md's per-phase sections — docs/first-order/STATUS.md is the record, docs/first-order/HYDRA.md is the map.

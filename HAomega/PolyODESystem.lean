@@ -96,36 +96,6 @@ abbrev genSolve2Inv (A B : Tm [] JetTy) (F G : JExpr2) :=
               (.eq (.app (.snd PW) i) (.app (.snd W) i)))))) :
     Formula (.nat :: []) _)
 
-/-- Congruence for `Tm.fst`, derived from `Deriv.eqSubst`. -/
-def Deriv.congFst {Γ as : List Ty} {Δ : Ctx Γ as} {c d : Ty}
-    {p q : Tm Γ (.prod c d)} (h : Deriv Δ (.eq p q)) :
-    Deriv Δ (.eq (.fst p) (.fst q)) := by
-  have hs : ∀ u : Tm Γ (.prod c d),
-      (Formula.eq (.fst (.var .here)) (Tm.fst p).wk).subst1 u
-        = Formula.eq (.fst u) (.fst p) := by
-    intro u
-    show Formula.eq (.fst u) (((Tm.fst p).wk).subst1 u) = _
-    rw [Tm.subst1_wk]
-  have key := Deriv.eqSubst (Δ := Δ)
-    (Formula.eq (.fst (.var .here)) (Tm.fst p).wk) h
-    (by rw [hs]; exact Deriv.eqRefl _)
-  rw [hs] at key; exact key.symmE
-
-/-- Congruence for `Tm.snd`, derived from `Deriv.eqSubst`. -/
-def Deriv.congSnd {Γ as : List Ty} {Δ : Ctx Γ as} {c d : Ty}
-    {p q : Tm Γ (.prod c d)} (h : Deriv Δ (.eq p q)) :
-    Deriv Δ (.eq (.snd p) (.snd q)) := by
-  have hs : ∀ u : Tm Γ (.prod c d),
-      (Formula.eq (.snd (.var .here)) (Tm.snd p).wk).subst1 u
-        = Formula.eq (.snd u) (.snd p) := by
-    intro u
-    show Formula.eq (.snd u) (((Tm.snd p).wk).subst1 u) = _
-    rw [Tm.subst1_wk]
-  have key := Deriv.eqSubst (Δ := Δ)
-    (Formula.eq (.snd (.var .here)) (Tm.snd p).wk) h
-    (by rw [hs]; exact Deriv.eqRefl _)
-  rw [hs] at key; exact key.symmE
-
 /-- Renaming commutes with `JExpr2.toTm`. -/
 @[derivNorm] theorem JExpr2.toTm_rename (F : JExpr2) {Γ Δ : List Ty}
     (u v : Tm Γ JetTy) (ρ : Ren Γ Δ) :

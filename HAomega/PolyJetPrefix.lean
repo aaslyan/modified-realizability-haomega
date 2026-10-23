@@ -3,7 +3,7 @@ Copyright (c) 2026 Ara Aslyan. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ara Aslyan
 -/
-import HAomega.RiccatiSolve
+import HAomega.DuffingSolve
 
 /-!
 # Polynomial–integral jet expressions and their prefix property, inside `Deriv`
@@ -48,67 +48,6 @@ abbrev prefixAgree {Γ : List Ty} (y y' : Tm Γ JetTy) (n : Tm Γ .nat) :=
     (.imp (.eq (.add (.var (.there .here)) (.var .here)) (n.wk.wk))
       (.eq (.app (y.wk.wk) (.var (.there .here))) (.app (y'.wk.wk) (.var (.there .here)))))) :
     Formula Γ _)
-
-/-- Congruence for `Tm.qsub` in both arguments, derived from `Deriv.eqSubst`. -/
-def Deriv.congQSub {Γ as : List Ty} {Δ : Ctx Γ as} {u u' v v' : Tm Γ .rat}
-    (hu : Deriv Δ (.eq u u')) (hv : Deriv Δ (.eq v v')) :
-    Deriv Δ (.eq (.qsub u v) (.qsub u' v')) := by
-  have hs1 : ∀ z : Tm Γ .rat,
-      (Formula.eq (.qsub u.wk (.var .here)) (Tm.qsub u v).wk).subst1 z
-        = Formula.eq (.qsub u z) (.qsub u v) := by
-    intro z
-    show Formula.eq (.qsub (u.wk.subst1 z) z) (.qsub (u.wk.subst1 z) (v.wk.subst1 z)) = _
-    rw [Tm.subst1_wk, Tm.subst1_wk]
-  have h1 := Deriv.eqSubst (Δ := Δ)
-    (Formula.eq (.qsub u.wk (.var .here)) (Tm.qsub u v).wk) hv
-    (by rw [hs1]; exact Deriv.eqRefl _)
-  rw [hs1] at h1
-  have hs2 : ∀ z : Tm Γ .rat,
-      (Formula.eq (.qsub (.var .here) v'.wk) (Tm.qsub u v').wk).subst1 z
-        = Formula.eq (.qsub z v') (.qsub u v') := by
-    intro z
-    show Formula.eq (.qsub z (v'.wk.subst1 z)) (.qsub (u.wk.subst1 z) (v'.wk.subst1 z)) = _
-    rw [Tm.subst1_wk, Tm.subst1_wk]
-  have h2 := Deriv.eqSubst (Δ := Δ)
-    (Formula.eq (.qsub (.var .here) v'.wk) (Tm.qsub u v').wk) hu
-    (by rw [hs2]; exact Deriv.eqRefl _)
-  rw [hs2] at h2
-  exact Deriv.transE h1.symmE h2.symmE
-
-/-- Renaming leaves `tmJetSub` unchanged. -/
-@[derivNorm] theorem tmJetSub_rename {Γ Δ : List Ty} (ρ : Ren Γ Δ) :
-    (tmJetSub (Γ := Γ)).rename ρ = tmJetSub (Γ := Δ) := rfl
-
-/-- Substitution leaves `tmJetSub` unchanged. -/
-@[derivNorm] theorem tmJetSub_subst {Γ Δ : List Ty} (s : Sub Γ Δ) :
-    (tmJetSub (Γ := Γ)).subst s = tmJetSub (Γ := Δ) := rfl
-
-/-- Applying `tmJetSub` to `A, B, i` converts to `.qsub (.app A i) (.app B i)` inside `Deriv`. -/
-def tmJetSub_appD {Γ as : List Ty} {Δ : Ctx Γ as}
-    (A B : Tm Γ JetTy) (i : Tm Γ .nat) :
-    Deriv Δ (.eq (.app (.app (.app (tmJetSub (Γ := Γ)) A) B) i)
-                 (.qsub (.app A i) (.app B i))) := by
-  have h1 : Deriv Δ (.eq (.app (tmJetSub (Γ := Γ)) A)
-      (.lam (.lam (.qsub (.app (A.wk.wk) (.var .here)) (.app (.var (.there .here)) (.var .here)))))) := by
-    have hb := Deriv.convBeta (Δ := Δ) (c := JetTy)
-      (.lam (.lam (.qsub (.app (.var (.there (.there .here))) (.var .here))
-                         (.app (.var (.there .here)) (.var .here))))) A
-    deriv_norm at hb
-    exact hb
-  have h2 : Deriv Δ (.eq
-      (.app (.lam (.lam (.qsub (.app (A.wk.wk) (.var .here)) (.app (.var (.there .here)) (.var .here))))) B)
-      (.lam (.qsub (.app A.wk (.var .here)) (.app B.wk (.var .here))))) := by
-    have hb := Deriv.convBeta (Δ := Δ) (c := JetTy)
-      (.lam (.qsub (.app (A.wk.wk) (.var .here)) (.app (.var (.there .here)) (.var .here)))) B
-    deriv_norm at hb
-    exact hb
-  have h3 : Deriv Δ (.eq (.app (.lam (.qsub (.app A.wk (.var .here)) (.app B.wk (.var .here)))) i)
-      (.qsub (.app A i) (.app B i))) := by
-    have hb := Deriv.convBeta (Δ := Δ) (c := .nat)
-      (.qsub (.app A.wk (.var .here)) (.app B.wk (.var .here))) i
-    deriv_norm at hb
-    exact hb
-  exact Deriv.transE (Deriv.congFun (Deriv.transE (Deriv.congFun h1 B) h2) i) h3
 
 /-- Instantiate `prefixAgree y y' n` at indices `m, d` and apply to `m + d = n`. -/
 def prefixAgreeElimT {Γ as : List Ty} {Δ : Ctx Γ as}

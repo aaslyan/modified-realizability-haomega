@@ -1,4 +1,4 @@
-# The twenty-six extracted programs of the HA^ω development
+# The twenty-seven extracted programs of the HA^ω development
 
 Each section shows one certified realizer in three renderings.  The
 certified object is the System T term; soundness certifies it realizes
@@ -607,5 +607,28 @@ Realizer type: `(N → Q) → (N → ((N → Q) × 1))`
 
 ```haskell
 (\x0 -> (\x1 -> ((natRec (\x2 -> (natRec (qOfNat 1) (\x3 -> (\x4 -> (qOfNat 0))) x2)) (\x2 -> (\x3 -> (((\x4 -> (\x5 -> (\x6 -> (qAdd (x4 x6) (x5 x6))))) x3) (((\x4 -> (\x5 -> (\x6 -> (natRec (qOfNat 0) (\x7 -> (\x8 -> (qAdd x8 (qMul (x4 x7) (x5 (natRec x6 (\x9 -> (\x10 -> (natRec 0 (\x11 -> (\x12 -> x11)) x10))) x7)))))) (1 + x6))))) x3) (((\x4 -> (\x5 -> (\x6 -> (qSub (x4 x6) (x5 x6))))) (\x4 -> (natRec (qOfNat 1) (\x5 -> (\x6 -> (qOfNat 0))) x4))) (((\x4 -> (\x5 -> (\x6 -> (natRec (qOfNat 0) (\x7 -> (\x8 -> (qAdd x8 (qMul (x4 x7) (x5 (natRec x6 (\x9 -> (\x10 -> (natRec 0 (\x11 -> (\x12 -> x11)) x10))) x7)))))) (1 + x6))))) x0) x3)))))) x1), ())))
+```
+
+## 27. Jet solver for y' = y from an algorithm-free specification (proof-computed)
+
+Theorem: `∀k. ∃Y^(ℕ→ℚ). ∀i ∀d. i + succ d = k → P(Y)(i) = Y(i)    (P(Y) = 1 + ∫Y)`  
+Realizer type: `N → ((N → Q) × (N → (N → (1 → 1))))`
+
+**1. High-level extracted object** (raw realizer; `★` = erased certificate):
+
+```
+(λx0. rec[⟨(λx1. rec[qℕ(S 0) | (λx2. (λx3. qℕ(0))) | x1]), (λx1. (λx2. (λx3. ★)))⟩ | (λx1. (λx2. (((λx3. (λx4. ⟨((λx5. (λx6. rec[qℕ(S 0) | (λx7. (λx8. ((x5 x7) /q qℕ(S x7)))) | x6])) x4), (λx5. rec[(λx6. (λx7. ★)) | (λx6. (λx7. (λx8. (λx9. ★)))) | x5])⟩)) snd x2) fst x2))) | x0])
+```
+
+**2. Collapsed functional program** (contentless parts elided):
+
+```
+(λx0. rec[⟨(λx1. rec[qℕ(S 0) | (λx2. (λx3. qℕ(0))) | x1]), (λx1. (λx2. (λx3. ·)))⟩ | (λx1. (λx2. (((λx3. (λx4. ⟨((λx5. (λx6. rec[qℕ(S 0) | (λx7. (λx8. ((x5 x7) /q qℕ(S x7)))) | x6])) x4), (λx5. rec[(λx6. (λx7. ·)) | (λx6. (λx7. (λx8. (λx9. ·)))) | x5])⟩)) snd x2) fst x2))) | x0])
+```
+
+**3. Haskell** (generated translation, not the certified artifact):
+
+```haskell
+(\x0 -> (natRec ((\x1 -> (natRec (qOfNat 1) (\x2 -> (\x3 -> (qOfNat 0))) x1)), (\x1 -> (\x2 -> (\x3 -> ())))) (\x1 -> (\x2 -> (((\x3 -> (\x4 -> (((\x5 -> (\x6 -> (natRec (qOfNat 1) (\x7 -> (\x8 -> (qDiv (x5 x7) (qOfNat (1 + x7))))) x6))) x4), (\x5 -> (natRec (\x6 -> (\x7 -> ())) (\x6 -> (\x7 -> (\x8 -> (\x9 -> ())))) x5))))) (snd x2)) (fst x2)))) x0))
 ```
 

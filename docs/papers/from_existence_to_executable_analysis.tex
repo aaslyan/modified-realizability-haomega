@@ -396,7 +396,7 @@ Both algebras embed into the approximating differentiable representation
 \(\lean{E1.diff}\) quantifies over an approximating derivative family
 \(\exists F : \N\to\Q\to\Q\) rather than an exact rational function.
 
-Across the thirty extracted programs cataloged in \lean{ShowAll.lean} and
+Across the thirty-two extracted programs cataloged in \lean{ShowAll.lean} and
 \lean{EXTRACTED_HAOMEGA.md}, we distinguish three classes of object-level
 derivations, by where the computational content comes from:
 \begin{enumerate}
@@ -463,6 +463,43 @@ below degree \(k\). These are theorems about the extracted programs, not part
 of the derivations.
 \end{enumerate}
 
+\subsection{Toward a Closed Universe}
+
+The longer-range goal is a minimal universe inside \HAomega\ in which
+\(+, -, \times, \frac{d}{dx}, \int\), \(\exp\), \(\sin\), \(\cos\), Taylor
+series and Fourier series live together, with existence statements yielding
+extracted programs. The general solvers above are its generating mechanism:
+the universe is the closure of constants under \(+,-,\times,\mathcal{I}\) and
+under solving \(y = A + \mathcal{I}F(y)\). The following are mechanized.
+\begin{itemize}
+\item \textbf{Uniqueness.} Any solution of \(Y = A + \mathcal{I}F(Y)\) agrees
+with the \(k\)-th extracted iterate below degree \(k\)
+(\lean{genSolve_unique_val}, \lean{genSolve2_unique_val}); the extracts compute
+\emph{the} Taylor coefficients, not merely those of some solution.
+\item \textbf{Inverses.} On the unnormalized \(\mathbb{Q}\) the guard
+\(G(0)\cdot Y(i)\) of \(Y = 1 + G\cdot Y\) is not structurally zero, so the guard
+is taken to be the shift \(x\cdot F\), which needs no division.
+\lean{shiftSolveD} proves \(\forall k\,\exists Y.\,\forall i<k.\;
+(A + x\cdot F(Y))(i) = Y(i)\) for every \(A, F\), giving \(1/(1 - xH)\) for every
+\(H\); for \(1/(1 - x - x^2)\) the extract yields the Fibonacci numbers exactly.
+\item \textbf{Composition.} \(f\circ(G - G(0))\) for an ODE-defined \(f\) solves
+\(Y = f(0) + \mathcal{I}(G'\cdot F(Y))\), an instance of \lean{genSolveD} with the
+constant jet \(G'\).
+\item \textbf{The Fourier layer.} Trigonometric polynomials
+\(\sum_{|k|\le N} c_k e^{ikx}\) over \(\mathbb{Q}[i]\) are exactly closed under
+\(+\), \(\times\), \(\frac{d}{dx}\) and the mean-zero \(\int\); infinite Fourier
+series are not, since a product coefficient is an infinite sum. A Taylor bridge
+is proved to commute with \(\frac{d}{dx}\) and (for real polynomials) with
+\(\times\), and to send the modes \(\cos(kx)\), \(\sin(kx)\) to their Taylor
+jets. The modes themselves are proof-computed, as the instance
+\(u' = m v,\ v' = -m u\) of \lean{genSolve2D}, and agree with the bridge
+(\lean{genSolve2_mode_trig}).
+\end{itemize}
+What is not yet mechanized is the algebra of the universe inside the object
+logic: FTC2, the product and chain rules, \(\sin' = \cos\), \(\sin^2+\cos^2=1\)
+are proved, where at all, only in the metatheory. They meet the representation
+question recorded below.
+
 \section{Related Work}
 
 This work is adjacent to several established lines.  Minlog provides program
@@ -498,6 +535,18 @@ cycles, strange attractors, or basin convergence.
 specific artifact is the result of \lean{extractClosed} applied to a
 \lean{Deriv}.
 \item Build counts are audit metadata, not evidence of mathematical novelty.
+\item Equality at type \(\mathrm{rat}\) in the object logic is structural on an
+unnormalized representation, so value-true identities can be false as stated
+(\(x + 0 = x\) fails). The ODE results are therefore stated in integral form,
+inverses use a shift guard, and the algebra laws of the closed universe are not
+yet stated inside the logic; whether to normalize \(\mathbb{Q}\) or add a value
+equality is an open design decision.
+\item The specifications of the proof-computed solvers name the equation (the
+Picard operator), though not the iteration; the differential form
+\(Y' = F(Y)\) is not derived inside the logic.
+\item Bridge, uniqueness and Fourier theorems are metatheory theorems about
+values and use \lean{Classical.choice} through Mathlib's \(\mathbb{Q}\); the
+extracted programs themselves stay \lean{[propext, Quot.sound]}.
 \end{itemize}
 
 \section{Conclusion}

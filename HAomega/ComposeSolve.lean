@@ -17,8 +17,8 @@ jet.
 
 `expComp G` is `exp ∘ (G − G(0))`. That it equals the metatheory's
 `Jet.compZero Jet.exp G` coefficientwise needs a chain-rule theorem for
-`compZero`, **not proved here**; the `#guard`s below check it at instances
-(`G = sin`, `G = x + x²`) and are evidence, not proof.
+`compZero`; it is proved for every `G` in `ComposeProof.lean`
+(`expComp_eq_compZero`). The `#guard`s below were the evidence before that.
 -/
 
 namespace HAomega

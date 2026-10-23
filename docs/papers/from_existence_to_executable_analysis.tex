@@ -484,7 +484,10 @@ is taken to be the shift \(x\cdot F\), which needs no division.
 \(H\); for \(1/(1 - x - x^2)\) the extract yields the Fibonacci numbers exactly.
 \item \textbf{Composition.} \(f\circ(G - G(0))\) for an ODE-defined \(f\) solves
 \(Y = f(0) + \mathcal{I}(G'\cdot F(Y))\), an instance of \lean{genSolveD} with the
-constant jet \(G'\).
+constant jet \(G'\). For \(f = \exp\) the extract is proved equal to the
+metatheory's formal composition for every \(G\), by the chain rule
+\(\frac{d}{dx}\exp(G - G(0)) = G'\exp(G - G(0))\) and uniqueness
+(\lean{expComp_eq_compZero}).
 \item \textbf{The Fourier layer.} Trigonometric polynomials
 \(\sum_{|k|\le N} c_k e^{ikx}\) over \(\mathbb{Q}[i]\) are exactly closed under
 \(+\), \(\times\), \(\frac{d}{dx}\) and the mean-zero \(\int\); infinite Fourier

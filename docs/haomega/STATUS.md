@@ -136,8 +136,10 @@ three labels, according to where its computational content comes from:
   - *Composition:* `ComposeSolve.lean`. `f ∘ (G − G(0))` for ODE-defined `f`
     solves `Y = f(0) + ∫(G'·F(Y))`, an instance of `genSolveD` with the
     constant `G'` (`expCompD G` for `exp`). Its agreement with the metatheory's
-    `Jet.compZero` is **checked at instances by `#guard` (evidence), not
-    proved**: that needs a chain-rule theorem for `compZero`.
+    `Jet.compZero` is **proved for every `G`** in `ComposeProof.lean`:
+    `compZero_exp_solves` (the chain rule `D(exp∘(G−G(0))) = G'·exp∘(G−G(0))`,
+    via the power rule `deriv_hPow_val`) and `expComp_eq_compZero` (by
+    uniqueness, `genSolve_unique_val`). Value theorems (`Classical.choice`).
   - *The Fourier layer, value level (closed-universe pillar 6):*
     `TrigPoly.lean`. Trigonometric polynomials `Σ_{|k|≤N} c_k e^{ikx}` over
     Gaussian rationals `CQ`, exactly closed under `+`, `×` (convolution),
@@ -1566,7 +1568,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,919 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,920 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

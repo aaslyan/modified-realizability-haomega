@@ -18,12 +18,11 @@ goal and where we stand (2026-10-23).
 | 1. **Objects and operations.** Jets $\mathbb{N}\to\mathbb{Q}$ with `tmJetAdd/Sub/Mul/Deriv/Integ`, exp/sin/cos jets, as System T terms | done |
 | 2. **Generation by proof-computed ODE solving.** The universe as the closure of constants under $+,-,\times,\int$ and solving $y = A + \int F(y)$ | done for single equations (`genSolveD`, `PolyODESolve.lean`) and two-variable systems (`genSolve2D`, `PolyODESystem.lean`), every right-hand side; sin/cos (#31), exp, tan, Duffing are instances |
 | 3. **Algebra laws inside `Deriv`.** FTC2, product and chain rules, $\exp' = \exp$, $\sin' = \cos$, $\sin^2+\cos^2 = 1$ | only FTC1 (`jetFTC1_*_D`). **Blocked on the equality question** (QUESTIONS.md item 18, kept open) |
-| 4. **Closure under $\div$ and $\circ$.** $1/(1-G)$ and $F(G)$ for $G(0)=0$ | metatheory (`RadiusJet.invOneSub`, `compZero`); in `Deriv` only a witness-style Newton inverse. Next: as proof-computed guarded fixed points ($Y = 1 + G\cdot Y$), which do not need the laws |
+| 4. **Closure under $\div$ and $\circ$.** $1/(1-G)$ and $F(G)$ for $G(0)=0$ | inverses done, proof-computed: `shiftSolveD` solves $Y = A + x\cdot F(Y)$, so $1/(1-xH)$ for every $H$ (#32: $1/(1-x-x^2)$, Fibonacci exactly). Composition with ODE-defined functions is a `genSolveD` instance (`ComposeSolve.lean`); its agreement with `Jet.compZero` is checked at instances, not yet proved (needs a chain rule) |
 | 5. **Evaluation.** Bounds and moduli from jets to values at points | metatheory (`toE0`/`toE1`); in `Deriv` the moduli are explicit witnesses with derived correctness |
 | 6. **Fourier layer.** Trigonometric series as coefficient streams, $\frac{d}{dx}$, $\int$, convolution, the Taylor $\leftrightarrow$ Fourier bridge via $\sin(kx), \cos(kx)$ | absent (only the 4-point DFT, FFT, single `FourierMode`s) |
 
-**Order of work.** Pillar 4 (inverse, composition) →
-pillar 6 (Fourier definitions and operations) → pillar 3 once item 18 is
+**Order of work.** Pillar 6 (Fourier definitions and operations) → pillar 3 once item 18 is
 decided → pillar 5 in the logic.
 
 **Presentation of the finished parts.** Until the universe is complete, the

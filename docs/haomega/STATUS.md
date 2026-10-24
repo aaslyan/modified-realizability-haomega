@@ -1,6 +1,6 @@
 # HA^ω status
 
-**As of 2026-10-23.** Full `lake build` green — 7,934 jobs,
+**As of 2026-10-23.** Full `lake build` green — 7,935 jobs,
 including Mathlib and the first-order tree — zero HAomega warnings, zero
 `sorry`/`admit`. 33,530 lines across 108 files in `HAomega/`, **60** inference
 rules (constructors of `Deriv`), 36 extracted realizers rendered in
@@ -175,6 +175,10 @@ three labels, according to where its computational content comes from:
     (`InGPAC_noInteg`: each `∫a` in a right-hand side becomes a variable
     `z = 0 + ∫a`, `flatOne`/`flatSysOne`) and `InGPAC_comp` (`f, g` members ⇒
     `f ∘ (g − g(0))` member; system `compSys`, `Y_u = A_u + ∫(g'·F_u(Y))`).
+    Fourier (`UniverseFourier.lean`): `sin(kx)`, `cos(kx)` for every `k`
+    (`InGPAC_sinFreq/cosFreq`, against `Jet.sinFreq/cosFreq`), and every
+    trigonometric polynomial through the Taylor bridge (`InGPAC_trigPoly`; no
+    reality condition, since `toJet` takes real parts).
     Closure proofs are metatheory (`[propext, Classical.choice, Quot.sound]`);
     every member's solver is the proof-computed `genSolveND`.
   - *Inverses (closed-universe pillar 4):* `ShiftSolve.lean`. On the
@@ -1642,7 +1646,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,934 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,935 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

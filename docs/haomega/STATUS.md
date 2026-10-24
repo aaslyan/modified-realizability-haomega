@@ -1,6 +1,6 @@
 # HA^ω status
 
-**As of 2026-10-23.** Full `lake build` green — 7,936 jobs,
+**As of 2026-10-24.** Full `lake build` green — 7,938 jobs,
 including Mathlib and the first-order tree — zero HAomega warnings, zero
 `sorry`/`admit`. 33,530 lines across 108 files in `HAomega/`, **60** inference
 rules (constructors of `Deriv`), 36 extracted realizers rendered in
@@ -204,6 +204,23 @@ three labels, according to where its computational content comes from:
     series, as values. Example: `tan = sin·(1/cos)` compiles to 6 variables.
     Closure proofs are metatheory (`[propext, Classical.choice, Quot.sound]`);
     every member's solver is the proof-computed `genSolveND`.
+    **Certified evaluation (pillar 5, `UniverseEval.lean`):** every defined
+    expression gets a geometric coefficient bound `|cₙ| ≤ 2^M (2^R)^n`
+    (`UExpr.radiusJet`, into the existing `RadiusJet` algebra; the reciprocal by
+    a direct strong induction on `Jet.recip`'s recursion), and
+    `RadiusJet.cauchyComputed_correct` reads the correctness of the
+    proof-computed Cauchy modulus (`jetCauchyModulusComputedD`) off the
+    derivation **through `soundness`**, discharging its premises on the disk
+    `|x| ≤ 2^{-(R+1)}`. Together, `UExpr.certifiedEval`: past `N(k)` the partial
+    sums stay within `2^{-k}`. The runnable evaluator `UExpr.approx` reads `(M, R)`
+    from a plain recursion `UExpr.radiusParams` (proved equal,
+    `radiusParams_eq`), so it is `[propext, Quot.sound]`; `approx_spec` is its
+    certificate. `tan`: `(M, R) = (2, 3)`, disk `1/16`, `N(k) = k + 5`; at `k = 20`
+    it agrees with floating-point `tan(1/16)` to `10⁻⁹` (`#guard`). Scope: this
+    covers the expression language, not arbitrary `InGPAC` systems (e.g. Duffing
+    has its own `RadiusJet` but no general majorant theorem for systems yet); the
+    disks are conservative; evaluation through composition is slow
+    (`e^{sin x}/(1+x²)` at `k = 20`, `N = 25`: about 7 minutes).
   - *Inverses (closed-universe pillar 4):* `ShiftSolve.lean`. On the
     unnormalized `Q` the guard `G(0)·Y(i)` of `Y = 1 + G·Y` is not structurally
     `0`, so the guard is the shift `x·F` (`tmJetShift`, no division).
@@ -1669,7 +1686,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,936 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,938 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

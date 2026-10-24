@@ -24,6 +24,7 @@ stated, and what is blocked on what.**
 | `tiEps0` + `tiRec`, and their typed twins `tiEps0O`/`tiRecE` | done |
 | Certified emission to a functional target, **32 of 32 programs** | done |
 | Derivation-authoring kit (`Kit.lean`), extensible normalizer | done |
+| Derivation-tree display `#dtree` / `#dtreeStats` (`DerivTree.lean`) | done |
 
 **Axiom footprints**, reprinted every build:
 
@@ -33,6 +34,18 @@ Tm.eval, continuity, all derivations,
   all running extracts                      [propext, Quot.sound]
 soundness                                   [propext, Classical.choice, Quot.sound]
 ```
+
+**`#dtree d`** (`DerivTree.lean`, display tooling, not certified) prints a
+closed derivation as a natural-deduction tree, one primitive rule per line with
+its conclusion, premises indented below; helper derivations are unfolded to the
+60 constructors, and a node is marked `·` when its realizer type is contentless
+(extraction erases it). `#dtreeStats d` counts rule uses. Pinned by `#guard_msgs`:
+`∀x. 0 + x = x` (9 rules, all erased), `∀x ∃y. y = S x` (the `exI` node is the
+one kept), and `genSolveND` at the `exp` system `y = 1 + ∫y`: **500 primitive
+rules** — `eqSubst` 196, `eqRefl` 131, `convBeta` 40, `ind` 6, `exI` 2, … — a
+logical skeleton of a few dozen nodes around an equational core in which every
+β- and recursor step of the Picard operator is an explicit rule. A derivation
+parametric in a system unfolds only at a concrete one.
 
 Choice enters `soundness` only through value-layer *theorem proofs*. **Every
 extracted program that runs is choice-free.** That invariant is the reason

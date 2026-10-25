@@ -1,6 +1,6 @@
 # HA^ω status
 
-**As of 2026-10-24.** Full `lake build` green — 7,940 jobs,
+**As of 2026-10-24.** Full `lake build` green — 7,941 jobs,
 including Mathlib and the first-order tree — zero HAomega warnings, zero
 `sorry`/`admit`. 33,530 lines across 108 files in `HAomega/`, **61** inference
 rules (constructors of `Deriv`), 37 extracted realizers rendered in
@@ -221,6 +221,21 @@ three labels, according to where its computational content comes from:
     has its own `RadiusJet` but no general majorant theorem for systems yet); the
     disks are conservative; evaluation through composition is slow
     (`e^{sin x}/(1+x²)` at `k = 20`, `N = 25`: about 7 minutes).
+    **The root operator** (`RootOperator.lean`): `UExpr.root e a b j m` colours
+    the grid `a + k(b−a)/2ʲ` by the sign of the certified approximation
+    (`UExpr.approx`, precision `2⁻ᵐ`) and runs the extracted bisection
+    operator `bisect` on it — two extracted programs composed, choice-free.
+    `UExpr.root_spec`: if the end colours differ, the root lies in `[a, b]` and
+    every partial sum past `N = m + M + 3` satisfies
+    `|S_N(root)| < 2⁻ᵐ + 2^{M+R+2}(b−a)/2ʲ` (slope bound `evalPoly_lip_disk`
+    times the grid step) — the approximate IVT, by binary search, on the disk
+    `|x| ≤ 2^{-(R+2)}`. Examples (`#guard`, within `10⁻¹⁰` of floating point,
+    tens of milliseconds at `j = m = 40`): `ln(41/40)` as the root of
+    `eˣ − 1 − 1/40`, and the inverse function value `arcsin(1/5)` as the root
+    of `sin x − 1/5`. Limits: the certified disk; a constant `q` is bounded by
+    `2^|num q|`, so large numerators inflate the slope term; roots of
+    expressions with products are slow (`x³ − 1/100`: about 10 s), by the
+    Cauchy-product evaluation cost already recorded above.
   - *Inverses (closed-universe pillar 4):* `ShiftSolve.lean`. On the
     unnormalized `Q` the guard `G(0)·Y(i)` of `Y = 1 + G·Y` is not structurally
     `0`, so the guard is the shift `x·F` (`tmJetShift`, no division).
@@ -1750,7 +1765,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,940 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,941 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

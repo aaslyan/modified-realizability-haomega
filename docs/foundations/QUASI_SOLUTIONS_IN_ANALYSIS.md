@@ -79,9 +79,21 @@ set.**
    computable points, and `y′ = 1/h` on it. Needs a Kleene-tree diagonalization
    against all partial recursive functions; Mathlib has `Nat.Partrec`/`Computable`.
    A real project.
-3. **A constructive-∀ realizability** — a variant of `MR` with ∀ over functions
-   restricted to computable inputs (the Markov–Zaslavsky quantifier); Example 1 of
-   Chapter 3 becomes a theorem about the gap between the two realizabilities.
+3. **A test-restricted realizability** — a variant of `MR` in which ∀ over
+   functions ranges over a class 𝔍 of tests; Example 1 of Chapter 3 becomes a
+   theorem about the gap between the restricted and the full quantifier.
+
+**Caution (the author's remark): 𝔍-quasi-solutions are probably not Markov's
+constructive functions, and the conclusions may differ.** In the dissertation the
+candidate `f*` is a fixed *total* function and only the *tests* are restricted.
+A Markov-school constructive function acts on *codes* of constructive reals and
+exists only on them; its theory has its own theorems (Tseitin's continuity
+theorem, non-extendability via singular coverings). Section 2's last bullet and
+item 3 should therefore be read as an analogy to be checked, not an
+identification. Settling the relation between the three notions is itself a
+question for this line of work: (a) total candidate, restricted tests; (b)
+Markov functions on constructive reals; (c) Kleene–Kreisel continuous
+functionals, the semantics of this repository's extracts.
 
 Distinct from the existing `GaloisAdjunction.lean` / `GaloisAdequacy.lean`, which
 relate *representations* to the *theorems* they support; this line relates *test

@@ -1129,8 +1129,19 @@ solution satisfies the recurrence up to a residual vanishing below degree
 residual form of the perturbation majorant (`rct_z_diff_weighted_bound`). The
 core, `rct_overlap_of_table`, holds for any table satisfying the recurrence.
 Guards: `sin` re-centred at `1/64` agrees with the original at `1/32` to
-`10⁻²⁰`, `tan` at `1/1024` to `10⁻³⁰`. Design: QUESTIONS.md item 20. Open:
-iterated steps with accumulated certified error.
+`10⁻²⁰`, `tan` at `1/1024` to `10⁻³⁰`. Design: QUESTIONS.md item 20.
+
+**Stepping from data** (`SystemStep.lean`, `StepKit.lean`; proof by AGY,
+audited). After one step only rational data remain, so the theorem is restated
+for the data table: `stepData F a x₀ N` (one step), `stepIter` (a list of
+increments), and **`stepData_overlap`**: for flat equations `F` (`StepEqs`) and
+every `D` there is one `R` serving **all data of size `≤ 2^D`** — the re-centred
+table at `t` agrees with `solFastD F a` at `x₀ + t` within any `ε` past some
+`N₀`. The proof generalizes `rct_overlap_of_table` to a base table with a given
+weighted bound (`stp_overlap_of_table`), with `K = 2^D` and `B` read from `F`
+alone. Guards: `tan` stepped twice by `1/1024` agrees with one step of `2/1024`
+and with the original series to `10⁻²⁵`. Open: a bound on the data size along
+an iteration (so `D` is known in advance) and the accumulated certified error.
 
 ## 8. Not started
 

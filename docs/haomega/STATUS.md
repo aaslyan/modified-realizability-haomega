@@ -1,9 +1,9 @@
 # HA^ω status
 
-**As of 2026-10-24.** Full `lake build` green — 7,939 jobs,
+**As of 2026-10-24.** Full `lake build` green — 7,940 jobs,
 including Mathlib and the first-order tree — zero HAomega warnings, zero
 `sorry`/`admit`. 33,530 lines across 108 files in `HAomega/`, **61** inference
-rules (constructors of `Deriv`), 36 extracted realizers rendered in
+rules (constructors of `Deriv`), 37 extracted realizers rendered in
 `EXTRACTED_HAOMEGA.md`.
 
 This is the "where does everything stand" document. `HAOMEGA.md` is the
@@ -1020,7 +1020,8 @@ is proof-side only, the cost is build time (7,849 jobs), not trust.
   point, Picard. Banach needs completeness (Cauchy sequences of Cauchy
   sequences); Picard additionally needs function spaces and integration — a
   programme, not a next step.
-* Bisection-versus-Newton as a quantitative fingerprint experiment. The
+* Bisection-versus-Newton as a quantitative fingerprint experiment (bisection
+  itself is now done, `Bisection.lean`, §8f). The
   square-root theorem does not exhibit it: its colouring is monotone, so first
   and last crossing coincide. It needs a genuinely different *proof*.
 * Automatic associates for extracted type-2 programs (see §6).
@@ -1262,9 +1263,26 @@ a crossing" and induct on **`j`**, the logarithm, with ordinary `ind`. The
 halving is in the statement, not the recursion. So no new rule is needed, and
 the blocker is derivation-writing effort, not missing infrastructure.
 
-**Not attempted.** It is a `spernerD`-sized derivation with more index
-arithmetic (`lo + 2ʲ`), and attempting it at the end of a long session would be
-exactly the rushing the item warned against.
+**Done (2026-10-24), `Bisection.lean`.** `bisectD : ∀j ∀c^(ℕ→ℕ) ∀lo. c lo ≠
+c (lo + 2ʲ) → ∃i. i < 2ʲ ∧ c (lo+i) ≠ c (lo+i+1)`, by `ind` on `j` exactly as
+planned (no new rule; `2ʲ` is the System T term `tmPow2`). Its extract `bisect`
+is a type-2 operator — a function and two numbers in, a crossing out — certified
+by `bisect_spec` through `soundness`. It runs: an interval of `2⁶⁰` points in
+milliseconds (61 queries), `⌊√2·2⁴⁰⌋ = 1554944255987` (`#guard`s). On an
+oscillating coloring it returns the crossing its halving leads to, not the
+first (`[0,1,0,1,0,1,0,1,1] ↦ 6`): the *different witness* effect above.
+
+**The *same witness, different cost* effect, measured — and its cause is
+extraction, not mathematics.** A first proof (`bisectSlowD`, kept) applies the
+induction hypothesis inside both branches of the midpoint case split. Its
+program is exponential in `j` (`j = 16`: ≈ 30 s; `bisect`: 1 ms), for two
+reasons that are properties of the extraction map: `orE` extracts to
+`recNat left right tag`, whose left branch is evaluated eagerly, and `exE`
+extracts to `(λλ body) (snd p) (fst p)`, which evaluates the eliminated program
+`p` twice. The fast proof decides *which half* first (a number `s ∈ {0, 2ʲ}`),
+calls the hypothesis once at `lo + s`, and binds its result with an `impE`/`impI`
+redex before opening it. The lesson is general: in this extraction, where a
+proof uses a content-bearing hypothesis is where the program spends.
 
 **Bisection versus Newton *literally* is a representation question, not an
 algorithmic one** — the sharper finding. Newton's convergence proof needs a
@@ -1732,7 +1750,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,939 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,940 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

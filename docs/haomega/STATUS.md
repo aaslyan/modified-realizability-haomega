@@ -1,6 +1,6 @@
 # HA^ω status
 
-**As of 2026-10-24.** Full `lake build` green — 7,941 jobs,
+**As of 2026-10-24.** Full `lake build` green — 7,942 jobs,
 including Mathlib and the first-order tree — zero HAomega warnings, zero
 `sorry`/`admit`. 33,530 lines across 108 files in `HAomega/`, **61** inference
 rules (constructors of `Deriv`), 37 extracted realizers rendered in
@@ -526,9 +526,15 @@ symbolic jet), each β/ι-reduction plus one `≈` cancellation, no induction:
 
 All `[propext, Quot.sound]`. Round trips through `soundness`:
 `expDerivLaw_val`, `ftc1Law_val` (`[propext, Classical.choice, Quot.sound]`).
-**Not yet inside `Deriv`:** the product rule, the chain rule and
-`sin² + cos² = 1` — these are about Cauchy products, i.e. finite sums built by
-`recNat`, and need induction over the sum, not just one cancellation.
+**The product rule** (`ProductRuleD.lean`): `productRuleLawD : ∀f ∀g ∀n.
+D(f·g)(n) ≈ (Df·g)(n) + (f·Dg)(n)` over the Cauchy product `tmJetMul`,
+`[propext, Quot.sound]`, round trip `productRuleLaw_val`. Unlike the five laws
+above it needs induction: on the number `t` of summed terms, with the invariant
+`(n+1)·S_{n+1}(f,g,t+1) = S_n(Df,g,t) + S_n(f,Dg,t) + d·f(t)·g(d)` under
+`t + d = n+1` (`prdPartialLeibnizD`); at `t = n+1` the remainder is `0·…`, and
+the structural equation becomes `≈` by `qeqvOfEqNorm`. Helpers include
+`qnat(a+b) = qnat a + qnat b` by induction (`prdQnatAddD`).
+**Not yet inside `Deriv`:** the chain rule and `sin² + cos² = 1`.
 
 ### The order bridge, and what it unblocked
 
@@ -1765,7 +1771,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,941 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,942 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

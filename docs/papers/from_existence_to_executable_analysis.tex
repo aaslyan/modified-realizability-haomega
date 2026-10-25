@@ -412,7 +412,7 @@ Both algebras embed into the approximating differentiable representation
 \(\lean{E1.diff}\) quantifies over an approximating derivative family
 \(\exists F : \N\to\Q\to\Q\) rather than an exact rational function.
 
-Across the thirty-two extracted programs cataloged in \lean{ShowAll.lean} and
+Across the thirty-seven extracted programs cataloged in \lean{ShowAll.lean} and
 \lean{EXTRACTED_HAOMEGA.md}, we distinguish three classes of object-level
 derivations, by where the computational content comes from:
 \begin{enumerate}
@@ -523,11 +523,29 @@ is proved to commute with \(\frac{d}{dx}\) and (for real polynomials) with
 jets. The modes themselves are proof-computed, as the instance
 \(u' = m v,\ v' = -m u\) of \lean{genSolve2D}, and agree with the bridge
 (\lean{genSolve2_mode_trig}).
+
+\item \textbf{The algebra inside the object logic.} Structural equality on the
+unnormalized rationals cannot state \(x + 0 = x\), so the laws are stated with a
+value equality \(s \approx t\), \emph{defined} as \(s + 0 = t + 0\); its rules
+(every operation returns a normal form and reads only the values of its
+arguments; the field laws a bare variable blocks) enter by one schema rule,
+\lean{Deriv.qlaw}, sound by uniqueness of normal forms. Derived in the calculus:
+\(\exp' \approx \exp\), \(\sin' \approx \cos\), \(\cos' \approx -\sin\),
+FTC1 \(D(\mathcal{I}c) \approx c\) and FTC2 \(\mathcal{I}(Dc)(n+1) \approx c(n+1)\)
+for every jet \(c\) (\lean{QEquiv.lean}), and the product rule
+\(D(fg) \approx Df\cdot g + f\cdot Dg\) for every \(f, g\), by induction over the
+Cauchy sum (\lean{productRuleLawD}).
+\item \textbf{Bisection and roots.} \(\forall j\,\forall c^{\N\to\N}\,\forall lo.\;
+c(lo) \ne c(lo + 2^j) \to \exists i < 2^j.\; c(lo+i) \ne c(lo+i+1)\) is proved by
+induction on \(j\) (\lean{bisectD}); its extract is binary search, a type-2
+operator certified through soundness. A first proof of the same statement,
+with the induction hypothesis used inside both branches of the case split,
+extracts an exponential program; the cost is a property of the proof's shape
+under extraction. Composed with the certified evaluator, the operator gives
+approximate roots of every expression of the universe on its certified disk
+(\lean{UExpr.root_spec}), e.g.\ \(\ln(41/40)\) and \(\arcsin(1/5)\).
 \end{itemize}
-What is not yet mechanized is the algebra of the universe inside the object
-logic: FTC2, the product and chain rules, \(\sin' = \cos\), \(\sin^2+\cos^2=1\)
-are proved, where at all, only in the metatheory. They meet the representation
-question recorded below.
+Not yet inside the object logic: the chain rule and \(\sin^2+\cos^2=1\).
 
 \section{Related Work}
 

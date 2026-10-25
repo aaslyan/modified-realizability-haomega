@@ -70,7 +70,7 @@ syntax by `sysParams` with the certified evaluator `GPACSys.approx` (`SystemEval
 2. **Re-centering / stepping**: re-expand at `x₀` (composition with `x + x₀`,
    already in the universe). Turns the disk-limited evaluator and solver into a
    global Taylor integrator; prerequisite for ODE solutions on `[0, 1]` and for
-   Fourier coefficients of universe functions. **One step done 2026-10-25** (`SystemRecenter.lean`): `recenter_overlap` — for a flat system, the series re-centred at `x₀` (data `S_N(Y)(x₀)`, table `solFastD`) agrees at `t` with the original at `x₀ + t`, in a uniform disk (QUESTIONS.md item 20). Stepping from data, with one radius for all data of size `≤ 2^D`: `stepData_overlap` (`SystemStep.lean`). Open: the data-size bound along an iteration and the accumulated certified error.
+   Fourier coefficients of universe functions. **One step done 2026-10-25** (`SystemRecenter.lean`): `recenter_overlap` — for a flat system, the series re-centred at `x₀` (data `S_N(Y)(x₀)`, table `solFastD`) agrees at `t` with the original at `x₀ + t`, in a uniform disk (QUESTIONS.md item 20). Stepping from data, with one radius for all data of size `≤ 2^D`: `stepData_overlap` (`SystemStep.lean`). Iterated steps converge in the precision (`stepIter_cauchy`). Open: an explicit modulus `N₀(ε, k)`.
 3. ~~Definite integrals (room 2) and approximate critical points (room 4)~~ — done 2026-10-24.
 4. Newton's method with certified quadratic contraction (`f′` is in the
    universe; the `f″` bound comes from the coefficient bounds). Today Newton

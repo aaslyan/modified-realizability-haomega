@@ -415,4 +415,152 @@ theorem stp_overlap_of_table (F : List JExprN)
     (rct_abs_chain_le h_term1 h_term2 h_term3 h_term4)
     (rct_twelve_half_pow_lt hε hM_eps)
 
+/-- `sbdExprBound F K` is monotone in `K` for `0 ≤ K ≤ K'`. -/
+theorem stp_sbdExprBound_mono (F : JExprN) {K K' : Rat} (hK : 0 ≤ K) (hKK' : K ≤ K') :
+    sbdExprBound F K ≤ sbdExprBound F K' := by
+  induction F with
+  | var _ => exact hKK'
+  | const _ => exact le_refl _
+  | add _ _ iha ihb => exact add_le_add iha ihb
+  | sub _ _ iha ihb => exact add_le_add iha ihb
+  | mul a b iha ihb =>
+    dsimp [sbdExprBound]
+    have ha0 := sbdExprBound_nonneg a hK
+    have hb0 := sbdExprBound_nonneg b hK
+    have hK' : 0 ≤ K' := le_trans hK hKK'
+    have ha'0 := sbdExprBound_nonneg a hK'
+    exact mul_le_mul (mul_le_mul_of_nonneg_left iha (by norm_num)) ihb hb0 (by positivity)
+  | integ _ iha => exact iha
+
+/-- Uniform weighted bound for `solFastD F a` for any `1 ≤ K ≤ K_max` when `4 * Φ(K_max) ≤ B`. -/
+theorem stp_solFastD_weighted_bound_getD (F : List JExprN)
+    (hF : ∀ Fv ∈ F, Fv.WF F.length ∧ Fv.ConstsConst ∧ Fv.NoInteg)
+    (a : List Q) {K K_max B : Rat} (hK1 : 1 ≤ K) (hKK : K ≤ K_max) (hB : 4 ≤ B)
+    (hInit : ∀ v < F.length, |(a.getD v Q.zero).val| ≤ K)
+    (hStep_max : ∀ Fv ∈ F, 4 * sbdExprBound Fv K_max ≤ B) :
+    ∀ n : Nat, ∀ v < F.length, |(solFastD F a v n).val| ≤ K * B ^ n / sbdSq n := by
+  have hK0 : (0 : Rat) ≤ K := by linarith
+  have hB0 : (0 : Rat) ≤ B := by linarith
+  refine stp_z_weighted_bound F hF (solFastD F a) hK0 hB hInit
+    (stp_solFastD_succ_val F hF a) fun Fv hFv ↦ ?_
+  have h1 := stp_sbdExprBound_mono Fv hK0 hKK
+  have h2 := hStep_max Fv hFv
+  have h3 : B ≤ K * B := le_mul_of_one_le_left hB0 hK1
+  linarith
+
+/-- Geometric sum bound `|S_N(f)(x)| ≤ 2 * K` when `|f n| ≤ K * B^n / sbdSq n` and `|x| ≤ 1 / (4 * B)`. -/
+theorem stp_evalPoly_bound (f : Nat → Q) (N : Nat) (x : Q) {K B : Rat}
+    (hK : 0 ≤ K) (hB : 0 < B) (hx : |x.val| ≤ 1 / (4 * B))
+    (hf : ∀ n : Nat, |(f n).val| ≤ K * B ^ n / sbdSq n) :
+    |(Jet.evalPoly ⟨f⟩ N x).val| ≤ 2 * K := by
+  have h_bd : ∀ n, 0 ≤ n → |(f n).val| ≤ K * B ^ n := fun n _ ↦
+    le_trans (hf n) (div_le_self (by positivity) (sbdSq_ge_one n))
+  have h_tail := rct_evalPoly_tail_bound f (Nat.zero_le N) x hK hB hx h_bd
+  have h_zero : (Jet.evalPoly ⟨f⟩ 0 x).val = 0 := by
+    rw [rct_evalPoly_val_eq_sum, Finset.sum_range_zero]
+  rw [h_zero, sub_zero, pow_zero, mul_one] at h_tail
+  exact h_tail
+
+/-- Weighted difference bound between `solFastD F a` and `solFastD F a'` for data `≤ K`. -/
+theorem stp_solFastD_diff_weighted_bound (F : List JExprN)
+    (hF : ∀ Fv ∈ F, Fv.WF F.length ∧ Fv.ConstsConst ∧ Fv.NoInteg)
+    (a a' : List Q) {K δ B : Rat} (hK : 0 ≤ K) (hδ : 0 ≤ δ) (hB : 4 ≤ B)
+    (ha : ∀ v < F.length, |(a.getD v Q.zero).val| ≤ K)
+    (ha' : ∀ v < F.length, |(a'.getD v Q.zero).val| ≤ K)
+    (hStep : ∀ Fv ∈ F, 4 * sbdExprBound Fv K ≤ K * B)
+    (hDiffInit : ∀ v < F.length, |(a.getD v Q.zero).val - (a'.getD v Q.zero).val| ≤ δ)
+    (hDiffStep : ∀ Fv ∈ F, 4 * sptDiffBound Fv K 1 ≤ B) :
+    ∀ n : Nat, ∀ v < F.length,
+      |(solFastD F a v n).val - (solFastD F a' v n).val| ≤ δ * 1 * B ^ n / sbdSq n := by
+  have hB0 : (0 : Rat) ≤ B := by linarith
+  have hW := stp_z_weighted_bound F hF (solFastD F a) hK hB ha
+    (stp_solFastD_succ_val F hF a) hStep
+  have hW' := stp_z_weighted_bound F hF (solFastD F a') hK hB ha'
+    (stp_solFastD_succ_val F hF a') hStep
+  intro n
+  induction n using Nat.strongRecOn with
+  | ind m ih =>
+    intro v hv
+    have hpv := hF F[v] (List.getElem_mem hv)
+    cases m with
+    | zero =>
+      have hsq0 : sbdSq 0 = 1 := by unfold sbdSq; norm_num
+      rw [hsq0, pow_zero, mul_one, mul_one, div_one]
+      exact hDiffInit v hv
+    | succ k =>
+      rw [stp_solFastD_succ_val F hF a v hv k, stp_solFastD_succ_val F hF a' v hv k]
+      have hk1_ge : (1 : Rat) ≤ ((k + 1 : Nat) : Rat) := by
+        exact_mod_cast Nat.succ_pos k
+      have hk1_pos : (0 : Rat) < ((k + 1 : Nat) : Rat) := by positivity
+      rw [← sub_div, abs_div, abs_of_pos hk1_pos]
+      have h_div_le :
+          |(sbdEvalExpr F[v] (solFastD F a) k).val -
+            (sbdEvalExpr F[v] (solFastD F a') k).val| / ((k + 1 : Nat) : Rat) ≤
+          |(sbdEvalExpr F[v] (solFastD F a) k).val -
+            (sbdEvalExpr F[v] (solFastD F a') k).val| :=
+        div_le_self (abs_nonneg _) hk1_ge
+      have h_expr := spt_evalExpr_diff_bound F[v] F.length hpv.1 hpv.2.1
+        (solFastD F a) (solFastD F a') hK (by norm_num) hδ hB k
+        (fun u hu j _ ↦ hW j u hu)
+        (fun u hu j _ ↦ hW' j u hu)
+        (fun u hu j hj ↦ ih j (Nat.lt_succ_of_le hj) u hu)
+        k (le_refl k)
+      have hΨ : 0 ≤ δ * sptDiffBound F[v] K 1 :=
+        mul_nonneg hδ (sptDiffBound_nonneg F[v] hK (by norm_num))
+      have h4Ψ : 4 * (δ * sptDiffBound F[v] K 1) ≤ (δ * 1) * B := by
+        have hstep_v := mul_le_mul_of_nonneg_left (hDiffStep F[v] (List.getElem_mem hv)) hδ
+        linarith
+      have h_scale := sbd_step_scale hΨ hB0 h4Ψ k
+      linarith
+
+/-- Combined data-Lipschitz and truncation bound for `evalPoly ⟨solFastD F a v⟩ N x`. -/
+theorem stp_evalPoly_solFastD_diff (F : List JExprN)
+    (hF : ∀ Fv ∈ F, Fv.WF F.length ∧ Fv.ConstsConst ∧ Fv.NoInteg)
+    (a a' : List Q) {K δ B : Rat} (hK1 : 1 ≤ K) (hδ : 0 ≤ δ) (hB : 4 ≤ B)
+    (ha : ∀ v < F.length, |(a.getD v Q.zero).val| ≤ K)
+    (ha' : ∀ v < F.length, |(a'.getD v Q.zero).val| ≤ K)
+    (hStep_max : ∀ Fv ∈ F, 4 * sbdExprBound Fv K ≤ B)
+    (hDiffInit : ∀ v < F.length, |(a.getD v Q.zero).val - (a'.getD v Q.zero).val| ≤ δ)
+    (hDiffStep : ∀ Fv ∈ F, 4 * sptDiffBound Fv K 1 ≤ B)
+    (x : Q) (hx : |x.val| ≤ 1 / (4 * B))
+    {N₀ N N' : Nat} (hN : N₀ ≤ N) (hN' : N₀ ≤ N') (v : Nat) (hv : v < F.length) :
+    |(Jet.evalPoly ⟨solFastD F a v⟩ N x).val -
+      (Jet.evalPoly ⟨solFastD F a' v⟩ N' x).val| ≤
+      2 * δ + 4 * K * (1 / 2 : Rat) ^ N₀ := by
+  have hK0 : (0 : Rat) ≤ K := by linarith
+  have hB_pos : (0 : Rat) < B := by linarith
+  have hStep : ∀ Fv ∈ F, 4 * sbdExprBound Fv K ≤ K * B := fun Fv hFv ↦
+    le_trans (hStep_max Fv hFv) (le_mul_of_one_le_left (le_of_lt hB_pos) hK1)
+  have h_diff_w := stp_solFastD_diff_weighted_bound F hF a a' hK0 hδ hB
+    ha ha' hStep hDiffInit hDiffStep
+  have h_diff_bd : ∀ n, 0 ≤ n →
+      |(solFastD F a v n).val - (solFastD F a' v n).val| ≤ δ * B ^ n := by
+    intro n _
+    have hw := h_diff_w n v hv
+    rw [mul_one] at hw
+    exact le_trans hw (div_le_self (by positivity) (sbdSq_ge_one n))
+  have h_lip := rct_evalPoly_diff_bound (solFastD F a v) (solFastD F a' v) N 0 x
+    hδ hB_pos hx (fun _ hn ↦ absurd hn (Nat.not_lt_zero _)) h_diff_bd
+  rw [pow_zero, mul_one] at h_lip
+  have hW' := stp_solFastD_weighted_bound_getD F hF a' hK1 (le_refl K) hB ha' hStep_max
+  have h_a'_bd : ∀ n, N₀ ≤ n → |(solFastD F a' v n).val| ≤ K * B ^ n := fun n _ ↦
+    le_trans (hW' n v hv) (div_le_self (by positivity) (sbdSq_ge_one n))
+  have h_tail1 := rct_evalPoly_tail_bound (solFastD F a' v) hN x hK0 hB_pos hx h_a'_bd
+  have h_tail2 := rct_evalPoly_tail_bound (solFastD F a' v) hN' x hK0 hB_pos hx h_a'_bd
+  have h_split :
+      (Jet.evalPoly ⟨solFastD F a v⟩ N x).val - (Jet.evalPoly ⟨solFastD F a' v⟩ N' x).val =
+      ((Jet.evalPoly ⟨solFastD F a v⟩ N x).val - (Jet.evalPoly ⟨solFastD F a' v⟩ N x).val) +
+      (((Jet.evalPoly ⟨solFastD F a' v⟩ N x).val - (Jet.evalPoly ⟨solFastD F a' v⟩ N₀ x).val) -
+        ((Jet.evalPoly ⟨solFastD F a' v⟩ N' x).val - (Jet.evalPoly ⟨solFastD F a' v⟩ N₀ x).val)) := by
+    ring
+  rw [h_split]
+  have h_tri1 := abs_add_le
+    ((Jet.evalPoly ⟨solFastD F a v⟩ N x).val - (Jet.evalPoly ⟨solFastD F a' v⟩ N x).val)
+    (((Jet.evalPoly ⟨solFastD F a' v⟩ N x).val - (Jet.evalPoly ⟨solFastD F a' v⟩ N₀ x).val) -
+      ((Jet.evalPoly ⟨solFastD F a' v⟩ N' x).val - (Jet.evalPoly ⟨solFastD F a' v⟩ N₀ x).val))
+  have h_tri2 := abs_sub
+    ((Jet.evalPoly ⟨solFastD F a' v⟩ N x).val - (Jet.evalPoly ⟨solFastD F a' v⟩ N₀ x).val)
+    ((Jet.evalPoly ⟨solFastD F a' v⟩ N' x).val - (Jet.evalPoly ⟨solFastD F a' v⟩ N₀ x).val)
+  linarith
+
 end HAomega

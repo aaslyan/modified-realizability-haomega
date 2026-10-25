@@ -1140,8 +1140,19 @@ table at `t` agrees with `solFastD F a` at `x₀ + t` within any `ε` past some
 `N₀`. The proof generalizes `rct_overlap_of_table` to a base table with a given
 weighted bound (`stp_overlap_of_table`), with `K = 2^D` and `B` read from `F`
 alone. Guards: `tan` stepped twice by `1/1024` agrees with one step of `2/1024`
-and with the original series to `10⁻²⁵`. Open: a bound on the data size along
-an iteration (so `D` is known in advance) and the accumulated certified error.
+and with the original series to `10⁻²⁵`.
+
+**The continuation is well defined** (`stepIter_cauchy`, AGY, audited): for
+at most `k` steps of size `≤ 2^{-(R+2)}`, with `R` depending on `F`, `D` and
+`k` only, the stepped data at precisions `N, N'` agree within any `ε` past some
+`N₀`. The proof bounds the data growth (each step at most doubles it,
+`stp_stepData_bound`), proves the table Lipschitz in its data
+(`stp_evalPoly_solFastD_diff`), and runs the error recursion
+`e_{j+1} ≤ C·e_j + C′·2^{-min(N,N′)}` along the steps
+(`stp_stepIter_diff_bound`). So past the first disk the continuation is a
+convergent computation, and by `stepData_overlap` it agrees with every
+earlier expansion on each overlap. Open: an explicit modulus `N₀(ε, k)` read
+off the constants (the theorem states its existence).
 
 ## 8. Not started
 

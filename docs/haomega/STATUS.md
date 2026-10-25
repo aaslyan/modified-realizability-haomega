@@ -552,8 +552,20 @@ the structural equation becomes `≈` by `qeqvOfEqNorm`. Helpers include
 pairs (`pythPair1ZeroD`, `pythPair2ZeroD`, by induction on the partial sum), so
 `(n+1)·E(n+1) ≈ 0`, hence `E(n+1) ≈ 0`; `E(0) = 1` by computation; induction on
 `n` assembles them.
-**Not yet inside `Deriv`:** the chain rule (composition is now a System T term,
-`tmJetComp` in `ChainRuleD.lean`, statement pinned).
+**The chain rule** (`ChainRuleD.lean`): composition is a closed System T term,
+`tmJetComp F G (n) := Σ_{k<n+1} F(k)·(G₊)ᵏ(n)` with `G₊` the jet `G` with its
+constant term dropped (`tmJetDrop0`) and powers an order-1 `recNat` at the jet
+type (`tmJetPow`); `#guard`s check it against the value-level `Jet.compZero`
+for `exp∘sin` and `sin∘exp` at degrees below 6. `chainRuleLawD : ∀f ∀g ∀n.
+D(f∘g)(n) ≈ (Dg·((Df)∘g))(n)`, `[propext, Quot.sound]`, round trip
+`chainRuleLaw_val` (`[propext, Classical.choice, Quot.sound]`). The proof needs
+three inductions beyond the product rule: the power rule
+`D((G₊)^{k+1}) ≈ (k+1)·Dg·(G₊)ᵏ` (`chrPowDerivD`), vanishing of `(G₊)ᵏ` below
+degree `k` (`chrPowVanishD`, which lets the finite sum be cut and extended), and
+the partial chain identity on the number of summed terms (`chrChainPartialD`).
+On the way it derives commutativity, associativity, linearity and congruence of
+the Cauchy product `tmJetMul` by `Deriv.ind` (`chrJetMulCommD`,
+`chrJetMulAssocD`, …). With it every law of pillar 3 is inside `Deriv`.
 
 ### The order bridge, and what it unblocked
 

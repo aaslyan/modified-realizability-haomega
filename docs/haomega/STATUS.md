@@ -1,8 +1,8 @@
 # HA^ω status
 
-**As of 2026-10-24.** Full `lake build` green — 7,938 jobs,
+**As of 2026-10-24.** Full `lake build` green — 7,939 jobs,
 including Mathlib and the first-order tree — zero HAomega warnings, zero
-`sorry`/`admit`. 33,530 lines across 108 files in `HAomega/`, **60** inference
+`sorry`/`admit`. 33,530 lines across 108 files in `HAomega/`, **61** inference
 rules (constructors of `Deriv`), 36 extracted realizers rendered in
 `EXTRACTED_HAOMEGA.md`.
 
@@ -38,7 +38,7 @@ soundness                                   [propext, Classical.choice, Quot.sou
 **`#dtree d`** (`DerivTree.lean`, display tooling, not certified) prints a
 closed derivation as a natural-deduction tree, one primitive rule per line with
 its conclusion, premises indented below; helper derivations are unfolded to the
-60 constructors, and a node is marked `·` when its realizer type is contentless
+61 constructors, and a node is marked `·` when its realizer type is contentless
 (extraction erases it). `#dtreeStats d` counts rule uses. Pinned by `#guard_msgs`:
 `∀x. 0 + x = x` (9 rules, all erased), `∀x ∃y. y = S x` (the `exI` node is the
 one kept), and `genSolveND` at the `exp` system `y = 1 + ∫y`: **500 primitive
@@ -467,7 +467,53 @@ inhabitant, and a law with a bare variable on one side does not.
 
 Closing that gap means a subtype carrying a coprimality proof, or a quotient —
 a change of a different size from `den+1`, and one that has to keep the proof
-component out of `Tm.eval`'s axiom footprint. **Not attempted.**
+component out of `Tm.eval`'s axiom footprint. **Not attempted** — the gap is
+closed the other way instead, below.
+
+### Value equality `≈` (QUESTIONS.md item 18 (b), 2026-10-24)
+
+Instead of normalizing the data, the object language gets a second equality.
+`s ≈ t` (`Formula.qeqv`) is **defined** as `s + 0 = t + 0` — equality of normal
+forms — so it is a formula of the existing language, its realizer is `unit`, and
+reflexivity, symmetry and transitivity are those of `=`. `MR_qeqv_iff`: realizing
+`s ≈ t` is `(s.eval e).val = (t.eval e).val`, exactly.
+
+Its laws are the schema `QLaw` (`Realizability.lean`), entered by the **one**
+rule `Deriv.qlaw` (60 → 61 rules). Eighteen premise-free laws, in three groups:
+every operation returns a normal form (`normAdd`/`Sub`/`Mul`/`Div`/`Nat`); every
+operation reads only the values of its arguments, so `≈` arguments give a
+*structurally* equal result (`addV`, `subV`, `mulV`, `divV`, `ltV`) — after
+which `=`'s Leibniz rule does all the remaining congruence work; and the field
+laws a bare variable blocks (`mulOne`, `mulZero`, `subAdd`, `addSub`, `divMul`
+and `mulDiv` under `¬(c ≈ 0)`, `natSucc`, `natSuccNeZero`). `x + 0 ≈ x` needs no
+law: it is `normAdd`. Soundness: `QLaw.sound`, each law by `Q.eq_of_val` (two
+normal forms with equal values are the same record) and the `isNorm_*` lemmas
+in `QArith.lean`. `extract` sends `qlaw` to `Tm.dflt`, as every contentless rule.
+
+*Why one rule and not eighteen.* Sixteen separate constructors were tried
+first: the build then failed generating `extract`'s equation lemmas (needed by
+`simp [extract]` in `Soundness.lean` and by `dsimp [extract]` elsewhere), over
+the heartbeat limit, and that generation does not see a local `set_option`.
+One schema rule keeps `extract`/`soundness` at one case each.
+
+**The first calculus laws inside `Deriv`** (`QEquiv.lean`), over the closed
+System T functionals `tmJetDeriv`/`tmJetInteg` and the generators
+`tmExpJet`/`tmSinJet`/`tmCosJet`, at a symbolic index (and for FTC a
+symbolic jet), each β/ι-reduction plus one `≈` cancellation, no induction:
+
+| derivation | statement |
+|---|---|
+| `expDerivLawD` | `∀n. (D exp)(n) ≈ exp(n)` |
+| `sinDerivLawD` | `∀n. (D sin)(n) ≈ cos(n)` |
+| `cosDerivLawD` | `∀n. (D cos)(n) ≈ 0 − sin(n)` |
+| `ftc1LawD` | `∀c ∀n. D(∫c)(n) ≈ c(n)` |
+| `ftc2LawD` | `∀c. ∫(Dc)(0) = 0 ∧ ∀n. ∫(Dc)(n+1) ≈ c(n+1)` |
+
+All `[propext, Quot.sound]`. Round trips through `soundness`:
+`expDerivLaw_val`, `ftc1Law_val` (`[propext, Classical.choice, Quot.sound]`).
+**Not yet inside `Deriv`:** the product rule, the chain rule and
+`sin² + cos² = 1` — these are about Cauchy products, i.e. finite sums built by
+`recNat`, and need induction over the sum, not just one cancellation.
 
 ### The order bridge, and what it unblocked
 
@@ -1686,7 +1732,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,938 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,939 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

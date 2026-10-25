@@ -32,6 +32,61 @@ def Realizes : {Γ : List Ty} → {as : List Ty} → Ctx Γ as → Env Γ →
   | _, _, .cons φ Δ, e, ε =>
       MR φ e (ε _ .here) ∧ Realizes Δ e (fun τ v ↦ ε τ (.there v))
 
+/-- **The value-equality laws are sound**, at any realizer (each is
+contentless). -/
+theorem QLaw.sound {Γ : List Ty} {a : Ty} {φ : Formula Γ a} (A : QLaw φ) (e : Env Γ)
+    (x : a.interp) : MR φ e x := by
+  cases A with
+  | normAdd s t => exact Q.isNorm_add _ _
+  | normSub s t => exact Q.isNorm_sub _ _
+  | normMul s t => exact Q.isNorm_mul _ _
+  | normDiv s t => exact Q.isNorm_div _ _
+  | normNat n => exact Q.isNorm_ofNat _
+  | addV s s' t t' =>
+      intro _ h₁ _ h₂
+      exact Q.eq_of_val (Q.isNorm_add _ _) (Q.isNorm_add _ _) (by
+        show (Q.add _ _).val = (Q.add _ _).val
+        rw [Q.val_add, Q.val_add, (Q.norm_eq_iff _ _).mp h₁, (Q.norm_eq_iff _ _).mp h₂])
+  | subV s s' t t' =>
+      intro _ h₁ _ h₂
+      exact Q.eq_of_val (Q.isNorm_sub _ _) (Q.isNorm_sub _ _) (by
+        show (Q.sub _ _).val = (Q.sub _ _).val
+        rw [Q.val_sub, Q.val_sub, (Q.norm_eq_iff _ _).mp h₁, (Q.norm_eq_iff _ _).mp h₂])
+  | mulV s s' t t' =>
+      intro _ h₁ _ h₂
+      exact Q.eq_of_val (Q.isNorm_mul _ _) (Q.isNorm_mul _ _) (by
+        show (Q.mul _ _).val = (Q.mul _ _).val
+        rw [Q.val_mul, Q.val_mul, (Q.norm_eq_iff _ _).mp h₁, (Q.norm_eq_iff _ _).mp h₂])
+  | divV s s' t t' =>
+      intro _ h₁ _ h₂
+      exact Q.eq_of_val (Q.isNorm_div _ _) (Q.isNorm_div _ _) (by
+        show (Q.div _ _).val = (Q.div _ _).val
+        rw [Q.val_div_all, Q.val_div_all, (Q.norm_eq_iff _ _).mp h₁,
+          (Q.norm_eq_iff _ _).mp h₂])
+  | ltV s s' t t' =>
+      intro _ h₁ _ h₂
+      exact Q.ltN_congr ((Q.norm_eq_iff _ _).mp h₁) ((Q.norm_eq_iff _ _).mp h₂)
+  | mulOne s => exact Q.mul_one_norm _
+  | mulZero s => exact Q.mul_zero_eq _
+  | subAdd s t => exact Q.sub_add_norm _ _
+  | addSub s t => exact Q.add_sub_norm _ _
+  | divMul s c =>
+      intro z hz
+      refine Q.div_mul_norm _ _ fun hc ↦ hz () ?_
+      show Q.norm _ = Q.norm _
+      rw [Q.norm_eq_iff, hc]
+      exact Q.val_ofNat_zero.symm
+  | natSucc n => exact Q.ofNat_succ_eq _
+  | mulDiv s c =>
+      intro z hz
+      refine Q.mul_div_norm' _ _ fun hc ↦ hz () ?_
+      show Q.norm _ = Q.norm _
+      rw [Q.norm_eq_iff, hc]
+      exact Q.val_ofNat_zero.symm
+  | natSuccNeZero n =>
+      intro z hz
+      exact Q.ofNat_succ_val_ne _ ((Q.norm_eq_iff _ _).mp hz)
+
 /-- Under the invariant, an object term evaluates the same in the realizer
 environment as in the object environment.  Needed by `allE`, `exI` and
 `eqDec`, which inject object terms into the realizer. -/
@@ -329,6 +384,7 @@ theorem soundness : {Γ : List Ty} → {as : List Ty} → {Δ : Ctx Γ as} → {
   | convQSubSelf t => intro e ε h; exact Q.sub_self _
   | convQMulDivCancel n a => intro e ε h; exact Q.mul_div_cancel_norm _ _
   | convQMulDivSubZero n a => intro e ε h; exact Q.mul_div_sub_zero _ _
+  | qlaw A => intro e ε h; exact QLaw.sound A e _
   | convPredZero => intro e ε h; rfl
   | convPredSucc t => intro e ε h; rfl
   | convGoodZero s => intro e ε h; rfl

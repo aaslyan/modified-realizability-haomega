@@ -16,7 +16,7 @@ one rule per line:
 
 with each rule's premises indented below it. The printer `whnf`-unfolds every
 helper derivation (`Deriv.symmE`, `genSolveNStepD`, …) down to the primitive
-`Deriv` constructors, so the tree contains only the 60 rules of
+`Deriv` constructors, so the tree contains only the 61 rules of
 `Realizability.lean`. A rule whose conclusion has a contentless realizer type
 (an equation, `⊥`, or a `∀`/`→`/`∧` built from them) is marked `·`: extraction
 erases it. The unmarked nodes are exactly the ones the extracted program is made of.

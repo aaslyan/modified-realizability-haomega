@@ -140,15 +140,8 @@ recommendations.  Items get moved to "Resolved" when you answer them.
    (`InUniverse_add` first). Exponential polynomials remain the intended
    finite sub-universe for laws inside `Deriv` (item 18 still open).
 
-## Open
-
-*(nothing blocking; the roadmap's phases and the Hydra project's six are
-all delivered, as are Phases E and F.  Item 12 is engineering, not
-mathematics; items 13–16 are design points, recorded rather than silently
-chosen.  Item 18 gates the HA^ω closed universe's algebra laws.)*
-
 18. **HA^ω closed universe: what does `=` on `rat` mean for the algebra laws?**
-   *Raised 2026-10-23, kept open by the user's choice.*  The hand-rolled `Q`
+   *Raised 2026-10-23; answered 2026-10-24: "(b)".*  The hand-rolled `Q`
    is unnormalized and `Deriv`'s `.eq` at `rat` is structural equality, so
    value-true identities can be false as stated (`Q.add_zero_not_id`,
    `Q.mul_div_not_id`; FTC1 holds only as `D(∫f)(n) = f(n) + 0`).  The
@@ -165,6 +158,23 @@ chosen.  Item 18 gates the HA^ω closed universe's algebra laws.)*
    need the laws proceeds meanwhile: the proof-computed solvers (integral
    form, structural `=`), inverse/composition as guarded fixed points, and
    the Fourier layer's definitions.
+   **Done (2026-10-24).**  `s ≈ t` is `Formula.qeqv`, *defined* as equality
+   of normal forms (`s + 0 = t + 0`), so refl/symm/trans are `=`'s.  Its laws
+   are the schema `QLaw` (18 premise-free laws: every operation returns a
+   normal form; every operation reads only values, so `≈` arguments give a
+   structurally equal result; the field laws a bare variable blocks), entered
+   by **one** rule `Deriv.qlaw` — so `Deriv` grows from 60 to 61 rules, not
+   78.  (Sixteen separate constructors were tried first and pushed the
+   generation of `extract`'s equation lemmas past the heartbeat limit, which
+   a local `set_option` does not reach.)  Sound by `Q.eq_of_val`.  First laws
+   derived in `QEquiv.lean`: exp′ ≈ exp, sin′ ≈ cos, cos′ ≈ −sin, FTC1, FTC2.
+
+## Open
+
+*(nothing blocking; the roadmap's phases and the Hydra project's six are
+all delivered, as are Phases E and F.  Item 12 is engineering, not
+mathematics; items 13–16 are design points, recorded rather than silently
+chosen.  Item 18 gates the HA^ω closed universe's algebra laws.)*
 
 16. **Lucas: should it be internalized in the fragment?**  *Raised and
    answered 2026-07-30, on delivering Phase G.*  Phase G proves

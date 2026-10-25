@@ -84,6 +84,17 @@ def Formula.neg {Γ : List Ty} {a : Ty} (φ : Formula Γ a) :
 /-- Truth, as the trivial equation. -/
 def Formula.top {Γ : List Ty} : Formula Γ .unit := .eq .zero .zero
 
+/-- The normal form of a rational term: adding zero runs it through `Q.of`. -/
+def Tm.qnorm {Γ : List Ty} (t : Tm Γ .rat) : Tm Γ .rat := .qadd t (.qnat .zero)
+
+/-- **Value equality on `rat`**, `s ≈ t`: equal normal forms.  Structural `=`
+distinguishes `2/4` from `1/2` (an inhabitant of `Q` need not be in lowest
+terms), so the field laws are stated with `≈` (`docs/internal/QUESTIONS.md`
+item 18 (b)).  A defined notion, not a new connective: reflexivity, symmetry
+and transitivity are those of `=`, and its realizer is `unit`. -/
+def Formula.qeqv {Γ : List Ty} (s t : Tm Γ .rat) : Formula Γ .unit :=
+  .eq s.qnorm t.qnorm
+
 /-! ## Renaming and substitution
 
 Each preserves the realizer index by construction — that is the entire point

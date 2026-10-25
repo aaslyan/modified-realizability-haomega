@@ -194,6 +194,62 @@ def Tm.dflt : {Γ : List Ty} → (τ : Ty) → Tm Γ τ
   | _, .arrow _ b => .lam (Tm.dflt b)
   | _, .prod a b => .pair (Tm.dflt a) (Tm.dflt b)
 
+/-! ## Value equality on `rat`: the law schema
+
+`s ≈ t` (`Formula.qeqv`) is equality of normal forms; it answers
+`docs/internal/QUESTIONS.md` item 18 (b).  Its laws are collected here and
+enter `Deriv` through the **one** rule `Deriv.qlaw`, so the rule base grows by
+one constructor rather than sixteen (each law is premise-free; a law with
+hypotheses states them as `→`).  Three groups:
+
+* every operation returns a normal form (`norm*`);
+* every operation reads only the values of its arguments, so `≈` arguments
+  give a *structurally* equal result (`*V`) — this is what makes `≈` a
+  congruence, and lets `=`'s Leibniz rule do the rest;
+* the field laws a bare variable blocks under structural `=`, stated against
+  the normal form (`mulOne`, `subAdd`, …).
+
+All are contentless (`unit` conclusions), sound by `Q.eq_of_val`. -/
+
+/-- The value-equality laws. -/
+inductive QLaw : {Γ : List Ty} → {a : Ty} → Formula Γ a → Type where
+  | normAdd {Γ : List Ty} (s t : Tm Γ .rat) :
+      QLaw (.eq (Tm.qnorm (.qadd s t)) (.qadd s t))
+  | normSub {Γ : List Ty} (s t : Tm Γ .rat) :
+      QLaw (.eq (Tm.qnorm (.qsub s t)) (.qsub s t))
+  | normMul {Γ : List Ty} (s t : Tm Γ .rat) :
+      QLaw (.eq (Tm.qnorm (.qmul s t)) (.qmul s t))
+  | normDiv {Γ : List Ty} (s t : Tm Γ .rat) :
+      QLaw (.eq (Tm.qnorm (.qdiv s t)) (.qdiv s t))
+  | normNat {Γ : List Ty} (n : Tm Γ .nat) :
+      QLaw (.eq (Tm.qnorm (.qnat n)) (.qnat n))
+  | addV {Γ : List Ty} (s s' t t' : Tm Γ .rat) :
+      QLaw ((Formula.qeqv s s').imp ((Formula.qeqv t t').imp (.eq (.qadd s t) (.qadd s' t'))))
+  | subV {Γ : List Ty} (s s' t t' : Tm Γ .rat) :
+      QLaw ((Formula.qeqv s s').imp ((Formula.qeqv t t').imp (.eq (.qsub s t) (.qsub s' t'))))
+  | mulV {Γ : List Ty} (s s' t t' : Tm Γ .rat) :
+      QLaw ((Formula.qeqv s s').imp ((Formula.qeqv t t').imp (.eq (.qmul s t) (.qmul s' t'))))
+  | divV {Γ : List Ty} (s s' t t' : Tm Γ .rat) :
+      QLaw ((Formula.qeqv s s').imp ((Formula.qeqv t t').imp (.eq (.qdiv s t) (.qdiv s' t'))))
+  | ltV {Γ : List Ty} (s s' t t' : Tm Γ .rat) :
+      QLaw ((Formula.qeqv s s').imp ((Formula.qeqv t t').imp (.eq (.qlt s t) (.qlt s' t'))))
+  | mulOne {Γ : List Ty} (s : Tm Γ .rat) :
+      QLaw (.eq (.qmul s (.qnat (.succ .zero))) (Tm.qnorm s))
+  | mulZero {Γ : List Ty} (s : Tm Γ .rat) :
+      QLaw (.eq (.qmul s (.qnat .zero)) (.qnat .zero))
+  | subAdd {Γ : List Ty} (s t : Tm Γ .rat) :
+      QLaw (.eq (.qadd (.qsub s t) t) (Tm.qnorm s))
+  | addSub {Γ : List Ty} (s t : Tm Γ .rat) :
+      QLaw (.eq (.qsub (.qadd s t) t) (Tm.qnorm s))
+  | divMul {Γ : List Ty} (s c : Tm Γ .rat) :
+      QLaw ((Formula.qeqv c (.qnat .zero)).neg.imp (.eq (.qmul (.qdiv s c) c) (Tm.qnorm s)))
+  | mulDiv {Γ : List Ty} (s c : Tm Γ .rat) :
+      QLaw ((Formula.qeqv c (.qnat .zero)).neg.imp (.eq (.qdiv (.qmul c s) c) (Tm.qnorm s)))
+  | natSuccNeZero {Γ : List Ty} (n : Tm Γ .nat) :
+      QLaw (Formula.qeqv (.qnat (.succ n)) (.qnat .zero)).neg
+  | natSucc {Γ : List Ty} (n : Tm Γ .nat) :
+      QLaw (.eq (.qnat (.succ n)) (.qadd (.qnat n) (.qnat (.succ .zero))))
+
 /-! ## The rules -/
 
 /-- **Natural deduction for HA^ω.**  45 rules, no side conditions. -/
@@ -319,6 +375,8 @@ inductive Deriv : {Γ : List Ty} → {as : List Ty} → Ctx Γ as →
   | convQPosRecip {Γ as} {Δ : Ctx Γ as} (t : Tm Γ .nat) :
       Deriv Δ (.eq (.qlt (.qnat .zero)
         (.qdiv (.qnat (.succ .zero)) (.qnat (.succ t)))) (.succ .zero))
+  /-- The value-equality laws (`QLaw`), one rule for the whole schema. -/
+  | qlaw {Γ as a} {φ : Formula Γ a} {Δ : Ctx Γ as} : QLaw φ → Deriv Δ φ
   | convPredZero {Γ as} {Δ : Ctx Γ as} : Deriv Δ (.eq (.pred .zero) .zero)
   | convPredSucc {Γ as} {Δ : Ctx Γ as} (t : Tm Γ .nat) :
       Deriv Δ (.eq (.pred (.succ t)) t)

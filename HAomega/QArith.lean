@@ -523,4 +523,140 @@ theorem qpow2posVal_val (j : Nat) : (qpow2posVal j).val = (2 : Rat)^j := by
 #print axioms Q.mul_add
 #print axioms Q.add_neg
 
+/-! ## Value equality: the normal form as the meaning of `≈`
+
+The answer to `docs/internal/QUESTIONS.md` item 18 (b).  Structural `=` cannot
+state `x + 0 = x`, because an inhabitant need not be in lowest terms.  The
+object language's value equality `s ≈ t` is *defined* as equality of normal
+forms, `s + 0 = t + 0` (`Formula.qeqv`), and the lemmas below are the value
+side of the rules that make it a congruence: every operation's result is a
+normal form (`isNorm_*`), and a normal form is determined by its value
+(`eq_of_val`). -/
+
+/-- The normal form of a `Q`: adding zero runs it through `Q.of`. -/
+def Q.norm (a : Q) : Q := Q.add a (Q.ofNat 0)
+
+/-- `a` is in normal form. -/
+def Q.IsNorm (a : Q) : Prop := Q.norm a = a
+
+theorem Q.val_ofNat_zero : (Q.ofNat 0).val = 0 := by rw [Q.val_ofNat]; simp
+
+theorem Q.val_norm (a : Q) : (Q.norm a).val = a.val := by
+  unfold Q.norm; rw [Q.val_add, Q.val_ofNat_zero, add_zero]
+
+/-- Equal values have equal normal forms. -/
+theorem Q.norm_eq_of_val {a b : Q} (h : a.val = b.val) : Q.norm a = Q.norm b :=
+  Q.of_inj_val (Nat.mul_ne_zero a.den_ne_zero (Q.ofNat 0).den_ne_zero)
+    (Nat.mul_ne_zero b.den_ne_zero (Q.ofNat 0).den_ne_zero)
+    (by rw [show Q.of _ _ = Q.norm a from rfl, show Q.of _ _ = Q.norm b from rfl,
+      Q.val_norm, Q.val_norm, h])
+
+/-- **`≈` means equal values.** -/
+theorem Q.norm_eq_iff (a b : Q) : Q.norm a = Q.norm b ↔ a.val = b.val :=
+  ⟨fun h ↦ by rw [← Q.val_norm a, h, Q.val_norm], Q.norm_eq_of_val⟩
+
+/-- Two normal forms with the same value are the same record. -/
+theorem Q.eq_of_val {a b : Q} (ha : a.IsNorm) (hb : b.IsNorm) (h : a.val = b.val) :
+    a = b := by
+  rw [← ha, ← hb]; exact Q.norm_eq_of_val h
+
+theorem Q.isNorm_of (n : Int) (d : Nat) (hd : d ≠ 0) : (Q.of n d).IsNorm :=
+  Q.of_inj_val (Nat.mul_ne_zero (Q.of n d).den_ne_zero (Q.ofNat 0).den_ne_zero) hd
+    (by rw [show Q.of _ _ = Q.norm (Q.of n d) from rfl, Q.val_norm])
+
+theorem Q.isNorm_add (a b : Q) : (Q.add a b).IsNorm :=
+  Q.isNorm_of _ _ (Nat.mul_ne_zero a.den_ne_zero b.den_ne_zero)
+
+theorem Q.isNorm_sub (a b : Q) : (Q.sub a b).IsNorm := Q.isNorm_add _ _
+
+theorem Q.isNorm_mul (a b : Q) : (Q.mul a b).IsNorm :=
+  Q.isNorm_of _ _ (Nat.mul_ne_zero a.den_ne_zero b.den_ne_zero)
+
+theorem Q.isNorm_norm (a : Q) : (Q.norm a).IsNorm := Q.isNorm_add _ _
+
+theorem Q.ofNat_eq_of (n : Nat) : Q.ofNat n = Q.of (Int.ofNat n) 1 := by
+  unfold Q.of Q.ofNat
+  simp
+
+theorem Q.isNorm_ofNat (n : Nat) : (Q.ofNat n).IsNorm := by
+  rw [Q.ofNat_eq_of]; exact Q.isNorm_of _ _ one_ne_zero
+
+theorem Q.isNorm_zero : Q.zero.IsNorm := Q.isNorm_ofNat 0
+
+theorem Q.of_neg (n : Int) (d : Nat) : Q.of (-n) d = Q.neg (Q.of n d) := by
+  unfold Q.of Q.neg Q.zero
+  split
+  · rfl
+  · simp only [Int.natAbs_neg]
+    split
+    · rfl
+    · simp [Int.neg_tdiv]; rfl
+
+theorem Q.isNorm_neg_of (n : Int) (d : Nat) (hd : d ≠ 0) : (Q.neg (Q.of n d)).IsNorm := by
+  rw [← Q.of_neg]; exact Q.isNorm_of _ _ hd
+
+theorem Q.isNorm_div (a b : Q) : (Q.div a b).IsNorm := by
+  unfold Q.div
+  split
+  · exact Q.isNorm_zero
+  · rename_i hb
+    have hd : a.den * b.num.natAbs ≠ 0 :=
+      Nat.mul_ne_zero a.den_ne_zero (Int.natAbs_ne_zero.mpr hb)
+    split
+    · exact Q.isNorm_neg_of _ _ hd
+    · exact Q.isNorm_of _ _ hd
+
+/-- Division commutes with the value map with no side condition: both sides
+send a zero divisor to `0`. -/
+theorem Q.val_div_all (a b : Q) : (Q.div a b).val = a.val / b.val := by
+  by_cases hb : b.num = 0
+  · have : b.val = 0 := by unfold Q.val; rw [hb]; simp
+    rw [this, div_zero]
+    unfold Q.div; rw [if_pos hb]; exact Q.val_zero
+  · exact Q.val_div a b hb
+
+theorem Q.ltN_congr {a a' b b' : Q} (ha : a.val = a'.val) (hb : b.val = b'.val) :
+    Q.ltN a b = Q.ltN a' b' := by
+  rcases Q.ltN_eq_zero_or_one a b with h | h
+  · rw [h, eq_comm, Q.ltN_eq_zero_iff, ← ha, ← hb, ← Q.ltN_eq_zero_iff]; exact h
+  · rw [h, eq_comm, Q.ltN_eq_one_iff, ← ha, ← hb, ← Q.ltN_eq_one_iff]; exact h
+
+-- the rules' soundness, value side
+theorem Q.mul_one_norm (a : Q) : Q.mul a (Q.ofNat 1) = Q.norm a :=
+  Q.eq_of_val (Q.isNorm_mul _ _) (Q.isNorm_norm _)
+    (by rw [Q.val_mul, Q.val_ofNat, Q.val_norm]; simp)
+
+theorem Q.mul_zero_eq (a : Q) : Q.mul a (Q.ofNat 0) = Q.ofNat 0 :=
+  Q.eq_of_val (Q.isNorm_mul _ _) (Q.isNorm_ofNat _)
+    (by rw [Q.val_mul, Q.val_ofNat]; simp)
+
+theorem Q.sub_add_norm (a b : Q) : Q.add (Q.sub a b) b = Q.norm a :=
+  Q.eq_of_val (Q.isNorm_add _ _) (Q.isNorm_norm _)
+    (by rw [Q.val_add, Q.val_sub, Q.val_norm]; ring)
+
+theorem Q.add_sub_norm (a b : Q) : Q.sub (Q.add a b) b = Q.norm a :=
+  Q.eq_of_val (Q.isNorm_sub _ _) (Q.isNorm_norm _)
+    (by rw [Q.val_sub, Q.val_add, Q.val_norm]; ring)
+
+theorem Q.div_mul_norm (a c : Q) (hc : c.val ≠ 0) :
+    Q.mul (Q.div a c) c = Q.norm a :=
+  Q.eq_of_val (Q.isNorm_mul _ _) (Q.isNorm_norm _)
+    (by rw [Q.val_mul, Q.val_div_all, Q.val_norm]; field_simp)
+
+theorem Q.mul_div_norm' (a c : Q) (hc : c.val ≠ 0) :
+    Q.div (Q.mul c a) c = Q.norm a :=
+  Q.eq_of_val (Q.isNorm_div _ _) (Q.isNorm_norm _)
+    (by rw [Q.val_div_all, Q.val_mul, Q.val_norm]; field_simp)
+
+theorem Q.ofNat_succ_val_ne (n : Nat) : (Q.ofNat (n + 1)).val ≠ (Q.ofNat 0).val := by
+  rw [Q.val_ofNat, Q.val_ofNat]; exact_mod_cast Nat.succ_ne_zero n
+
+theorem Q.ofNat_succ_eq (n : Nat) : Q.ofNat (n + 1) = Q.add (Q.ofNat n) (Q.ofNat 1) :=
+  Q.eq_of_val (Q.isNorm_ofNat _) (Q.isNorm_add _ _)
+    (by rw [Q.val_add, Q.val_ofNat, Q.val_ofNat, Q.val_ofNat]; push_cast; ring)
+
+#print axioms Q.ltN_congr
+#print axioms Q.div_mul_norm
+#print axioms Q.isNorm_div
+
 end HAomega

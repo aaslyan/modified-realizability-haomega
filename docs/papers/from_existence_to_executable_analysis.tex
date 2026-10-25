@@ -548,6 +548,24 @@ extracts an exponential program; the cost is a property of the proof's shape
 under extraction. Composed with the certified evaluator, the operator gives
 approximate roots of every expression of the universe on its certified disk
 (\lean{UExpr.root_spec}), e.g.\ \(\ln(41/40)\) and \(\arcsin(1/5)\).
+\item \textbf{Every polynomial system, evaluated and continued.} These results
+are metatheory about choice-free programs, not extracts of \(\mathsf{Deriv}\)
+proofs. Every solution of a polynomial--integral system with constant data has
+coefficients \(|c_n| \le 2^M (2^R)^n\) (\lean{solN_geom_bound}), with
+\((M, R)\) computed from the system's syntax (\lean{sysParams},
+\lean{solN_geom_bound_computed}); with the proof-computed Cauchy modulus this
+gives a certified evaluator for every member of the universe, not only for
+expressions (\lean{GPACSys.approx_spec}), run on a memoized coefficient table
+proved equal to the Picard solution (\lean{solFast_val}). Initial-data
+perturbation is bounded uniformly in the data (\lean{solN_perturb_bound}), and
+re-expanding at \(x_0\) is consistent on the overlap of the two disks
+(\lean{recenter_overlap}, \lean{stepData_overlap}); iterated steps converge in
+the precision (\lean{stepIter_cauchy}), so past the first disk the continuation
+is a convergent computation. Newton's method on the partial sums, with the
+exact derivative the universe supplies, converges quadratically under a
+Kantorovich condition (\lean{UExpr.newton_spec}). For trigonometric
+polynomials, Parseval, mode orthogonality and integration by parts hold as
+identities of the coefficient algebra (\lean{TrigPolyInner.lean}).
 \end{itemize}
 
 \section{Related Work}

@@ -29,19 +29,38 @@ in progress) → pillar 5 in the logic.
 
 ### 0.1 Next phase: the six rooms (decided 2026-10-24)
 
-The aim, in the author's words: a *complete and brief* "toy house" of
-mathematical analysis — the classical theorems hold in it without pathology,
-one can actually work in it, and in practice it behaves like numerical analysis,
-since every object and every proof is an algorithm.
+**The vision.** In the author's words: a *complete and brief* "toy house" of
+mathematical analysis — a minimal closed universe inside HA^ω and System T in
+which the classical theorems of first-year analysis (Newton–Leibniz, the
+intermediate value theorem, critical points, differential equations, Taylor and
+Fourier series) hold without pathology, one can actually work, and in practice
+everything behaves like numerical analysis, because every object and every
+existence proof is a certified algorithm.
 
-| Room | Classical content | Tool in the universe | State |
-| :--- | :--- | :--- | :--- |
-| 1. Differential algebra | linearity, product rule, chain rule, `sin²+cos²=1` | jet functionals `tmJetDeriv`, `tmJetMul`, `tmJetComp` | product rule, Pythagoras done in `Deriv`; chain rule in progress (`ChainRuleD.lean`) |
-| 2. Integral calculus | FTC1, FTC2; `∫ₐᵇ f′ = f(b) − f(a)` | definite integral `(∫f)(b) − (∫f)(a)` through the certified evaluator | done: `UExpr.defIntegral` with certificate `defIntegral_spec`, and the pointwise Newton–Leibniz formula `UExpr.newtonLeibniz` (`DefiniteIntegral.lean`) |
-| 3. Zeros and inverses | intermediate value theorem, inverse functions | `UExpr.root` (extracted bisection + evaluator) | done (approximate IVT on the certified disk) |
-| 4. Extrema | approximate Rolle / mean value theorem | approximate stationary points: bisection on `f′` | done (approximate form): `UExpr.critical`, `critical_spec` (`CriticalPoints.lean`); constructively only `\|f′(x)\| < ε`, and max/min needs more data (e.g. the sign of `f″`) |
-| 5. Differential equations | existence, uniqueness | `genSolveND`, `UExpr.compile` | done near `0`; values for general systems need `solN_geom_bound` (`SystemBound.lean`, pinned) |
-| 6. Fourier analysis | orthogonality, Parseval, Fourier coefficients | `TrigPoly` algebra, Taylor bridge `toJet` | algebra and bridge done; projection of a general `f` needs a whole period, hence step 2 below |
+Why this universe and not pointwise functions: for black-box `C⁰`/`C¹`
+functions (`E0`/`E1` here) Myhill's obstruction blocks computable
+differentiation unless derivative moduli are carried by hand, and integration by
+Riemann sums needs `2^{ω(k)}` evaluations. On polynomial-ODE analytic jets
+(`UExpr`, `InGPAC`):
+- `d/dx` and `∫₀ˣ` are one-step structural operations on coefficient streams;
+- Newton–Leibniz holds coefficientwise inside `Deriv` (up to `≈`) and, on the
+  certified disk, as a certified computation: a definite integral costs `O(k)`
+  series terms, not `2^k` samples;
+- bisection, extracted from induction on the logarithm of the grid size,
+  composes with the certified evaluator into root-finding and inverse functions;
+- ODE solving is native: guarded Picard iteration locks one coefficient per step;
+- Taylor and Fourier meet through the trigonometric-polynomial bridge `toJet`.
+Explicit coefficient bounds `(M, R)` exist for every `UExpr`; for arbitrary
+`InGPAC` systems they are the open item `solN_geom_bound`.
+
+| Room | Classical content | Tool in the universe | Done | Remaining |
+| :--- | :--- | :--- | :--- | :--- |
+| 1. Differential algebra | linearity, product rule, chain rule, `sin²+cos²=1` | `tmJetDeriv`, `tmJetMul`, `tmJetComp` | in `Deriv`: `exp′≈exp`, `sin′≈cos`, `cos′≈−sin`, FTC1, FTC2 (`QEquiv.lean`), product rule (`ProductRuleD.lean`), `sin²+cos²≈1` (`PythagorasD.lean`); composition as a System T term (`tmJetComp`) | the chain rule `chainRuleAtD` (`ChainRuleD.lean`, statement pinned, proof in progress) |
+| 2. Integral calculus | FTC1, FTC2; `∫ₐᵇ f′ = f(b) − f(a)` | definite integral through the evaluator | `UExpr.defIntegral`, `defIntegral_spec`, pointwise Newton–Leibniz `UExpr.newtonLeibniz` (`DefiniteIntegral.lean`) | optional: a benchmark against the Riemann sums of `EFTC.lean` |
+| 3. Zeros and inverses | intermediate value theorem, inverse functions | `UExpr.root` (extracted `bisect` + `UExpr.approx`) | approximate IVT on the certified disk (`Bisection.lean`, `RootOperator.lean`; `ln(41/40)`, `arcsin(1/5)` to `10⁻¹⁰`) | Newton's method (order item 4) |
+| 4. Extrema | approximate Rolle / mean value theorem | bisection on `f′` | `UExpr.critical`, `critical_spec` (`CriticalPoints.lean`) | constructively only `\|f′(x)\| < ε`; a max/min claim needs more data (e.g. the sign of `f″`) |
+| 5. Differential equations | existence, uniqueness | `genSolveND`, `UExpr.compile` | scalar, 2-variable and n-variable solvers, uniqueness, `InGPAC` closure | the general majorant `solN_geom_bound` (`SystemBound.lean`, pinned); re-centering / stepping past the initial disk |
+| 6. Fourier analysis | orthogonality, Parseval, Fourier coefficients | `TrigPoly` algebra, bridge `toJet`, modes from `genSolve2D` | `TrigPoly` `+, ×, d/dx, ∫`, `toJet`, System T terms | mean and inner product, mode orthogonality, Parseval for trigonometric polynomials (cheap, finite coefficient algebra); Fourier coefficients of general universe functions need a whole period, hence re-centering |
 
 **Order:**
 1. Finish what is running: the chain rule (room 1), then `solN_geom_bound` —
@@ -54,7 +73,8 @@ since every object and every proof is an algorithm.
 4. Newton's method with certified quadratic contraction (`f′` is in the
    universe; the `f″` bound comes from the coefficient bounds). Today Newton
    exists only for square roots on ℚ (`NewtonRaphson.lean`).
-5. Fourier projection and Parseval for universe functions (room 6), after 2.
+5. Room 6: mean, inner product, orthogonality and Parseval for trigonometric
+   polynomials (any time; small); Fourier projection of universe functions after 2.
 
 **What the house will still not contain**, by design: non-analytic functions
 (`|x|`, steps, `max`) and functions satisfying no polynomial ODE (Γ, ζ); a
@@ -63,6 +83,7 @@ choices (exact roots of arbitrary `f`, exact argmax) — only approximations.
 These are the walls numerical analysis lives within too.
 
 **Claims not to make:** Newton–Leibniz holds up to `≈`, not "on the nose";
+"automatic `(M, R)` bounds" hold for `UExpr`, not yet for every `InGPAC` system;
 evaluation is certified only on the disk `|x| ≤ 2^{-(R+1)}`, so values such as
 `∫₀^{1/4} e^{sin x}` are not covered until step 2 (and composition evaluation is
 slow, ~7 min for `e^{sin x}/(1+x²)` at `k = 20`).
@@ -73,77 +94,6 @@ practice: algorithm-free specifications, proofs by induction, certified
 extracts, with the proof-computed / explicit-witness / witness-style
 classification kept explicit. This is a way to present the parts, not a
 replacement for the goal.
-
----
-
-## 0.1. Research Plan: Completing the "Minimal Viable Universe" of Analysis
-
-### The Vision: A Complete "Toy House" of Mathematical & Numerical Analysis
-
-The overarching idea is to define a **minimal viable closed universe** of
-mathematical analysis inside $\mathrm{HA}^\omega$ and Gödel's System T — a
-self-contained "toy house" where the classical theorems of first-year analysis
-(Newton–Leibniz / FTC1 & FTC2, the Intermediate Value Theorem via bisection,
-critical points / Rolle's theorem, differential equations, Taylor series, and
-Fourier analysis) all hold **without pathology**, and where every existence
-proof is immediately a **runnable, certified numerical algorithm**.
-
-In pointwise representations of analysis ($C^0 / C^1$ black-box functions, such
-as $E_0 / E_1$), Myhill's (1971) obstruction blocks computable differentiation
-unless derivative moduli are carried by hand, and Riemann-sum integration
-requires $O(2^{\omega(k)})$ point evaluations. By choosing **polynomial-ODE
-analytic jets** (`UExpr` / `InGPAC`) with automatic $(M, R)$ Cauchy–Hadamard
-bounds as the universe:
-- $\frac{d}{dx}$ and $\int_0^x$ are 1-step exact structural combinators on
-  coefficient streams;
-- **Newton–Leibniz** holds both coefficientwise inside `Deriv` and pointwise on
-  values, turning definite integration into an $O(k)$-term series evaluation
-  rather than a $2^k$-point Riemann sum;
-- **Bisection** (`bisect`, extracted from induction on the logarithm of the
-  grid size) composes with the certified evaluator (`UExpr.approx`) to give
-  certified root-finding and inverse functions (`UExpr.root`);
-- **ODE solving** is native via guarded Picard iteration (`genSolveND`), which
-  locks one Taylor coefficient per step;
-- **Taylor and Fourier** live in the same universe via the trigonometric
-  polynomial bridge (`TrigPoly.toJet`).
-
-### The Six Rooms of the House: What Is Built and What Remains
-
-| Room | Classical Theorem | Numerical / Computational Tool | Current Status | Remaining Work |
-| :--- | :--- | :--- | :--- | :--- |
-| **1. Differential Algebra** | Linearity, Product Rule, Chain Rule, $\sin^2 + \cos^2 = 1$ | Stream AD (`tmJetDeriv`, `tmJetMul`, `tmJetComp`) | $\exp' \approx \exp$, $\sin' \approx \cos$, $\cos' \approx -\sin$, FTC1, FTC2 (`QEquiv.lean`), Product Rule (`ProductRuleD.lean`), $\sin^2+\cos^2 \approx 1$ (`PythagorasD.lean`) | Finish `chainRuleAtD` in `ChainRuleD.lean` (1 `sorry`) |
-| **2. Integral Calculus (Newton–Leibniz)** | FTC1 ($D\int f = f$) & FTC2 ($\int_a^b f'(t)\,dt = f(b) - f(a)$) | Fast certified quadrature via formal antiderivative `UExpr.integrate` | Formal $\mathcal{I}$ and termwise FTC1/FTC2 in `Deriv` done | Add **Pointwise Newton–Leibniz** & certified definite integral `UExpr.integral e a b m` on `UExpr` |
-| **3. Zero-Finding & Inverses (IVT)** | Intermediate Value Theorem & Inverse Function Theorem | `UExpr.root` (extracted `bisect` + `UExpr.approx`) | **Done** (`Bisection.lean`, `RootOperator.lean`; $\ln(41/40)$, $\arcsin(1/5)$ to $10^{-10}$) | Optional: **Newton–Raphson** step `x - e(x)/e'(x)` alongside bisection |
-| **4. Extrema & Mean Value** | Rolle's Theorem, Mean Value Theorem, Critical Points ($f'(c) = 0$) | Certified stationary-point finder `UExpr.critical` (`e.deriv.root`) | Slope bound `evalPoly_lip_disk` proved; no critical-point operator yet | Add `UExpr.critical e a b j m := e.deriv.root a b j m` + approximate Rolle/stationary theorem |
-| **5. Differential Equations & Horizons** | Cauchy–Kowalevski / Picard–Lindelöf Existence & Uniqueness | Proof-computed solver `genSolveND` + compiler `UExpr.compile` | Scalar, 2D, $N$-D solvers, uniqueness, and `InGPAC` closure done | **General majorant** $(M, R)$ for arbitrary `GPACSys`; **re-centering / step continuation** past the initial disk |
-| **6. Fourier & Harmonic Analysis** | Trig Calculus, Orthogonality of Modes, Parseval's Identity | `TrigPoly` algebra, Taylor bridge `toJet`, Fourier inner product / projection | `TrigPoly` $+,\times,\frac{d}{dx},\int$, `toJet`, `modeSolveD`, System T terms done | Add **mean / $L^2$ inner product**, **mode orthogonality**, and **Parseval's identity** ($\mathrm{mean}(|P|^2) = \sum |c_k|^2$) |
-
-### Concrete Action Plan (Step-by-Step)
-
-1. **Phase A — Close Room 1 (Algebra Laws Inside `Deriv`):**
-   - Verify and commit [`HAomega/PythagorasD.lean`](file:///Users/araaslyan/modified-realizability-haomega/HAomega/PythagorasD.lean) ($\sin^2 + \cos^2 \approx 1$ inside `Deriv`, already `sorry`-free).
-   - Complete the proof of `chainRuleAtD` in [`HAomega/ChainRuleD.lean`](file:///Users/araaslyan/modified-realizability-haomega/HAomega/ChainRuleD.lean):
-     1. Derive the jet power rule $D(G_+^{k+1})(n) \approx (k+1)\cdot(DG \cdot G_+^k)(n)$ by `Deriv.ind` on $k$ using `productRuleAtD`.
-     2. Derive degree vanishing $(G_+)^k(m) = 0$ for $k > m$.
-     3. Derive partial-sum linearity of `tmJetMul` over `tmJetComp` by `Deriv.ind`.
-
-2. **Phase B — Close Room 2 (Pointwise Newton–Leibniz & Definite Quadrature):**
-   - Define `UExpr.integral (e : UExpr) (a b : Q) (m : Nat) : Q` using `(UExpr.integ e).approx b (m + 1) - (UExpr.integ e).approx a (m + 1)`.
-   - Prove **Pointwise FTC2 (`UExpr.ftc2_spec`)** and **Definite Integral Correctness (`UExpr.integral_spec`)**: on the certified disk, `UExpr.integral e.deriv a b m` is within $2^{-m}$ of $e(b) - e(a)$, and `UExpr.integral e a b m` is within $2^{-m}$ of the antiderivative difference $F(b) - F(a)$ where $F' = e$.
-   - Add `#guard` benchmarks comparing $O(m)$-term jet quadrature against the $2^{\omega(m)}$-sample Riemann sums of `EFTC.lean`.
-
-3. **Phase C — Close Room 4 (Critical Points, Rolle's Theorem, and Newton Step):**
-   - Define `UExpr.critical (e : UExpr) (a b : Q) (j m : Nat) : Q := e.deriv.root a b j m`.
-   - Prove `UExpr.critical_spec` (Approximate Rolle / Stationary Point Theorem): if $e'(a)$ and $e'(b)$ have opposite signs at precision $2^{-m}$, `e.critical a b j m` returns a point $c \in [a, b]$ where $|S_N(e')(c)|$ is bounded by the precision + Lipschitz grid step.
-   - Define a certified 1-step or $k$-step **Newton–Raphson operator** `UExpr.newtonStep e x m` using `e.approx` and `e.deriv.approx` to showcase fast derivative-assisted root refinement alongside `UExpr.root`.
-
-4. **Phase D — Close Room 6 (Harmonic Analysis: Orthogonality & Parseval):**
-   - In `TrigPoly.lean` (or `FourierAnalysis.lean`), define the period-mean functional $\mathrm{mean}(P) := c_0 = \frac{1}{2\pi}\int_0^{2\pi} P(x)\,dx$ and the Hermitian inner product $\langle P, Q \rangle := \mathrm{mean}(P \cdot \overline{Q})$.
-   - Prove **Orthogonality of Fourier Modes** ($\langle e^{ijx}, e^{ikx} \rangle = \delta_{jk}$ and the real $\sin/\cos$ counterparts), **Fourier Projection** ($c_k = \langle P, e^{ikx} \rangle$), and **Parseval's Identity** ($\langle P, P \rangle = \sum_{|k|\le N} |c_k|^2$).
-
-5. **Phase E — Close Room 5 (System Majorants & Stepping Past the Disk):**
-   - Prove a general **Cauchy–Kowalevski Majorant Theorem** assigning explicit $(M, R)$ `RadiusJet` bounds to any well-formed polynomial–integral system `GPACSys`, so every `InGPAC` function (not just `UExpr`) inherits certified evaluation and bisection.
-   - Formalize **analytic re-centering / ODE stepping** ($x \mapsto x_0 + h$) to extend evaluation and ODE integration across multiple disks.
 
 ---
 

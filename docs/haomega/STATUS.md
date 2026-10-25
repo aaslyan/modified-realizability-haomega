@@ -1,6 +1,6 @@
 # HA^ω status
 
-**As of 2026-10-24.** Full `lake build` green — 7,943 jobs,
+**As of 2026-10-24.** Full `lake build` green — 7,945 jobs,
 including Mathlib and the first-order tree — zero HAomega warnings, zero
 `sorry`/`admit`. 33,530 lines across 108 files in `HAomega/`, **61** inference
 rules (constructors of `Deriv`), 37 extracted realizers rendered in
@@ -236,6 +236,17 @@ three labels, according to where its computational content comes from:
     `2^|num q|`, so large numerators inflate the slope term; roots of
     expressions with products are slow (`x³ − 1/100`: about 10 s), by the
     Cauchy-product evaluation cost already recorded above.
+    **Definite integrals and critical points** (`DefiniteIntegral.lean`,
+    `CriticalPoints.lean`): `UExpr.defIntegral e a b k = (∫e)(b) − (∫e)(a)`
+    through the evaluator, certified within `2⁻ᵏ` of the partial-sum
+    difference (`defIntegral_spec`); FTC2 on partial sums,
+    `S_{N+1}(∫f′)(x) = S_{N+1}(f)(x) − f(0)` (`evalPoly_integ_deriv`), gives the
+    certified Newton–Leibniz formula `UExpr.newtonLeibniz`. `UExpr.critical` is the
+    root operator on `f′` — the approximate Rolle statement (`critical_spec`),
+    not a max/min claim. Examples (`#guard`): `∫₀^{1/2} cos = sin(1/2)`,
+    `∫₀^{1/4} exp′ = e^{1/4} − 1` (to `10⁻⁸` at `k = 30`), and the minimum
+    `ln(21/20)` of `eˣ − 1 − (21/20)x` (to `10⁻¹⁰`). Both operators
+    `[propext, Quot.sound]`.
   - *Inverses (closed-universe pillar 4):* `ShiftSolve.lean`. On the
     unnormalized `Q` the guard `G(0)·Y(i)` of `Y = 1 + G·Y` is not structurally
     `0`, so the guard is the shift `x·F` (`tmJetShift`, no division).
@@ -1779,7 +1790,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,943 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,945 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

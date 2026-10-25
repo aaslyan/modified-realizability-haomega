@@ -37,9 +37,9 @@ since every object and every proof is an algorithm.
 | Room | Classical content | Tool in the universe | State |
 | :--- | :--- | :--- | :--- |
 | 1. Differential algebra | linearity, product rule, chain rule, `sin²+cos²=1` | jet functionals `tmJetDeriv`, `tmJetMul`, `tmJetComp` | product rule, Pythagoras done in `Deriv`; chain rule in progress (`ChainRuleD.lean`) |
-| 2. Integral calculus | FTC1, FTC2; `∫ₐᵇ f′ = f(b) − f(a)` | definite integral `(∫f)(b) − (∫f)(a)` through the certified evaluator | termwise FTC1/FTC2 done; pointwise definite integral missing |
+| 2. Integral calculus | FTC1, FTC2; `∫ₐᵇ f′ = f(b) − f(a)` | definite integral `(∫f)(b) − (∫f)(a)` through the certified evaluator | done: `UExpr.defIntegral` with certificate `defIntegral_spec`, and the pointwise Newton–Leibniz formula `UExpr.newtonLeibniz` (`DefiniteIntegral.lean`) |
 | 3. Zeros and inverses | intermediate value theorem, inverse functions | `UExpr.root` (extracted bisection + evaluator) | done (approximate IVT on the certified disk) |
-| 4. Extrema | approximate Rolle / mean value theorem | approximate stationary points: bisection on `f′` | missing; constructively only `\|f′(x)\| < ε`, and max/min needs more data (e.g. the sign of `f″`) |
+| 4. Extrema | approximate Rolle / mean value theorem | approximate stationary points: bisection on `f′` | done (approximate form): `UExpr.critical`, `critical_spec` (`CriticalPoints.lean`); constructively only `\|f′(x)\| < ε`, and max/min needs more data (e.g. the sign of `f″`) |
 | 5. Differential equations | existence, uniqueness | `genSolveND`, `UExpr.compile` | done near `0`; values for general systems need `solN_geom_bound` (`SystemBound.lean`, pinned) |
 | 6. Fourier analysis | orthogonality, Parseval, Fourier coefficients | `TrigPoly` algebra, Taylor bridge `toJet` | algebra and bridge done; projection of a general `f` needs a whole period, hence step 2 below |
 
@@ -50,7 +50,7 @@ since every object and every proof is an algorithm.
    already in the universe). Turns the disk-limited evaluator and solver into a
    global Taylor integrator; prerequisite for ODE solutions on `[0, 1]` and for
    Fourier coefficients of universe functions.
-3. Definite integrals (room 2) and approximate critical points (room 4): small.
+3. ~~Definite integrals (room 2) and approximate critical points (room 4)~~ — done 2026-10-24.
 4. Newton's method with certified quadratic contraction (`f′` is in the
    universe; the `f″` bound comes from the coefficient bounds). Today Newton
    exists only for square roots on ℚ (`NewtonRaphson.lean`).

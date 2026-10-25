@@ -534,7 +534,8 @@ arguments; the field laws a bare variable blocks) enter by one schema rule,
 FTC1 \(D(\mathcal{I}c) \approx c\) and FTC2 \(\mathcal{I}(Dc)(n+1) \approx c(n+1)\)
 for every jet \(c\) (\lean{QEquiv.lean}), and the product rule
 \(D(fg) \approx Df\cdot g + f\cdot Dg\) for every \(f, g\), by induction over the
-Cauchy sum (\lean{productRuleLawD}).
+Cauchy sum (\lean{productRuleLawD}), and \(\sin^2+\cos^2 \approx 1\) from it, since
+the derivative of the left side cancels (\lean{pythagorasLawD}).
 \item \textbf{Bisection and roots.} \(\forall j\,\forall c^{\N\to\N}\,\forall lo.\;
 c(lo) \ne c(lo + 2^j) \to \exists i < 2^j.\; c(lo+i) \ne c(lo+i+1)\) is proved by
 induction on \(j\) (\lean{bisectD}); its extract is binary search, a type-2
@@ -545,7 +546,7 @@ under extraction. Composed with the certified evaluator, the operator gives
 approximate roots of every expression of the universe on its certified disk
 (\lean{UExpr.root_spec}), e.g.\ \(\ln(41/40)\) and \(\arcsin(1/5)\).
 \end{itemize}
-Not yet inside the object logic: the chain rule and \(\sin^2+\cos^2=1\).
+Not yet inside the object logic: the chain rule.
 
 \section{Related Work}
 

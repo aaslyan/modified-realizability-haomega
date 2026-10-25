@@ -1,6 +1,6 @@
 # HA^ω status
 
-**As of 2026-10-24.** Full `lake build` green — 7,942 jobs,
+**As of 2026-10-24.** Full `lake build` green — 7,943 jobs,
 including Mathlib and the first-order tree — zero HAomega warnings, zero
 `sorry`/`admit`. 33,530 lines across 108 files in `HAomega/`, **61** inference
 rules (constructors of `Deriv`), 37 extracted realizers rendered in
@@ -534,7 +534,15 @@ above it needs induction: on the number `t` of summed terms, with the invariant
 `t + d = n+1` (`prdPartialLeibnizD`); at `t = n+1` the remainder is `0·…`, and
 the structural equation becomes `≈` by `qeqvOfEqNorm`. Helpers include
 `qnat(a+b) = qnat a + qnat b` by induction (`prdQnatAddD`).
-**Not yet inside `Deriv`:** the chain rule and `sin² + cos² = 1`.
+**`sin² + cos² = 1`** (`PythagorasD.lean`): `pythagorasLawD : ∀n.
+(sin·sin + cos·cos)(n) ≈ 1̂(n)`, `[propext, Quot.sound]`, round trip
+`pythagorasLaw_val`. The proof is the calculus one: by the product rule and
+`sin′ ≈ cos`, `cos′ ≈ −sin`, the four Cauchy sums of `D(sin² + cos²)` cancel in
+pairs (`pythPair1ZeroD`, `pythPair2ZeroD`, by induction on the partial sum), so
+`(n+1)·E(n+1) ≈ 0`, hence `E(n+1) ≈ 0`; `E(0) = 1` by computation; induction on
+`n` assembles them.
+**Not yet inside `Deriv`:** the chain rule (composition is now a System T term,
+`tmJetComp` in `ChainRuleD.lean`, statement pinned).
 
 ### The order bridge, and what it unblocked
 
@@ -1771,7 +1779,7 @@ see §7 for why the first is not statable here.
       - `RadiusJet` ($|c_n| \le 2^M(2^R)^n$, Cauchy–Hadamard germs of radius $\rho = 2^{-R}$): closed under `add`, `sub`, `neg`, `mul`, `integ`, `deriv`, reciprocal `invOneSub` ($1/(1-G)$ for $G_0 = 0$, giving `sec`, `tan`, `arctan`), composition `compZero` ($F \circ G$ for $G_0 = 0$, giving `expTan`, `sinArctan`, `negLogCos`), and nonlinear ODE fixed points (`riccatiODE`, `quadBlowupODE`, `duffingU`, `duffingV`), with `RadiusJet.toE0 : E0` on $[-2^{-(R+1)}, 2^{-(R+1)}]$ and `RadiusJet.toE1 : E1` on $[-2^{-(R+3)}, 2^{-(R+3)}]$.
     - **Proved Lookahead, Guarded Picard Contraction, Kleene–Kreisel Continuity, and Certified Haskell Emission (`HsSemantics.hsOf_correct`)**: `tmJetAdd_lookahead_zero`, `jetMul_lookahead_zero`, `tmJetDeriv_lookahead_plus_one`, `tmJetInteg_contractive_minus_one`, `picard_jetAgree_lock`, `Tracked` / `ContAt Q` theorems, and `hsOf_correct` for all 26 programs (`[propext, Quot.sound]`).
 
-* Build status: **7,942 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
+* Build status: **7,943 jobs green**, 0 errors, 0 warnings, zero `sorry`s.
 
 
 

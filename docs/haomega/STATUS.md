@@ -272,6 +272,20 @@ three labels, according to where its computational content comes from:
     `compZero_exp_solves` (the chain rule `D(exp∘(G−G(0))) = G'·exp∘(G−G(0))`,
     via the power rule `deriv_hPow_val`) and `expComp_eq_compZero` (by
     uniqueness, `genSolve_unique_val`). Value theorems (`Classical.choice`).
+  - *Inverse functions:* `UniverseInvFun.lean` (proof by AGY, audited).
+    **`InGPAC_invFun`**: if `g ∈ InGPAC`, `g(0) = 0` and `g′(0) ≠ 0`, some
+    `y ∈ InGPAC` has `y(0) = 0` and `(g ∘ y)(n) = [n = 1]` coefficientwise
+    (`Jet.compZero`). The unknown sits inside `g` (the `F(f) = G(f)` shape of
+    the 1997 dissertation); the pinned construction `invFunSys` (axiom-free)
+    compiles `g(y) = x` into a polynomial system with constant data: for a flat
+    system `Z = A + ∫F(Z)` with `g = Z_v`, the variables `W = Z ∘ y`
+    (`W = A + ∫F(W)·u`), `y = ∫u`, and `u = 1/g′(y)` (`u = 1/g′(0) + ∫(−u³H(W))`,
+    `H` the symbolic derivative of `g′`). The proof identifies `W` with `Z ∘ y`
+    by uniqueness, shows `u·g′(y) = 1` from its linear recurrence, and reads off
+    `(g∘y)′ = 1`. `[propext, Classical.choice, Quot.sound]`. Guard: from the
+    `(sin, cos)` system the `y` component is `arcsin`,
+    `x + x³/6 + 3x⁵/40 + 5x⁷/112`. Not covered: implicit equations
+    `E(x, y) = 0` in general, and boundary-value problems.
   - *The Fourier layer, value level (closed-universe pillar 6):*
     `TrigPoly.lean`. Trigonometric polynomials `Σ_{|k|≤N} c_k e^{ikx}` over
     Gaussian rationals `CQ`, exactly closed under `+`, `×` (convolution),

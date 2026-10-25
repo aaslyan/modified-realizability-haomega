@@ -290,6 +290,15 @@ three labels, according to where its computational content comes from:
     coefficients of `sin(mx)`, `cos(mx)`; `genSolve2_mode_trig`: they agree with
     the Fourier layer's `toJet` of `sinMode`/`cosMode` — the Taylor and Fourier
     sides meet at a proof-computed object (value theorems, with `Classical.choice`).
+  - *Mean, inner product, orthogonality, Parseval (room 6, finite):*
+    `TrigPolyInner.lean` (proofs by AGY, audited). `mean p := c_0` **by
+    definition** (its identity with `(1/2π)∫₀^{2π}` is not formalized: no real
+    integral in HA^ω), `inner p q := mean(p·conj q)` over the exact convolution.
+    `mean_deriv` (`mean(p′) = 0`), `mean_parts` (`mean(p′q) = −mean(pq′)`),
+    `inner_modes` (`⟨e_j, e_k⟩ = [j = k]`), `parseval`
+    (`⟨p, p⟩ = Σ_{|k|≤N} |c_k|²`), as values; definitions axiom-free. Not
+    claimed: convergence of infinite Fourier series, or Fourier coefficients of
+    general universe functions (they need a whole period, hence stepping).
   - *The Fourier layer in System T:* `TrigPolyTerms.lean`. Degree-`≤ N`
     polynomials encoded as streams `j ↦ c_{j−N}` of rational pairs (`TrigTy`);
     `tmTrigAdd`, `tmTrigDeriv`, `tmTrigInteg` (mean-zero), `tmTrigMul`

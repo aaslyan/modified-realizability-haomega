@@ -61,7 +61,7 @@ syntax by `sysParams` with the certified evaluator `GPACSys.approx` (`SystemEval
 | 3. Zeros and inverses | intermediate value theorem, inverse functions | `UExpr.root` (extracted `bisect` + `UExpr.approx`) | approximate IVT on the certified disk (`Bisection.lean`, `RootOperator.lean`; `ln(41/40)`, `arcsin(1/5)` to `10⁻¹⁰`) | Newton done 2026-10-25: `UExpr.newton_spec`, quadratic convergence on partial sums (`NewtonUniverse.lean`); open: dyadic rounding of the iterates |
 | 4. Extrema | approximate Rolle / mean value theorem | bisection on `f′` | `UExpr.critical`, `critical_spec` (`CriticalPoints.lean`) | constructively only `\|f′(x)\| < ε`; a max/min claim needs more data (e.g. the sign of `f″`) |
 | 5. Differential equations | existence, uniqueness | `genSolveND`, `UExpr.compile` | scalar, 2-variable and n-variable solvers, uniqueness, `InGPAC` closure | the general majorant `solN_geom_bound` (`SystemBound.lean`), computed `(M, R)` and the evaluator `GPACSys.approx` (`SystemEval.lean`), perturbation `solN_perturb_bound` (`SystemPerturb.lean`), all 2026-10-25; re-centering / stepping past the initial disk |
-| 6. Fourier analysis | orthogonality, Parseval, Fourier coefficients | `TrigPoly` algebra, bridge `toJet`, modes from `genSolve2D` | `TrigPoly` `+, ×, d/dx, ∫`, `toJet`, System T terms | mean and inner product, mode orthogonality, Parseval for trigonometric polynomials (cheap, finite coefficient algebra); Fourier coefficients of general universe functions need a whole period, hence re-centering |
+| 6. Fourier analysis | orthogonality, Parseval, Fourier coefficients | `TrigPoly` algebra, bridge `toJet`, modes from `genSolve2D` | `TrigPoly` `+, ×, d/dx, ∫`, `toJet`, System T terms | finite part done 2026-10-25 (`TrigPolyInner.lean`: `mean_deriv`, `mean_parts`, `inner_modes`, `parseval`; mean = `c_0` by definition); Fourier coefficients of general universe functions need a whole period, hence re-centering |
 
 **Order:**
 1. ~~The chain rule (room 1)~~ — done 2026-10-25. ~~`solN_geom_bound`, computed `(M, R)`, evaluator `GPACSys.approx`, perturbation bound~~ —
@@ -74,8 +74,7 @@ syntax by `sysParams` with the certified evaluator `GPACSys.approx` (`SystemEval
 3. ~~Definite integrals (room 2) and approximate critical points (room 4)~~ — done 2026-10-24.
 4. ~~Newton's method with certified quadratic contraction~~ — done 2026-10-25
    (`NewtonUniverse.lean`); open: dyadic rounding of the iterates.
-5. Room 6: mean, inner product, orthogonality and Parseval for trigonometric
-   polynomials (any time; small); Fourier projection of universe functions after 2.
+5. ~~Room 6, finite part~~ — done 2026-10-25 (`TrigPolyInner.lean`). Fourier projection of universe functions after 2.
 
 **What the house will still not contain**, by design: non-analytic functions
 (`|x|`, steps, `max`) and functions satisfying no polynomial ODE (Γ, ζ); a

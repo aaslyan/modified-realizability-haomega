@@ -247,6 +247,17 @@ three labels, according to where its computational content comes from:
     `∫₀^{1/4} exp′ = e^{1/4} − 1` (to `10⁻⁸` at `k = 30`), and the minimum
     `ln(21/20)` of `eˣ − 1 − (21/20)x` (to `10⁻¹⁰`). Both operators
     `[propext, Quot.sound]`.
+    **Newton** (`NewtonUniverse.lean`; proof by AGY, audited):
+    `UExpr.newton e N x₀ j` is `j` Newton steps for `P = S_{N+2}(e)` with the
+    exact derivative `P′ = S_{N+1}(e′)` — no outside derivative, since the
+    universe is closed under `d/dx`. `UExpr.newton_spec` (Kantorovich type):
+    if `|P′| ≥ m`, `|P″| ≤ K` (with `P″ = S_N(e″)`) on the ball of radius `r`
+    about `x₀`, `K|P(x₀)|/m² ≤ 1/2` and `2|P(x₀)|/m ≤ r`, every iterate stays in
+    the ball and `|P(x_j)| ≤ |P(x₀)|·2^{1−2^j}`. Program `[propext, Quot.sound]`,
+    theorem `[propext, Classical.choice, Quot.sound]`. Guards: agreement with
+    the extracted engine `newtonIterExtracted`; `ln(41/40)` to `10⁻¹⁴` in three
+    steps and `10⁻²⁸` in four. **Cost:** exact iterates grow ≈ 20× in bit
+    length per step; dyadic rounding with the error absorbed is open.
   - *Inverses (closed-universe pillar 4):* `ShiftSolve.lean`. On the
     unnormalized `Q` the guard `G(0)·Y(i)` of `Y = 1 + G·Y` is not structurally
     `0`, so the guard is the shift `x·F` (`tmJetShift`, no division).

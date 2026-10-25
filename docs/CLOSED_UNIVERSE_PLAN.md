@@ -58,7 +58,7 @@ syntax by `sysParams` with the certified evaluator `GPACSys.approx` (`SystemEval
 | :--- | :--- | :--- | :--- | :--- |
 | 1. Differential algebra | linearity, product rule, chain rule, `sin²+cos²=1` | `tmJetDeriv`, `tmJetMul`, `tmJetComp` | in `Deriv`: `exp′≈exp`, `sin′≈cos`, `cos′≈−sin`, FTC1, FTC2 (`QEquiv.lean`), product rule (`ProductRuleD.lean`), `sin²+cos²≈1` (`PythagorasD.lean`); the chain rule `chainRuleLawD` over the System T composition `tmJetComp` (`ChainRuleD.lean`) | — |
 | 2. Integral calculus | FTC1, FTC2; `∫ₐᵇ f′ = f(b) − f(a)` | definite integral through the evaluator | `UExpr.defIntegral`, `defIntegral_spec`, pointwise Newton–Leibniz `UExpr.newtonLeibniz` (`DefiniteIntegral.lean`) | optional: a benchmark against the Riemann sums of `EFTC.lean` |
-| 3. Zeros and inverses | intermediate value theorem, inverse functions | `UExpr.root` (extracted `bisect` + `UExpr.approx`) | approximate IVT on the certified disk (`Bisection.lean`, `RootOperator.lean`; `ln(41/40)`, `arcsin(1/5)` to `10⁻¹⁰`) | Newton's method (order item 4) |
+| 3. Zeros and inverses | intermediate value theorem, inverse functions | `UExpr.root` (extracted `bisect` + `UExpr.approx`) | approximate IVT on the certified disk (`Bisection.lean`, `RootOperator.lean`; `ln(41/40)`, `arcsin(1/5)` to `10⁻¹⁰`) | Newton done 2026-10-25: `UExpr.newton_spec`, quadratic convergence on partial sums (`NewtonUniverse.lean`); open: dyadic rounding of the iterates |
 | 4. Extrema | approximate Rolle / mean value theorem | bisection on `f′` | `UExpr.critical`, `critical_spec` (`CriticalPoints.lean`) | constructively only `\|f′(x)\| < ε`; a max/min claim needs more data (e.g. the sign of `f″`) |
 | 5. Differential equations | existence, uniqueness | `genSolveND`, `UExpr.compile` | scalar, 2-variable and n-variable solvers, uniqueness, `InGPAC` closure | the general majorant `solN_geom_bound` (`SystemBound.lean`), computed `(M, R)` and the evaluator `GPACSys.approx` (`SystemEval.lean`), perturbation `solN_perturb_bound` (`SystemPerturb.lean`), all 2026-10-25; re-centering / stepping past the initial disk |
 | 6. Fourier analysis | orthogonality, Parseval, Fourier coefficients | `TrigPoly` algebra, bridge `toJet`, modes from `genSolve2D` | `TrigPoly` `+, ×, d/dx, ∫`, `toJet`, System T terms | mean and inner product, mode orthogonality, Parseval for trigonometric polynomials (cheap, finite coefficient algebra); Fourier coefficients of general universe functions need a whole period, hence re-centering |
@@ -72,9 +72,8 @@ syntax by `sysParams` with the certified evaluator `GPACSys.approx` (`SystemEval
    global Taylor integrator; prerequisite for ODE solutions on `[0, 1]` and for
    Fourier coefficients of universe functions. **One step done 2026-10-25** (`SystemRecenter.lean`): `recenter_overlap` — for a flat system, the series re-centred at `x₀` (data `S_N(Y)(x₀)`, table `solFastD`) agrees at `t` with the original at `x₀ + t`, in a uniform disk (QUESTIONS.md item 20). Stepping from data, with one radius for all data of size `≤ 2^D`: `stepData_overlap` (`SystemStep.lean`). Iterated steps converge in the precision (`stepIter_cauchy`). Open: an explicit modulus `N₀(ε, k)`.
 3. ~~Definite integrals (room 2) and approximate critical points (room 4)~~ — done 2026-10-24.
-4. Newton's method with certified quadratic contraction (`f′` is in the
-   universe; the `f″` bound comes from the coefficient bounds). Today Newton
-   exists only for square roots on ℚ (`NewtonRaphson.lean`).
+4. ~~Newton's method with certified quadratic contraction~~ — done 2026-10-25
+   (`NewtonUniverse.lean`); open: dyadic rounding of the iterates.
 5. Room 6: mean, inner product, orthogonality and Parseval for trigonometric
    polynomials (any time; small); Fourier projection of universe functions after 2.
 

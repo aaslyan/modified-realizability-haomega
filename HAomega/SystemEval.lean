@@ -181,8 +181,8 @@ written directly, not produced by `UExpr.compile` — gets `(M, R) = (1, 8)`.
 **Cost.** `solN` evaluates the Picard iterates lazily, so for a nonlinear
 system the cost of coefficient `n` grows exponentially (for `tan`: degree 7 in
 ≈ 4 s, 11 in ≈ 13 s, measured by `lake env lean`); the guard stays at `k = 3`
-(`N = 7`). A memoized coefficient table proved equal to `solN` is the open
-speed item. -/
+(`N = 7`). The memoized table of `SystemFast.lean` (`solFast`, proved equal to
+`solN`) removes the cost. -/
 
 #guard sysParams memSinCosSys = (1, 4)
 #guard extractedJetCauchyModulusComputed (solN memSinCosSys 0) (sysParams memSinCosSys).1 ⟨1, 31⟩ 10 = 14

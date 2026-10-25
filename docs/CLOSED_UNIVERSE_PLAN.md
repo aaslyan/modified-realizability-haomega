@@ -65,7 +65,7 @@ syntax by `sysParams` with the certified evaluator `GPACSys.approx` (`SystemEval
 
 **Order:**
 1. ~~The chain rule (room 1)~~ — done 2026-10-25. ~~`solN_geom_bound`, computed `(M, R)`, evaluator `GPACSys.approx`, perturbation bound~~ —
-   done 2026-10-25; open: a memoized coefficient table (nonlinear systems are exponential today) —
+   done 2026-10-25; and the memoized table `solFast` (`SystemFast.lean`) makes it fast —
    certified values for every member of the universe, not only `UExpr`.
 2. **Re-centering / stepping**: re-expand at `x₀` (composition with `x + x₀`,
    already in the universe). Turns the disk-limited evaluator and solver into a

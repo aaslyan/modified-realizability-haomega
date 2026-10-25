@@ -1096,7 +1096,13 @@ the proof-computed modulus is within `2⁻ᵏ` of it. Examples: `sin` from
 system `y = ∫(1 + y²)` written directly (`(1, 8)`). **Cost:** `solN` evaluates
 the Picard iterates lazily, so for nonlinear systems coefficient `n` costs
 exponentially in `n` (`tan`: degree 7 ≈ 4 s, 11 ≈ 13 s); the `tan` guard runs at
-`k = 3` only. A memoized coefficient table proved equal to `solN` is open.
+`k = 3` only. **Fixed** by `SystemFast.lean`: `solRows` computes the rows
+`Y(0), …, Y(n)` once each from the recurrence `Y_v(n+1) = F_v(Y)(n)/(n+1)`,
+reading earlier rows from a table; `solFast_val` proves it equal in value to
+`solN` (proof by AGY, audited; prefix dependence via `JExprN.toTm_agreeV`), and
+`GPACSys.approxFast_spec` carries the same certificate. `tan` at `x = 1/1024`,
+`k = 20` (`N = 24`) now agrees with floating point to `10⁻⁹`, the whole file in
+≈ 8 s.
 
 **Perturbation** (`SystemPerturb.lean`, proof by AGY, audited):
 `solN_perturb_bound F D` — for all systems with equations `F` and data of size

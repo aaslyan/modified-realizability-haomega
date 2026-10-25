@@ -1066,6 +1066,28 @@ field; it calls `Q.of`, so it was never a touch point.
 tried and the module paths do not exist in the pinned version. Since the file
 is proof-side only, the cost is build time (7,849 jobs), not trust.
 
+## 7b. A coefficient bound for every polynomial system
+
+`SystemBound.lean`: **`solN_geom_bound`** — for every `GPACSys` (a well-formed
+polynomial–integral system with constant data) there are `M, R` with
+`|c_n| ≤ 2^M · (2^R)^n` for every solution coefficient of every variable,
+`[propext, Classical.choice, Quot.sound]` (metatheory, about `Q.val`). Before it
+such bounds existed only expression by expression, for `UExpr`.
+
+The proof is the weighted majorant for analytic ODEs. The class
+`|c(n)| ≤ K·Bⁿ/(n+1)²` is closed under `±`, under the Cauchy product with
+constant 8 (`sbd_conv_sum_le`, `sbd_mul_bound`: `Σ_j 1/((j+1)²(n−j+1)²) ≤
+8/(n+1)²` by a telescoping sum), and under `∫` for `B ≥ 4`. A bound multiplier
+`Φ_F(K)` is defined by recursion on the equation (`sbdExprBound`), and strong
+induction on the index closes the step (`sbd_solN_weighted_bound`), using that
+`F(Y)(n)` reads `Y` only up to index `n`. The constants are explicit: `K` is a
+power of two above every initial value and `B` a power of two above
+`max(4, 4·max_v Φ_{F_v}(K)/K)`; the theorem states only their existence, so a
+**computed** `(M, R)` read off the system's syntax, and with it the certified
+evaluator on `GPACSys`, is the next step. Next to it, pinned:
+`solN_perturb_bound` (`SystemPerturb.lean`), the initial-data perturbation bound
+uniform in data of size `≤ 2^D` that re-centering needs.
+
 ## 8. Not started
 
 * Constructive analysis beyond uniform continuity: IVT proper, Banach fixed

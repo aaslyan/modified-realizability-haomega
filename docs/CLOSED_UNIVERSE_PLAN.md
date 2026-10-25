@@ -51,8 +51,8 @@ Riemann sums needs `2^{ω(k)}` evaluations. On polynomial-ODE analytic jets
 - ODE solving is native: guarded Picard iteration locks one coefficient per step;
 - Taylor and Fourier meet through the trigonometric-polynomial bridge `toJet`.
 Explicit coefficient bounds `(M, R)` exist for every `UExpr`; for arbitrary
-`InGPAC` systems they exist too (`solN_geom_bound`, `SystemBound.lean`, proved
-2026-10-25; the computed `(M, R)` from a system's syntax is open).
+`InGPAC` systems they exist too (`solN_geom_bound`, `SystemBound.lean`), computed from the system's
+syntax by `sysParams` with the certified evaluator `GPACSys.approx` (`SystemEval.lean`, 2026-10-25).
 
 | Room | Classical content | Tool in the universe | Done | Remaining |
 | :--- | :--- | :--- | :--- | :--- |
@@ -60,12 +60,12 @@ Explicit coefficient bounds `(M, R)` exist for every `UExpr`; for arbitrary
 | 2. Integral calculus | FTC1, FTC2; `∫ₐᵇ f′ = f(b) − f(a)` | definite integral through the evaluator | `UExpr.defIntegral`, `defIntegral_spec`, pointwise Newton–Leibniz `UExpr.newtonLeibniz` (`DefiniteIntegral.lean`) | optional: a benchmark against the Riemann sums of `EFTC.lean` |
 | 3. Zeros and inverses | intermediate value theorem, inverse functions | `UExpr.root` (extracted `bisect` + `UExpr.approx`) | approximate IVT on the certified disk (`Bisection.lean`, `RootOperator.lean`; `ln(41/40)`, `arcsin(1/5)` to `10⁻¹⁰`) | Newton's method (order item 4) |
 | 4. Extrema | approximate Rolle / mean value theorem | bisection on `f′` | `UExpr.critical`, `critical_spec` (`CriticalPoints.lean`) | constructively only `\|f′(x)\| < ε`; a max/min claim needs more data (e.g. the sign of `f″`) |
-| 5. Differential equations | existence, uniqueness | `genSolveND`, `UExpr.compile` | scalar, 2-variable and n-variable solvers, uniqueness, `InGPAC` closure | the general majorant `solN_geom_bound` (`SystemBound.lean`, proved 2026-10-25 as existence; computed `(M, R)` open); re-centering / stepping past the initial disk |
+| 5. Differential equations | existence, uniqueness | `genSolveND`, `UExpr.compile` | scalar, 2-variable and n-variable solvers, uniqueness, `InGPAC` closure | the general majorant `solN_geom_bound` (`SystemBound.lean`), computed `(M, R)` and the evaluator `GPACSys.approx` (`SystemEval.lean`), perturbation `solN_perturb_bound` (`SystemPerturb.lean`), all 2026-10-25; re-centering / stepping past the initial disk |
 | 6. Fourier analysis | orthogonality, Parseval, Fourier coefficients | `TrigPoly` algebra, bridge `toJet`, modes from `genSolve2D` | `TrigPoly` `+, ×, d/dx, ∫`, `toJet`, System T terms | mean and inner product, mode orthogonality, Parseval for trigonometric polynomials (cheap, finite coefficient algebra); Fourier coefficients of general universe functions need a whole period, hence re-centering |
 
 **Order:**
-1. ~~The chain rule (room 1)~~ — done 2026-10-25. ~~`solN_geom_bound`~~ — proved 2026-10-25 as existence; next
-   its computed `(M, R)` and the certified evaluator on `GPACSys` —
+1. ~~The chain rule (room 1)~~ — done 2026-10-25. ~~`solN_geom_bound`, computed `(M, R)`, evaluator `GPACSys.approx`, perturbation bound~~ —
+   done 2026-10-25; open: a memoized coefficient table (nonlinear systems are exponential today) —
    certified values for every member of the universe, not only `UExpr`.
 2. **Re-centering / stepping**: re-expand at `x₀` (composition with `x + x₀`,
    already in the universe). Turns the disk-limited evaluator and solver into a

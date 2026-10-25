@@ -1082,11 +1082,29 @@ constant 8 (`sbd_conv_sum_le`, `sbd_mul_bound`: `Σ_j 1/((j+1)²(n−j+1)²) ≤
 induction on the index closes the step (`sbd_solN_weighted_bound`), using that
 `F(Y)(n)` reads `Y` only up to index `n`. The constants are explicit: `K` is a
 power of two above every initial value and `B` a power of two above
-`max(4, 4·max_v Φ_{F_v}(K)/K)`; the theorem states only their existence, so a
-**computed** `(M, R)` read off the system's syntax, and with it the certified
-evaluator on `GPACSys`, is the next step. Next to it, pinned:
-`solN_perturb_bound` (`SystemPerturb.lean`), the initial-data perturbation bound
-uniform in data of size `≤ 2^D` that re-centering needs.
+`max(4, 4·max_v Φ_{F_v}(K)/K)`.
+
+**Computed, and the evaluator** (`SystemEval.lean`). `sysParams sys`, a
+choice-free recursion on the syntax (`[propext, Quot.sound]`; constants bounded
+by `|num|`, never through `Q.val`), returns `(M, R)`, and
+`solN_geom_bound_computed` proves that pair a bound. So every component of every
+`GPACSys` is a `RadiusJet` (`GPACSys.radiusJet`), and `GPACSys.approx` with
+`GPACSys.approx_spec` is the certified evaluator for **every member of the
+universe**, not only for `UExpr`: on `|x| ≤ 2^{-(R+1)}` every partial sum past
+the proof-computed modulus is within `2⁻ᵏ` of it. Examples: `sin` from
+`memSinCosSys` (`(1, 4)`, to `10⁻⁶` at `x = 1/32`), and `tan` from the Riccati
+system `y = ∫(1 + y²)` written directly (`(1, 8)`). **Cost:** `solN` evaluates
+the Picard iterates lazily, so for nonlinear systems coefficient `n` costs
+exponentially in `n` (`tan`: degree 7 ≈ 4 s, 11 ≈ 13 s); the `tan` guard runs at
+`k = 3` only. A memoized coefficient table proved equal to `solN` is open.
+
+**Perturbation** (`SystemPerturb.lean`, proof by AGY, audited):
+`solN_perturb_bound F D` — for all systems with equations `F` and data of size
+`≤ 2^D`, initial values within `δ` give coefficients within
+`δ·2^M·(2^R)ⁿ`, with `(M, R)` depending only on `F` and `D`. The proof runs the
+same majorant on the difference (`spt_mul_diff_bound`:
+`ab − a′b′ = (a−a′)b + a′(b−b′)`; `sptDiffBound`, `spt_evalExpr_diff_bound`).
+`[propext, Classical.choice, Quot.sound]`. This is the input re-centering needs.
 
 ## 8. Not started
 

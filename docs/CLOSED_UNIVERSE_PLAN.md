@@ -70,7 +70,7 @@ syntax by `sysParams` with the certified evaluator `GPACSys.approx` (`SystemEval
 2. **Re-centering / stepping**: re-expand at `x₀` (composition with `x + x₀`,
    already in the universe). Turns the disk-limited evaluator and solver into a
    global Taylor integrator; prerequisite for ODE solutions on `[0, 1]` and for
-   Fourier coefficients of universe functions.
+   Fourier coefficients of universe functions. **One step done 2026-10-25** (`SystemRecenter.lean`): `recenter_overlap` — for a flat system, the series re-centred at `x₀` (data `S_N(Y)(x₀)`, table `solFastD`) agrees at `t` with the original at `x₀ + t`, in a uniform disk (QUESTIONS.md item 20). Open: iterated steps with accumulated certified error (the perturbation bound covers the data error).
 3. ~~Definite integrals (room 2) and approximate critical points (room 4)~~ — done 2026-10-24.
 4. Newton's method with certified quadratic contraction (`f′` is in the
    universe; the `f″` bound comes from the coefficient bounds). Today Newton

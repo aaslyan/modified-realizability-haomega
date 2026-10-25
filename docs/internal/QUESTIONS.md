@@ -176,6 +176,26 @@ all delivered, as are Phases E and F.  Item 12 is engineering, not
 mathematics; items 13–16 are design points, recorded rather than silently
 chosen.  Item 18 gates the HA^ω closed universe's algebra laws.)*
 
+20. **HA^ω re-centering: what does "the value past the first disk" mean, and
+   how is the consistency theorem stated?**  *Raised and chosen 2026-10-25,
+   on pinning `recenter_overlap` (`SystemRecenter.lean`); open to revision.*
+   Past the certified disk the original series diverges, so the re-centred
+   system *defines* the continuation; what must be proved is that it is the
+   right one where both make sense.  Options: (a) state it with Mathlib reals
+   (`tsum` of the series, the real solution of the shifted IVP); (b) stay in
+   `ℚ` and state it with partial sums: for `x₀`, `t` in a uniform disk, the
+   re-centred series at `t` and the original at `x₀ + t` come within any `ε`
+   once data precision `N` and partial-sum length `L` pass some `N₀`.
+   **Chosen: (b)**, since HA^ω's metatheory uses `Rat` only and every other
+   evaluator statement is a partial-sum statement; its proof is finite
+   (polynomial shift is an exact ring map commuting with `d/dx`; the
+   truncation satisfies the system up to a residual vanishing below degree
+   `N−1`; a residual form of `solN_perturb_bound`).  Two scope decisions
+   come with it: only flat systems (`NoInteg`; inner `∫₀ˣ` is not
+   shift-invariant, and `flatAll` flattens any system), and the data are
+   rationals fed to a table (`solFastD`), not numeral terms (`memConstJet`
+   builds unary numerals and overflows the interpreter at real precisions).
+
 16. **Lucas: should it be internalized in the fragment?**  *Raised and
    answered 2026-07-30, on delivering Phase G.*  Phase G proves
    Kummer/Lucas in the metatheory.  Internalizing it is blocked twice

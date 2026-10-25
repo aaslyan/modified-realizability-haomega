@@ -1112,6 +1112,26 @@ same majorant on the difference (`spt_mul_diff_bound`:
 `ab − a′b′ = (a−a′)b + a′(b−b′)`; `sptDiffBound`, `spt_evalExpr_diff_bound`).
 `[propext, Classical.choice, Quot.sound]`. This is the input re-centering needs.
 
+**Re-centering** (`SystemRecenter.lean`, `RecenterKit.lean`; proof by AGY,
+audited). `recenterData sys x₀ N` is the new data `S_N(Y_v)(x₀)`, and
+`solFastD F a` the coefficient table of the same equations from rational data
+(choice-free; it never builds numeral terms, since `memConstJet`'s unary
+numerals overflow the interpreter at real precisions). **`recenter_overlap`**:
+for a flat system (`NoInteg`; `flatAll` flattens any system) there is a uniform
+`R` such that for `|x₀|, |t| ≤ 2^{-(R+2)}` and every `ε > 0`, the re-centred
+partial sum `S_L(z)(t)` and the original `S_L(Y)(x₀ + t)` are within `ε` once
+`N, L ≥ N₀`. `[propext, Classical.choice, Quot.sound]`. The proof is finite and
+rational: an exact polynomial shift `rctShift` (additive, multiplicative via a
+Vandermonde identity, commuting with `d/dx`, fixing constants;
+`rct_evalPoly_shift`: `S_L(τp)(t) = S_D(p)(x₀+t)`); the truncation of the
+solution satisfies the recurrence up to a residual vanishing below degree
+`N − 1` (`rct_residual_zero_lt`), geometrically small after the shift; and a
+residual form of the perturbation majorant (`rct_z_diff_weighted_bound`). The
+core, `rct_overlap_of_table`, holds for any table satisfying the recurrence.
+Guards: `sin` re-centred at `1/64` agrees with the original at `1/32` to
+`10⁻²⁰`, `tan` at `1/1024` to `10⁻³⁰`. Design: QUESTIONS.md item 20. Open:
+iterated steps with accumulated certified error.
+
 ## 8. Not started
 
 * Constructive analysis beyond uniform continuity: IVT proper, Banach fixed

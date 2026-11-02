@@ -563,4 +563,162 @@ theorem stp_evalPoly_solFastD_diff (F : List JExprN)
     ((Jet.evalPoly ⟨solFastD F a' v⟩ N' x).val - (Jet.evalPoly ⟨solFastD F a' v⟩ N₀ x).val)
   linarith
 
+/-- `sptDiffBound`, in natural numbers and with each expression multiplier bounded by
+`JExprN.natBound`: computable without `Q.val`. -/
+def JExprN.natDiffBound : JExprN → Nat → Nat → Nat
+  | .var _, _, K₁ => K₁
+  | .const _, _, _ => 0
+  | .add a b, K, K₁ => a.natDiffBound K K₁ + b.natDiffBound K K₁
+  | .sub a b, K, K₁ => a.natDiffBound K K₁ + b.natDiffBound K K₁
+  | .mul a b, K, K₁ =>
+      8 * a.natDiffBound K K₁ * b.natBound K + 8 * a.natBound K * b.natDiffBound K K₁
+  | .integ a, K, K₁ => a.natDiffBound K K₁
+
+theorem sptDiffBound_le_natDiffBound (F : JExprN) (K K₁ : Nat) :
+    sptDiffBound F (K : Rat) (K₁ : Rat) ≤ (F.natDiffBound K K₁ : Rat) := by
+  induction F with
+  | var _ => exact le_refl _
+  | const _ => exact le_refl _
+  | add a b iha ihb =>
+    show sptDiffBound a K K₁ + sptDiffBound b K K₁ ≤
+      ((a.natDiffBound K K₁ + b.natDiffBound K K₁ : Nat) : Rat)
+    push_cast; linarith
+  | sub a b iha ihb =>
+    show sptDiffBound a K K₁ + sptDiffBound b K K₁ ≤
+      ((a.natDiffBound K K₁ + b.natDiffBound K K₁ : Nat) : Rat)
+    push_cast; linarith
+  | mul a b iha ihb =>
+    show 8 * sptDiffBound a K K₁ * sbdExprBound b K + 8 * sbdExprBound a K * sptDiffBound b K K₁ ≤
+      ((8 * a.natDiffBound K K₁ * b.natBound K + 8 * a.natBound K * b.natDiffBound K K₁ : Nat) : Rat)
+    push_cast
+    have ha_phi := sbdExprBound_le_natBound a K
+    have hb_phi := sbdExprBound_le_natBound b K
+    have ha0 := sbdExprBound_nonneg a (Nat.cast_nonneg K)
+    have hb0 := sbdExprBound_nonneg b (Nat.cast_nonneg K)
+    have hda0 := sptDiffBound_nonneg a (Nat.cast_nonneg K) (Nat.cast_nonneg K₁)
+    have hdb0 := sptDiffBound_nonneg b (Nat.cast_nonneg K) (Nat.cast_nonneg K₁)
+    have hp1 := mul_le_mul iha hb_phi hb0 (by positivity)
+    have hp2 := mul_le_mul ha_phi ihb hdb0 (by positivity)
+    nlinarith
+  | integ a iha => exact iha
+
+/-- The largest `natBound K` across a list of equations `F`. -/
+def stepMaxPhiN (K : Nat) : List JExprN → Nat
+  | [] => 0
+  | Fv :: rest => max (Fv.natBound K) (stepMaxPhiN K rest)
+
+/-- The largest `natDiffBound K K₁` across a list of equations `F`. -/
+def stepMaxPsiN (K K₁ : Nat) : List JExprN → Nat
+  | [] => 0
+  | Fv :: rest => max (Fv.natDiffBound K K₁) (stepMaxPsiN K K₁ rest)
+
+theorem stepMaxPhiN_mem (K : Nat) {F : List JExprN} {Fv : JExprN} (hFv : Fv ∈ F) :
+    Fv.natBound K ≤ stepMaxPhiN K F := by
+  induction F with
+  | nil => nomatch hFv
+  | cons hd rest ih =>
+    simp only [List.mem_cons] at hFv
+    rcases hFv with rfl | hFv
+    · exact le_max_left _ _
+    · exact le_trans (ih hFv) (le_max_right _ _)
+
+theorem stepMaxPsiN_mem (K K₁ : Nat) {F : List JExprN} {Fv : JExprN} (hFv : Fv ∈ F) :
+    Fv.natDiffBound K K₁ ≤ stepMaxPsiN K K₁ F := by
+  induction F with
+  | nil => nomatch hFv
+  | cons hd rest ih =>
+    simp only [List.mem_cons] at hFv
+    rcases hFv with rfl | hFv
+    · exact le_max_left _ _
+    · exact le_trans (ih hFv) (le_max_right _ _)
+
+/-- Quantitative overlap bound for any base table `c` and re-centered table `z`
+    at given majorant constants `(K₀, B₀, B)` and truncation threshold `M_eps + 1`. -/
+theorem stp_overlap_of_table_bound (F : List JExprN)
+    (hF : ∀ Fv ∈ F, Fv.WF F.length ∧ Fv.ConstsConst ∧ Fv.NoInteg)
+    {K₀ B₀ B : Rat} (hK₀ : 0 < K₀) (hB₀ : 4 ≤ B₀)
+    (hStep₀ : ∀ Fv ∈ F, 4 * sbdExprBound Fv K₀ ≤ K₀ * B₀)
+    (hB_32 : 32 * B₀ ≤ B)
+    (hStep : ∀ Fv ∈ F, 4 * sbdExprBound Fv (2 * K₀) ≤ (2 * K₀) * B)
+    (hDiffStep : ∀ Fv ∈ F, 4 * (sptDiffBound Fv (2 * K₀) 1 + 1) ≤ B)
+    (c : Nat → Nat → Q) (z : Q → Nat → Nat → Nat → Q)
+    (hc_bd : ∀ u < F.length, ∀ m : Nat, |(c u m).val| ≤ K₀ * B₀ ^ m / sbdSq m)
+    (hc_succ : ∀ v (hv : v < F.length) (k : Nat),
+      (c v (k + 1)).val = (sbdEvalExpr F[v] c k).val / ((k + 1 : Nat) : Rat))
+    (hz_zero : ∀ (x₀ : Q) (N v : Nat), v < F.length →
+      (z x₀ N v 0).val = (Jet.evalPoly ⟨c v⟩ N x₀).val)
+    (hz_succ : ∀ (x₀ : Q) (N v : Nat) (hv : v < F.length) (k : Nat),
+      (z x₀ N v (k + 1)).val = (sbdEvalExpr F[v] (z x₀ N) k).val / ((k + 1 : Nat) : Rat))
+    (x₀ t : Q) (hx₀_4B : |x₀.val| ≤ 1 / (4 * B)) (ht_4B : |t.val| ≤ 1 / (4 * B))
+    {M_eps N L : Nat} (hN₀N : M_eps + 1 ≤ N) (hN₀L : M_eps + 1 ≤ L)
+    (v : Nat) (hv : v < F.length) :
+    |(Jet.evalPoly ⟨z x₀ N v⟩ L t).val
+      - (Jet.evalPoly ⟨c v⟩ L (Q.add x₀ t)).val| ≤
+      12 * (K₀ * B₀ * (1 / 2 : Rat) ^ M_eps) := by
+  have hK₀_nonneg : (0 : Rat) ≤ K₀ := le_of_lt hK₀
+  have hB₀_ge_1 : (1 : Rat) ≤ B₀ := by linarith
+  have hB₀_pos : (0 : Rat) < B₀ := by linarith
+  have hB_pos : (0 : Rat) < B := by linarith
+  have hx₀_8B₀ : |x₀.val| ≤ 1 / (8 * B₀) :=
+    le_trans hx₀_4B (one_div_le_one_div_of_le (by positivity) (by linarith))
+  have ht_32B₀ : |t.val| ≤ 1 / (4 * (8 * B₀)) :=
+    le_trans ht_4B (one_div_le_one_div_of_le (by positivity) (by linarith))
+  have hxt_4B₀ : |(Q.add x₀ t).val| ≤ 1 / (4 * B₀) := by
+    rw [Q.val_add]
+    have h_sum : |x₀.val + t.val| ≤ 1 / (2 * B) := by
+      have h_tri := abs_add_le x₀.val t.val
+      have h_eq : 1 / (4 * B) + 1 / (4 * B) = 1 / (2 * B) := by ring
+      linarith
+    exact le_trans h_sum (one_div_le_one_div_of_le (by positivity) (by linarith))
+  have hN1 : 1 ≤ N := by omega
+  let d : Nat → Q := rctShift x₀.val N (rctTrunc N (c v))
+  let δ : Rat := 2 * (K₀ * B₀) * (1 / 2 : Rat) ^ (N - 1)
+  have h_term1 : |(Jet.evalPoly ⟨z x₀ N v⟩ L t).val - (Jet.evalPoly ⟨d⟩ L t).val| ≤
+      4 * (K₀ * B₀ * (1 / 2 : Rat) ^ M_eps) := by
+    have h_z_d_coeff : ∀ n, 0 ≤ n → |(z x₀ N v n).val - (d n).val| ≤ δ * B ^ n := by
+      intro n _
+      have hw := stp_z_diff_weighted_bound F hF c (z x₀ N) hK₀_nonneg hB₀ hStep₀ hc_bd hc_succ
+        x₀ hN1 hx₀_8B₀ hB_32 hStep hDiffStep (hz_zero x₀ N) (hz_succ x₀ N) n v hv
+      have hdrop : δ * 1 * B ^ n / sbdSq n ≤ δ * B ^ n := by
+        rw [mul_one]
+        exact div_le_self (by positivity) (sbdSq_ge_one n)
+      exact le_trans hw hdrop
+    have h_raw := rct_evalPoly_diff_bound (z x₀ N v) d L 0 t
+      (by positivity) hB_pos ht_4B (fun _ hn ↦ absurd hn (Nat.not_lt_zero _)) h_z_d_coeff
+    rw [pow_zero, mul_one] at h_raw
+    exact rct_scale_delta hK₀_nonneg (le_of_lt hB₀_pos) (by omega) h_raw
+  have h_term2 :
+      |(Jet.evalPoly ⟨c v⟩ N (Q.add x₀ t)).val - (Jet.evalPoly ⟨d⟩ L t).val| ≤
+      4 * (K₀ * B₀ * (1 / 2 : Rat) ^ M_eps) := by
+    have h_raw := rct_evalPoly_tail_bound d (le_max_right N L) t
+      (by positivity) (by positivity) ht_32B₀
+      (fun n _ ↦ stp_d_geom_bound F c hK₀_nonneg hB₀ hc_bd x₀ N hx₀_8B₀ v hv n)
+    have h_shift_id :
+        (Jet.evalPoly ⟨d⟩ (max N L) t).val =
+          (Jet.evalPoly ⟨c v⟩ N (Q.add x₀ t)).val := by
+      dsimp [d]
+      rw [rct_evalPoly_shift x₀ t N (max N L) (le_max_left N L) (rctTrunc N (c v)),
+          rct_evalPoly_trunc_eq N (c v) (Q.add x₀ t)]
+    rw [h_shift_id] at h_raw
+    exact rct_scale_half_pow hK₀_nonneg hB₀_ge_1 (by omega) h_raw
+  have h_c_bd : ∀ n : Nat, |(c v n).val| ≤ K₀ * B₀ ^ n := by
+    intro n
+    exact le_trans (hc_bd v hv n)
+      (div_le_self (by positivity) (sbdSq_ge_one n))
+  have h_term3 :
+      |(Jet.evalPoly ⟨c v⟩ (max N L) (Q.add x₀ t)).val -
+        (Jet.evalPoly ⟨c v⟩ N (Q.add x₀ t)).val| ≤
+      2 * (K₀ * B₀ * (1 / 2 : Rat) ^ M_eps) := by
+    have h_raw := rct_evalPoly_tail_bound (c v) (le_max_left N L) (Q.add x₀ t)
+      hK₀_nonneg hB₀_pos hxt_4B₀ (fun n _ ↦ h_c_bd n)
+    exact rct_scale_half_pow_two hK₀_nonneg hB₀_ge_1 (by omega) h_raw
+  have h_term4 :
+      |(Jet.evalPoly ⟨c v⟩ (max N L) (Q.add x₀ t)).val -
+        (Jet.evalPoly ⟨c v⟩ L (Q.add x₀ t)).val| ≤
+      2 * (K₀ * B₀ * (1 / 2 : Rat) ^ M_eps) := by
+    have h_raw := rct_evalPoly_tail_bound (c v) (le_max_right N L) (Q.add x₀ t)
+      hK₀_nonneg hB₀_pos hxt_4B₀ (fun n _ ↦ h_c_bd n)
+    exact rct_scale_half_pow_two hK₀_nonneg hB₀_ge_1 (by omega) h_raw
+  exact rct_abs_chain_le h_term1 h_term2 h_term3 h_term4
+
 end HAomega

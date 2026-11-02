@@ -8,7 +8,7 @@ This report provides an honest, audited status of mathematical theorems and prog
 
 ### 1. The Genuinely Proved Constructive Analysis Theorems in `Deriv`
 
-There are **five** fundamental constructive analysis theorems formalized with genuine, non-tautological natural deduction trees in `Deriv`:
+There are **six** fundamental constructive analysis theorems formalized with genuine, non-tautological natural deduction trees in `Deriv`:
 
 1. **The Discrete Crossing / Sperner Root Solver (`fnCrossingD` in `SquareRoot.lean`)**:
    - **Statement**: Proves that for ANY computable function $F : \mathbb{Q} \to \mathbb{Q}$ and target $y$, a sign change on $[0, K \cdot 2^{-n}]$ constructively yields an isolated discrete crossing index $k < K$.
@@ -18,10 +18,11 @@ There are **five** fundamental constructive analysis theorems formalized with ge
      - `circleY`, `ellipseY`, `cubicCurveY` (`CertifiedPlotter.lean`): 2-D implicit curve plotting with certified brackets.
      - `sqrtApproxD`, `cubeApproxD`: Pointwise root solvers.
 
-2. **Banach Contraction Convergence Modulus (`banachContractionD` / `banachModulusD` in `BanachModulus.lean`)**:
-   - **Statement**: Proves by mathematical induction (`Deriv.ind`) that for ANY contraction $T : \mathbb{Q} \to \mathbb{Q}$ with seed $x_0$ and initial scale $k_0$, the stopping criterion $N(n) = n$ guarantees that consecutive iterate gaps drop below $2^{-n}$ for all future iterations $N + d$:
-     $$\forall n, \exists N, \forall d. \; \text{close}(n, x_{N+d}, x_{N+d+1}) = 1$$
+2. **Banach Contraction Convergence Modulus & Fixed-Point Synthesis (`banachContractionD`, `banachFixedPointD` in `BanachModulus.lean`)**:
+   - **Statement**: Proves by mathematical induction (`Deriv.ind`) that for ANY contraction $T : \mathbb{Q} \to \mathbb{Q}$ with seed $x_0$ and initial scale $k_0$, the stopping criterion $N(n) = n$ and the iterate $y_n = \mathrm{iterAt}\ T\ x_0\ n$ satisfy $y_n = T^n(x_0)$ and consecutive iterate gaps drop below $2^{-n}$ for all future iterations $N + d$:
+     $$\forall n, \exists N, \exists y. \; y = T^N(x_0) \;\wedge\; \forall d. \; \text{close}(n, x_{N+d}, x_{N+d+1}) = 1$$
    - **Constructive Content**: Quantifies over operator $T$, initial point $x_0$, and scale $k_0$, deriving exact precision $n$ via scale-monotonicity conversion `convQCloseMono` and associativity `plusAssocD`.
+   - **Extracted Programs**: `banachStoppingN`, `banachFixedPointSol`, and `banachExtractedIter`, evaluated directly from `extractClosed banachFixedPointD`.
 
 3. **Uniform Continuity from Lipschitz Bound (`uniContLipD` in `UniformContinuity.lean`)**:
    - **Statement**: Proves that for ANY function $f : \mathbb{Q} \to \mathbb{Q}$ satisfying the algebraic Lipschitz bound $|f(x) - f(y)| \le 2^j |x - y|$, $f$ is uniformly continuous with modulus $M(n) = n + j$:
@@ -34,6 +35,19 @@ There are **five** fundamental constructive analysis theorems formalized with ge
 
 5. **1D Discrete Intermediate Value Theorem (`spernerD` in `Sperner.lean`)**:
    - **Statement**: Proves 1D discrete intermediate value theorem by mathematical induction on the bracket length.
+
+6. **Constructive Weierstrass Bernstein Approximator (`weierstrassApproxD` in `Weierstrass.lean`)**:
+   - **Statement**: For EVERY continuous function $f : \mathbb{Q} \to \mathbb{Q}$, modulus $\omega$, and scale bound $k_0$, synthesizes the degree $N(n) = n + k_0$ and the closed System T Bernstein polynomial operator $P := \text{tmBernsteinClosed} \; f \; (n + k_0)$ as the existential witnesses.
+   - **Constructive Content**: Eliminates Pattern P1 by constructing the explicit Bernstein polynomial operator inside Gödel's System T (`Tm`), evaluated directly through `(extractClosed weierstrassApproxD).eval Env.nil`.
+
+7. **Krasnoselskii–Mann Averaged Iteration & Argmin Extractor (`kmSequenceD`, `kmExtracted`, `kmBestIndex_spec` in `FixedPoint.lean`)**:
+   - **Statement**: Derives the System T averaged iteration sequence $x_n = T_{1/2}^n(x_0)$ in `Deriv` and extracts `kmExtracted` via `extractClosed`, coupled with the computable minimum-residual finder `kmBestIndex` certifying $|T(x_{i^*}) - x_{i^*}| \le 2^{-k}$ within $4(\mathrm{diamSq} + 1)\cdot 4^k$ steps.
+
+8. **Exponential Taylor Accumulator in System T (`expTaylorSequenceD`, `expTaylorExtracted` in `Taylor.lean`)**:
+   - **Statement**: Derives the linear-pass System T state accumulator $(P_n(x), x^n/n!)$ in `Deriv` via `indexedIterSequenceD` and extracts `expTaylorExtracted`, paired with the telescoping Cauchy remainder theorem `expTaylor_cauchy_remainder`.
+
+9. **Multi-Step Dynamical & PDE Trajectory Realizers (`ckAdvectionD`, `newtonIterD`, `symplecticStepD`, `harmonicTrajectoryD`, `heatDiffusionStepD` in `ExtractedEngines.lean`)**:
+   - **Statement**: Synthesizes closed System T realizers via `extractClosed` for Cauchy–Kowalevski advection, Newton–Raphson inversion, symplectic Kepler steps, 2D harmonic oscillator trajectories, and 1D heat diffusion.
 
 ---
 

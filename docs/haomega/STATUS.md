@@ -284,8 +284,43 @@ three labels, according to where its computational content comes from:
     by uniqueness, shows `u·g′(y) = 1` from its linear recurrence, and reads off
     `(g∘y)′ = 1`. `[propext, Classical.choice, Quot.sound]`. Guard: from the
     `(sin, cos)` system the `y` component is `arcsin`,
-    `x + x³/6 + 3x⁵/40 + 5x⁷/112`. Not covered: implicit equations
-    `E(x, y) = 0` in general, and boundary-value problems.
+    `x + x³/6 + 3x⁵/40 + 5x⁷/112`.
+  - *Implicit function theorem (room 7):* `UniverseImpFun.lean`.
+    **`InGPAC_impFun`**: given flat `GPACSys` systems `sysX` (length `nX`, solution
+    `X(x)`) and `sysY` (length `nY`, solution `Z(y)`), and a polynomial
+    `E : JExprN` (`E.WF (nX + nY)`, `E.ConstsConst`, `E.NoInteg`) satisfying
+    `E(X(0), Z(0)) = 0` and `(impEy nX sysY E)(X(0), Z(0)) ≠ 0`, some
+    `y ∈ InGPAC` has `y(0) = 0` and `E(X(x), Z(y(x))) = 0` coefficientwise at
+    all degrees `n`. The axiom-free system compiler `impFunSys sysX sysY E`
+    has length `nX + nY + 2` (`X` components `0..nX−1`, composed `W = Z ∘ y`
+    components `nX..nX+nY−1` driven by `impYrhs = −Ex·u`, implicit solution
+    `y` at index `nX + nY`, and reciprocal `u = 1/Ey` at index `nX + nY + 1`).
+    `[propext, Classical.choice, Quot.sound]`. Guard: for the mixed non-separable
+    implicit equation `sin(y) + x·y − x = 0` near `(0, 0)`, the Taylor
+    coefficients of `y(x)` through degree 6 are
+    `[0, 1, −1, 7/6, −5/3, 329/120, −73/15]`.
+  - *Shooting method for 2-point BVPs (room 7):* `ShootingBVP.lean`.
+    **`shootBVP`** (`[propext, Quot.sound]`): composes the memoized arbitrary-data
+    ODE evaluator `solFastD` (`SystemRecenter.lean`) with the extracted dyadic
+    bisection operator `bisect` (`Bisection.lean`) to solve 2-point boundary
+    value problems `Y(0) = a₀[u₀ := s]`, `Y_v(b) = β` on a slope bracket
+    `[a, c]` in `m` bisection steps. **`shootBVP_spec`** and
+    **`shootBVP_certified`** (`[propext, Classical.choice, Quot.sound]`): under
+    opposite endpoint signs on `[a, c]` and `|b| ≤ 1/(4B)`, bound both the
+    degree-`N` boundary defect `|S_N(Y_v(s*))(b) − β| ≤ 2(c − a)/2^m` (via the
+    Lipschitz constant `2` in initial data from `stp_evalPoly_solFastD_diff`)
+    and the tail defect against any higher truncation `M ≥ N` by
+    `2(c − a)/2^m + 8K·(1/2)^N`. Guards: harmonic oscillator BVP
+    `y″ + y = 0, y(0) = 0, y(1/8) = sin(1/8)` and nonlinear Duffing BVP
+    `y″ + y + y³ = 0, y(0) = 0, y(1/8) = 3/25` to `10⁻¹⁰` (`m = 36` steps).
+  - *Stepping with explicit syntax-computed radii and moduli (room 5):*
+    `SystemStep.lean` & `StepKit.lean`. `JExprN.natDiffBound` (`[propext, Quot.sound]`)
+    computes an upper bound in `ℕ` for `sptDiffBound`, giving choice-free
+    syntax-computed radii and moduli for both one-step overlap
+    (`stepOverlapRadius F D`, `stepOverlapModulus F D m = m + D + stepBaseRadius F D + 5`,
+    proved in `stepData_overlap_computed`) and `k`-step iterated continuation
+    (`stepRadius F D k`, `stepModulus D k m = m + D + 2k + 3` — axiom-free linear
+    formula, proved in `stepIter_cauchy_computed` and `stepIterApprox_spec`).
   - *The Fourier layer, value level (closed-universe pillar 6):*
     `TrigPoly.lean`. Trigonometric polynomials `Σ_{|k|≤N} c_k e^{ikx}` over
     Gaussian rationals `CQ`, exactly closed under `+`, `×` (convolution),

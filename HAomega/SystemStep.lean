@@ -239,11 +239,265 @@ theorem stepIter_cauchy (F : List JExprN) (hF : StepEqs F) (D k : Nat) :
     linarith
   exact lt_of_le_of_lt (le_trans h_iter h_le_4A) (rct_twelve_half_pow_lt hε hN₀)
 
+/-! ## Explicit syntax-computed radii and moduli (choice-free)
+
+Just as `sysParams` (`SystemEval.lean`) replaces the existential `∃ (M, R)` in
+`solN_geom_bound` with a syntax-computed pair, the definitions below replace the
+existentials `∃ R, ... ∃ N₀` in `stepData_overlap` and `stepIter_cauchy` with
+explicit functions of the system equations `F`, initial-data exponent `D`, step
+count `k`, and dyadic precision `2⁻ᵐ`. -/
+
+/-- Computed base radius exponent `R₀` for data bounded by `2^D`:
+    `2^R₀ ≥ 4 * stepMaxPhiN (2^D) F + 4`. -/
+def stepBaseRadius (F : List JExprN) (D : Nat) : Nat :=
+  (4 * stepMaxPhiN (2 ^ D) F + 4).log2 + 1
+
+/-- Computed overlap radius exponent `R` for one re-centering step from data `≤ 2^D`. -/
+def stepOverlapRadius (F : List JExprN) (D : Nat) : Nat :=
+  let R₀ := stepBaseRadius F D
+  let K := 2 ^ (D + 1)
+  (max (32 * 2 ^ R₀) (max (4 * stepMaxPhiN K F) (4 * (stepMaxPsiN K 1 F + 1)))).log2 + 1
+
+/-- Computed truncation modulus `N₀(D, m)` for one re-centering step to precision `2⁻ᵐ`. -/
+def stepOverlapModulus (F : List JExprN) (D m : Nat) : Nat :=
+  m + D + stepBaseRadius F D + 5
+
+/-- **Choice-free one-step overlap with computed radius and modulus.** -/
+theorem stepData_overlap_computed (F : List JExprN) (hF : StepEqs F) (D : Nat)
+    (a : List Q) (ha_len : a.length = F.length)
+    (ha_bd : ∀ v (hv : v < a.length), |(a[v]).val| ≤ (2 : Rat) ^ D)
+    (x₀ t : Q)
+    (hx₀ : |x₀.val| ≤ 1 / (2 : Rat) ^ (stepOverlapRadius F D + 2))
+    (ht : |t.val| ≤ 1 / (2 : Rat) ^ (stepOverlapRadius F D + 2))
+    (m N L : Nat)
+    (hN : stepOverlapModulus F D m ≤ N) (hL : stepOverlapModulus F D m ≤ L)
+    (v : Nat) (hv : v < F.length) :
+    |(Jet.evalPoly ⟨solFastD F (stepData F a x₀ N) v⟩ L t).val
+      - (Jet.evalPoly ⟨solFastD F a v⟩ L (Q.add x₀ t)).val| < 1 / (2 : Rat) ^ m := by
+  let R₀ := stepBaseRadius F D
+  let R := stepOverlapRadius F D
+  let K₀ : Rat := (2 : Rat) ^ D
+  let B₀ : Rat := (2 : Rat) ^ R₀
+  let B : Rat := (2 : Rat) ^ R
+  have hK₀_pos : (0 : Rat) < K₀ := by positivity
+  have hK₀_nonneg : (0 : Rat) ≤ K₀ := le_of_lt hK₀_pos
+  have hK₀_ge_1 : (1 : Rat) ≤ K₀ := one_le_pow₀ (by norm_num)
+  have hK₀_cast : (((2 ^ D : Nat) : Nat) : Rat) = K₀ := by push_cast; rfl
+  have h2K₀_cast : (((2 ^ (D + 1) : Nat) : Nat) : Rat) = 2 * K₀ := by
+    change (((2 ^ (D + 1) : Nat) : Nat) : Rat) = 2 * (2 : Rat) ^ D
+    push_cast; rw [pow_succ]; ring
+  have hR₀_le : ((4 * stepMaxPhiN (2 ^ D) F + 4 : Nat) : Rat) ≤ (2 : Rat) ^ R₀ := by
+    exact_mod_cast (Nat.lt_log2_self (n := 4 * stepMaxPhiN (2 ^ D) F + 4)).le
+  have hB₀_ge_4 : (4 : Rat) ≤ B₀ := by
+    push_cast at hR₀_le
+    have : (0 : Rat) ≤ (stepMaxPhiN (2 ^ D) F : Rat) := Nat.cast_nonneg _
+    linarith
+  have hStep₀ : ∀ Fv ∈ F, 4 * sbdExprBound Fv K₀ ≤ K₀ * B₀ := by
+    intro Fv hFv
+    have h1 := sbdExprBound_le_natBound Fv (2 ^ D)
+    rw [hK₀_cast] at h1
+    have h2 : (Fv.natBound (2 ^ D) : Rat) ≤ (stepMaxPhiN (2 ^ D) F : Rat) := by
+      exact_mod_cast stepMaxPhiN_mem (2 ^ D) hFv
+    push_cast at hR₀_le
+    have hB₀_0 : (0 : Rat) ≤ B₀ := by linarith
+    have h4 : 4 * sbdExprBound Fv K₀ ≤ B₀ := by linarith
+    exact le_trans h4 (le_mul_of_one_le_left hB₀_0 hK₀_ge_1)
+  let M_R := max (32 * 2 ^ R₀) (max (4 * stepMaxPhiN (2 ^ (D + 1)) F) (4 * (stepMaxPsiN (2 ^ (D + 1)) 1 F + 1)))
+  have hR_le : (M_R : Rat) ≤ (2 : Rat) ^ R := by
+    exact_mod_cast (Nat.lt_log2_self (n := M_R)).le
+  have hB_32 : 32 * B₀ ≤ B := by
+    have h1 : (32 * 2 ^ R₀ : Nat) ≤ M_R := le_max_left _ _
+    have h2 : ((32 * 2 ^ R₀ : Nat) : Rat) ≤ (M_R : Rat) := by exact_mod_cast h1
+    push_cast at h2
+    exact le_trans h2 hR_le
+  have hStep : ∀ Fv ∈ F, 4 * sbdExprBound Fv (2 * K₀) ≤ (2 * K₀) * B := by
+    intro Fv hFv
+    have h1 := sbdExprBound_le_natBound Fv (2 ^ (D + 1))
+    rw [h2K₀_cast] at h1
+    have h2 : Fv.natBound (2 ^ (D + 1)) ≤ stepMaxPhiN (2 ^ (D + 1)) F :=
+      stepMaxPhiN_mem (2 ^ (D + 1)) hFv
+    have h3 : 4 * stepMaxPhiN (2 ^ (D + 1)) F ≤ M_R :=
+      le_trans (le_max_left _ _) (le_max_right _ _)
+    have h4 : ((4 * Fv.natBound (2 ^ (D + 1)) : Nat) : Rat) ≤ B := by
+      refine le_trans ?_ hR_le
+      exact_mod_cast le_trans (Nat.mul_le_mul_left 4 h2) h3
+    push_cast at h4
+    have h4' : 4 * sbdExprBound Fv (2 * K₀) ≤ B := by linarith
+    have hB_0 : (0 : Rat) ≤ B := by positivity
+    have h2K₀_ge_1 : (1 : Rat) ≤ 2 * K₀ := by linarith
+    exact le_trans h4' (le_mul_of_one_le_left hB_0 h2K₀_ge_1)
+  have hDiffStep : ∀ Fv ∈ F, 4 * (sptDiffBound Fv (2 * K₀) 1 + 1) ≤ B := by
+    intro Fv hFv
+    have h1 := sptDiffBound_le_natDiffBound Fv (2 ^ (D + 1)) 1
+    rw [h2K₀_cast] at h1
+    change sptDiffBound Fv (2 * K₀) 1 ≤ (Fv.natDiffBound (2 ^ (D + 1)) 1 : Rat) at h1
+    have h2 : Fv.natDiffBound (2 ^ (D + 1)) 1 ≤ stepMaxPsiN (2 ^ (D + 1)) 1 F :=
+      stepMaxPsiN_mem (2 ^ (D + 1)) 1 hFv
+    have h3 : 4 * (stepMaxPsiN (2 ^ (D + 1)) 1 F + 1) ≤ M_R :=
+      le_trans (le_max_right _ _) (le_max_right _ _)
+    have h4 : ((4 * (Fv.natDiffBound (2 ^ (D + 1)) 1 + 1) : Nat) : Rat) ≤ B := by
+      refine le_trans ?_ hR_le
+      exact_mod_cast le_trans (Nat.mul_le_mul_left 4 (Nat.add_le_add_right h2 1)) h3
+    push_cast at h4
+    linarith
+  have hpow_R2 : (2 : Rat) ^ (R + 2) = 4 * B := by
+    change (2 : Rat) ^ (R + 2) = 4 * (2 : Rat) ^ R
+    rw [pow_add]; ring
+  have hx₀_4B : |x₀.val| ≤ 1 / (4 * B) := by rwa [hpow_R2] at hx₀
+  have ht_4B : |t.val| ≤ 1 / (4 * B) := by rwa [hpow_R2] at ht
+  let M_eps := m + D + R₀ + 4
+  have h_ov := stp_overlap_of_table_bound F hF hK₀_pos hB₀_ge_4 hStep₀ hB_32 hStep hDiffStep
+    (solFastD F a) (fun x₀ N ↦ solFastD F (stepData F a x₀ N))
+    (fun u hu n ↦ stp_solFastD_weighted_bound F hF a ha_len hK₀_nonneg hB₀_ge_4 ha_bd hStep₀ n u hu)
+    (stp_solFastD_succ_val F hF a)
+    (stp_stepData_zero_val F a)
+    (fun x₀ N ↦ stp_solFastD_succ_val F hF (stepData F a x₀ N))
+    x₀ t hx₀_4B ht_4B (M_eps := M_eps) hN hL v hv
+  have h_scale :
+      12 * (K₀ * B₀ * (1 / 2 : Rat) ^ M_eps) = (3 / 4 : Rat) * (1 / (2 : Rat) ^ m) := by
+    dsimp [K₀, B₀, M_eps]
+    rw [one_div_pow, show m + D + R₀ + 4 = D + R₀ + m + 4 by omega,
+        pow_add, pow_add, pow_add]
+    have h2D : (2 : Rat) ^ D ≠ 0 := by positivity
+    have h2R : (2 : Rat) ^ R₀ ≠ 0 := by positivity
+    have h2m : (2 : Rat) ^ m ≠ 0 := by positivity
+    field_simp
+    norm_num
+  have h2m_pos : (0 : Rat) < 1 / (2 : Rat) ^ m := by positivity
+  linarith
+
+/-- Computed step radius exponent `R` for `k` iterated steps from data `≤ 2^D`. -/
+def stepRadius (F : List JExprN) (D k : Nat) : Nat :=
+  let K_max := 2 ^ (D + k)
+  (4 * max (stepMaxPhiN K_max F) (stepMaxPsiN K_max 1 F) + 4).log2 + 1
+
+/-- Explicit linear convergence modulus `N₀(D, k, m) = m + D + 2k + 3` for `k` steps
+    from data `≤ 2^D` to precision `2⁻ᵐ`. -/
+def stepModulus (D k m : Nat) : Nat :=
+  m + D + 2 * k + 3
+
+/-- **Choice-free multi-step Cauchy convergence with explicit computed radius and modulus.** -/
+theorem stepIter_cauchy_computed (F : List JExprN) (hF : StepEqs F) (D k : Nat)
+    (a : List Q) (ha_len : a.length = F.length)
+    (ha_bd : ∀ v (hv : v < a.length), |(a[v]).val| ≤ (2 : Rat) ^ D)
+    (hs : List Q) (hhs_len : hs.length ≤ k)
+    (hhs_bd : ∀ h ∈ hs, |h.val| ≤ 1 / (2 : Rat) ^ (stepRadius F D k + 2))
+    (m N N' : Nat) (hN : stepModulus D k m ≤ N) (hN' : stepModulus D k m ≤ N')
+    (v : Nat) (hv : v < F.length) :
+    |((stepIter F N a hs).getD v Q.zero).val
+      - ((stepIter F N' a hs).getD v Q.zero).val| < 1 / (2 : Rat) ^ m := by
+  let R := stepRadius F D k
+  let B : Rat := (2 : Rat) ^ R
+  let K_max : Rat := (2 : Rat) ^ (D + k)
+  let N₀ := stepModulus D k m
+  have hKmax_cast : (((2 ^ (D + k) : Nat) : Nat) : Rat) = K_max := by push_cast; rfl
+  let M_R := 4 * max (stepMaxPhiN (2 ^ (D + k)) F) (stepMaxPsiN (2 ^ (D + k)) 1 F) + 4
+  have hR_le : (M_R : Rat) ≤ (2 : Rat) ^ R := by
+    exact_mod_cast (Nat.lt_log2_self (n := M_R)).le
+  have hB_ge_4 : (4 : Rat) ≤ B := by
+    have h4_le : (4 : Rat) ≤ (M_R : Rat) := by
+      exact_mod_cast (show 4 ≤ M_R by dsimp [M_R]; omega)
+    exact le_trans h4_le hR_le
+  have hStep_max : ∀ Fv ∈ F, 4 * sbdExprBound Fv K_max ≤ B := by
+    intro Fv hFv
+    have h1 := sbdExprBound_le_natBound Fv (2 ^ (D + k))
+    rw [hKmax_cast] at h1
+    have h2 : Fv.natBound (2 ^ (D + k)) ≤ stepMaxPhiN (2 ^ (D + k)) F :=
+      stepMaxPhiN_mem (2 ^ (D + k)) hFv
+    have h3 : 4 * stepMaxPhiN (2 ^ (D + k)) F ≤ M_R := by
+      dsimp [M_R]
+      have := le_max_left (stepMaxPhiN (2 ^ (D + k)) F) (stepMaxPsiN (2 ^ (D + k)) 1 F)
+      omega
+    have h4 : ((4 * Fv.natBound (2 ^ (D + k)) : Nat) : Rat) ≤ B := by
+      refine le_trans ?_ hR_le
+      exact_mod_cast le_trans (Nat.mul_le_mul_left 4 h2) h3
+    push_cast at h4
+    linarith
+  have hDiffStep : ∀ Fv ∈ F, 4 * sptDiffBound Fv K_max 1 ≤ B := by
+    intro Fv hFv
+    have h1 := sptDiffBound_le_natDiffBound Fv (2 ^ (D + k)) 1
+    rw [hKmax_cast] at h1
+    change sptDiffBound Fv K_max 1 ≤ (Fv.natDiffBound (2 ^ (D + k)) 1 : Rat) at h1
+    have h2 : Fv.natDiffBound (2 ^ (D + k)) 1 ≤ stepMaxPsiN (2 ^ (D + k)) 1 F :=
+      stepMaxPsiN_mem (2 ^ (D + k)) 1 hFv
+    have h3 : 4 * stepMaxPsiN (2 ^ (D + k)) 1 F ≤ M_R := by
+      dsimp [M_R]
+      have := le_max_right (stepMaxPhiN (2 ^ (D + k)) F) (stepMaxPsiN (2 ^ (D + k)) 1 F)
+      omega
+    have h4 : ((4 * Fv.natDiffBound (2 ^ (D + k)) 1 : Nat) : Rat) ≤ B := by
+      refine le_trans ?_ hR_le
+      exact_mod_cast le_trans (Nat.mul_le_mul_left 4 h2) h3
+    push_cast at h4
+    linarith
+  have hpow_R2 : (2 : Rat) ^ (R + 2) = 4 * B := by
+    change (2 : Rat) ^ (R + 2) = 4 * (2 : Rat) ^ R
+    rw [pow_add]; ring
+  have hh : ∀ h ∈ hs, |h.val| ≤ 1 / (4 * B) := by
+    intro h hh_mem
+    have := hhs_bd h hh_mem
+    rwa [hpow_R2] at this
+  have ha_getD : ∀ u < F.length, |(a.getD u Q.zero).val| ≤ (2 : Rat) ^ (D + 0) := by
+    intro u hu
+    have hua : u < a.length := ha_len ▸ hu
+    rw [uDeriv_getD_eq_getElem a Q.zero u hua, Nat.add_zero]
+    exact ha_bd u hua
+  have hDiff0 : ∀ u < F.length, |(a.getD u Q.zero).val - (a.getD u Q.zero).val| ≤ 0 := by
+    intro u _
+    rw [sub_self, abs_zero]
+  have h_iter := stp_stepIter_diff_bound F hF D k hB_ge_4 hStep_max hDiffStep
+    hN hN' hs hh 0 (by omega) a a (le_refl 0) ha_getD ha_getD hDiff0 v hv
+  have h_pow_le : (2 : Rat) ^ hs.length - 1 ≤ (2 : Rat) ^ k := by
+    have : (2 : Rat) ^ hs.length ≤ (2 : Rat) ^ k :=
+      pow_le_pow_right₀ (by norm_num) hhs_len
+    linarith
+  have h_tau_nonneg : (0 : Rat) ≤ 4 * K_max * (1 / 2 : Rat) ^ N₀ := by
+    dsimp [K_max]; positivity
+  have h_le :
+      (2 : Rat) ^ hs.length * 0 +
+        ((2 : Rat) ^ hs.length - 1) * (4 * K_max * (1 / 2 : Rat) ^ N₀) ≤
+      (2 : Rat) ^ k * (4 * K_max * (1 / 2 : Rat) ^ N₀) := by
+    have := mul_le_mul_of_nonneg_right h_pow_le h_tau_nonneg
+    linarith
+  have h_scale :
+      (2 : Rat) ^ k * (4 * K_max * (1 / 2 : Rat) ^ N₀) =
+        (1 / 2 : Rat) * (1 / (2 : Rat) ^ m) := by
+    dsimp [K_max, N₀, stepModulus]
+    rw [one_div_pow, show m + D + 2 * k + 3 = k + D + k + m + 3 by omega,
+        pow_add (2 : Rat) D k, pow_add, pow_add, pow_add, pow_add]
+    have h2k : (2 : Rat) ^ k ≠ 0 := by positivity
+    have h2D : (2 : Rat) ^ D ≠ 0 := by positivity
+    have h2m : (2 : Rat) ^ m ≠ 0 := by positivity
+    field_simp
+    norm_num
+  have h2m_pos : (0 : Rat) < 1 / (2 : Rat) ^ m := by positivity
+  linarith
+
+/-- **Certified multi-step continuation operator**: steps `a` along `hs` at the
+    computed degree `stepModulus D k m`. -/
+def stepIterApprox (F : List JExprN) (D k m : Nat) (a hs : List Q) : List Q :=
+  stepIter F (stepModulus D k m) a hs
+
+/-- **Every later degree `stepModulus D k m + d` is within `2⁻ᵐ` of `stepIterApprox`.** -/
+theorem stepIterApprox_spec (F : List JExprN) (hF : StepEqs F) (D k : Nat)
+    (a : List Q) (ha_len : a.length = F.length)
+    (ha_bd : ∀ v (hv : v < a.length), |(a[v]).val| ≤ (2 : Rat) ^ D)
+    (hs : List Q) (hhs_len : hs.length ≤ k)
+    (hhs_bd : ∀ h ∈ hs, |h.val| ≤ 1 / (2 : Rat) ^ (stepRadius F D k + 2))
+    (m d v : Nat) (hv : v < F.length) :
+    |((stepIter F (stepModulus D k m + d) a hs).getD v Q.zero).val
+      - ((stepIterApprox F D k m a hs).getD v Q.zero).val| < 1 / (2 : Rat) ^ m :=
+  stepIter_cauchy_computed F hF D k a ha_len ha_bd hs hhs_len hhs_bd m
+    (stepModulus D k m + d) (stepModulus D k m) (Nat.le_add_right _ _) (le_refl _) v hv
+
 /-! ## Checks
 
 `tan` (`sysTan`) from its data `[0]`, stepped twice by `1/1024`, against one
 step by `2/1024` and against the original series at `2/1024`. -/
 
+#guard stepRadius (sysTan.map Prod.snd) 0 2 = 10
+#guard stepModulus 0 2 10 = 17
+#guard stepOverlapRadius (sysTan.map Prod.snd) 0 = 12
+#guard stepOverlapModulus (sysTan.map Prod.snd) 0 10 = 21
 #guard (let F := sysTan.map Prod.snd
         let a := stepIter F 12 [Q.zero] [⟨1, 1023⟩, ⟨1, 1023⟩]
         let b := stepData F [Q.zero] ⟨1, 511⟩ 12
@@ -255,7 +509,15 @@ step by `2/1024` and against the original series at `2/1024`. -/
 
 #print axioms stepData
 #print axioms stepIter
+#print axioms stepModulus
+#print axioms stepRadius
+#print axioms stepOverlapRadius
+#print axioms stepOverlapModulus
+#print axioms stepIterApprox
 #print axioms stepData_overlap
+#print axioms stepData_overlap_computed
 #print axioms stepIter_cauchy
+#print axioms stepIter_cauchy_computed
+#print axioms stepIterApprox_spec
 
 end HAomega

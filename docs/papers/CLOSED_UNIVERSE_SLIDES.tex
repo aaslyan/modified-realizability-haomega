@@ -1,0 +1,344 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{whale}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\definecolor{deepblue}{RGB}{18, 53, 91}
+\definecolor{accentteal}{RGB}{0, 114, 128}
+\definecolor{notebg}{RGB}{240, 244, 250}
+\definecolor{okgreen}{RGB}{20, 115, 50}
+\definecolor{warnred}{RGB}{175, 35, 35}
+
+\setbeamercolor{structure}{fg=deepblue}
+\setbeamercolor{palette primary}{bg=deepblue,fg=white}
+\setbeamercolor{palette secondary}{bg=accentteal,fg=white}
+\setbeamercolor{block title}{bg=deepblue,fg=white}
+\setbeamercolor{block body}{bg=notebg,fg=black}
+\setbeamercolor{alerted text}{fg=warnred}
+
+\newcommand{\say}[1]{%
+  \vfill
+  \begin{beamercolorbox}[sep=5pt,rounded=true,shadow=false]{block body}
+  {\footnotesize \textbf{\textcolor{deepblue}{How to say this out loud:}} ``#1''}
+  \end{beamercolorbox}
+}
+
+\title[A Closed Algebraic Universe of Calculus]{A Closed Algebraic Universe of Calculus}
+\subtitle{How to Make Differential Equations, Calculus, and Ordinal Numbers\\100\% Computable and Machine-Checked}
+\author{Ara Aslyan}
+\institute{Plain-English Presentation Plan \& Annotated Slides (Mechanized in Lean 4)}
+\date{October 2026}
+
+\begin{document}
+
+% =========================================================================
+% SLIDE 1: TITLE & THE 4-STEP ROADMAP
+% =========================================================================
+\begin{frame}
+  \titlepage
+  \vspace{-0.3cm}
+  \begin{block}{How This Presentation Works (4 Simple Questions)}
+    \footnotesize
+    \textbf{1. The Problem (Slides 2--3):} Why is it so hard for a computer to do calculus with 100\% certainty?\\
+    \textbf{2. Theory \#1 --- The Closed Algebraic System (Slides 4--7):} What functions are inside our box, why is it \emph{closed}, and how does it solve calculus?\\
+    \textbf{3. Theory \#2 --- The Ordinal Hierarchy (Slides 8--9):} How do ordinal numbers ($\omega, \omega^2, \omega^\omega < \varepsilon_0$) measure the true complexity of differential equations?\\
+    \textbf{4. The Honest Ledger (Slides 10--11):} What do we \textbf{have} (100\% proved) vs.\ what do we \textbf{not have}?
+  \end{block}
+\end{frame}
+
+% =========================================================================
+% SLIDE 2: STEP 1 — THE PROBLEM WITH USUAL CALCULUS ON COMPUTERS
+% =========================================================================
+\begin{frame}[shrink=6]{1. The Problem: Why Black-Box Functions Break Calculus}
+  Suppose you want a computer to do calculus \textbf{with 100\% mathematical certainty} (guaranteed error $< 2^{-k}$, no floating-point guessing).
+
+  \vspace{0.15cm}
+  If you give the computer a function as a \textbf{black box} $x \mapsto f(x)$ (plug in $x$, get out $f(x)$):
+  \begin{itemize}
+    \item \textbf{Taking a derivative $f'(x)$ is impossible!}
+      Looking at $\frac{f(x+h) - f(x)}{h}$ for a tiny $h$ can be completely fooled if $f$ wiggles at scales smaller than $h$ (\emph{Myhill's Theorem, 1971}).
+    \item \textbf{Computing an integral $\int_0^1 f(x)\,dx$ is impossibly slow!}
+      To get 10 digits of accuracy ($2^{-33}$) using Riemann rectangles, you must evaluate $f(x)$ \alert{billions of times ($2^{33}$ points)}.
+  \end{itemize}
+
+  \say{If you only treat a function as a black box that takes $x$ and spits out $f(x)$, a computer cannot even take its derivative reliably, and integrating it to 10 digits of precision takes billions of sample points. So we need a better way to represent functions.}
+\end{frame}
+
+% =========================================================================
+% SLIDE 3: THE SOLUTION — FUNCTIONS AS RECIPES + 2 NUMBERS (M, R)
+% =========================================================================
+\begin{frame}[shrink=6]{The Fix: Represent a Function by Its Taylor Recipe + 2 Numbers}
+  Instead of a black box, every function in our system is a \textbf{package of two things}:
+  \begin{enumerate}
+    \item \textbf{Its infinite list of Taylor coefficients} $(c_0, c_1, c_2, c_3, \dots)$ where:
+      $$f(x) = c_0 + c_1 x + c_2 x^2 + c_3 x^3 + \cdots$$
+    \item \textbf{Two whole numbers $(M, R)$} that bound how big the coefficients can get:
+      $$|c_n| \le 2^M \cdot (2^R)^n.$$
+  \end{enumerate}
+
+  \begin{block}{Why This Changes Everything!}
+    \footnotesize
+    \begin{itemize}
+      \item \textbf{Derivative $f'(x)$ is instant:} The $n$-th coefficient of $f'$ is just $(n+1)\cdot c_{n+1}$. No limits!
+      \item \textbf{Integral $\int_0^x f(t)\,dt$ is instant:} The $(n+1)$-th coefficient of $\int f$ is just $\frac{c_n}{n+1}$.
+      \item \textbf{Fast, 100\% Certified Numbers:} On the disk $|x| \le \frac{1}{2^{R+1}}$, each term $|c_n x^n|$ shrinks by at least $\frac{1}{2^n}$. To get $k$ bits of accuracy ($2^{-k}$), you \textbf{just add the first $k + M + 3$ terms}! (For 10 digits, that's $\sim 38$ terms instead of $8{,}000{,}000{,}000$ Riemann rectangles!)
+    \end{itemize}
+  \end{block}
+
+  \say{Here is our core trick. Every function carries its Taylor coefficient recipe $c_n$ plus two integers $(M, R)$ bounding $|c_n| \le 2^M(2^R)^n$. Now derivatives and integrals are 1-line shifts on the list $c_n$, and to evaluate $f(x)$ to $k$ bits of accuracy, we only add $k + M + 3$ terms!}
+\end{frame}
+
+% =========================================================================
+% SLIDE 4: THEORY #1 — WHAT IS OUR CLOSED ALGEBRAIC SYSTEM?
+% =========================================================================
+\begin{frame}[shrink=6]{2. Theory \#1: Our Closed Algebraic System of Functions}
+  What functions are inside our system, and what does \textbf{``Closed''} mean?
+
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \begin{block}{The Building Blocks (Seeds)}
+        We start with just 5 basic ingredients:
+        \begin{itemize}
+          \item Any rational number $q \in \mathbb{Q}$
+          \item The variable $x$
+          \item The exponential $e^x = \sum \frac{x^n}{n!}$
+          \item Sine $\sin(x)$ and Cosine $\cos(x)$
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \begin{block}{The Operations (You Never Leave the Box!)}
+        Combine any functions in the box using:
+        \begin{enumerate}
+          \item \textbf{Arithmetic:} $f + g$, \; $f - g$, \; $f \cdot g$
+          \item \textbf{Division:} $\frac{f}{g}$ \quad (whenever $g(0) \neq 0$)
+          \item \textbf{Calculus:} $\frac{d}{dx}f$ \quad and \quad $\int_0^x f(t)\,dt$
+          \item \textbf{Composition:} $f(g(x))$ \quad (plugging $g$ into $f$)
+          \item \textbf{Solving Polynomial ODEs:} $y' = P(y)$
+          \item \textbf{Inverting a Function:} $y = g^{-1}(x)$ ($g(y)=x$)
+        \end{enumerate}
+      \end{block}
+    \end{column}
+  \end{columns}
+
+  \vspace{0.1cm}
+  \centering
+  \textbf{\textcolor{okgreen}{Theorem \#1 (Closure):}} \emph{Every single operation above produces a function that is STILL inside the box, with a computable coefficient recipe $c_n$ and computable $(M, R)$ bounds!}
+
+  \say{What is Theory \#1? We start with rationals, $x, e^x, \sin x, \cos x$. Then we prove that our system is CLOSED under addition, subtraction, multiplication, division, derivatives, integrals, composition, solving polynomial differential equations, and inverting functions. You can do all of first-year calculus and never leave this single algebraic box!}
+\end{frame}
+
+% =========================================================================
+% SLIDE 5: HOW ODEs AND INVERSE FUNCTIONS WORK IN THE BOX
+% =========================================================================
+\begin{frame}[shrink=6]{How Do Differential Equations \& Inverse Functions Work?}
+  Why do $\tan(x)$, $\ln(1+x)$, and $\arcsin(x)$ all live inside our box automatically?
+
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{A. Differential Equations Lock 1 Term at a Time}
+        Consider $y(x) = y_0 + \int_0^x P(y(t))\,dt$.
+        Because $\int_0^x$ shifts powers of $x$ up by $1$ ($x^n \mapsto \frac{x^{n+1}}{n+1}$):
+        \begin{itemize}
+          \item Knowing $c_0$ gives you $c_1$ of $\int P(y)$.
+          \item Knowing $c_0, c_1$ gives you $c_2$, and so on!
+          \item \textbf{Example ($\tan x$):} $\tan' = 1 + \tan^2$ with $\tan(0)=0$ automatically generates $\tan x = x + \frac{1}{3}x^3 + \frac{2}{15}x^5 + \cdots$ and computes its $(M,R) = (2,3)$.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{B. Inverse Functions Become ODEs!}
+        Suppose we have $\sin(y)$ and want its inverse $y = \arcsin(x)$, which solves $\sin(y(x)) = x$.
+        \begin{itemize}
+          \item Here $y$ is trapped \emph{inside} $\sin(\cdot)$!
+          \item Differentiate both sides: $g'(y) \cdot y' = 1$, so
+            $$y' = \frac{1}{g'(y)}.$$
+          \item We proved (\texttt{InGPAC\_invFun}) that this automatically compiles into a polynomial ODE system that outputs the exact series for $\arcsin(x) = x + \frac{x^3}{6} + \frac{3x^5}{40} + \cdots$!
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+
+  \say{How do we get functions like $\tan(x)$ or $\arcsin(x)$? Every expression in our language compiles into a polynomial differential equation $y = y_0 + \int P(y)$. Because integration shifts powers of $x$ up by 1, the coefficients $c_0, c_1, c_2$ lock in one by one! Even an implicit inverse equation like $\sin(y(x)) = x$ differentiates into $y' = 1/\cos(y)$, which our compiler turns into a polynomial ODE system for $\arcsin(x)$.}
+\end{frame}
+
+% =========================================================================
+% SLIDE 6: TWO TYPES OF FUNCTIONS IN THE BOX (GLOBAL VS LOCAL)
+% =========================================================================
+\begin{frame}[shrink=6]{A Key Discovery: Global Waves vs.\ Functions That Can Blow Up}
+  Inside our closed box, we proved there are \textbf{two distinct tiers of functions}:
+
+  \vspace{0.1cm}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Tier 1: Global Functions (\texttt{AnalyticJet})}
+        \textbf{Bound:} $|c_n| \cdot \mathbf{n!} \le 2^M \cdot (2^R)^n$\\[3pt]
+        \textbf{Examples:} Polynomials, $e^x, \sin x, \cos x, \sinh x, \cosh x$, and all their sums and products.\\[3pt]
+        \textbf{Why they are special:}
+        \begin{itemize}
+          \item Because of $n!$ in the denominator, their series converge \textbf{everywhere} (infinite radius!).
+          \item When you differentiate, $(n+1)$ is absorbed into $n! \mapsto (n+1)!$, so \textcolor{okgreen}{\textbf{taking derivatives never shrinks their domain!}}
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Tier 2: Local Functions (\texttt{RadiusJet})}
+        \textbf{Bound:} $|c_n| \le 2^M \cdot (2^R)^n$ \quad (\alert{no $n!$})\\[3pt]
+        \textbf{Examples:} $\frac{1}{1-x} = 1 + x + x^2 + \cdots$ (which solves $y' = y^2$), $\tan x$, $\arcsin x$, $\ln(1+x)$.\\[3pt]
+        \textbf{Why they are different:}
+        \begin{itemize}
+          \item $\frac{1}{1-x}$ blows up to $\infty$ at $x = 1$! Its series only converges on $|x| < 1$.
+          \item Without $n!$, differentiating multiplies $c_n$ by $(n+1) \le 2 \cdot 2^n$, which \textcolor{warnred}{\textbf{halves the certified disk radius}} ($R \mapsto R+1$).
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+
+  \say{Inside our box, we discovered a beautiful split. Functions built from polynomials, $e^x, \sin x, \cos x$ without division have a factorial $n!$ helping their coefficients shrink, so they converge everywhere and differentiation never shrinks their radius. Once you divide or solve a nonlinear ODE like $y' = y^2$, the $n!$ disappears, the function can blow up in finite time (like $\frac{1}{1-x}$ at $x=1$), and every derivative halves the guaranteed disk.}
+\end{frame}
+
+% =========================================================================
+% SLIDE 7: ALL 7 ROOMS OF FIRST-YEAR CALCULUS WORKING TOGETHER
+% =========================================================================
+\begin{frame}[shrink=12]{All 7 ``Rooms'' of First-Year Calculus Are Built and Tested}
+  Because our box is closed, every theorem of first-year analysis becomes a \textbf{certified computer program}:
+  \vspace{0.05cm}
+  \footnotesize
+  \begin{table}
+    \centering
+    \renewcommand{\arraystretch}{1.18}
+    \begin{tabular}{>{\bfseries}p{2.9cm} p{5.2cm} p{5.0cm}}
+      \toprule
+      Calculus Topic & What Our Program Does & Actual Tested Calculation in Lean \\
+      \midrule
+      1. Symbolic Rules & Proves $(fg)' = f'g + fg'$, $(f\circ g)' = (f'\circ g)g'$, and $\sin^2 x + \cos^2 x = 1$ inside the logic. & Verified as formal proof trees (\texttt{Deriv}) \\
+      2. Definite Integrals & Computes $\int_a^b f(x)\,dx = F(b) - F(a)$ using the antiderivative $F = \int_0^x f$. & Computes $\int_0^{1/2} \cos x\,dx = \sin(1/2)$ to 30 bits ($2^{-30}$) \\
+      3. Finding Roots ($f(x)=0$) & Uses Bisection (\texttt{root}) to bracket a root, then \textbf{Newton's Method} (\texttt{newton}) to double the digits every step! & Solves $e^x - 1 - \frac{1}{40} = 0$ for $\ln(41/40)$ to \textbf{28 decimal places} in 4 Newton steps! \\
+      4. Max / Min ($f'(x)=0$) & Differentiates $f$ to get $f'$, then runs the root-finder on $f'$. & Finds minimum of $e^x - 1 - \frac{21}{20}x$ at $\ln(21/20)$ to 10 digits \\
+      5. Stepping ODEs & Solves $Y' = F(Y)$ near $0$, then \textbf{re-centers} at $x_0$ to step forward along the curve! & Steps $\sin(x)$ and $\tan(x)$ across overlapping disks to $10^{-20}$ \\
+      6. Fourier Series & Computes inner products $\langle p, q \rangle$, proves $\cos(kx) \perp \sin(jx)$ and Parseval's identity. & Verifies $\langle \cos 2x, \cos 2x \rangle = \frac{1}{2}$ and $\langle \cos 2x, \sin 2x \rangle = 0$ \\
+      7. Inverse Functions & Turns $g(y(x)) = x$ into an ODE system for $y = g^{-1}(x)$. & Automatically computes $\arcsin x = x + \frac{x^3}{6} + \frac{3x^5}{40} + \frac{5x^7}{112} + \cdots$ \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \say{Here is what you can actually DO with our closed system. All 7 chapters of a freshman calculus textbook---product and chain rules, definite integrals, bisection and Newton's method, critical points, stepping differential equations, Fourier series, and inverse functions---are 100\% proved and run directly inside the Lean 4 kernel.}
+\end{frame}
+
+% =========================================================================
+% SLIDE 8: THEORY #2 — WHY ORDINAL NUMBERS SHOW UP
+% =========================================================================
+\begin{frame}[shrink=8]{3. Theory \#2: How Ordinal Numbers Grade Differential Equations}
+  \textbf{Question:} Some functions in our box are simple ($1 + x^2$), while others are wild ($e^{e^{e^x}}$). Can we measure \emph{how complex} a differential equation is?
+
+  \vspace{0.1cm}
+  \textbf{Our Idea:} We attach a \textbf{transfinite ordinal number below $\varepsilon_0$} ($0, 1, 2, \dots, \omega, \omega^2, \omega^\omega, \dots$) to every equation!
+  \begin{itemize}
+    \item \textbf{Constants $q$} get ordinal $\mathbf{0}$; \quad \textbf{Variable $x$} gets ordinal $\mathbf{1}$; \quad \textbf{Multiplying} adds ordinals.
+    \item \textbf{Linear waves ($e^x, \sin x, \cos x$)} jump to the first infinite ordinal $\boldsymbol{\omega}$.
+    \item \textbf{Dividing ($\frac{1}{1-x}$, nonlinear feedback $y'=y^2$)} jumps to $\boldsymbol{\omega^2}$.
+    \item \textbf{Plugging an exponential inside another ($e^{e^x}$, $e^{e^{e^x}}$)} climbs the exponential tower $\boldsymbol{\omega^\omega, \omega^{\omega^\omega}, \dots < \varepsilon_0}$!
+  \end{itemize}
+
+  \begin{block}{Wait --- What About Fake Complexity Like $e^x - e^x = 0$?}
+    If someone writes the formula $e^x - e^x$, the \emph{formula} looks like it has ordinal $\omega$, even though the \emph{function} is just $0$!\\[2pt]
+    So how do we prove that larger ordinals create \textbf{genuinely more complex functions}?\\
+    $\Longrightarrow$ \textbf{By proving Impossibility / Lower-Bound Theorems!} (Next Slide)
+  \end{block}
+
+  \say{Now for Theory \#2. How do we measure how complex a function in our box is? We assign a Cantor ordinal number below $\varepsilon_0$ to every expression: polynomials get finite numbers $k$, basic waves like $e^x$ and $\sin x$ get $\omega$, division $\frac{1}{1-x}$ gets $\omega^2$, and nested exponentials $e^{e^x}$ climb the $\omega$-tower. And to make sure this isn't just measuring the formula's length---like $e^x - e^x = 0$---we proved strict mathematical separation theorems at every level.}
+\end{frame}
+
+% =========================================================================
+% SLIDE 9: THE 4-LEVEL ORDINAL HIERARCHY (PROVED IN LEAN)
+% =========================================================================
+\begin{frame}[shrink=10]{The 4-Level Ordinal Hierarchy of Solutions (100\% Proved)}
+  We proved that as the ordinal climbs toward $\varepsilon_0$, the functions cross \textbf{4 unbreakable mathematical barriers}:
+
+  \vspace{0.05cm}
+  \footnotesize
+  \begin{table}
+    \centering
+    \renewcommand{\arraystretch}{1.22}
+    \begin{tabular}{>{\bfseries}p{2.6cm} p{4.2cm} p{6.2cm}}
+      \toprule
+      Ordinal Level & What Lives Here & What We Proved (No Trick Formula Below Can Cross!) \\
+      \midrule
+      Level 1: Finite $k < \omega$ & \textbf{Polynomials of degree $\le k$} ($c_0 + c_1 x + \cdots + c_k x^k$) & Every coefficient $c_n = 0$ for $n > k$. \textbf{Impossibility:} No polynomial expression of ordinal $\le k$ (even with cancellations) can ever equal $x^{k+1}$! \\
+      Level 2: $\omega \preceq \alpha \prec \omega^2$ & \textbf{Entire Waves \& Exp-Polynomials} ($\sum P_j(x) e^{k_j x} \sin(\omega_j x)$) & Coefficients never stop ($e^x$ is not a polynomial!), \emph{but} $|c_n|\cdot n! \le 2^M(2^R)^n$ (converges everywhere). \\
+      Level 3: $\alpha = \omega^2$ & \textbf{Finite-Time Poles / Blowup} ($\frac{1}{1-x} = 1 + x + x^2 + \cdots$, $y'=y^2$) & Here $c_n = 1$ forever, so $c_n \cdot n! = n!$ grows faster than any $2^M(2^R)^n$. \textbf{Impossibility:} \alert{No formula below $\omega^2$ can ever equal $\frac{1}{1-x}$!} \\
+      Level 4: Tower $\omega^\omega, \omega^{\omega^\omega}, \dots < \varepsilon_0$ & \textbf{Iterated Exponential Tower} $f_h(x) = \exp(\exp(\cdots(e^x - 1)))$ & Generates the combinatorial \textbf{Bell Numbers}! We proved the exact formula $[x^2]f_h = \frac{h+1}{2}$, proving all tower levels are distinct functions and require composition depth $\ge h+1$! \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \say{Look at this 4-level staircase. Below $\omega$, Taylor series stop at step $k$. Between $\omega$ and $\omega^2$, series go on forever but have $n!$ decay so they converge on the whole line. At $\omega^2$, $\frac{1}{1-x}$ loses its $n!$ decay and blows up at $x=1$---and we proved NO formula below $\omega^2$ can ever produce $\frac{1}{1-x}$. Finally, climbing the $\omega^{\omega^{\omega}}$ tower generates the Bell numbers, where the $x^2$ coefficient is $(h+1)/2$, proving every level of the tower is a brand-new function!}
+\end{frame}
+
+% =========================================================================
+% SLIDE 10: STEP 4 — WHAT WE HAVE VS WHAT WE DON'T HAVE
+% =========================================================================
+\begin{frame}[shrink=8]{4. The Honest Ledger: What We Have vs.\ What We Don't Have}
+  \footnotesize
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{\textcolor{okgreen}{What We HAVE (100\% Proved, Zero Gaps)}}
+        \begin{enumerate}
+          \item \textbf{Full Closed Algebra:} $+, -, \times, \div, \frac{d}{dx}, \int_0^x$, composition $f(g(x))$, polynomial ODEs, and local inverse functions $g^{-1}(x)$.
+          \item \textbf{Automatic Bounds \& Evaluator:} The computer reads any formula or ODE system, computes $(M, R)$, and evaluates $f(x)$ to any accuracy $2^{-k}$.
+          \item \textbf{All 7 Calculus Tools:} Definite integrals, Bisection, Quadratic Newton's method, Critical points, Disk-to-disk ODE stepping, and finite Fourier series (Parseval).
+          \item \textbf{The $\varepsilon_0$ Ordinal Hierarchy:} All 4 levels ($k < \omega$, $\omega$, $\omega^2$, and the $\omega$-tower) with impossibility proofs.
+        \end{enumerate}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{\textcolor{warnred}{What We DO NOT Have (And Why)}}
+        \begin{enumerate}
+          \item \textbf{Non-Smooth Functions ($|x|$, step functions):} They have sharp corners at $0$, so they don't have Taylor series. (Outside our box by design.)
+          \item \textbf{Non-ODE Functions ($\Gamma(x)$, $\zeta(s)$):} Euler's Gamma function cannot satisfy any polynomial ODE (H\"older's theorem), so it is outside our box.
+          \item \textbf{Automatic ``Is $f = g$?'' Button:} We can \emph{prove} $\sin^2 x + \cos^2 x = 1$, but no computer program can decide equality for all possible formulas.
+          \item \textbf{Next Open Goals:}
+            \begin{itemize}
+              \item General 2-variable implicit equations $E(x, y(x)) = 0$.
+              \item Rounding fractions in Newton's method so denominators stay small.
+              \item Proving $e^{e^x}$ cannot be solved by a 1-variable polynomial ODE.
+            \end{itemize}
+        \end{enumerate}
+      \end{block}
+    \end{column}
+  \end{columns}
+
+  \say{Here is the honest summary. On the left is everything we have 100\% proved in Lean 4 with zero unproved assumptions. On the right is what is outside our box: sharp-corner functions like $|x|$, non-ODE functions like $\Gamma(x)$, and three concrete next extensions we can build next.}
+\end{frame}
+
+% =========================================================================
+% SLIDE 11: BONUS — HEARING THE ORDINALS ("ORDINAL MUSIC")
+% =========================================================================
+\begin{frame}[shrink=8]{Bonus Idea: ``Ordinal Music'' --- Hearing the Hierarchy!}
+  Because an analog music synthesizer (like a Moog) is literally a box of coupled integrators ($\int dt$), our ordinal hierarchy maps \textbf{every ordinal number below $\varepsilon_0$ to a musical sound}:
+
+  \vspace{0.1cm}
+  \begin{itemize}
+    \item \textbf{Finite Ordinals ($k < \omega$):} Polynomial curves $t^k$ $\longrightarrow$ \textbf{Volume fade-in / fade-out ramps} (no vibration).
+    \item \textbf{Level $\omega$ ($e^{-\gamma t}\sin(\omega_0 t)$):} Linear ODEs $\longrightarrow$ \textbf{Pure musical notes \& chords} (a guitar string or bell with clean harmonic overtones).
+    \item \textbf{Level $\omega^\omega$ and $\omega^{\omega^\omega}$ ($\sin(t + \sin(t))$):} Nested compositions $\longrightarrow$ \textbf{FM Synthesizer Sounds!} Plugging a sine wave inside another sine wave creates a rich cloud of metallic sideband frequencies.
+    \item \textbf{A ``Hydra'' Song:} In logic, the Kirby--Paris Hydra battle counts down through ordinals $\omega^{\omega^\omega} \to \omega^2 \to \omega \cdot 3 \to 1 \to 0$. Played through our equations, it starts as a wild, shimmering FM synthesizer cloud and resolves step-by-step into a pure harmonic chord before fading to silence!
+  \end{itemize}
+
+  \vspace{0.15cm}
+  \begin{center}
+    \textbf{\textcolor{deepblue}{Summary:}} One closed algebraic box $\bullet$ 7 working rooms of calculus $\bullet$ Graded by ordinals below $\varepsilon_0$ $\bullet$ 100\% verified in Lean 4.
+  \end{center}
+
+  \say{And to end on a fun note: because a modular music synthesizer is physically a differential equation solver, our ordinal hierarchy actually describes musical sound! Finite ordinals are volume envelopes, $\omega$ is pure harmonic notes and chords, and the $\omega^\omega$ tower is FM synthesis---meaning you can literally listen to a Goodstein sequence or Hydra battle resolve from a complex FM sound down to a pure chord.}
+\end{frame}
+
+\end{document}

@@ -607,6 +607,468 @@ theorem RadiusJet.location_error_of_deriv_margin (F : RadiusJet) (a b : Q) (k : 
     hd_persists x z hxa hxb hza hzb
   exact (le_div_iff₀ hm).mpr (by linarith)
 
+/-! ### Decisive Theorem IIA: Infinite-Series Limit Secant & True Root-Location Adequacy in `ℝ`
+
+Passing `location_error_of_deriv_margin` to the $d \to \infty$ limit via
+`analyticValue_sub_evalPoly_le` connects the **finite rational derivative check**
+on $S_{N_k}(F')$ directly to the **infinite real power series** $S.\operatorname{analyticValue}(x) \in \mathbb{R}$. -/
+
+/-- Elementary dominance `(d : ℝ) ≤ (2 : ℝ) ^ d`. -/
+theorem real_nat_le_two_pow : ∀ d : Nat, (d : ℝ) ≤ (2 : ℝ) ^ d
+  | 0 => by norm_num
+  | d + 1 => by
+    have ih := real_nat_le_two_pow d
+    have h1 : (1 : ℝ) ≤ (2 : ℝ) ^ d := one_le_pow₀ (by norm_num)
+    rw [pow_succ]
+    push_cast
+    linarith
+
+/-- Archimedean elimination of `C / 2^d` across all `d : Nat` in `ℝ`. -/
+theorem real_le_of_forall_sub_pow2_le (A B C : ℝ) (_hC : 0 ≤ C)
+    (h : ∀ d : Nat, A ≤ B + C / (2 : ℝ) ^ d) : A ≤ B := by
+  by_contra hlt
+  push_neg at hlt
+  have hAB : 0 < A - B := sub_pos.mpr hlt
+  obtain ⟨d, hd⟩ := exists_nat_gt (C / (A - B))
+  have hd_pow : (d : ℝ) ≤ (2 : ℝ) ^ d := real_nat_le_two_pow d
+  have h2d_gt : C / (A - B) < (2 : ℝ) ^ d := lt_of_lt_of_le hd hd_pow
+  have h2d_pos : (0 : ℝ) < (2 : ℝ) ^ d := by positivity
+  have h1 := h d
+  have h2 : C < (2 : ℝ) ^ d * (A - B) := (div_lt_iff₀ hAB).mp h2d_gt
+  have h3 : C / (2 : ℝ) ^ d < A - B := (div_lt_iff₀ h2d_pos).mpr (by linarith)
+  linarith
+
+/-- For `P : PolyODEProof`, evaluating `solN P.sys P.v` up to degree `N` has the same
+    rational value as evaluating `solFast P.sys P.v` up to degree `N`. -/
+theorem PolyODEProof.evalPoly_solN_eq_solFast (P : PolyODEProof) (N : Nat) (x : Q) :
+    ((Jet.mk (solN P.sys P.v)).evalPoly N x).val =
+      ((Jet.mk (solFast P.sys P.v)).evalPoly N x).val := by
+  rw [jet_evalPoly_val_eq_sum, jet_evalPoly_val_eq_sum]
+  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  rw [solFast_val P.sys P.wf P.v P.hv n]
+
+/-- **Theorem IIA.1 (Infinite-Series Secant Lower Bound from Finite Rational Derivative Margin)**:
+    Let `P : PolyODEProof`, `S := P.toCertifiedAnalyticRep`, and
+    `F := GPACSys.radiusJet P.sys P.wf P.v P.hv`.
+    If on $[a, b] \subseteq [-2^{-(S.R+2)}, 2^{-(S.R+2)}]$, the finite rational derivative
+    polynomial at degree $N_k = k + (F.\mathrm{deriv}.M + 3)$ satisfies
+    $$(F.\mathrm{deriv}.\mathrm{toJet}.\mathrm{evalPoly}\;N_k\;y).\mathrm{val} - \frac{1}{2^k} \ge m$$
+    for all $y \in [a, b]$, then the **true infinite real power series**
+    $S.\operatorname{analyticValue} : Q \to \mathbb{R}$ satisfies the global secant bound:
+    $$(m : \mathbb{R}) \cdot |(x.\mathrm{val} : \mathbb{R}) - (z.\mathrm{val} : \mathbb{R})|
+      \le \big|S.\operatorname{analyticValue}(x) - S.\operatorname{analyticValue}(z)\big|$$
+    for all $x, z \in [a, b]$. -/
+theorem PolyODEProof.analyticValue_secant_of_deriv_margin (P : PolyODEProof)
+    (a b : Q) (k : Nat) (m : Rat)
+    (ha : |a.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2))
+    (hb : |b.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2))
+    (hmargin : ∀ y : Q, a.val ≤ y.val → y.val ≤ b.val →
+      m ≤ ((GPACSys.radiusJet P.sys P.wf P.v P.hv).deriv.toJet.evalPoly
+            (k + ((GPACSys.radiusJet P.sys P.wf P.v P.hv).deriv.M + 3)) y).val
+          - 1 / (2 : Rat) ^ k)
+    (x z : Q) (hxa : a.val ≤ x.val) (hxb : x.val ≤ b.val)
+    (hza : a.val ≤ z.val) (hzb : z.val ≤ b.val) :
+    (m : ℝ) * |(x.val : ℝ) - (z.val : ℝ)| ≤
+      |P.toCertifiedAnalyticRep.analyticValue x - P.toCertifiedAnalyticRep.analyticValue z| := by
+  let S := P.toCertifiedAnalyticRep
+  let F := GPACSys.radiusJet P.sys P.wf P.v P.hv
+  have hSR : S.R = (sysParams P.sys).2 := rfl
+  have hx_disk : |x.val| ≤ 1 / (2 : Rat) ^ (S.R + 1) := by
+    have hx2 : |x.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2) := by
+      rw [abs_le] at ha hb ⊢
+      constructor <;> linarith [ha.1, hb.2]
+    exact le_trans hx2 (one_div_le_one_div_of_le (by positivity)
+      (pow_le_pow_right₀ (by norm_num) (by omega)))
+  have hz_disk : |z.val| ≤ 1 / (2 : Rat) ^ (S.R + 1) := by
+    have hz2 : |z.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2) := by
+      rw [abs_le] at ha hb ⊢
+      constructor <;> linarith [ha.1, hb.2]
+    exact le_trans hz2 (one_div_le_one_div_of_le (by positivity)
+      (pow_le_pow_right₀ (by norm_num) (by omega)))
+  set N₀ := k + (F.deriv.M + 3) + 1
+  let C : ℝ := 2 * (2 : ℝ) ^ (S.M + 1) / (2 : ℝ) ^ N₀
+  have hC : 0 ≤ C := by positivity
+  refine real_le_of_forall_sub_pow2_le _ _ C hC (fun d ↦ ?_)
+  have hd_persists : ∀ y : Q, a.val ≤ y.val → y.val ≤ b.val →
+      m ≤ (F.toJet.deriv.evalPoly (k + (F.deriv.M + 3) + d) y).val :=
+    fun y hya hyb ↦ F.deriv_margin_persists a b k m ha hb hmargin d y hya hyb
+  have hsec_rat := jet_evalPoly_secant_lower_bound F.toJet (k + (F.deriv.M + 3) + d) a b m
+    hd_persists x z hxa hxb hza hzb
+  have hN_eq : k + (F.deriv.M + 3) + d + 1 = N₀ + d := by omega
+  rw [hN_eq] at hsec_rat
+  have hsec_real : (m : ℝ) * |(x.val : ℝ) - (z.val : ℝ)| ≤
+      |(((F.toJet.evalPoly (N₀ + d) x).val : ℝ) - ((F.toJet.evalPoly (N₀ + d) z).val : ℝ))| := by
+    have hcast : ((m * |x.val - z.val| : Rat) : ℝ) ≤
+        ((|(F.toJet.evalPoly (N₀ + d) x).val - (F.toJet.evalPoly (N₀ + d) z).val| : Rat) : ℝ) := by
+      exact_mod_cast hsec_rat
+    simpa only [Rat.cast_mul, Rat.cast_abs, Rat.cast_sub] using hcast
+  have hx_eq : (F.toJet.evalPoly (N₀ + d) x).val =
+      ((Jet.mk (solFast P.sys P.v)).evalPoly (N₀ + d) x).val :=
+    P.evalPoly_solN_eq_solFast (N₀ + d) x
+  have hz_eq : (F.toJet.evalPoly (N₀ + d) z).val =
+      ((Jet.mk (solFast P.sys P.v)).evalPoly (N₀ + d) z).val :=
+    P.evalPoly_solN_eq_solFast (N₀ + d) z
+  rw [hx_eq, hz_eq] at hsec_real
+  set Px : ℝ := (((Jet.mk (solFast P.sys P.v)).evalPoly (N₀ + d) x).val : ℝ)
+  set Pz : ℝ := (((Jet.mk (solFast P.sys P.v)).evalPoly (N₀ + d) z).val : ℝ)
+  set fx : ℝ := S.analyticValue x
+  set fz : ℝ := S.analyticValue z
+  have hsec_real' : (m : ℝ) * |(x.val : ℝ) - (z.val : ℝ)| ≤ |Px - Pz| := hsec_real
+  have hrem_x : |Px - fx| ≤ (2 : ℝ) ^ (S.M + 1) / (2 : ℝ) ^ (N₀ + d) :=
+    S.analyticValue_sub_evalPoly_le x hx_disk (N₀ + d)
+  have hrem_z : |Pz - fz| ≤ (2 : ℝ) ^ (S.M + 1) / (2 : ℝ) ^ (N₀ + d) :=
+    S.analyticValue_sub_evalPoly_le z hz_disk (N₀ + d)
+  have htri1 : |Px - Pz| = |(Px - fx) + ((fx - fz) + (fz - Pz))| := by
+    congr 1; ring
+  have htri2 := abs_add_le (Px - fx) ((fx - fz) + (fz - Pz))
+  have htri3 := abs_add_le (fx - fz) (fz - Pz)
+  have hrem_z' : |fz - Pz| ≤ (2 : ℝ) ^ (S.M + 1) / (2 : ℝ) ^ (N₀ + d) := by
+    rw [abs_sub_comm]; exact hrem_z
+  have hpow_split : 2 * ((2 : ℝ) ^ (S.M + 1) / (2 : ℝ) ^ (N₀ + d)) = C / (2 : ℝ) ^ d := by
+    dsimp [C]
+    rw [pow_add (2 : ℝ) N₀ d]
+    ring
+  linarith
+
+/-- **Theorem IIA.2 (True Infinite-Series Root-Location & Uniqueness Theorem)**:
+    Under the finite rational derivative margin of `analyticValue_secant_of_deriv_margin`,
+    if $z \in [a, b]$ is a zero of the true analytic function ($S.\operatorname{analyticValue}(z) = 0$),
+    then for every point $x \in [a, b]$ and every evaluation precision $j \in \mathbb{N}$:
+    $$\big|(x.\mathrm{val} : \mathbb{R}) - (z.\mathrm{val} : \mathbb{R})\big|
+      \le \frac{|S.\operatorname{analyticValue}(x)|}{(m : \mathbb{R})}
+      \le \frac{|((\operatorname{GPACSys.approxFast}\;P.\mathrm{sys}\;P.v\;x\;j).\mathrm{val} : \mathbb{R})| + 1 / (2 : \mathbb{R})^j}{(m : \mathbb{R})}.$$ -/
+theorem PolyODEProof.analyticValue_root_location_of_deriv_margin (P : PolyODEProof)
+    (a b : Q) (k : Nat) (m : Rat) (hm : 0 < m)
+    (ha : |a.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2))
+    (hb : |b.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2))
+    (hmargin : ∀ y : Q, a.val ≤ y.val → y.val ≤ b.val →
+      m ≤ ((GPACSys.radiusJet P.sys P.wf P.v P.hv).deriv.toJet.evalPoly
+            (k + ((GPACSys.radiusJet P.sys P.wf P.v P.hv).deriv.M + 3)) y).val
+          - 1 / (2 : Rat) ^ k)
+    (x z : Q) (hxa : a.val ≤ x.val) (hxb : x.val ≤ b.val)
+    (hza : a.val ≤ z.val) (hzb : z.val ≤ b.val)
+    (hroot : P.toCertifiedAnalyticRep.analyticValue z = 0) (j : Nat) :
+    |(x.val : ℝ) - (z.val : ℝ)| ≤
+      |P.toCertifiedAnalyticRep.analyticValue x| / (m : ℝ) ∧
+    |(x.val : ℝ) - (z.val : ℝ)| ≤
+      (|((GPACSys.approxFast P.sys P.v x j).val : ℝ)| + 1 / (2 : ℝ) ^ j) / (m : ℝ) := by
+  have hm_real : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm
+  have hsec := P.analyticValue_secant_of_deriv_margin a b k m ha hb hmargin x z hxa hxb hza hzb
+  rw [hroot, sub_zero] at hsec
+  have h1 : |(x.val : ℝ) - (z.val : ℝ)| ≤
+      |P.toCertifiedAnalyticRep.analyticValue x| / (m : ℝ) :=
+    (le_div_iff₀ hm_real).mpr (by linarith)
+  refine ⟨h1, le_trans h1 ?_⟩
+  have hx_disk : |x.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 1) := by
+    have hx2 : |x.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2) := by
+      rw [abs_le] at ha hb ⊢
+      constructor <;> linarith [ha.1, hb.2]
+    exact le_trans hx2 (one_div_le_one_div_of_le (by positivity)
+      (pow_le_pow_right₀ (by norm_num) (by omega)))
+  set A : ℝ := ((GPACSys.approxFast P.sys P.v x j).val : ℝ)
+  set F : ℝ := P.toCertifiedAnalyticRep.analyticValue x
+  have hcert : |A - F| ≤ 1 / (2 : ℝ) ^ j := certified_evaluation P x j hx_disk
+  have htri : |F| ≤ |A| + |A - F| := by
+    have hsub := abs_add_le A (F - A)
+    rw [add_sub_cancel, abs_sub_comm F A] at hsub
+    exact hsub
+  exact div_le_div_of_nonneg_right (by linarith) (le_of_lt hm_real)
+
+/-! ## Section 4: Decisive Theorem IIB — Representation-to-Representation Closure (`PolyODEProof` Transformers, True Definite Integral, and Local Inverse)
+
+Every calculus operation—including local compositional inversion of autonomous 1D polynomial
+ODEs—acts as an explicit representation-to-representation compiler:
+$$\mathsf{PolyODEProof} \longrightarrow \mathsf{PolyODEProof}.$$ -/
+
+/-- **Addition of `PolyODEProof` representations (`PolyODEProof.add`)**. -/
+def PolyODEProof.add (P₁ P₂ : PolyODEProof) : PolyODEProof where
+  sys := sumSys P₁.sys P₂.sys P₁.v P₂.v P₁.hv P₂.hv
+  wf  := gpac_sumSys P₁.sys P₂.sys P₁.wf P₂.wf P₁.v P₂.v P₁.hv P₂.hv
+  v   := P₁.sys.length + P₂.sys.length
+  hv  := by rw [sumSys_length]; exact Nat.lt_succ_self _
+
+/-- Coefficient soundness of `PolyODEProof.add`. -/
+theorem PolyODEProof.add_coeff (P₁ P₂ : PolyODEProof) (n : Nat) :
+    (P₁.add P₂).toCertifiedAnalyticRep.coeff n =
+      P₁.toCertifiedAnalyticRep.coeff n + P₂.toCertifiedAnalyticRep.coeff n := by
+  change (solN (sumSys P₁.sys P₂.sys P₁.v P₂.v P₁.hv P₂.hv) (P₁.sys.length + P₂.sys.length) n).val =
+    (solN P₁.sys P₁.v n).val + (solN P₂.sys P₂.v n).val
+  let S := sumSys P₁.sys P₂.sys P₁.v P₂.v P₁.hv P₂.hv
+  have hgpacS := gpac_sumSys P₁.sys P₂.sys P₁.wf P₂.wf P₁.v P₂.v P₁.hv P₂.hv
+  have hvS : P₁.sys.length + P₂.sys.length < S.length := by
+    rw [sumSys_length]; exact Nat.lt_succ_self _
+  have huniq := genSolveN_unique_val S (gpac_wf hgpacS) (sumTargetState P₁.sys P₂.sys P₁.v P₂.v)
+    (sumTargetState_fixed P₁.sys P₂.sys (gpac_wf P₁.wf) (gpac_wf P₂.wf) P₁.v P₂.v P₁.hv P₂.hv)
+    (n + 1) (P₁.sys.length + P₂.sys.length) n hvS (Nat.lt_succ_self n)
+  rw [extractClosed_genSolveND_fst] at huniq
+  change (solN S (P₁.sys.length + P₂.sys.length) n).val = _ at huniq
+  rw [huniq]
+  unfold sumTargetState
+  rw [if_neg (by omega), if_neg (by omega), Q.val_add]
+
+/-- **Subtraction of `PolyODEProof` representations (`PolyODEProof.sub`)**. -/
+def PolyODEProof.sub (P₁ P₂ : PolyODEProof) : PolyODEProof where
+  sys := subSys P₁.sys P₂.sys P₁.v P₂.v P₁.hv P₂.hv
+  wf  := gpac_subSys P₁.sys P₂.sys P₁.wf P₂.wf P₁.v P₂.v P₁.hv P₂.hv
+  v   := P₁.sys.length + P₂.sys.length
+  hv  := by rw [uSub_subSys_length]; exact Nat.lt_succ_self _
+
+/-- Coefficient soundness of `PolyODEProof.sub`. -/
+theorem PolyODEProof.sub_coeff (P₁ P₂ : PolyODEProof) (n : Nat) :
+    (P₁.sub P₂).toCertifiedAnalyticRep.coeff n =
+      P₁.toCertifiedAnalyticRep.coeff n - P₂.toCertifiedAnalyticRep.coeff n := by
+  change (solN (subSys P₁.sys P₂.sys P₁.v P₂.v P₁.hv P₂.hv) (P₁.sys.length + P₂.sys.length) n).val =
+    (solN P₁.sys P₁.v n).val - (solN P₂.sys P₂.v n).val
+  let S := subSys P₁.sys P₂.sys P₁.v P₂.v P₁.hv P₂.hv
+  have hgpacS := gpac_subSys P₁.sys P₂.sys P₁.wf P₂.wf P₁.v P₂.v P₁.hv P₂.hv
+  have hvS : P₁.sys.length + P₂.sys.length < S.length := by
+    rw [uSub_subSys_length]; exact Nat.lt_succ_self _
+  have huniq := genSolveN_unique_val S (gpac_wf hgpacS) (uSubTargetState P₁.sys P₂.sys P₁.v P₂.v)
+    (uSubTargetState_fixed P₁.sys P₂.sys (gpac_wf P₁.wf) (gpac_wf P₂.wf) P₁.v P₂.v P₁.hv P₂.hv)
+    (n + 1) (P₁.sys.length + P₂.sys.length) n hvS (Nat.lt_succ_self n)
+  rw [extractClosed_genSolveND_fst] at huniq
+  change (solN S (P₁.sys.length + P₂.sys.length) n).val = _ at huniq
+  rw [huniq]
+  unfold uSubTargetState
+  rw [if_neg (by omega), if_neg (by omega), Q.val_sub]
+
+/-- **Cauchy Multiplication of `PolyODEProof` representations (`PolyODEProof.mul`)**. -/
+def PolyODEProof.mul (P₁ P₂ : PolyODEProof) : PolyODEProof where
+  sys := mulSys P₁.sys P₂.sys P₁.v P₂.v P₁.hv P₂.hv
+  wf  := gpac_mulSys P₁.sys P₂.sys P₁.wf P₂.wf P₁.v P₂.v P₁.hv P₂.hv
+  v   := P₁.sys.length + P₂.sys.length
+  hv  := by rw [mulSys_length]; exact Nat.lt_succ_self _
+
+/-- Coefficient soundness of `PolyODEProof.mul`. -/
+theorem PolyODEProof.mul_coeff (P₁ P₂ : PolyODEProof) (n : Nat) :
+    (P₁.mul P₂).toCertifiedAnalyticRep.coeff n =
+      ((((tmJetMul (Γ := [])).eval Env.nil) (solN P₁.sys P₁.v) (solN P₂.sys P₂.v)) n).val := by
+  change (solN (mulSys P₁.sys P₂.sys P₁.v P₂.v P₁.hv P₂.hv) (P₁.sys.length + P₂.sys.length) n).val = _
+  let S := mulSys P₁.sys P₂.sys P₁.v P₂.v P₁.hv P₂.hv
+  have hgpacS := gpac_mulSys P₁.sys P₂.sys P₁.wf P₂.wf P₁.v P₂.v P₁.hv P₂.hv
+  have hvS : P₁.sys.length + P₂.sys.length < S.length := by
+    rw [mulSys_length]; exact Nat.lt_succ_self _
+  have huniq := genSolveN_unique_val S (gpac_wf hgpacS) (uMulTargetState P₁.sys P₂.sys P₁.v P₂.v)
+    (uMulTargetState_fixed P₁.sys P₂.sys (gpac_wf P₁.wf) (gpac_wf P₂.wf) P₁.v P₂.v P₁.hv P₂.hv)
+    (n + 1) (P₁.sys.length + P₂.sys.length) n hvS (Nat.lt_succ_self n)
+  rw [extractClosed_genSolveND_fst] at huniq
+  change (solN S (P₁.sys.length + P₂.sys.length) n).val = _ at huniq
+  rw [huniq]
+  unfold uMulTargetState
+  rw [if_neg (by omega), if_neg (by omega)]
+
+/-- **Reciprocal of a `PolyODEProof` representation (`PolyODEProof.inv`)**. -/
+def PolyODEProof.inv (P : PolyODEProof) : PolyODEProof where
+  sys := invSys P.sys P.v P.hv
+  wf  := inv_gpac_invSys P.sys P.wf P.v P.hv
+  v   := P.sys.length
+  hv  := by simp [invSys]
+
+/-- Coefficient soundness of `PolyODEProof.inv` when `(solN P.sys P.v 0).val ≠ 0`. -/
+theorem PolyODEProof.inv_coeff (P : PolyODEProof)
+    (h0 : (solN P.sys P.v 0).val ≠ 0) (n : Nat) :
+    P.inv.toCertifiedAnalyticRep.coeff n = (Jet.recip (solN P.sys P.v) n).val :=
+  (ux_inv_unique_val (solN P.sys P.v) (solN (invSys P.sys P.v P.hv) P.sys.length) h0
+    (ux_invSys_mul_val (solN P.sys P.v) P.sys P.wf P.v P.hv (fun _ ↦ rfl) h0) n).symm
+
+/-- **Indefinite Integration of a `PolyODEProof` representation (`PolyODEProof.integ`)**. -/
+def PolyODEProof.integ (P : PolyODEProof) : PolyODEProof where
+  sys := integSys P.sys P.v
+  wf  := gpac_integSys P.sys P.wf P.v P.hv
+  v   := P.sys.length
+  hv  := by simp [integSys]
+
+/-- Coefficient soundness of `PolyODEProof.integ`. -/
+theorem PolyODEProof.integ_coeff (P : PolyODEProof) (n : Nat) :
+    P.integ.toCertifiedAnalyticRep.coeff n =
+      ((((tmJetInteg (Γ := [])).eval Env.nil) (solN P.sys P.v)) n).val := by
+  change (solN (integSys P.sys P.v) P.sys.length n).val = _
+  let S := integSys P.sys P.v
+  have hgpacS := gpac_integSys P.sys P.wf P.v P.hv
+  have hvS : P.sys.length < S.length := by
+    rw [uInteg_integSys_length]; exact Nat.lt_succ_self _
+  have huniq := genSolveN_unique_val S (gpac_wf hgpacS) (uIntegTargetState P.sys P.v)
+    (uIntegTargetState_fixed P.sys (gpac_wf P.wf) P.v P.hv)
+    (n + 1) P.sys.length n hvS (Nat.lt_succ_self n)
+  rw [extractClosed_genSolveND_fst] at huniq
+  change (solN S P.sys.length n).val = _ at huniq
+  rw [huniq]
+  unfold uIntegTargetState
+  rw [if_neg (Nat.lt_irrefl _)]
+
+/-- **Differentiation of a `PolyODEProof` representation (`PolyODEProof.derivOp`)**. -/
+def PolyODEProof.derivOp (P : PolyODEProof) : PolyODEProof where
+  sys := derivSysC P.sys P.v P.hv
+  wf  := gpac_derivSysC P.sys P.wf P.v P.hv
+  v   := P.sys.length
+  hv  := by rw [gpac_derivSysC_length]; exact Nat.lt_succ_self _
+
+/-- Coefficient soundness of `PolyODEProof.derivOp`. -/
+theorem PolyODEProof.derivOp_coeff (P : PolyODEProof) (n : Nat) :
+    P.derivOp.toCertifiedAnalyticRep.coeff n =
+      ((((tmJetDeriv (Γ := [])).eval Env.nil) (solN P.sys P.v)) n).val := by
+  change (solN (derivSysC P.sys P.v P.hv) P.sys.length n).val = _
+  let S := derivSysC P.sys P.v P.hv
+  have hgpacS := gpac_derivSysC P.sys P.wf P.v P.hv
+  have hvS : P.sys.length < S.length := by
+    rw [gpac_derivSysC_length]; exact Nat.lt_succ_self _
+  have huniq := genSolveN_unique_val S (gpac_wf hgpacS) (uDerivTargetState P.sys P.v)
+    (gpac_derivSysC_fixed P.sys (gpac_wf P.wf) P.v P.hv)
+    (n + 1) P.sys.length n hvS (Nat.lt_succ_self n)
+  rw [extractClosed_genSolveND_fst] at huniq
+  change (solN S P.sys.length n).val = _ at huniq
+  rw [huniq]
+  unfold uDerivTargetState
+  rw [if_neg (Nat.lt_irrefl _)]
+
+/-- **Composition of `PolyODEProof` representations (`PolyODEProof.comp`)**:
+    `P₁.comp P₂` represents $f_{P_1}(f_{P_2}(x) - f_{P_2}(0))$. -/
+def PolyODEProof.comp (P₁ P₂ : PolyODEProof) : PolyODEProof where
+  sys := compSys (flatAll P₁.sys) P₂.sys P₂.v P₂.hv
+  wf  := comp_gpac_compSys (flatAll P₁.sys) P₂.sys (ux_flatAll_props P₁.sys P₁.wf).1 P₂.wf P₂.v P₂.hv
+  v   := P₂.sys.length + P₁.v
+  hv  := by
+    have := flatAll_length_ge P₁.sys
+    have := P₁.hv
+    rw [comp_compSys_length]
+    omega
+
+/-- Coefficient soundness of `PolyODEProof.comp`. -/
+theorem PolyODEProof.comp_coeff (P₁ P₂ : PolyODEProof) (n : Nat) :
+    (P₁.comp P₂).toCertifiedAnalyticRep.coeff n =
+      ((Jet.compZero ⟨solN P₁.sys P₁.v⟩ ⟨solN P₂.sys P₂.v⟩).coeff n).val := by
+  obtain ⟨hgpacF, hnoF, hvalF⟩ := ux_flatAll_props P₁.sys P₁.wf
+  let S := compSys (flatAll P₁.sys) P₂.sys P₂.v P₂.hv
+  have hgpacS := comp_gpac_compSys (flatAll P₁.sys) P₂.sys hgpacF P₂.wf P₂.v P₂.hv
+  have hvS : P₂.sys.length + P₁.v < S.length := (P₁.comp P₂).hv
+  have huniq := genSolveN_unique_val S (gpac_wf hgpacS) (compTargetState (flatAll P₁.sys) P₂.sys P₂.v)
+    (compTargetState_fixed (flatAll P₁.sys) P₂.sys hgpacF hnoF (gpac_wf P₂.wf) P₂.v P₂.hv)
+    (n + 1) (P₂.sys.length + P₁.v) n hvS (Nat.lt_succ_self n)
+  rw [extractClosed_genSolveND_fst] at huniq
+  change (solN S (P₂.sys.length + P₁.v) n).val = _ at huniq
+  change (solN S (P₂.sys.length + P₁.v) n).val = _
+  rw [huniq]
+  unfold compTargetState
+  rw [if_neg (by omega), Nat.add_sub_cancel_left]
+  exact (compZero_congr_val ⟨solN P₁.sys P₁.v⟩ ⟨solN (flatAll P₁.sys) P₁.v⟩
+    ⟨solN P₂.sys P₂.v⟩ (hvalF P₁.v P₁.hv) n).symm
+
+/-- **Fast Certified Definite Integral (`PolyODEProof.defIntegralFast`)**:
+    Evaluates $\int_a^b f_P(t)\,dt$ to precision $2^{-k}$ via `P.integ` and `approxFast`. -/
+def PolyODEProof.defIntegralFast (P : PolyODEProof) (a b : Q) (k : Nat) : Q :=
+  Q.sub (GPACSys.approxFast P.integ.sys P.integ.v b (k + 1))
+        (GPACSys.approxFast P.integ.sys P.integ.v a (k + 1))
+
+/-- **True Infinite-Series Definite Integral Adequacy (`defIntegralFast_analyticValue_spec`)**:
+    For $a, b$ in the certified disk of `P.integ`, `P.defIntegralFast a b k` approximates the
+    true real antiderivative difference
+    $$P.\mathrm{integ}.\mathrm{toCertifiedAnalyticRep}.\operatorname{analyticValue}(b) -
+      P.\mathrm{integ}.\mathrm{toCertifiedAnalyticRep}.\operatorname{analyticValue}(a)$$
+    within $2^{-k}$. -/
+theorem PolyODEProof.defIntegralFast_analyticValue_spec (P : PolyODEProof) (a b : Q) (k : Nat)
+    (ha : |a.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.integ.sys).2 + 1))
+    (hb : |b.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.integ.sys).2 + 1)) :
+    |((P.defIntegralFast a b k).val : ℝ) -
+      (P.integ.toCertifiedAnalyticRep.analyticValue b -
+       P.integ.toCertifiedAnalyticRep.analyticValue a)| ≤ 1 / (2 : ℝ) ^ k := by
+  unfold defIntegralFast
+  rw [Q.val_sub, Rat.cast_sub]
+  set Ia : ℝ := ((GPACSys.approxFast P.integ.sys P.integ.v a (k + 1)).val : ℝ)
+  set Ib : ℝ := ((GPACSys.approxFast P.integ.sys P.integ.v b (k + 1)).val : ℝ)
+  set Fa : ℝ := P.integ.toCertifiedAnalyticRep.analyticValue a
+  set Fb : ℝ := P.integ.toCertifiedAnalyticRep.analyticValue b
+  have ha_cert : |Ia - Fa| ≤ 1 / (2 : ℝ) ^ (k + 1) := certified_evaluation P.integ a (k + 1) ha
+  have hb_cert : |Ib - Fb| ≤ 1 / (2 : ℝ) ^ (k + 1) := certified_evaluation P.integ b (k + 1) hb
+  have hsplit : (Ib - Ia) - (Fb - Fa) = (Ib - Fb) + (Fa - Ia) := by ring
+  rw [hsplit]
+  have htri := abs_add_le (Ib - Fb) (Fa - Ia)
+  have ha_cert' : |Fa - Ia| ≤ 1 / (2 : ℝ) ^ (k + 1) := by rw [abs_sub_comm]; exact ha_cert
+  have hhalf : (1 : ℝ) / (2 : ℝ) ^ (k + 1) + 1 / (2 : ℝ) ^ (k + 1) = 1 / (2 : ℝ) ^ k := by
+    rw [pow_succ (2 : ℝ) k]
+    field_simp
+    ring
+  linarith
+
+/-- **Local Analytic Inverse of an Autonomous 1D ODE (`UExpr.autoInverse`)**:
+    For an autonomous 1D ODE $y'(x) = F(y(x))$ with $y(0) = 0$ and $F(0) \neq 0$,
+    its inverse $g = y^{-1}$ satisfies $g(0) = 0$ and $g'(t) = 1 / F(t)$, so
+    $$g(t) = \int_0^t \frac{1}{F(s)}\,ds = \operatorname{UExpr.integ}(\operatorname{UExpr.inv}\;F).$$ -/
+def UExpr.autoInverse (F : UExpr) : UExpr :=
+  .integ (.inv F)
+
+theorem UExpr.autoInverse_defined (F : UExpr) (hF : F.Defined) (h0 : (F.eval 0).val ≠ 0) :
+    (UExpr.autoInverse F).Defined :=
+  ⟨hF, h0⟩
+
+/-- Compiling `UExpr.autoInverse F` produces a `PolyODEProof` for the local inverse $y^{-1}$. -/
+def UExpr.autoInverse_toPolyODEProof (F : UExpr) (hF : F.Defined) (h0 : (F.eval 0).val ≠ 0) :
+    PolyODEProof :=
+  (UExpr.autoInverse F).toPolyODEProof (UExpr.autoInverse_defined F hF h0)
+
+/-- **Compositional Inverse Adequacy Theorem (`autoInverse_comp_sol_eq_varX`)**:
+    Let $F : \mathrm{UExpr}$ have `(F.eval 0).val ≠ 0`, and let $Y : \mathrm{Jet}$ solve the
+    autonomous 1D ODE $Y(0) = 0$, $Y' = F \circ Y$ (in rational value).
+    Then composing the inverse jet `⟨(UExpr.autoInverse F).eval⟩` with $Y$ yields the exact
+    identity coordinate jet `Jet.varX` ($g(Y(x)) = x$) at every Taylor degree $n \in \mathbb{N}$. -/
+theorem UExpr.autoInverse_comp_sol_eq_varX (F : UExpr) (h0 : (F.eval 0).val ≠ 0)
+    (Y : Jet) (_hY0 : (Y.coeff 0).val = 0)
+    (hY_ode : ∀ k, (Y.deriv.coeff k).val = ((Jet.compZero ⟨F.eval⟩ Y).coeff k).val) :
+    ∀ n : Nat,
+      ((Jet.compZero ⟨(UExpr.autoInverse F).eval⟩ Y).coeff n).val = (Jet.varX.coeff n).val
+  | 0 => by
+    rw [compZero_coeff_val_eq_sum _ Y 0 0 (le_refl 0), Finset.sum_range_one]
+    change (Q.zero : Q).val * ((hPow Y 0).coeff 0).val = Q.zero.val
+    rw [Q.val_zero, zero_mul]
+  | k + 1 => by
+    let G : Jet := ⟨(UExpr.autoInverse F).eval⟩
+    have hG_deriv : ∀ m, (G.deriv.coeff m).val = (Jet.recip F.eval m).val := by
+      intro m
+      have hd := Jet.deriv_integ_val ⟨Jet.recip F.eval⟩ m
+      exact hd
+    have hchain := compZero_deriv_val G Y k
+    have hmul_comp : ((Y.deriv.mul (Jet.compZero G.deriv Y)).coeff k).val =
+        (((Jet.compZero ⟨F.eval⟩ Y).mul (Jet.compZero ⟨Jet.recip F.eval⟩ Y)).coeff k).val := by
+      dsimp [Jet.mul]
+      rw [TrigPoly.cauchyConvAux_val, TrigPoly.cauchyConvAux_val]
+      refine Finset.sum_congr rfl fun j _ ↦ ?_
+      rw [hY_ode j, compZero_congr_val G.deriv ⟨Jet.recip F.eval⟩ Y hG_deriv (k - j)]
+    have hcomp_mul := (compZero_mul_val ⟨F.eval⟩ ⟨Jet.recip F.eval⟩ Y k).symm
+    have hrecip_one : ∀ m, ((Jet.mk F.eval).mul ⟨Jet.recip F.eval⟩).coeff m =
+        ((tmJetMul (Γ := [])).eval Env.nil) F.eval (Jet.recip F.eval) m := by
+      intro m; rw [tmJetMul_eval]
+    have hcomp_one : ((Jet.compZero ((Jet.mk F.eval).mul ⟨Jet.recip F.eval⟩) Y).coeff k).val =
+        ((Jet.compZero (Jet.const (Q.ofNat 1)) Y).coeff k).val :=
+      compZero_congr_val ((Jet.mk F.eval).mul ⟨Jet.recip F.eval⟩) (Jet.const (Q.ofNat 1)) Y
+        (fun m ↦ by rw [hrecip_one m]; exact Jet.recip_spec F.eval h0 m) k
+    have hconst_one : ((Jet.compZero (Jet.const (Q.ofNat 1)) Y).coeff k).val =
+        ((Jet.const (Q.ofNat 1)).coeff k).val :=
+      compZero_const_val (Jet.const (Q.ofNat 1)) Y (fun m ↦ Q.val_zero) k
+    have hderiv_eq : (((Jet.compZero G Y).deriv).coeff k).val =
+        ((Jet.const (Q.ofNat 1)).coeff k).val :=
+      hchain.trans (hmul_comp.trans (hcomp_mul.trans (hcomp_one.trans hconst_one)))
+    have hderiv_def : (((Jet.compZero G Y).deriv).coeff k).val =
+        ((k + 1 : Nat) : Rat) * ((Jet.compZero G Y).coeff (k + 1)).val := by
+      dsimp [Jet.deriv]
+      rw [Q.val_mul, Q.val_ofNat]
+    rw [hderiv_def] at hderiv_eq
+    cases k with
+    | zero =>
+      change ((0 + 1 : Nat) : Rat) * ((Jet.compZero G Y).coeff 1).val = (Q.ofNat 1).val at hderiv_eq
+      rw [Q.val_ofNat] at hderiv_eq
+      change ((Jet.compZero G Y).coeff 1).val = (Q.ofNat 1).val
+      rw [Q.val_ofNat]
+      push_cast at hderiv_eq ⊢
+      linarith
+    | succ m =>
+      change ((m + 1 + 1 : Nat) : Rat) * ((Jet.compZero G Y).coeff (m + 2)).val = Q.zero.val at hderiv_eq
+      rw [Q.val_zero] at hderiv_eq
+      have hpos : ((m + 1 + 1 : Nat) : Rat) ≠ 0 := by positivity
+      have hzero : ((Jet.compZero G Y).coeff (m + 2)).val = 0 :=
+        (mul_eq_zero.mp hderiv_eq).resolve_left hpos
+      change ((Jet.compZero G Y).coeff (m + 2)).val = Q.zero.val
+      rw [Q.val_zero]
+      exact hzero
+
 /-! ## Section 4: Theorem II (Part 3) — Analytic Fourier Adequacy on a Strip (`StripFourierRep`)
 
 A $2\pi$-periodic function analytic on the strip $|\mathrm{Im}(z)| \le R \ln 2$ ($R \ge 1$) is
@@ -763,6 +1225,10 @@ theorem no_uniform_modulus_without_tail_info (N₀ : Nat) :
 #print axioms certified_evaluation
 #print axioms UExpr.eval_eq_extracted_and_fast
 #print axioms RadiusJet.location_error_of_deriv_margin
+#print axioms PolyODEProof.analyticValue_secant_of_deriv_margin
+#print axioms PolyODEProof.analyticValue_root_location_of_deriv_margin
+#print axioms PolyODEProof.defIntegralFast_analyticValue_spec
+#print axioms UExpr.autoInverse_comp_sol_eq_varX
 #print axioms no_uniform_modulus_without_tail_info
 
 end HAomega

@@ -774,6 +774,211 @@ theorem PolyODEProof.analyticValue_root_location_of_deriv_margin (P : PolyODEPro
     exact hsub
   exact div_le_div_of_nonneg_right (by linarith) (le_of_lt hm_real)
 
+/-- **Infinite-Series Lipschitz Theorem on the Quarter-Radius Disk (`analyticValue_lipschitz_disk`)**:
+    For `P : PolyODEProof` and any $x, y$ in the quarter-radius disk
+    $|x.\mathrm{val}|, |y.\mathrm{val}| \le 2^{-(R+2)}$ where $(M, R) = \operatorname{sysParams}(P.\mathrm{sys})$,
+    the true infinite power series satisfies:
+    $$\big|P.\operatorname{toCertifiedAnalyticRep}.\operatorname{analyticValue}(x) -
+          P.\operatorname{toCertifiedAnalyticRep}.\operatorname{analyticValue}(y)\big|
+      \le 2^{M + R + 2} \cdot \big|(x.\mathrm{val} : \mathbb{R}) - (y.\mathrm{val} : \mathbb{R})\big|.$$ -/
+theorem PolyODEProof.analyticValue_lipschitz_disk (P : PolyODEProof) (x y : Q)
+    (hx : |x.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2))
+    (hy : |y.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2)) :
+    |P.toCertifiedAnalyticRep.analyticValue x - P.toCertifiedAnalyticRep.analyticValue y| ≤
+      (2 : ℝ) ^ ((sysParams P.sys).1 + (sysParams P.sys).2 + 2) *
+        |(x.val : ℝ) - (y.val : ℝ)| := by
+  let S := P.toCertifiedAnalyticRep
+  let F := GPACSys.radiusJet P.sys P.wf P.v P.hv
+  have hSR : S.R = (sysParams P.sys).2 := rfl
+  have hFR : F.R = (sysParams P.sys).2 := rfl
+  have hFM : F.M = (sysParams P.sys).1 := rfl
+  have hx_disk : |x.val| ≤ 1 / (2 : Rat) ^ (S.R + 1) :=
+    le_trans hx (one_div_le_one_div_of_le (by positivity) (pow_le_pow_right₀ (by norm_num) (by omega)))
+  have hy_disk : |y.val| ≤ 1 / (2 : Rat) ^ (S.R + 1) :=
+    le_trans hy (one_div_le_one_div_of_le (by positivity) (pow_le_pow_right₀ (by norm_num) (by omega)))
+  let C : ℝ := 2 * (2 : ℝ) ^ (S.M + 1)
+  refine real_le_of_forall_sub_pow2_le _ _ C (by positivity) (fun d ↦ ?_)
+  let r : Q := D.toQ (D.pow2neg (F.R + 2))
+  have hr : |r.val| = 1 / (2 : Rat) ^ (F.R + 2) := by
+    dsimp [r]; rw [toQ_pow2neg_val, abs_of_pos (by positivity)]
+  have hlip_rat := F.evalPoly_lip_disk r x y (by rw [hr])
+    (by rw [hr, hFR]; exact hx) (by rw [hr, hFR]; exact hy) d
+  have hDM : F.deriv.M + 1 = (sysParams P.sys).1 + (sysParams P.sys).2 + 2 := by
+    show F.M + F.R + 1 + 1 = _
+    rw [hFM, hFR]
+  rw [hDM] at hlip_rat
+  have hlip_real :
+      |(((F.toJet.evalPoly d x).val : ℝ) - ((F.toJet.evalPoly d y).val : ℝ))| ≤
+        (2 : ℝ) ^ ((sysParams P.sys).1 + (sysParams P.sys).2 + 2) *
+          |(x.val : ℝ) - (y.val : ℝ)| := by
+    have hcast :
+        ((|(F.toJet.evalPoly d x).val - (F.toJet.evalPoly d y).val| : Rat) : ℝ) ≤
+          (((2 : Rat) ^ ((sysParams P.sys).1 + (sysParams P.sys).2 + 2) * |x.val - y.val| : Rat) : ℝ) := by
+      exact_mod_cast hlip_rat
+    simpa only [Rat.cast_abs, Rat.cast_sub, Rat.cast_mul, Rat.cast_pow, Rat.cast_ofNat] using hcast
+  have hx_eq : (F.toJet.evalPoly d x).val =
+      ((Jet.mk (solFast P.sys P.v)).evalPoly d x).val :=
+    P.evalPoly_solN_eq_solFast d x
+  have hy_eq : (F.toJet.evalPoly d y).val =
+      ((Jet.mk (solFast P.sys P.v)).evalPoly d y).val :=
+    P.evalPoly_solN_eq_solFast d y
+  rw [hx_eq, hy_eq] at hlip_real
+  set Px : ℝ := (((Jet.mk (solFast P.sys P.v)).evalPoly d x).val : ℝ)
+  set Py : ℝ := (((Jet.mk (solFast P.sys P.v)).evalPoly d y).val : ℝ)
+  set fx : ℝ := S.analyticValue x
+  set fy : ℝ := S.analyticValue y
+  have hlip_real' : |Px - Py| ≤
+      (2 : ℝ) ^ ((sysParams P.sys).1 + (sysParams P.sys).2 + 2) * |(x.val : ℝ) - (y.val : ℝ)| :=
+    hlip_real
+  have hrem_x : |Px - fx| ≤ (2 : ℝ) ^ (S.M + 1) / (2 : ℝ) ^ d :=
+    S.analyticValue_sub_evalPoly_le x hx_disk d
+  have hrem_y : |Py - fy| ≤ (2 : ℝ) ^ (S.M + 1) / (2 : ℝ) ^ d :=
+    S.analyticValue_sub_evalPoly_le y hy_disk d
+  have hrem_x' : |fx - Px| ≤ (2 : ℝ) ^ (S.M + 1) / (2 : ℝ) ^ d := by
+    rw [abs_sub_comm]; exact hrem_x
+  have htri1 : |fx - fy| = |(fx - Px) + ((Px - Py) + (Py - fy))| := by congr 1; ring
+  have htri2 := abs_add_le (fx - Px) ((Px - Py) + (Py - fy))
+  have htri3 := abs_add_le (Px - Py) (Py - fy)
+  have hC_div : 2 * ((2 : ℝ) ^ (S.M + 1) / (2 : ℝ) ^ d) = C / (2 : ℝ) ^ d := by
+    dsimp [C]; ring
+  change |fx - fy| ≤
+    (2 : ℝ) ^ ((sysParams P.sys).1 + (sysParams P.sys).2 + 2) * |(x.val : ℝ) - (y.val : ℝ)| +
+      C / (2 : ℝ) ^ d
+  linarith
+
+/-- Sign coloring of `GPACSys.approxFast` on the binary grid `rootGrid a b j k` at precision `2^{-p}`. -/
+def PolyODEProof.rootColor (P : PolyODEProof) (a b : Q) (j p : Nat) (k : Nat) : Nat :=
+  Q.ltN (GPACSys.approxFast P.sys P.v (rootGrid a b j k) p) (Q.ofNat 0)
+
+/-- Proof-extracted bisection grid index for `P : PolyODEProof`. -/
+def PolyODEProof.rootIndex (P : PolyODEProof) (a b : Q) (j p : Nat) : Nat :=
+  bisect j (P.rootColor a b j p) 0
+
+/-- **Constructive Fast Bisection Root Operator (`PolyODEProof.rootFast`)**:
+    Composes the proof-extracted binary search `bisect` (`Bisection.lean`) with
+    the fast DP evaluator `GPACSys.approxFast` on the grid `rootGrid a b j`. -/
+def PolyODEProof.rootFast (P : PolyODEProof) (a b : Q) (j p : Nat) : Q :=
+  rootGrid a b j (P.rootIndex a b j p)
+
+/-- **Theorem IIA.3 (Constructive Infinite-Series Approximate IVT via Fast Bisection)**:
+    If on $[a, b] \subseteq [-2^{-(R+2)}, 2^{-(R+2)}]$ ($a \le b$), the fast evaluator
+    changes sign between the endpoints (`P.rootColor a b j p 0 ≠ P.rootColor a b j p (2 ^ j)`),
+    then the constructed rational point $r = P.\operatorname{rootFast}\;a\;b\;j\;p$ lies in $[a, b]$
+    and the **true infinite real power series** satisfies the residual bound:
+    $$\big|P.\operatorname{toCertifiedAnalyticRep}.\operatorname{analyticValue}(r)\big|
+      \le \frac{1}{2^p} + 2^{M + R + 2} \frac{b - a}{2^j}.$$ -/
+theorem PolyODEProof.rootFast_analyticValue_spec (P : PolyODEProof) (a b : Q) (j p : Nat)
+    (ha : |a.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2))
+    (hb : |b.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2))
+    (hab : a.val ≤ b.val)
+    (hends : P.rootColor a b j p 0 ≠ P.rootColor a b j p (2 ^ j)) :
+    a.val ≤ (P.rootFast a b j p).val ∧
+    (P.rootFast a b j p).val ≤ b.val ∧
+    |P.toCertifiedAnalyticRep.analyticValue (P.rootFast a b j p)| ≤
+      1 / (2 : ℝ) ^ p +
+        (2 : ℝ) ^ ((sysParams P.sys).1 + (sysParams P.sys).2 + 2) *
+          (((b.val : ℝ) - (a.val : ℝ)) / (2 : ℝ) ^ j) := by
+  set c := P.rootColor a b j p with hcdef
+  have hb0 : c 0 ≠ c (0 + 2 ^ j) := by rwa [Nat.zero_add]
+  obtain ⟨hi, hci⟩ := bisect_spec j c 0 hb0
+  set i := bisect j c 0 with hidef
+  rw [Nat.zero_add] at hci
+  have hroot : P.rootFast a b j p = rootGrid a b j i := rfl
+  rw [hroot]
+  set x := rootGrid a b j i with hxdef
+  set y := rootGrid a b j (i + 1) with hydef
+  have hxm := rootGrid_mem a b j i hab (le_of_lt hi)
+  have hym := rootGrid_mem a b j (i + 1) hab hi
+  refine ⟨hxm.1, hxm.2, ?_⟩
+  have hdisk2 : ∀ z : Q, a.val ≤ z.val → z.val ≤ b.val →
+      |z.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2) := by
+    intro z h1 h2
+    rw [abs_le] at ha hb ⊢
+    constructor <;> linarith [ha.1, hb.2]
+  have hdisk1 : ∀ z : Q, |z.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2) →
+      |z.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 1) := by
+    intro z hz
+    exact le_trans hz (one_div_le_one_div_of_le (by positivity) (pow_le_pow_right₀ (by norm_num) (by omega)))
+  have hxd2 := hdisk2 x hxm.1 hxm.2
+  have hyd2 := hdisk2 y hym.1 hym.2
+  set Ax : ℝ := ((GPACSys.approxFast P.sys P.v x p).val : ℝ)
+  set Ay : ℝ := ((GPACSys.approxFast P.sys P.v y p).val : ℝ)
+  set fx : ℝ := P.toCertifiedAnalyticRep.analyticValue x
+  set fy : ℝ := P.toCertifiedAnalyticRep.analyticValue y
+  have hax : |Ax - fx| ≤ 1 / (2 : ℝ) ^ p := certified_evaluation P x p (hdisk1 x hxd2)
+  have hay : |Ay - fy| ≤ 1 / (2 : ℝ) ^ p := certified_evaluation P y p (hdisk1 y hyd2)
+  have hlip : |fx - fy| ≤
+      (2 : ℝ) ^ ((sysParams P.sys).1 + (sysParams P.sys).2 + 2) *
+        (((b.val : ℝ) - (a.val : ℝ)) / (2 : ℝ) ^ j) := by
+    have hl := P.analyticValue_lipschitz_disk x y hxd2 hyd2
+    have hstep_rat : |x.val - y.val| = (b.val - a.val) / (2 : Rat) ^ j := by
+      have hs := rootGrid_step a b j i
+      rw [abs_sub_comm, abs_of_nonneg (by
+        rw [← hydef, ← hxdef] at hs; rw [hs]
+        have : 0 ≤ b.val - a.val := by linarith
+        positivity)]
+      exact hs
+    have hstep_real : |(x.val : ℝ) - (y.val : ℝ)| = ((b.val : ℝ) - (a.val : ℝ)) / (2 : ℝ) ^ j := by
+      have hcast : ((|x.val - y.val| : Rat) : ℝ) = (((b.val - a.val) / (2 : Rat) ^ j : Rat) : ℝ) :=
+        congrArg Rat.cast hstep_rat
+      simpa only [Rat.cast_abs, Rat.cast_sub, Rat.cast_div, Rat.cast_pow, Rat.cast_ofNat] using hcast
+    rwa [hstep_real] at hl
+  rw [abs_le] at hax hay hlip ⊢
+  rcases Q.ltN_eq_zero_or_one (GPACSys.approxFast P.sys P.v x p) (Q.ofNat 0) with hx0 | hx1 <;>
+  rcases Q.ltN_eq_zero_or_one (GPACSys.approxFast P.sys P.v y p) (Q.ofNat 0) with hy0 | hy1
+  · exact absurd (hx0.trans hy0.symm) hci
+  · rw [Q.ltN_eq_zero_iff, Q.val_ofNat_zero] at hx0
+    rw [Q.ltN_eq_one_iff, Q.val_ofNat_zero] at hy1
+    have hx0_r : (0 : ℝ) ≤ ((GPACSys.approxFast P.sys P.v x p).val : ℝ) := by exact_mod_cast hx0
+    have hy1_r : ((GPACSys.approxFast P.sys P.v y p).val : ℝ) < (0 : ℝ) := by exact_mod_cast hy1
+    have hx0_Ax : (0 : ℝ) ≤ Ax := hx0_r
+    have hy1_Ay : Ay < (0 : ℝ) := hy1_r
+    constructor <;> linarith
+  · rw [Q.ltN_eq_one_iff, Q.val_ofNat_zero] at hx1
+    rw [Q.ltN_eq_zero_iff, Q.val_ofNat_zero] at hy0
+    have hx1_r : ((GPACSys.approxFast P.sys P.v x p).val : ℝ) < (0 : ℝ) := by exact_mod_cast hx1
+    have hy0_r : (0 : ℝ) ≤ ((GPACSys.approxFast P.sys P.v y p).val : ℝ) := by exact_mod_cast hy0
+    have hx1_Ax : Ax < (0 : ℝ) := hx1_r
+    have hy0_Ay : (0 : ℝ) ≤ Ay := hy0_r
+    constructor <;> linarith
+  · exact absurd (hx1.trans hy1.symm) hci
+
+/-- **Theorem IIA.4 (Constructive Cauchy Convergence of Bisection Root Approximations)**:
+    Under the finite rational derivative margin of `analyticValue_secant_of_deriv_margin`,
+    any two bisection root approximations $r_1 = P.\operatorname{rootFast}\;a\;b\;j_1\;p_1$ and
+    $r_2 = P.\operatorname{rootFast}\;a\;b\;j_2\;p_2$ with verified endpoint sign changes satisfy
+    the explicit mutual Cauchy distance bound:
+    $$\big|(r_1.\mathrm{val} : \mathbb{R}) - (r_2.\mathrm{val} : \mathbb{R})\big|
+      \le \frac{|S.\operatorname{analyticValue}(r_1)| + |S.\operatorname{analyticValue}(r_2)|}{(m : \mathbb{R})},$$
+    without assuming an external real zero a priori. -/
+theorem PolyODEProof.rootFast_cauchy_of_deriv_margin (P : PolyODEProof)
+    (a b : Q) (k : Nat) (m : Rat) (hm : 0 < m)
+    (ha : |a.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2))
+    (hb : |b.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 2))
+    (hab : a.val ≤ b.val)
+    (hmargin : ∀ y : Q, a.val ≤ y.val → y.val ≤ b.val →
+      m ≤ ((GPACSys.radiusJet P.sys P.wf P.v P.hv).deriv.toJet.evalPoly
+            (k + ((GPACSys.radiusJet P.sys P.wf P.v P.hv).deriv.M + 3)) y).val
+          - 1 / (2 : Rat) ^ k)
+    (j₁ p₁ j₂ p₂ : Nat)
+    (hends₁ : P.rootColor a b j₁ p₁ 0 ≠ P.rootColor a b j₁ p₁ (2 ^ j₁))
+    (hends₂ : P.rootColor a b j₂ p₂ 0 ≠ P.rootColor a b j₂ p₂ (2 ^ j₂)) :
+    |((P.rootFast a b j₁ p₁).val : ℝ) - ((P.rootFast a b j₂ p₂).val : ℝ)| ≤
+      (|P.toCertifiedAnalyticRep.analyticValue (P.rootFast a b j₁ p₁)| +
+       |P.toCertifiedAnalyticRep.analyticValue (P.rootFast a b j₂ p₂)|) / (m : ℝ) := by
+  have hm_real : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm
+  have hr₁ := P.rootFast_analyticValue_spec a b j₁ p₁ ha hb hab hends₁
+  have hr₂ := P.rootFast_analyticValue_spec a b j₂ p₂ ha hb hab hends₂
+  set r₁ := P.rootFast a b j₁ p₁
+  set r₂ := P.rootFast a b j₂ p₂
+  have hsec := P.analyticValue_secant_of_deriv_margin a b k m ha hb hmargin
+    r₁ r₂ hr₁.1 hr₁.2.1 hr₂.1 hr₂.2.1
+  set f₁ : ℝ := P.toCertifiedAnalyticRep.analyticValue r₁
+  set f₂ : ℝ := P.toCertifiedAnalyticRep.analyticValue r₂
+  have htri : |f₁ - f₂| ≤ |f₁| + |f₂| := by
+    simpa [sub_eq_add_neg] using abs_add_le f₁ (-f₂)
+  exact (le_div_iff₀ hm_real).mpr (by linarith)
+
 /-! ## Section 4: Decisive Theorem IIB — Representation-to-Representation Closure (`PolyODEProof` Transformers, True Definite Integral, and Local Inverse)
 
 Every calculus operation—including local compositional inversion of autonomous 1D polynomial
@@ -989,6 +1194,109 @@ theorem PolyODEProof.defIntegralFast_analyticValue_spec (P : PolyODEProof) (a b 
     ring
   linarith
 
+/-- Two `CertifiedAnalyticRep`s with identical rational coefficients have the exact
+    same infinite real power series `analyticValue` at every rational point `x : Q`. -/
+theorem CertifiedAnalyticRep.analyticValue_congr (S₁ S₂ : CertifiedAnalyticRep)
+    (h : ∀ n : Nat, S₁.coeff n = S₂.coeff n) (x : Q) :
+    S₁.analyticValue x = S₂.analyticValue x := by
+  unfold analyticValue seriesTerm
+  congr 1; ext n; rw [h n]
+
+/-- **FTC Part 1 on `PolyODEProof` Coefficients (`derivOp_integ_coeff`)**:
+    Differentiating the antiderivative `P.integ` via `derivOp` recovers the exact
+    rational Taylor coefficients of `P` at every degree $n \in \mathbb{N}$. -/
+theorem PolyODEProof.derivOp_integ_coeff (P : PolyODEProof) (n : Nat) :
+    (P.integ.derivOp).toCertifiedAnalyticRep.coeff n = P.toCertifiedAnalyticRep.coeff n := by
+  rw [P.integ.derivOp_coeff n]
+  change (Q.mul (Q.ofNat (n + 1)) (solN P.integ.sys P.integ.v (n + 1))).val =
+    P.toCertifiedAnalyticRep.coeff n
+  rw [Q.val_mul, Q.val_ofNat]
+  have hint := P.integ_coeff (n + 1)
+  change (solN P.integ.sys P.integ.v (n + 1)).val =
+    (Q.div (solN P.sys P.v n) (Q.ofNat (n + 1))).val at hint
+  rw [hint, Q.val_div_all, Q.val_ofNat]
+  have hn : ((n + 1 : Nat) : Rat) ≠ 0 := by positivity
+  exact mul_div_cancel₀ _ hn
+
+/-- **FTC Part 1 in the Real Analytic Interpretation (`derivOp_integ_analyticValue`)**:
+    The derivative representation `P.integ.derivOp` of the antiderivative `P.integ`
+    has the exact same infinite real power series `analyticValue` as `P`. -/
+theorem PolyODEProof.derivOp_integ_analyticValue (P : PolyODEProof) (x : Q) :
+    (P.integ.derivOp).toCertifiedAnalyticRep.analyticValue x =
+      P.toCertifiedAnalyticRep.analyticValue x :=
+  CertifiedAnalyticRep.analyticValue_congr _ _ P.derivOp_integ_coeff x
+
+/-- **FTC Part 2 on `PolyODEProof` Coefficients at `0` (`integ_derivOp_coeff_zero`)**. -/
+theorem PolyODEProof.integ_derivOp_coeff_zero (P : PolyODEProof) :
+    (P.derivOp.integ).toCertifiedAnalyticRep.coeff 0 = 0 := by
+  rw [P.derivOp.integ_coeff 0]
+  exact Q.val_zero
+
+/-- **FTC Part 2 on `PolyODEProof` Coefficients at `n + 1` (`integ_derivOp_coeff_succ`)**. -/
+theorem PolyODEProof.integ_derivOp_coeff_succ (P : PolyODEProof) (n : Nat) :
+    (P.derivOp.integ).toCertifiedAnalyticRep.coeff (n + 1) =
+      P.toCertifiedAnalyticRep.coeff (n + 1) := by
+  rw [P.derivOp.integ_coeff (n + 1)]
+  change (Q.div (solN P.derivOp.sys P.derivOp.v n) (Q.ofNat (n + 1))).val =
+    P.toCertifiedAnalyticRep.coeff (n + 1)
+  rw [Q.val_div_all, Q.val_ofNat]
+  have hd := P.derivOp_coeff n
+  change (solN P.derivOp.sys P.derivOp.v n).val =
+    (Q.mul (Q.ofNat (n + 1)) (solN P.sys P.v (n + 1))).val at hd
+  rw [hd, Q.val_mul, Q.val_ofNat]
+  have hn : ((n + 1 : Nat) : Rat) ≠ 0 := by positivity
+  exact mul_div_cancel_left₀ _ hn
+
+/-- **FTC Part 2 in the Real Analytic Interpretation (`integ_derivOp_analyticValue`)**:
+    For $x$ in the certified disks of `P` and `P.derivOp.integ`, the infinite real power
+    series of `P.derivOp.integ` equals $P.\mathrm{toCertifiedAnalyticRep}.\operatorname{analyticValue}(x) - f_P(0)$. -/
+theorem PolyODEProof.integ_derivOp_analyticValue (P : PolyODEProof) (x : Q)
+    (hx : |x.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 1))
+    (hx_di : |x.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.derivOp.integ.sys).2 + 1)) :
+    (P.derivOp.integ).toCertifiedAnalyticRep.analyticValue x =
+      P.toCertifiedAnalyticRep.analyticValue x - (P.toCertifiedAnalyticRep.coeff 0 : ℝ) := by
+  let S := P.toCertifiedAnalyticRep
+  let S_di := (P.derivOp.integ).toCertifiedAnalyticRep
+  have h1 := (S.summable_seriesTerm x hx).sum_add_tsum_nat_add 1
+  have h2 := (S_di.summable_seriesTerm x hx_di).sum_add_tsum_nat_add 1
+  rw [Finset.sum_range_one] at h1 h2
+  have h0_S : S.seriesTerm x 0 = (S.coeff 0 : ℝ) := by
+    unfold CertifiedAnalyticRep.seriesTerm; simp
+  have h0_di : S_di.seriesTerm x 0 = 0 := by
+    unfold CertifiedAnalyticRep.seriesTerm
+    rw [P.integ_derivOp_coeff_zero]; simp
+  have htail : (∑' k : Nat, S_di.seriesTerm x (k + 1)) = ∑' k : Nat, S.seriesTerm x (k + 1) := by
+    congr 1; ext k
+    unfold CertifiedAnalyticRep.seriesTerm
+    rw [P.integ_derivOp_coeff_succ k]
+  change S_di.analyticValue x = S.analyticValue x - (S.coeff 0 : ℝ)
+  unfold CertifiedAnalyticRep.analyticValue
+  linarith
+
+/-- **Full Infinite-Series Newton–Leibniz Adequacy Theorem (`newtonLeibniz_analyticValue_spec`)**:
+    For $a, b$ in the certified disks of `P` and `P.derivOp.integ`, the fast definite integral
+    of the derivative representation `P.derivOp.defIntegralFast a b k` approximates the true
+    infinite power-series difference of the original function `P` within $2^{-k}$ in $\mathbb{R}$:
+    $$\left|\big((P.\mathrm{derivOp}.\operatorname{defIntegralFast}\;a\;b\;k).\mathrm{val} : \mathbb{R}\big) -
+      \big(P.\mathrm{toCertifiedAnalyticRep}.\operatorname{analyticValue}(b) -
+           P.\mathrm{toCertifiedAnalyticRep}.\operatorname{analyticValue}(a)\big)\right| \le \frac{1}{2^k}.$$ -/
+theorem PolyODEProof.newtonLeibniz_analyticValue_spec (P : PolyODEProof) (a b : Q) (k : Nat)
+    (ha : |a.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 1))
+    (hb : |b.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 1))
+    (ha_di : |a.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.derivOp.integ.sys).2 + 1))
+    (hb_di : |b.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.derivOp.integ.sys).2 + 1)) :
+    |((P.derivOp.defIntegralFast a b k).val : ℝ) -
+      (P.toCertifiedAnalyticRep.analyticValue b -
+       P.toCertifiedAnalyticRep.analyticValue a)| ≤ 1 / (2 : ℝ) ^ k := by
+  have hspec := P.derivOp.defIntegralFast_analyticValue_spec a b k ha_di hb_di
+  have h_a := P.integ_derivOp_analyticValue a ha ha_di
+  have h_b := P.integ_derivOp_analyticValue b hb hb_di
+  have hdiff : (P.derivOp.integ).toCertifiedAnalyticRep.analyticValue b -
+      (P.derivOp.integ).toCertifiedAnalyticRep.analyticValue a =
+      P.toCertifiedAnalyticRep.analyticValue b - P.toCertifiedAnalyticRep.analyticValue a := by
+    rw [h_a, h_b]; ring
+  rwa [hdiff] at hspec
+
 /-- **Local Analytic Inverse of an Autonomous 1D ODE (`UExpr.autoInverse`)**:
     For an autonomous 1D ODE $y'(x) = F(y(x))$ with $y(0) = 0$ and $F(0) \neq 0$,
     its inverse $g = y^{-1}$ satisfies $g(0) = 0$ and $g'(t) = 1 / F(t)$, so
@@ -1005,11 +1313,13 @@ def UExpr.autoInverse_toPolyODEProof (F : UExpr) (hF : F.Defined) (h0 : (F.eval 
     PolyODEProof :=
   (UExpr.autoInverse F).toPolyODEProof (UExpr.autoInverse_defined F hF h0)
 
-/-- **Compositional Inverse Adequacy Theorem (`autoInverse_comp_sol_eq_varX`)**:
+/-- **Left Compositional Inverse Adequacy for Autonomous 1D ODEs (`autoInverse_comp_sol_eq_varX`)**:
     Let $F : \mathrm{UExpr}$ have `(F.eval 0).val ≠ 0`, and let $Y : \mathrm{Jet}$ solve the
     autonomous 1D ODE $Y(0) = 0$, $Y' = F \circ Y$ (in rational value).
-    Then composing the inverse jet `⟨(UExpr.autoInverse F).eval⟩` with $Y$ yields the exact
-    identity coordinate jet `Jet.varX` ($g(Y(x)) = x$) at every Taylor degree $n \in \mathbb{N}$. -/
+    Then composing the inverse jet `⟨(UExpr.autoInverse F).eval⟩` on the left with $Y$ yields
+    the exact identity coordinate jet `Jet.varX` ($g(Y(x)) = x$) at every Taylor degree $n \in \mathbb{N}$.
+    (Scope note: this theorem establishes the left formal power-series composition identity for
+    autonomous 1D ODEs; general non-autonomous root/inverse evaluation is provided by `PolyODEProof.rootFast`.) -/
 theorem UExpr.autoInverse_comp_sol_eq_varX (F : UExpr) (h0 : (F.eval 0).val ≠ 0)
     (Y : Jet) (_hY0 : (Y.coeff 0).val = 0)
     (hY_ode : ∀ k, (Y.deriv.coeff k).val = ((Jet.compZero ⟨F.eval⟩ Y).coeff k).val) :
@@ -1069,14 +1379,54 @@ theorem UExpr.autoInverse_comp_sol_eq_varX (F : UExpr) (h0 : (F.eval 0).val ≠ 
       rw [Q.val_zero]
       exact hzero
 
-/-! ## Section 4: Theorem II (Part 3) — Analytic Fourier Adequacy on a Strip (`StripFourierRep`)
+/-! ## Section 5: Certified Fourier Series Evaluation on a Strip (`StripFourierRep`)
 
 A $2\pi$-periodic function analytic on the strip $|\mathrm{Im}(z)| \le R \ln 2$ ($R \ge 1$) is
 represented by its two-sided Gaussian-rational Fourier coefficient stream `c : Int → CQ`
 together with an exponential decay certificate:
 $$|(c\;n).\mathrm{re}.\mathrm{val}| + |(c\;n).\mathrm{im}.\mathrm{val}|
   \le 2^M \cdot \left(\frac{1}{2^R}\right)^{|n|}, \qquad R \ge 1.$$
--/
+We establish:
+1. **Exact Modal Coefficient Extraction (`TrigPoly.inner_mode_eq_coeff`, `StripFourierRep.inner_trunc_mode_eq`)**:
+   The Hermitian inner product `TrigPoly.inner _ (TrigPoly.mode k)` extracts the exact $k$-th
+   Fourier coefficient in `CRat`.
+2. **Infinite Fourier Series Evaluation & Explicit Truncation Error (`StripFourierRep.fourierValue_sub_evalTrunc_le`, `StripFourierRep.certified_fourier_series_evaluation`)**:
+   For any bounded trigonometric phase pair `(cs, sn : Int → ℝ)` with `|cs n| ≤ 1`, `|sn n| ≤ 1`,
+   the symmetric frequency-shell series converges absolutely in $\mathbb{R}$, and the degree-$N$
+   truncation approximates the stored infinite Fourier series within $2^{M + 1} / 2^N$ (and within $2^{-k}$
+   at the linear truncation modulus $N(k) = k + M + 1$). -/
+
+/-- **Exact Modal Coefficient Extraction (`TrigPoly.inner_mode_eq_coeff`)**:
+    For every trigonometric polynomial `p : TrigPoly` and frequency `k : Int`,
+    the Hermitian inner product `TrigPoly.inner p (TrigPoly.mode k)` recovers
+    the exact `k`-th Fourier coefficient `p.coeff k` in `CRat`. -/
+theorem TrigPoly.inner_mode_eq_coeff (p : TrigPoly) (k : Int) :
+    TrigPoly.toCRat (TrigPoly.inner p (TrigPoly.mode k)) = TrigPoly.toCRat (p.coeff k) := by
+  rw [TrigPoly.tpi_inner_eq_sum]
+  by_cases hk : k.natAbs ≤ p.deg
+  · rw [Finset.sum_eq_single k]
+    · rw [TrigPoly.tpi_toCRat_mode_coeff, if_pos rfl]
+      have hconj1 : TrigPoly.CRat.conj 1 = 1 := by ext <;> simp [TrigPoly.CRat.conj]
+      rw [hconj1, mul_one]
+    · intro j _ hjk
+      rw [TrigPoly.tpi_toCRat_mode_coeff, if_neg hjk]
+      have hconj0 : TrigPoly.CRat.conj 0 = 0 := by ext <;> simp [TrigPoly.CRat.conj]
+      rw [hconj0, mul_zero]
+    · intro hnot
+      exfalso
+      apply hnot
+      rw [Finset.mem_Icc]
+      omega
+  · have hsum0 : (∑ j ∈ Finset.Icc (-(p.deg : Int)) (p.deg : Int),
+        TrigPoly.toCRat (p.coeff j) *
+          TrigPoly.CRat.conj (TrigPoly.toCRat ((TrigPoly.mode k).coeff j))) = 0 := by
+      refine Finset.sum_eq_zero fun j hj ↦ ?_
+      rw [Finset.mem_Icc] at hj
+      have hjk : j ≠ k := by omega
+      rw [TrigPoly.tpi_toCRat_mode_coeff, if_neg hjk]
+      have hconj0 : TrigPoly.CRat.conj 0 = 0 := by ext <;> simp [TrigPoly.CRat.conj]
+      rw [hconj0, mul_zero]
+    rw [hsum0, TrigPoly.coeff, if_neg hk, TrigPoly.toCRat_zero]
 
 /-- The $\ell^1$-norm $|z.\mathrm{re}| + |z.\mathrm{im}| \in \mathbb{Q}$ of a Gaussian rational `z : CQ`. -/
 def CQ.l1Norm (z : CQ) : Rat :=
@@ -1108,6 +1458,16 @@ def trunc (F : StripFourierRep) (N : Nat) : TrigPoly where
   deg := N
   c := F.c
 
+/-- **Modal Coefficient Extraction on `StripFourierRep` (`inner_trunc_mode_eq`)**:
+    For every `F : StripFourierRep` and frequency `|k| ≤ N`, the inner product of
+    `F.trunc N` against `TrigPoly.mode k` recovers the exact coefficient `F.c k`. -/
+theorem inner_trunc_mode_eq (F : StripFourierRep) (N : Nat) (k : Int) (hk : k.natAbs ≤ N) :
+    TrigPoly.toCRat (TrigPoly.inner (F.trunc N) (TrigPoly.mode k)) = TrigPoly.toCRat (F.c k) := by
+  rw [TrigPoly.inner_mode_eq_coeff]
+  unfold trunc TrigPoly.coeff
+  dsimp
+  rw [if_pos hk]
+
 /-- Every mode $n$ satisfies `(F.c n).l1Norm ≤ 2^M · (1/2)^|n|` since $R \ge 1$. -/
 theorem mode_decay_half (F : StripFourierRep) (n : Int) :
     (F.c n).l1Norm ≤ (2 : Rat) ^ F.M * (1 / 2 : Rat) ^ n.natAbs := by
@@ -1133,6 +1493,153 @@ theorem tail_mode_bound (F : StripFourierRep) (k m : Nat) (n : Int)
     rw [show k + F.M + 1 + m = F.M + (k + 1 + m) by omega, pow_add, one_div_pow, one_div_pow]
     field_simp
   linarith
+
+/-- Real part of the $n$-th Fourier mode `F.c n` evaluated against a phase pair `(cs n, sn n)`
+    (e.g., $\mathrm{cs}(n) = \cos(n\theta)$, $\mathrm{sn}(n) = \sin(n\theta)$). -/
+def modeEvalRe (F : StripFourierRep) (cs sn : Int → ℝ) (n : Int) : ℝ :=
+  ((F.c n).re.val : ℝ) * cs n - ((F.c n).im.val : ℝ) * sn n
+
+/-- Bound on a single Fourier mode evaluation when `|cs n| ≤ 1` and `|sn n| ≤ 1`. -/
+theorem modeEvalRe_abs_le (F : StripFourierRep) (cs sn : Int → ℝ)
+    (hcs : ∀ n : Int, |cs n| ≤ 1) (hsn : ∀ n : Int, |sn n| ≤ 1) (n : Int) :
+    |F.modeEvalRe cs sn n| ≤ (2 : ℝ) ^ F.M * (1 / 2 : ℝ) ^ n.natAbs := by
+  unfold modeEvalRe
+  have htri : |((F.c n).re.val : ℝ) * cs n - ((F.c n).im.val : ℝ) * sn n| ≤
+      |((F.c n).re.val : ℝ) * cs n| + |((F.c n).im.val : ℝ) * sn n| := by
+    simpa [sub_eq_add_neg] using
+      abs_add_le (((F.c n).re.val : ℝ) * cs n) (-(((F.c n).im.val : ℝ) * sn n))
+  rw [abs_mul, abs_mul] at htri
+  have hre : |((F.c n).re.val : ℝ)| * |cs n| ≤ |((F.c n).re.val : ℝ)| * 1 :=
+    mul_le_mul_of_nonneg_left (hcs n) (abs_nonneg _)
+  have him : |((F.c n).im.val : ℝ)| * |sn n| ≤ |((F.c n).im.val : ℝ)| * 1 :=
+    mul_le_mul_of_nonneg_left (hsn n) (abs_nonneg _)
+  have hdec := F.mode_decay_half n
+  have hdec_real : (((F.c n).l1Norm : Rat) : ℝ) ≤
+      (((2 : Rat) ^ F.M * (1 / 2 : Rat) ^ n.natAbs : Rat) : ℝ) := by
+    exact_mod_cast hdec
+  unfold CQ.l1Norm at hdec_real
+  push_cast at hdec_real
+  linarith
+
+/-- Symmetric frequency shell `m : Nat` combining modes `+m` and `-m` (and mode `0` at `m = 0`). -/
+def shellTerm (F : StripFourierRep) (cs sn : Int → ℝ) : Nat → ℝ
+  | 0 => F.modeEvalRe cs sn 0
+  | m + 1 => F.modeEvalRe cs sn ((m + 1 : Nat) : Int) + F.modeEvalRe cs sn (-((m + 1 : Nat) : Int))
+
+/-- Every frequency shell `m : Nat` is bounded by `2^{M + 1} · (1/2)^m`. -/
+theorem shellTerm_abs_le (F : StripFourierRep) (cs sn : Int → ℝ)
+    (hcs : ∀ n : Int, |cs n| ≤ 1) (hsn : ∀ n : Int, |sn n| ≤ 1) (m : Nat) :
+    ‖F.shellTerm cs sn m‖ ≤ (2 : ℝ) ^ (F.M + 1) * (1 / 2 : ℝ) ^ m := by
+  rw [Real.norm_eq_abs]
+  cases m with
+  | zero =>
+    dsimp [shellTerm]
+    have h0 := F.modeEvalRe_abs_le cs sn hcs hsn 0
+    simp only [Int.natAbs_zero, pow_zero, mul_one] at h0 ⊢
+    have hpow : (2 : ℝ) ^ F.M ≤ (2 : ℝ) ^ (F.M + 1) :=
+      pow_le_pow_right₀ (by norm_num) (Nat.le_succ _)
+    linarith
+  | succ k =>
+    change |F.modeEvalRe cs sn ((k + 1 : Nat) : Int) +
+      F.modeEvalRe cs sn (-((k + 1 : Nat) : Int))| ≤
+        (2 : ℝ) ^ (F.M + 1) * (1 / 2 : ℝ) ^ (k + 1)
+    have hp := F.modeEvalRe_abs_le cs sn hcs hsn ((k + 1 : Nat) : Int)
+    have hn := F.modeEvalRe_abs_le cs sn hcs hsn (-((k + 1 : Nat) : Int))
+    rw [Int.natAbs_natCast] at hp
+    rw [Int.natAbs_neg, Int.natAbs_natCast] at hn
+    have htri := abs_add_le (F.modeEvalRe cs sn ((k + 1 : Nat) : Int))
+      (F.modeEvalRe cs sn (-((k + 1 : Nat) : Int)))
+    have hsum : (2 : ℝ) ^ (F.M + 1) * (1 / 2 : ℝ) ^ (k + 1) =
+        (2 : ℝ) ^ F.M * (1 / 2 : ℝ) ^ (k + 1) + (2 : ℝ) ^ F.M * (1 / 2 : ℝ) ^ (k + 1) := by
+      rw [pow_succ (2 : ℝ) F.M]
+      ring
+    linarith
+
+/-- Absolute summability of the symmetric Fourier frequency shells in `ℝ`. -/
+theorem summable_shellTerm (F : StripFourierRep) (cs sn : Int → ℝ)
+    (hcs : ∀ n : Int, |cs n| ≤ 1) (hsn : ∀ n : Int, |sn n| ≤ 1) :
+    Summable (F.shellTerm cs sn) := by
+  refine Summable.of_norm_bounded
+    ((summable_geometric_of_lt_one (by norm_num : (0 : ℝ) ≤ 1 / 2)
+      (by norm_num : (1 / 2 : ℝ) < 1)).mul_left ((2 : ℝ) ^ (F.M + 1))) ?_
+  intro m
+  exact F.shellTerm_abs_le cs sn hcs hsn m
+
+/-- **Infinite Real Fourier Series Value (`StripFourierRep.fourierValue`)**:
+    Sum of all symmetric frequency shells $m = 0, 1, 2, \dots$ in $\mathbb{R}$. -/
+noncomputable def fourierValue (F : StripFourierRep) (cs sn : Int → ℝ) : ℝ :=
+  ∑' m : Nat, F.shellTerm cs sn m
+
+/-- **Degree-$N$ Truncated Fourier Evaluation (`StripFourierRep.evalTrunc`)**:
+    Finite sum of frequency shells $0 \le m \le N$ (all modes $|n| \le N$). -/
+def evalTrunc (F : StripFourierRep) (cs sn : Int → ℝ) (N : Nat) : ℝ :=
+  ∑ m ∈ Finset.range (N + 1), F.shellTerm cs sn m
+
+/-- **Explicit Infinite-Series Fourier Truncation Error (`fourierValue_sub_evalTrunc_le`)**:
+    For any bounded trigonometric phase pair `(cs, sn)` (`|cs n| ≤ 1`, `|sn n| ≤ 1`) and
+    any truncation degree $N \in \mathbb{N}$:
+    $$\big|F.\operatorname{evalTrunc}(\mathrm{cs}, \mathrm{sn}, N) -
+          F.\operatorname{fourierValue}(\mathrm{cs}, \mathrm{sn})\big|
+      \le \frac{(2 : \mathbb{R})^{F.M + 1}}{(2 : \mathbb{R})^N}.$$ -/
+theorem fourierValue_sub_evalTrunc_le (F : StripFourierRep) (cs sn : Int → ℝ)
+    (hcs : ∀ n : Int, |cs n| ≤ 1) (hsn : ∀ n : Int, |sn n| ≤ 1) (N : Nat) :
+    |F.evalTrunc cs sn N - F.fourierValue cs sn| ≤
+      (2 : ℝ) ^ (F.M + 1) / (2 : ℝ) ^ N := by
+  have hsum := F.summable_shellTerm cs sn hcs hsn
+  have hsplit := hsum.sum_add_tsum_nat_add (N + 1)
+  have hsub : F.evalTrunc cs sn N - F.fourierValue cs sn =
+      -(∑' k : Nat, F.shellTerm cs sn (k + (N + 1))) := by
+    unfold evalTrunc fourierValue
+    linarith
+  rw [hsub, abs_neg, ← Real.norm_eq_abs]
+  have htail_summable : Summable (fun k : Nat ↦ F.shellTerm cs sn (k + (N + 1))) :=
+    (summable_nat_add_iff (N + 1)).mpr hsum
+  have hgeom_summable : Summable (fun k : Nat ↦
+      ((2 : ℝ) ^ (F.M + 1) * (1 / 2 : ℝ) ^ (N + 1)) * (1 / 2 : ℝ) ^ k) :=
+    (summable_geometric_of_lt_one (by norm_num) (by norm_num)).mul_left _
+  have hbound : ∀ k : Nat,
+      ‖F.shellTerm cs sn (k + (N + 1))‖ ≤
+        ((2 : ℝ) ^ (F.M + 1) * (1 / 2 : ℝ) ^ (N + 1)) * (1 / 2 : ℝ) ^ k := by
+    intro k
+    have hterm := F.shellTerm_abs_le cs sn hcs hsn (k + (N + 1))
+    have hpow : (2 : ℝ) ^ (F.M + 1) * (1 / 2 : ℝ) ^ (k + (N + 1)) =
+        ((2 : ℝ) ^ (F.M + 1) * (1 / 2 : ℝ) ^ (N + 1)) * (1 / 2 : ℝ) ^ k := by
+      rw [pow_add]
+      ring
+    rwa [hpow] at hterm
+  have htsum_le := norm_tsum_le_tsum_norm htail_summable.norm
+  have hle2 := htail_summable.norm.tsum_le_tsum hbound hgeom_summable
+  have hgeom_eval : (∑' k : Nat, ((2 : ℝ) ^ (F.M + 1) * (1 / 2 : ℝ) ^ (N + 1)) * (1 / 2 : ℝ) ^ k) =
+      (2 : ℝ) ^ (F.M + 1) / (2 : ℝ) ^ N := by
+    rw [tsum_mul_left, tsum_geometric_of_lt_one (by norm_num) (by norm_num)]
+    have h12 : (1 : ℝ) - 1 / 2 = 1 / 2 := by norm_num
+    rw [h12, one_div_pow, pow_succ (2 : ℝ) N]
+    field_simp
+  linarith
+
+/-- **Certified $2^{-k}$ Fourier Series Evaluation Theorem (`certified_fourier_series_evaluation`)**:
+    At the linear truncation modulus $N(k) = k + F.M + 1$:
+    1. Every Fourier coefficient $F.c\;n$ for $|n| \le N(k)$ is extracted by the orthogonal
+       inner product `TrigPoly.inner (F.trunc N(k)) (TrigPoly.mode n)`.
+    2. The truncated Fourier sum `F.evalTrunc cs sn (k + F.M + 1)` approximates the infinite
+       Fourier series `F.fourierValue cs sn` stored in `F : StripFourierRep` with certified
+       error at most $2^{-k}$ in $\mathbb{R}$.
+    (Scope note: this certifies evaluation of the Fourier series `F.fourierValue` from its
+    stored coefficients `F.c`; proving that `F.fourierValue` equals an independently specified
+    periodic analytic function $f$ whose coefficients are defined by the Fourier integral of $f$
+    is a separate Fourier reconstruction theorem.) -/
+theorem certified_fourier_series_evaluation (F : StripFourierRep) (cs sn : Int → ℝ)
+    (hcs : ∀ n : Int, |cs n| ≤ 1) (hsn : ∀ n : Int, |sn n| ≤ 1) (k : Nat) :
+    (∀ n : Int, n.natAbs ≤ k + F.M + 1 →
+      TrigPoly.toCRat (TrigPoly.inner (F.trunc (k + F.M + 1)) (TrigPoly.mode n)) =
+        TrigPoly.toCRat (F.c n)) ∧
+    |F.evalTrunc cs sn (k + F.M + 1) - F.fourierValue cs sn| ≤ 1 / (2 : ℝ) ^ k := by
+  refine ⟨fun n hn ↦ F.inner_trunc_mode_eq (k + F.M + 1) n hn, ?_⟩
+  have hrem := F.fourierValue_sub_evalTrunc_le cs sn hcs hsn (k + F.M + 1)
+  have hpow : (2 : ℝ) ^ (F.M + 1) / (2 : ℝ) ^ (k + F.M + 1) = 1 / (2 : ℝ) ^ k := by
+    rw [show k + F.M + 1 = k + (F.M + 1) by omega, pow_add (2 : ℝ) k (F.M + 1)]
+    field_simp
+  rwa [hpow] at hrem
 
 /-- Pointwise addition of two `StripFourierRep` representations preserves the strip analyticity class. -/
 def add (F G : StripFourierRep) : StripFourierRep where
@@ -1167,7 +1674,56 @@ def add (F G : StripFourierRep) : StripFourierRep where
 
 end StripFourierRep
 
-/-! ## Section 5: Selected Non-Redundancy — Necessity of Effective Tail Information
+/-! ## Section 6: Unified Calculus Operations Adequacy Theorem (`calculus_adequacy_master`)
+
+We now package the verified adequacy theorems of this module into a single summary theorem:
+1. **Extraction–Representation–Evaluation Equivalence**: Proof-extracted System T witnesses
+   equal the fast DP table `solFast` and converge to `analyticValue` within $2^{-k}$.
+2. **Representation-Level FTC1 & FTC2 on Infinite Series**: `integ` and `derivOp`
+   satisfy `(P.integ.derivOp).analyticValue = P.analyticValue` and
+   `|(P.derivOp.defIntegralFast a b k) - (P.analyticValue b - P.analyticValue a)| ≤ 2^{-k}`
+   (connecting `derivOp` and `integ` to `analyticValue` on $\mathbb{R}$; the semantic bridge to
+   Mathlib's `HasDerivAt` and `intervalIntegral` is treated separately).
+3. **Constructive Root Approximation & Secant Location**: `PolyODEProof.rootFast` constructs
+   rational approximate zeros with certified infinite-series residual and mutual Cauchy bounds
+   under verified endpoint sign changes (`rootFast_analyticValue_spec`, `rootFast_cauchy_of_deriv_margin`).
+4. **Certified Fourier Series Evaluation**: `StripFourierRep` extracts exact modes via `TrigPoly.inner`
+   and evaluates the infinite Fourier series `F.fourierValue` within $2^{-k}$ at the linear modulus $k + M + 1$. -/
+
+/-- **Unified Calculus Operations Adequacy Theorem (`calculus_adequacy_master`)**:
+    Simultaneously certifies:
+    1. Extraction-to-fast evaluation equivalence and $2^{-k}$ evaluation adequacy for `P : PolyODEProof`;
+    2. Representation-level FTC1 (`derivOp_integ_analyticValue`) and FTC2 (`newtonLeibniz_analyticValue_spec`)
+       on the infinite power series `analyticValue`;
+    3. Exact modal extraction and $2^{-k}$ infinite Fourier series evaluation (`certified_fourier_series_evaluation`). -/
+theorem calculus_adequacy_master (P : PolyODEProof) (x a b : Q) (k : Nat)
+    (hx : |x.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 1))
+    (ha : |a.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 1))
+    (hb : |b.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.sys).2 + 1))
+    (ha_di : |a.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.derivOp.integ.sys).2 + 1))
+    (hb_di : |b.val| ≤ 1 / (2 : Rat) ^ ((sysParams P.derivOp.integ.sys).2 + 1))
+    (F : StripFourierRep) (cs sn : Int → ℝ)
+    (hcs : ∀ n : Int, |cs n| ≤ 1) (hsn : ∀ n : Int, |sn n| ≤ 1) :
+    (∀ n : Nat,
+      extractedCoeff P.sys (gpac_wf P.wf) P.v n = (solFast P.sys P.v n).val) ∧
+    (|((GPACSys.approxFast P.sys P.v x k).val : ℝ) -
+        P.toCertifiedAnalyticRep.analyticValue x| ≤ 1 / (2 : ℝ) ^ k) ∧
+    ((P.integ.derivOp).toCertifiedAnalyticRep.analyticValue x =
+        P.toCertifiedAnalyticRep.analyticValue x) ∧
+    (|((P.derivOp.defIntegralFast a b k).val : ℝ) -
+        (P.toCertifiedAnalyticRep.analyticValue b -
+         P.toCertifiedAnalyticRep.analyticValue a)| ≤ 1 / (2 : ℝ) ^ k) ∧
+    ((∀ n : Int, n.natAbs ≤ k + F.M + 1 →
+        TrigPoly.toCRat (TrigPoly.inner (F.trunc (k + F.M + 1)) (TrigPoly.mode n)) =
+          TrigPoly.toCRat (F.c n)) ∧
+      |F.evalTrunc cs sn (k + F.M + 1) - F.fourierValue cs sn| ≤ 1 / (2 : ℝ) ^ k) :=
+  ⟨fun n ↦ extraction_to_fast P.toCertifiedAnalyticRep n,
+   certified_evaluation P x k hx,
+   P.derivOp_integ_analyticValue x,
+   P.newtonLeibniz_analyticValue_spec a b k ha hb ha_di hb_di,
+   F.certified_fourier_series_evaluation cs sn hcs hsn k⟩
+
+/-! ## Section 7: Selected Non-Redundancy — Necessity of Effective Tail Information
 
 Why must a certified analytic representation carry tail-bound information (such as
 $(M, R)$ or an equivalent tail envelope) rather than a bare coefficient stream
@@ -1227,8 +1783,15 @@ theorem no_uniform_modulus_without_tail_info (N₀ : Nat) :
 #print axioms RadiusJet.location_error_of_deriv_margin
 #print axioms PolyODEProof.analyticValue_secant_of_deriv_margin
 #print axioms PolyODEProof.analyticValue_root_location_of_deriv_margin
+#print axioms PolyODEProof.rootFast_analyticValue_spec
+#print axioms PolyODEProof.rootFast_cauchy_of_deriv_margin
 #print axioms PolyODEProof.defIntegralFast_analyticValue_spec
+#print axioms PolyODEProof.derivOp_integ_analyticValue
+#print axioms PolyODEProof.newtonLeibniz_analyticValue_spec
 #print axioms UExpr.autoInverse_comp_sol_eq_varX
+#print axioms TrigPoly.inner_mode_eq_coeff
+#print axioms StripFourierRep.certified_fourier_series_evaluation
+#print axioms calculus_adequacy_master
 #print axioms no_uniform_modulus_without_tail_info
 
 end HAomega

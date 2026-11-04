@@ -1,0 +1,944 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=0.95in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{hyperref}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!65!black,
+  citecolor=green!45!black,
+  urlcolor=blue!75!black,
+  pdftitle={The Complete Plain-English & Mathematical Guide to the HAomega Theorem Universe},
+  pdfauthor={Ara Aslyan}
+}
+
+\setlist{itemsep=3pt,topsep=4pt,parsep=1pt}
+
+\newcommand{\HAomega}{\ensuremath{\mathrm{HA}^{\omega}}}
+\newcommand{\SystemT}{\ensuremath{\mathrm{System\ T}}}
+\newcommand{\Deriv}{\ensuremath{\mathrm{Deriv}}}
+\newcommand{\Tm}{\ensuremath{\mathrm{Tm}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\Q}{\ensuremath{\mathbb{Q}}}
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\lean}[1]{\texttt{\nolinkurl{#1}}}
+
+\newtcolorbox{thmcard}[2][]{
+  breakable,
+  colback=gray!4,
+  colframe=blue!60!black,
+  coltitle=white,
+  fonttitle=\bfseries\large,
+  title={#2},
+  arc=3pt,
+  boxrule=0.8pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt,
+  #1
+}
+
+\newtcolorbox{eli5box}{
+  colback=yellow!10!white,
+  colframe=orange!75!black,
+  fonttitle=\bfseries,
+  title={Plain-English / ``Explain It Like I'm 5'' Intuition},
+  arc=2pt,
+  boxrule=0.6pt,
+  left=6pt,right=6pt,top=4pt,bottom=4pt
+}
+
+\title{\textbf{The Complete Plain-English \& Mathematical Guide\\
+to the \texorpdfstring{$\HAomega$}{HAomega} Theorem Universe}\\[6pt]
+\large Every Major Mechanized Theorem Explained from Scratch:\\
+Intuition, Key Facts, Exact Formulas, and Lean 4 Identifiers}
+\author{Ara Aslyan}
+\date{November 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This compendium walks through every major theorem proved in the \lean{modified-realizability-haomega} Lean 4 repository (100\% verified by the Lean 4 kernel with zero \lean{sorry} axioms). For each theorem, we give four things:
+\begin{enumerate}
+  \item \textbf{The Kid-Friendly / Plain-English Intuition:} What the theorem really says using everyday analogies---no jargon required.
+  \item \textbf{Why It Matters:} What goes wrong on a computer if you \emph{don't} have this theorem.
+  \item \textbf{Exact Mathematical Facts \& Bounds:} The precise formulas, error bounds, hypotheses, and honest scope qualifications.
+  \item \textbf{Lean 4 Identifiers:} The exact file and theorem names in \lean{HAomega/}.
+\end{enumerate}
+Together, these 25 theorem groups tell one continuous story: how to turn constructive mathematical proofs into fast, $100\%$-certified computer programs for calculus, differential equations, root-finding, fixed points, Fourier series, symbolic optimization, and an ordinal hierarchy of waveforms up to $\varepsilon_0$.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Big Picture: How the Whole Universe Fits Together}
+% ============================================================================
+
+Before diving into individual theorems, here is the 60-second map of the entire project:
+
+\begin{enumerate}
+  \item \textbf{The Black-Box Problem:} In ordinary programming, a function $f$ is a ``black box''---you plug in a number $x$ and get out $f(x)$. But a computer \emph{cannot} reliably take the derivative of a black box (because tiny hidden wiggles smaller than your step size $h$ can fool $\frac{f(x+h)-f(x)}{h}$), and integrating it to 10 decimal places by slicing into rectangles takes billions of steps.
+  \item \textbf{Our Solution (Recipe + 2 Safety Numbers):} Every function in our universe is stored not as a black box, but as:
+  \begin{itemize}
+    \item A \textbf{Taylor coefficient recipe} $n \mapsto c_n \in \Q$ so that $f(x) = c_0 + c_1 x + c_2 x^2 + \cdots$, and
+    \item \textbf{Two safety numbers $(M, R) \in \N^2$} extracted directly from the formula's syntax that guarantee $|c_n| \le 2^M \cdot (2^R)^n$ for every $n$.
+  \end{itemize}
+  Because of those two numbers $(M, R)$, taking a derivative or integral takes \textbf{one step}, and computing $f(x)$ to $k$ bits of accuracy ($2^{-k}$) only requires adding the first $N(k) = k + M + 3$ terms!
+  \item \textbf{Six Connected Pillars:}
+  \begin{itemize}
+    \item \textbf{Part I (The Proof-to-Program Engine):} Modified realizability turns logical proofs ($\Deriv$) into executable System T programs ($\Tm$), backed by Hydra termination below $\varepsilon_0$.
+    \item \textbf{Part II (The Closed Differential-Equation Universe):} Polynomial ODE systems (\lean{GPACSys}) and analytic expressions (\lean{UExpr}) are closed under $+,-,\times,\div,\frac{d}{dx},\int_0^x$, composition, inverse functions, 2-variable implicit equations, analytic continuation, and boundary-value shooting.
+    \item \textbf{Part III (Computational Adequacy):} Replaces slow $O(2^n)$ proof tree unfolding with fast $O(n^2)$ dynamic programming (\lean{solFast}), proves convergence to the infinite series $\sum_{n=0}^\infty c_n x^n \in \R$, certifies root location and Cauchy bounds, and evaluates infinite Fourier series on a strip.
+    \item \textbf{Part IV (Classical Real-Analysis Bridge \& Fixed Points):} Connects our constructive evaluators to Mathlib's classical \lean{HasDerivAt} and \lean{intervalIntegral}, constructs an unconditional root sequence converging to a genuine real zero $f(z_*)=0$, and builds certified Banach/Picard and general fixed-point operators ($f(z_*)=z_*$).
+    \item \textbf{Part V (The Optimizing Compiler for Analysis):} A terminating bottom-up normalizer and cost-guided ODE compressor that cancels stacked inverse operations ($\frac{d}{dx}\int_0^x f \to f$, $1/(1/f) \to f$, $f \circ f^{-1} \to x$) down to minimal ODE systems.
+    \item \textbf{Part VI (The $\varepsilon_0$ Descriptive Differential Hierarchy):} Grades differential equations by Cantor ordinals $\alpha \prec \varepsilon_0$ ($k < \omega$, $\omega$, $\omega^2$, $\omega^\omega, \dots$) and proves strict impossibility barriers separating polynomials, linear waves ($1/n!$ decay), finite-time blowup ($y'=y^2$), and ``waves over waves'' (\lean{uWaveTower}).
+  \end{itemize}
+\end{enumerate}
+
+\newpage
+% ============================================================================
+\section{Part I: The Proof-to-Program Engine (\texorpdfstring{$\HAomega$}{HAomega} \& System T)}
+% ============================================================================
+
+\begin{thmcard}{Theorem Group 1: Soundness of Modified Realizability (Proofs \texorpdfstring{$\to$}{->} Programs)}
+\begin{eli5box}
+Imagine a cookbook where every time someone proves ``a delicious cake \emph{exists},'' a magical machine automatically reads their proof and prints out the exact step-by-step baking recipe---along with a guarantee that the recipe never gets stuck and always bakes the exact cake promised. That machine is \lean{extract}.
+\end{eli5box}
+
+\textbf{Why It Matters:}
+In classical mathematics, you can prove ``there exists a number $x$'' by contradiction without ever saying how to find $x$. In constructive arithmetic ($\HAomega$), every proof of ``for every input $a$, there exists an output $b$'' secretly contains an algorithm. Kreisel's \emph{modified realizability} extracts that algorithm as a typed functional program in Gödel's \SystemT{} and proves inside Lean 4 that the extracted program satisfies the specification.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item Every formula $\varphi$ in $\HAomega$ is assigned a \textbf{realizer type} $\varphi.\mathrm{realTy}$ and a semantic specification $w \;\mathbf{mr}\; \varphi$ (``witness $w$ realizes $\varphi$'').
+  \item The extraction compiler $\lean{extract} : \Deriv\;\Gamma\;\varphi \to \Tm\;\Gamma.\mathrm{realCtx}\;\varphi.\mathrm{realTy}$ translates natural-deduction proofs into typed \SystemT{} terms.
+  \item \textbf{Soundness Theorem:} If $d : \Deriv\;[]\;\varphi$ is a closed proof, then its extracted term $\lean{extractClosed}\;d$ evaluates to a value that satisfies $\varphi$'s realizability specification:
+  \[
+    \bigl(\lean{extractClosed}\;d\bigr).\mathrm{eval}\;() \;\mathbf{mr}\; \varphi.
+  \]
+  \item \textbf{Conservative over Harrop Formulas:} For purely computational specifications $\forall x.\;\exists y.\;P(x,y)$ where $P$ is quantifier-free (Harrop), the extracted realizer is an honest function $f$ such that $P(x, f(x))$ holds for every $x$.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/Extraction.lean}: \lean{extract}, \lean{extractClosed}
+  \item \lean{HAomega/Realizability.lean}: \lean{Formula.realTy}, \lean{Formula.mr}
+  \item \lean{HAomega/Soundness.lean}: \lean{soundness}, \lean{soundness_closed}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 2: The Kirby--Paris Hydra \& Transfinite Induction Below \texorpdfstring{$\varepsilon_0$}{epsilon\_0}}
+\begin{eli5box}
+Imagine fighting a monster tree (a Hydra). Every time you chop off one head, the Hydra grows \emph{ten} new copies of the branch below it! It looks like the Hydra is getting bigger and bigger forever. This theorem proves that no matter which heads you chop, \textbf{the Hydra always dies in a finite number of chops}. How? By assigning every Hydra a special ``super-number'' (an ordinal below $\varepsilon_0$) that strictly goes down on every single chop.
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Ordinary induction only counts $n, n-1, n-2, \dots, 0$. Complex recursive algorithms and nested differential-equation hierarchies need a much taller ruler: \textbf{Cantor Normal Form ordinals below $\varepsilon_0$} ($\omega, \omega^2, \omega^\omega, \omega^{\omega^\omega}, \dots$). Proving that the Cantor ordinal order \lean{Eps0.OLtE} is well-founded provides the transfinite ruler used later to grade our differential-equation hierarchy.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item Every tree $h : \lean{Hydra}$ maps to a Cantor Normal Form ordinal $\lean{ordEOfHydra}(h) \prec \varepsilon_0$.
+  \item On every valid chop at step $n$, the ordinal strictly decreases: $\lean{Eps0.OLtE}\;(\lean{ordEOfHydra}\;h')\;(\lean{ordEOfHydra}\;h)$.
+  \item Because $\lean{Eps0.oLtE_wf}$ is well-founded (no infinite descending chains of ordinals exist), \textbf{every Hydra battle terminates} (\lean{hercules_wins}, \lean{no_infinite_play}).
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{Realizability/Theorems/Hydra/HydraGeneral.lean}: \lean{play_descends}, \lean{hercules_wins}, \lean{no_infinite_play}
+  \item \lean{HAomega/OrdCnf.lean}: \lean{Eps0}, \lean{Eps0.oltNE}, \lean{Eps0.oLtE_wf}
+  \item \lean{HAomega/HydraTyped.lean}: \lean{ordEOfHydra}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 3: The Constructive Analysis Hierarchy \& Galois Calibration (\lean{A0} \texorpdfstring{$\to$}{->} \lean{RadiusJet})}
+\begin{eli5box}
+Think of functions like cars:
+\begin{itemize}
+  \item \textbf{Level \lean{A0} (Continuous):} You only know where the car is, and how close in time you must look so it doesn't move more than an inch.
+  \item \textbf{Level \lean{A1} (Differentiable):} You also have a speedometer ($f'$) and know how fast the speedometer changes.
+  \item \textbf{Level \lean{RadiusJet} (Analytic Power Series):} You have the car's \emph{complete blueprint}---every derivative at $0$ ($c_0, c_1, c_2, \dots$) plus two safety numbers $(M, R)$ that bound all of them at once.
+\end{itemize}
+Our theorems prove that once you have the \lean{RadiusJet} blueprint, you can automatically build the speedometer (\lean{A1}) and position tracker (\lean{A0}) with zero guesswork!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+By Myhill's theorem (1971), you cannot compute the derivative of a black-box continuous function (\lean{A0}). Our hierarchy (\lean{HAomega/SmoothnessHierarchy.lean}, \lean{HAomega/Jet.lean}, \lean{HAomega/RadiusJet.lean}) proves that enriching the representation to carry its Taylor jet and Cauchy majorant $(M, R)$ makes differentiation and integration 1-step algebraic operations while embedding cleanly back into \lean{A1} and \lean{A0}.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Upward Forgetful Functors:} $\lean{RadiusJet} \hookleftarrow \lean{AnalyticJet} \to \lean{Aomega} \to \lean{A1} \to \lean{A0}$.
+  \item \textbf{Galois Calibration:} Passing from $\lean{A0}$ to $\lean{A1}$ requires classical/non-constructive axioms (\lean{A0.toA1}), whereas within \lean{RadiusJet} and \lean{AnalyticJet}, differentiation $\lean{RadiusJet.deriv}$ and integration $\lean{RadiusJet.integ}$ are purely constructive, exact rational recurrences.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/SmoothnessHierarchy.lean}, \lean{HAomega/Jet.lean}, \lean{HAomega/AnalyticJet.lean}, \lean{HAomega/RadiusJet.lean}
+  \item \lean{HAomega/PascalTheorem.lean}: \lean{A1.fundamental_theorem_of_calculus}
+  \item \lean{HAomega/InverseFunction.lean}: \lean{StrictlyMonotoneA1.inv_uniform_continuous}
+\end{itemize}
+\end{thmcard}
+
+\newpage
+% ============================================================================
+\section{Part II: Polynomial Differential Equations \& The Closed Analytic Universe}
+% ============================================================================
+
+\begin{thmcard}{Theorem Group 4: Solving Any System of Polynomial ODEs One Coefficient at a Time (\lean{genSolveND})}
+\begin{eli5box}
+Suppose you have a machine where the speed of each gear depends on the positions of the other gears ($Y' = P(Y)$). How do you figure out where the gears will be? Instead of guessing the whole curve at once, you find the starting position $c_0$, use the speed rule to find the initial slope $c_1$, use that to find the curvature $c_2$, and so on---locking in \textbf{one exact fraction $c_n$ at a time} like snapping Lego bricks together!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Almost every important function in science and engineering ($\exp, \sin, \cos, \tan, \arctan$, nonlinear oscillators, Kepler orbits) is the solution of a polynomial Initial Value Problem (a Shannon \textbf{General Purpose Analog Computer}, or \lean{GPACSys}):
+\[
+  Y_v(x) = A_v + \int_0^x F_v(Y(t))\,dt \qquad (v = 0, \dots, N-1).
+\]
+This theorem proves inside $\HAomega$ that Picard iteration locks in the exact $n$-th Taylor coefficient on step $n+1$ and never changes it again (\emph{Picard locking}).
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Exact Taylor Recurrence (\lean{sbd_solN_succ_val}):} For every component $v$ and degree $n \in \N$,
+  \[
+    (\lean{solN}\;\mathrm{sys}\;v\;0).\mathrm{val} = A_v, \qquad
+    (\lean{solN}\;\mathrm{sys}\;v\;(n+1)).\mathrm{val} = \frac{F_v(\lean{solN}\;\mathrm{sys})(n)}{n+1}.
+  \]
+  \item \textbf{Formal $\HAomega$ Existence Proof (\lean{genSolveND}):} Constructs a formal natural-deduction proof $\Deriv\;[]\;(\forall k : \mathrm{nat}.\; \lean{genSolveNInv}\;\mathrm{sys})$ certifying that iterating the polynomial vector field $k$ times produces a fixed-point prefix on degrees $0 \dots k-1$.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/PolyODESystemN.lean}: \lean{genSolveND}, \lean{genSolveNInv}
+  \item \lean{HAomega/UniverseCore.lean}: \lean{solN}
+  \item \lean{HAomega/SystemBound.lean}: \lean{sbd_solN_succ_val}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 5: The Two Magic Safety Numbers \texorpdfstring{$(M, R)$}{(M, R)} From Syntax (\lean{sysParams} \& \lean{solN\_geom\_bound\_computed})}
+\begin{eli5box}
+If you have an infinite sum $c_0 + c_1 x + c_2 x^2 + \cdots$, how do you know when it's safe to stop adding terms? Our function \lean{sysParams} looks at the differential equation \textbf{just once} (without solving it!) and hands you two whole numbers $M$ and $R$. Those two numbers guarantee that the $n$-th coefficient is never bigger than $2^M \cdot (2^R)^n$. That tells you \textbf{before you even start} that adding $k + M + 3$ terms gives $k$ bits of accuracy!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+In classical analysis (Cauchy--Kovalevskaya), people say ``\emph{there exist} constants $M, R > 0$ such that $|c_n| \le M R^n$.'' An existence statement with unknown constants cannot tell a computer how many terms to sum! By computing $(M, R) = \lean{sysParams}(\mathrm{sys})$ directly from the syntax of the initial conditions and polynomial vector field, we get a \textbf{100\% explicit, parameter-free convergence modulus}.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Syntax-Computed Majorant Theorem (\lean{solN_geom_bound_computed}):} Let $(M, R) = \lean{sysParams}(\mathrm{sys})$. For every well-formed system $\lean{GPACSys}\;\mathrm{sys}$, every state variable $v < \mathrm{sys.length}$, and every degree $n \in \N$:
+  \[
+    \bigl|(\lean{solN}\;\mathrm{sys}\;v\;n).\mathrm{val}\bigr| \le 2^M \cdot (2^R)^n.
+  \]
+  \item \textbf{Proof-Extracted Truncation Modulus (\lean{jetCauchyModulusComputedD}, \lean{extractedJetCauchyModulusComputed_eq}):} Extracting the formal $\HAomega$ Cauchy-modulus proof yields the exact linear formula
+  \[
+    N(k) = k + (M + 3).
+  \]
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/SystemEval.lean}: \lean{sysParams}, \lean{solN_geom_bound_computed}
+  \item \lean{HAomega/JetCauchyComputed.lean}: \lean{jetCauchyModulusComputedD}, \lean{extractedJetCauchyModulusComputed_eq}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 6: The Closed Algebraic Universe of Calculus (\lean{UExpr.compile\_correct})}
+\begin{eli5box}
+Imagine a Lego set with just 5 starter pieces: numbers $q \in \Q$, the variable $x$, $e^x$, $\sin x$, and $\cos x$. Now suppose you are allowed to add, subtract, multiply, divide, differentiate, integrate, and plug one creation inside another as many times as you want. This theorem proves that \textbf{every single creation you can ever build automatically compiles into one unified Polynomial ODE machine} with its own $(M, R)$ safety numbers!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Instead of writing separate ad-hoc numerical approximations for $\tan(x)$, $e^{\sin x}$, $\int_0^x \frac{dt}{1+t^4}$, etc., our compiler \lean{UExpr.compile} translates \emph{any} well-defined expression in the syntax tree \lean{UExpr} into a single polynomial ODE system \lean{GPACSys} whose solution matches the expression's exact Taylor series at every degree $n \in \N$.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Closed Under 7 Operations:} Constants, $x$, $\exp, \sin, \cos$, $+$, $-$, $\times$, reciprocal $1/f$ (when $f(0) \neq 0$), derivative $\frac{d}{dx}$, integral $\int_0^x$, and zero-normalized composition $f(g(x) - g(0))$.
+  \item \textbf{Compiler Soundness (\lean{UExpr.compile_correct}):} Whenever $e.\mathrm{Defined}$ holds, the compiled ODE system $(S, v) = e.\mathrm{compile}$ satisfies $\lean{GPACSys}\;S$ and
+  \[
+    \forall n \in \N,\quad (\lean{solN}\;S\;v\;n).\mathrm{val} = (e.\mathrm{eval}\;n).\mathrm{val}.
+  \]
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/UniverseExpr.lean}: \lean{UExpr}, \lean{UExpr.Defined}, \lean{UExpr.compile}, \lean{UExpr.compile_correct}
+  \item \lean{HAomega/UniverseGPAC.lean}: \lean{GPACSys}, \lean{InGPAC}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 7: Automatic Inverse \& 2-Variable Implicit Functions (\lean{InGPAC\_invFun} \& \lean{InGPAC\_impFun})}
+\begin{eli5box}
+Suppose you know how to go \emph{forward} with $y \mapsto \sin(y)$, and you want to go \emph{backward} to find $y(x) = \arcsin(x)$ where $\sin(y(x)) = x$. Or even harder: what if $x$ and $y$ are tangled together in $\sin(y) + x \cdot y - x = 0$ where you can't isolate $y$ by algebra? Our theorem uses a clever trick: differentiate the tangled equation to find how fast $y$ moves ($y' = -E_x / E_y$), and let the ODE machine build $y(x)$ one Taylor coefficient at a time!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Inverse functions ($\arcsin, \arctan, \ln(1+x)$, Lambert $W$) and implicit algebraic/transcendental curves cannot be written down using only $+,-,\times,\div$. By compiling $g(y(x)) = x$ and $E(X(x), Z(y(x))) = 0$ into polynomial ODE systems (\lean{invFunSys} and \lean{impFunSys}), the universe is closed under local inversion and implicit function resolution!
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{General ODE Inverse Closure (\lean{InGPAC_invFun}):} If $g \in \lean{InGPAC}$ satisfies $g(0)=0$ and $g'(0) \neq 0$, then the solution $y(x)$ to $y'(x) = 1 / g'(y(x))$, $y(0)=0$ belongs to \lean{InGPAC} and satisfies $(g \circ y)(x) = x$ at every Taylor coefficient.
+  \item \textbf{2-Variable Implicit Function Closure (\lean{InGPAC_impFun}):} For any coupled ODE systems $X(x), Z(y)$ and bivariate polynomial relation $E(X(x), Z(y(x))) = 0$ with $E(0,0)=0$ and $\partial_y E(0,0) \neq 0$, the implicit solution $y(x)$ compiles to a well-formed \lean{GPACSys} (\lean{impFunSys}) satisfying $E(X(x), Z(y(x))) = 0$ at all Taylor degrees $n \in \N$.
+  \item \textbf{Autonomous 1D Left-Inverse Identity (\lean{UExpr.autoInverse_comp_sol_eq_varX}):} For an autonomous 1D ODE $Y' = F(Y)$ with $Y(0)=0, F(0)\neq 0$, the explicit integral $g(t) = \int_0^t \frac{ds}{F(s)} = \lean{UExpr.autoInverse}(F)$ satisfies $(g \circ Y) = x$ at all degrees $n \in \N$.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/UniverseInvFun.lean}: \lean{invFunSys}, \lean{InGPAC_invFun}
+  \item \lean{HAomega/UniverseImpFun.lean}: \lean{impFunSys}, \lean{InGPAC_impFun}
+  \item \lean{HAomega/ComputationalAdequacy.lean}: \lean{UExpr.autoInverse}, \lean{UExpr.autoInverse_comp_sol_eq_varX}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 8: Multi-Step Analytic Continuation \& Boundary-Value Cannon Shooting (\lean{stepData} \& \lean{shootBVP})}
+\begin{eli5box}
+A power series centered at $0$ is like a flashlight that only lights up a small circle around $0$. How do you walk down a long dark hallway? You walk partway to the edge of your light circle, turn on a \emph{new} flashlight centered where you are standing (\lean{stepData}), and keep marching step by step! And what if you need your path to hit a target bullseye at $x = b$? Our theorem \lean{shootBVP} adjusts the starting angle of the cannon using binary search until the trajectory hits the bullseye within $2^{-k}$!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Local Taylor series only converge inside their radius of convergence $|x| < 2^{-R}$. Re-centering the ODE system at $x_0$ (\lean{HAomega/SystemStep.lean}) provides certified multi-step ODE integration with syntax-computed step radii (\lean{stepRadius}) and truncation moduli (\lean{stepModulus}), while \lean{HAomega/ShootingBVP.lean} solves nonlinear two-point Boundary Value Problems $y'' = f(x, y, y')$, $y(0)=\alpha, y(b)=\beta$.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Certified Step Continuation (\lean{stepData}, \lean{stepIterApprox}):} Shifts any \lean{GPACSys} to a new center $x_0$, computing the new $(M', R')$ bounds and guaranteeing $2^{-k}$ accuracy across chained steps.
+  \item \textbf{Certified BVP Shooting (\lean{shootBVP}, \lean{shootBVP_spec}):} Combines the ODE state-transition evaluator with extracted bisection to find an initial slope $s_* \in [s_{\min}, s_{\max}]$ whose trajectory hits the boundary target $\beta$ at $x = b$ within certified tolerance.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/SystemStep.lean}: \lean{stepData}, \lean{stepRadius}, \lean{stepModulus}, \lean{stepIterApprox}
+  \item \lean{HAomega/ShootingBVP.lean}: \lean{shootBVP}, \lean{shootBVP_spec}
+\end{itemize}
+\end{thmcard}
+
+\newpage
+% ============================================================================
+\section{Part III: Computational Adequacy --- Fast Evaluation, Infinite Series, Roots, \& Fourier (\texorpdfstring{\lean{ComputationalAdequacy.lean}}{ComputationalAdequacy.lean})}
+% ============================================================================
+
+\begin{thmcard}{Theorem Group 9: From Exponential Proof Trees to Fast Dynamic Programming (\lean{extraction\_to\_fast})}
+\begin{eli5box}
+Suppose to find the 30th number in a sequence, a naive recipe asks two helpers for the 29th number, each of whom asks two helpers for the 28th number, and so on---creating $2^{30} \approx 1\text{ billion}$ phone calls! A smart dynamic-programming table (\lean{solFast}) just writes the numbers down on a notepad from $0$ up to $30$ so nobody ever recalculates the same number twice. This theorem proves that the fast notepad table gives the \textbf{exact same fraction} as the proof-extracted program!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Direct proof extraction (\lean{extractClosed (genSolveND sys hwf)}) unfolds Picard iteration top-down, recomputing lower Taylor coefficients exponentially many times ($O(2^n)$). Our bottom-up dynamic-programming table \lean{solFast} computes all coefficients $0 \dots n$ in $O(n^2 |\mathrm{sys}|)$ rational operations. Theorem \lean{extraction_to_fast} bridges the logical world and the fast numerical world by proving they are bit-for-bit identical.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Theorem (\lean{extraction_to_fast}):} For every certified analytic representation $S : \lean{CertifiedAnalyticRep}$ and every degree $n \in \N$,
+  \[
+    \lean{extractedCoeff}\;S.\mathrm{sys}\;(\lean{gpac\_wf}\;S.\mathrm{wf})\;S.v\;n
+    = (\lean{solFast}\;S.\mathrm{sys}\;S.v\;n).\mathrm{val}
+    = S.\mathrm{coeff}\;n.
+  \]
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/SystemFast.lean}: \lean{solFast}, \lean{solFast_val}, \lean{GPACSys.approxFast}
+  \item \lean{HAomega/ComputationalAdequacy.lean}: \lean{extractedCoeff_eq_solN}, \lean{extraction_to_fast}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 10: Certified Infinite Power-Series Evaluation in \texorpdfstring{$\R$}{R} (\lean{certified\_evaluation})}
+\begin{eli5box}
+Adding the first $N$ terms of a series gives a rational approximation, like measuring a board to the nearest millimeter. But does the \emph{infinite} sum of all terms $c_0 + c_1 x + c_2 x^2 + \cdots$ actually add up to a real number $f(x) \in \R$, and how close is our finite sum to that true infinite sum? This theorem proves that inside the safe circle $|x| \le 2^{-(R+1)}$, each term is at most half the size of the previous bound, so stopping at term $N(k) = k + M + 3$ is \textbf{guaranteed to be within $2^{-k}$ of the true infinite sum in $\R$}!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Earlier constructive modules bounded the Cauchy difference $|S_N(x) - S_M(x)|$ between two finite partial sums. Theorem \lean{certified_evaluation} upgrades this to bound the error against the \textbf{actual infinite series limit} $S.\lean{analyticValue}(x) := \sum_{n=0}^\infty c_n x^n \in \R$.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Infinite Tail Bound (\lean{CertifiedAnalyticRep.analyticValue_sub_evalPoly_le}):} For $|x.\mathrm{val}| \le 2^{-(S.R+1)}$ and any $N \in \N$,
+  \[
+    \Bigl|\bigl((\lean{Jet.mk}\;(\lean{solFast}\;S.\mathrm{sys}\;S.v)).\lean{evalPoly}\;N\;x\bigr).\mathrm{val} - S.\lean{analyticValue}(x)\Bigr| \le \frac{2^{S.M+1}}{2^N}.
+  \]
+  \item \textbf{Certified $2^{-k}$ Evaluation (\lean{certified_evaluation}):} At the proof-extracted truncation degree $N(k) = k + M + 3$,
+  \[
+    \Bigl|\bigl(\lean{GPACSys.approxFast}\;P.\mathrm{sys}\;P.v\;x\;k\bigr).\mathrm{val} - P.\lean{toCertifiedAnalyticRep}.\lean{analyticValue}(x)\Bigr| \le \frac{1}{2^k}.
+  \]
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/ComputationalAdequacy.lean}: \lean{CertifiedAnalyticRep.analyticValue}, \lean{CertifiedAnalyticRep.summable_seriesTerm}, \lean{CertifiedAnalyticRep.analyticValue_sub_evalPoly_le}, \lean{certified_evaluation}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 11: Why You Can Never Skip the Tail Bound (\lean{no\_uniform\_modulus\_without\_tail\_info})}
+\begin{eli5box}
+Suppose someone claims: ``I don't need your $(M, R)$ safety numbers! I'll just look at the first $100$ coefficients of $f(x)$ and tell you how accurate the sum is.'' This theorem proves they are wrong! Even if two functions have the \textbf{exact same first $N_0$ coefficients} (say $0, 0, \dots, 0$), one can stay at $0$ forever while the other suddenly has a huge spike at term $N_0 + 1$ that changes $f(1/2)$ by $2$. Without a promise about the unseen infinite tail, no algorithm can ever certify accuracy!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Proves that carrying an effective tail bound (such as $(M, R)$) is not an arbitrary design choice---it is mathematically \emph{indispensable} for certified numerical evaluation.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Theorem (\lean{no_uniform_modulus_without_tail_info}):} For every candidate truncation degree $N_0 \in \N$, there exist two jets $F_1, F_2$ with $F_1(n) = F_2(n)$ for all $n \le N_0$, yet at $x = 1/2$:
+  \[
+    \bigl|(F_1.\lean{evalPoly}\;(N_0+2)\;(1/2)).\mathrm{val} - (F_2.\lean{evalPoly}\;(N_0+2)\;(1/2)).\mathrm{val}\bigr| = 2 > 1.
+  \]
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/ComputationalAdequacy.lean}: \lean{spikeJet}, \lean{no_uniform_modulus_without_tail_info}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 12: Representation-to-Representation Closure (\lean{PolyODEProof} Transformers)}
+\begin{eli5box}
+When you add, multiply, differentiate, or integrate two certified ODE packages (\lean{PolyODEProof}), you don't just get a new formula---you get a \textbf{brand-new certified ODE package} with its own formal $\HAomega$ proof, its own fast evaluator, and its own $(M, R)$ safety numbers! Furthermore, taking the derivative of the integral gives back the exact same infinite series, and integrating the derivative gives $f(b) - f(a)$.
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Shows that calculus operations preserve the full constructive representation (\lean{PolyODEProof $\to$ PolyODEProof}) rather than degrading into uncertified black-box functions.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Closed Transformers:} \lean{PolyODEProof.add}, \lean{sub}, \lean{mul}, \lean{inv}, \lean{integ}, \lean{derivOp}, \lean{comp} all map \lean{PolyODEProof} to \lean{PolyODEProof} with proved Taylor coefficient identities (\lean{add_coeff}, \dots, \lean{comp_coeff}).
+  \item \textbf{Infinite-Series FTC Part 1 \& Part 2 (\lean{derivOp_integ_analyticValue}, \lean{integ_derivOp_analyticValue}, \lean{newtonLeibniz_analyticValue_spec}):}
+  \[
+    (P.\lean{integ}.\lean{derivOp}).\lean{analyticValue}(x) = P.\lean{analyticValue}(x), \qquad
+    (P.\lean{derivOp}.\lean{integ}).\lean{analyticValue}(x) = P.\lean{analyticValue}(x) - c_P(0),
+  \]
+  and $\bigl|(P.\lean{derivOp}.\lean{defIntegralFast}\;a\;b\;k).\mathrm{val} - (P.\lean{analyticValue}(b) - P.\lean{analyticValue}(a))\bigr| \le 2^{-k}$.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/ComputationalAdequacy.lean}: \lean{PolyODEProof.add}, \lean{PolyODEProof.sub}, \lean{PolyODEProof.mul}, \lean{PolyODEProof.inv}, \lean{PolyODEProof.integ}, \lean{PolyODEProof.derivOp}, \lean{PolyODEProof.comp}, \lean{PolyODEProof.derivOp_integ_analyticValue}, \lean{PolyODEProof.integ_derivOp_analyticValue}, \lean{PolyODEProof.newtonLeibniz_analyticValue_spec}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 13: Infinite-Series Secant \& Root-Location Adequacy (\lean{analyticValue\_root\_location\_of\_deriv\_margin})}
+\begin{eli5box}
+Suppose you are hiking on a hill $f(x)$ looking for sea level ($f(z) = 0$). If your altimeter says you are only $0.01$ meters above sea level ($|f(x)| \le 0.01$), how far away horizontally can the shoreline $z$ be? If the hill is flat, the shoreline could be miles away! But if you know the hill's slope is at least $m > 0$ everywhere, then you can't be farther than $\frac{0.01}{m}$ from the shoreline! This theorem proves how to check that slope $m > 0$ using \textbf{just one finite polynomial} so that the guarantee holds for the \textbf{true infinite series}!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Checking that a truncated derivative polynomial $S_N(f')(y) \ge m > 0$ is not enough by itself, because the remaining infinite tail of $f'$ could dip below zero. By requiring the \textbf{remainder-guarded derivative margin} $S_{N_k}(f')(y) - 2^{-k} \ge m > 0$, we prove that the slope bound $m > 0$ survives for \emph{all} higher partial sums $N_k + d$ and passes to the $d \to \infty$ infinite-series limit in $\R$.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{True Infinite-Series Secant Bound (\lean{PolyODEProof.analyticValue_secant_of_deriv_margin}):} Under the remainder-guarded derivative margin $m > 0$ on $[a,b] \subseteq [-2^{-(R+2)}, 2^{-(R+2)}]$, for all $x, z \in [a,b]$:
+  \[
+    (m : \R) \cdot |x.\mathrm{val} - z.\mathrm{val}| \le \bigl|S.\lean{analyticValue}(x) - S.\lean{analyticValue}(z)\bigr|.
+  \]
+  \item \textbf{Certified Root Location Error (\lean{PolyODEProof.analyticValue_root_location_of_deriv_margin}):} If $S.\lean{analyticValue}(z) = 0$ on $[a,b]$, then for any $x \in [a,b]$ and precision $j \in \N$:
+  \[
+    |x.\mathrm{val} - z.\mathrm{val}| \le \frac{|S.\lean{analyticValue}(x)|}{m} \le \frac{|(\lean{GPACSys.approxFast}\;P.\mathrm{sys}\;P.v\;x\;j).\mathrm{val}| + 2^{-j}}{m}.
+  \]
+  \item \textbf{Bisection Residual \& Cauchy Bound (\lean{rootFast_analyticValue_spec}, \lean{rootFast_cauchy_of_deriv_margin}):} Whenever the endpoint sign colors differ, $r_{j,p} = P.\lean{rootFast}\;a\;b\;j\;p$ satisfies $|S.\lean{analyticValue}(r_{j,p})| \le 2^{-p} + 2^{M+R+2}\frac{b-a}{2^j}$ and $|r_{j_1,p_1} - r_{j_2,p_2}| \le \frac{|f(r_{j_1,p_1})| + |f(r_{j_2,p_2})|}{m}$.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/ComputationalAdequacy.lean}: \lean{RadiusJet.deriv_margin_persists}, \lean{RadiusJet.location_error_of_deriv_margin}, \lean{PolyODEProof.analyticValue_secant_of_deriv_margin}, \lean{PolyODEProof.analyticValue_root_location_of_deriv_margin}, \lean{PolyODEProof.rootFast_analyticValue_spec}, \lean{PolyODEProof.rootFast_cauchy_of_deriv_margin}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 14: Certified Fourier Series Evaluation \& Parseval's Identity (\lean{StripFourierRep})}
+\begin{eli5box}
+A musical chord is a sum of pure notes (sines and cosines of frequencies $n = 0, \pm 1, \pm 2, \dots$). First, we prove that pure notes of different frequencies are completely independent (\textbf{orthogonal}), so you can pluck out the exact volume of frequency $n$ using an inner product (\lean{inner_mode_eq_coeff}), and the total energy of the wave equals the sum of the squared volumes of its notes (\textbf{Parseval's Identity}). Second, if the high-frequency notes fade away exponentially ($|c_n| \le 2^M \cdot 2^{-R|n|}$), keeping only frequencies $|n| \le k + M + 1$ approximates the infinite wave within $2^{-k}$!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Extends certified numerical evaluation from local power series $\sum c_n x^n$ to periodic Fourier series $\sum_{n \in \Z} c_n e^{inx}$ analytic on a strip of width $R \ge 1$.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Parseval's Identity (\lean{TrigPoly.parseval}) \& Modal Extraction (\lean{TrigPoly.inner_mode_eq_coeff}):} Exact symbolic integration over $[0, 2\pi]$ extracts the exact $n$-th complex rational coefficient $\lean{toCRat}(F.c\;n)$ from any truncated Fourier sum $F.\mathrm{trunc}\;N$ ($|n| \le N$).
+  \item \textbf{Certified $2^{-k}$ Fourier Series Evaluation (\lean{StripFourierRep.certified_fourier_series_evaluation}):} For any bounded phase sequence $|\mathrm{cs}(n)|, |\mathrm{sn}(n)| \le 1$, truncating at frequency $N(k) = k + F.M + 1$ approximates the infinite two-sided series $F.\lean{fourierValue}(\mathrm{cs}, \mathrm{sn})$ within $2^{-k}$:
+  \[
+    \bigl|F.\lean{evalTrunc}(\mathrm{cs}, \mathrm{sn}, k + F.M + 1) - F.\lean{fourierValue}(\mathrm{cs}, \mathrm{sn})\bigr| \le \frac{1}{2^k}.
+  \]
+  \emph{Scope Note:} Certifies evaluation of the infinite Fourier series stored in $F$; proving $f(x) = \sum \widehat{f}(n)e^{inx}$ for an arbitrary periodic ODE solution via numerical quadrature is a separate reconstruction bridge.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/TrigPolyInner.lean}: \lean{TrigPoly.inner_modes}, \lean{TrigPoly.parseval}
+  \item \lean{HAomega/ComputationalAdequacy.lean}: \lean{TrigPoly.inner_mode_eq_coeff}, \lean{StripFourierRep}, \lean{StripFourierRep.certified_fourier_series_evaluation}, \lean{calculus_adequacy_master}
+\end{itemize}
+\end{thmcard}
+
+\newpage
+% ============================================================================
+\section{Part IV: Classical Real-Analysis Semantic Bridge \& Certified Fixed-Point Operators (\texorpdfstring{\lean{RealCalculusBridge.lean}}{RealCalculusBridge.lean})}
+% ============================================================================
+
+\begin{thmcard}{Theorem Group 15: Real Power-Series Extension \& Quadratic Tangent-Line Remainder (\lean{realAnalyticValue\_quad\_rem\_disk})}
+\begin{eli5box}
+Until now, we plugged \emph{fractions} $x \in \Q$ into our power series. What if you plug in \emph{any real number} $x \in \R$ (like $\pi/10$ or $\sqrt{2}/8$)? First, we extend our infinite power series to every real number $x \in \R$ (\lean{realAnalyticValue}). Second, if you approximate a smooth curve $f(y)$ near $x$ by its straight tangent line $f(x) + f'(x)(y-x)$, how big is the gap between the curve and the tangent line? We prove the gap shrinks with the \textbf{square} of the distance: at most $C \cdot (y-x)^2$!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+To prove that our formal derivative operator \lean{P.derivOp} is the \textbf{genuine classical real derivative} in Mathlib (\lean{HasDerivAt}), we need a uniform first-order Taylor remainder bound across all real points $x, y \in \R$ in the quarter-radius disk $[-2^{-(R+2)}, 2^{-(R+2)}]$.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Agreement at Rationals (\lean{CertifiedAnalyticRep.realAnalyticValue_coe}):} For all $q : Q$, $S.\lean{realAnalyticValue}(q.\mathrm{val} : \R) = S.\lean{analyticValue}(q)$.
+  \item \textbf{Real Lipschitz \& Continuity (\lean{realAnalyticValue_lipschitz_disk}, \lean{continuousOn_realAnalyticValue_disk}):} On $|x|, |y| \le 2^{-(R+2)}$, $|S.\lean{realAnalyticValue}(x) - S.\lean{realAnalyticValue}(y)| \le 2^{M+R+2}|x - y|$.
+  \item \textbf{Quadratic Taylor Remainder (\lean{PolyODEProof.realAnalyticValue_quad_rem_disk}):} For all $x, y \in [-2^{-(R+2)}, 2^{-(R+2)}] \subseteq \R$:
+  \[
+    \bigl|f_P(y) - f_P(x) - f_{P'}(x)(y - x)\bigr| \le 2^{M + 2R + 5} \cdot (y - x)^2.
+  \]
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/RealCalculusBridge.lean}: \lean{CertifiedAnalyticRep.realAnalyticValue}, \lean{CertifiedAnalyticRep.realAnalyticValue_coe}, \lean{CertifiedAnalyticRep.realAnalyticValue_lipschitz_disk}, \lean{CertifiedAnalyticRep.continuousOn_realAnalyticValue_disk}, \lean{PolyODEProof.realAnalyticValue_quad_rem_disk}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 16: Classical Mathlib \lean{HasDerivAt} \& \lean{intervalIntegral} Fundamental Theorem of Calculus}
+\begin{eli5box}
+In our constructive world, ``derivative'' meant multiplying the $n$-th Taylor coefficient by $n$, and ``definite integral'' meant subtracting two power series $F(b) - F(a)$. A classical mathematician might ask: ``Wait---is your formal derivative \emph{really} the classical limit $\lim_{y \to x}\frac{f(y)-f(x)}{y-x}$ in $\R$, and does your fast integral algorithm \emph{really} compute the classical area under the curve $\int_a^b f(t)\,dt$ in Mathlib?'' This theorem proves: \textbf{Yes, 100\%!}
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Completes the semantic bridge between constructive Taylor-series calculus and standard real analysis in Mathlib (\lean{HasDerivAt} and \lean{intervalIntegral}).
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Classical Real Differentiability (\lean{PolyODEProof.hasDerivAt_realAnalyticValue}, \lean{hasDerivAt_integ_realAnalyticValue}):} For every real point $|x| < 2^{-(R+2)}$,
+  \[
+    \lean{HasDerivAt}\;P.\lean{toCertifiedAnalyticRep}.\lean{realAnalyticValue}\;\bigl(P.\lean{derivOp}.\lean{toCertifiedAnalyticRep}.\lean{realAnalyticValue}\;x\bigr)\;x,
+  \]
+  and the antiderivative $P.\lean{integ}$ has classical derivative equal to $P.\lean{realAnalyticValue}\;x$.
+  \item \textbf{Classical Bochner/Interval Integral FTC (\lean{intervalIntegral_realAnalyticValue_eq_integ_sub}, \lean{intervalIntegral_derivOp_eq_sub}):}
+  \[
+    \int_a^b P.\lean{toCertifiedAnalyticRep}.\lean{realAnalyticValue}(t)\,dt
+    = P.\lean{integ}.\lean{toCertifiedAnalyticRep}.\lean{realAnalyticValue}(b)
+    - P.\lean{integ}.\lean{toCertifiedAnalyticRep}.\lean{realAnalyticValue}(a).
+  \]
+  \item \textbf{Certified $2^{-k}$ Approximation of Mathlib's \lean{intervalIntegral} (\lean{defIntegralFast_intervalIntegral_spec}):}
+  \[
+    \left|\bigl((P.\lean{defIntegralFast}\;a\;b\;k).\mathrm{val} : \R\bigr) - \int_{(a.\mathrm{val}:\R)}^{(b.\mathrm{val}:\R)} P.\lean{toCertifiedAnalyticRep}.\lean{realAnalyticValue}(t)\,dt\right| \le \frac{1}{2^k}.
+  \]
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/RealCalculusBridge.lean}: \lean{hasDerivWithinAt_of_quad_rem_Icc}, \lean{PolyODEProof.hasDerivWithinAt_realAnalyticValue}, \lean{PolyODEProof.hasDerivAt_realAnalyticValue}, \lean{PolyODEProof.hasDerivAt_integ_realAnalyticValue}, \lean{PolyODEProof.intervalIntegral_realAnalyticValue_eq_integ_sub}, \lean{PolyODEProof.defIntegralFast_intervalIntegral_spec}, \lean{PolyODEProof.intervalIntegral_derivOp_eq_sub}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 17: Unconditional Constructive Root Sequence \& Genuine Real Zero Existence (\lean{rootSeq\_converges\_to\_real\_zero})}
+\begin{eli5box}
+Earlier, we showed how to measure the distance to a root \emph{if} a root already existed. Now we build the root from scratch! Suppose $f(a)$ is below $-2^{-k_0}$ (underwater) and $f(b)$ is above $+2^{-k_0}$ (on dry land), and the hill slopes upward with margin $m > 0$. Our sequence $r_n = P.\lean{rootSeq}\;a\;b\;k_0\;n$ automatically picks the right grid depth and precision at every step $n$ so that $|f(r_n)| \le 2^{-n}$, and the points $r_n$ march straight to a \textbf{genuine real number $z_* \in [a, b]$ where $f(z_*) = 0$ exactly}!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Eliminates the conditional hypothesis ``assuming a root $z$ exists'' by constructing an explicit 1-parameter sequence $r_n$ with schedule $p(k_0,n) = \max(k_0+1, n+1)$ and $j(n) = n + 1 + M + R + 2$, automatically discharging the endpoint sign-color condition for all $n$, and proving convergence to a true zero $z_* \in \R$ by completeness of $\R$ and continuity of $\lean{realAnalyticValue}$.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Automatic Endpoint Sign Discharge (\lean{rootColor_endpoints_ne_of_sign_margin}):} If $f_P(a) \le -2^{-k_0}$ and $f_P(b) \ge 2^{-k_0}$, then for every $p \ge k_0 + 1$ and every $j$, $\lean{rootColor}\;a\;b\;j\;p\;0 = 1 \neq 0 = \lean{rootColor}\;a\;b\;j\;p\;(2^j)$.
+  \item \textbf{Unconditional $2^{-n}$ Residual (\lean{rootSeq_residual_le}):} $\bigl|f_P(P.\lean{rootSeq}\;a\;b\;k_0\;n)\bigr| \le 2^{-n}$.
+  \item \textbf{Genuine Real Zero Existence \& Convergence Rate (\lean{PolyODEProof.rootSeq_converges_to_real_zero}):} There exists $z_* \in [a.\mathrm{val}, b.\mathrm{val}] \subseteq \R$ such that $r_n \to z_*$,
+  \[
+    P.\lean{toCertifiedAnalyticRep}.\lean{realAnalyticValue}(z_*) = 0, \qquad\text{and}\qquad
+    \forall n \in \N,\quad |r_n.\mathrm{val} - z_*| \le \frac{2^{-n}}{m}.
+  \]
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/RealCalculusBridge.lean}: \lean{PolyODEProof.rootColor_endpoints_ne_of_sign_margin}, \lean{PolyODEProof.rootSeq}, \lean{PolyODEProof.rootSeq_residual_le}, \lean{PolyODEProof.rootSeq_cauchy_of_deriv_margin}, \lean{PolyODEProof.rootSeq_converges_to_real_zero}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 18: Certified Fixed-Point Operators (\lean{fixFast} \& \lean{fixRootSeq})}
+\begin{eli5box}
+A \textbf{fixed point} is a number $z_*$ that doesn't move when you apply $f$ to it: $f(z_*) = z_*$ (like the center spot on a map when you lay a smaller copy of the map on top of the big map!). We build two fixed-point machines:
+\begin{enumerate}
+  \item \textbf{The Shrinking Map Machine (\lean{fixFast}):} If $f$ shrinks distances by at least half ($|f(u)-f(v)| \le \frac{1}{2}|u-v|$), you just plug your answer back into the fast evaluator over and over ($x_{n+1} = \lean{approxFast}(x_n, 2n+2)$). Every step cuts the distance to $z_*$ in half!
+  \item \textbf{The General Fixed-Point Machine (\lean{fixRootSeq}):} Even if $f$ doesn't shrink distances, asking for $f(x) = x$ is the exact same thing as asking for a root of $g(x) = f(x) - x = 0$! So we subtract $x$ (\lean{P.sub varX}) and run our root finder!
+\end{enumerate}
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Provides both a fast contractive Banach/Picard fixed-point iterator (\lean{PolyODEProof.fixFast}) and a general non-contractive fixed-point solver (\lean{PolyODEProof.fixRootSeq}) with certified convergence in $\R$.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Contractive Residual Bound (\lean{PolyODEProof.fixFast_residual_le}):} Under $(1/2)$-Lipschitz contractivity on the certified disk $|x| \le 2^{-(R+1)}$, the iterates $x_n = P.\lean{fixFast}\;x_0\;n$ satisfy:
+  \[
+    \bigl|f_P(x_n) - x_n.\mathrm{val}\bigr| \le \frac{|f_P(x_0) - x_0.\mathrm{val}| + 2}{2^n}.
+  \]
+  \item \textbf{Banach Fixed-Point Convergence (\lean{PolyODEProof.fixFast_converges_to_fixedPoint}):} There exists $z_* \in \R$ in the certified disk such that $x_n \to z_*$,
+  \[
+    P.\lean{toCertifiedAnalyticRep}.\lean{realAnalyticValue}(z_*) = z_*, \qquad
+    |x_n.\mathrm{val} - z_*| \le 2 \cdot \frac{|f_P(x_0) - x_0.\mathrm{val}| + 2}{2^n}.
+  \]
+  \item \textbf{General Fixed-Point Reduction (\lean{PolyODEProof.fixPoint_iff_fixPointEq_zero}):} Defining $P.\lean{fixPointEq} := P.\lean{sub}\;\lean{PolyODEProof.varX}$, on $|x| \le 2^{-(R+1)}$:
+  \[
+    P.\lean{toCertifiedAnalyticRep}.\lean{realAnalyticValue}(x) = x
+    \iff P.\lean{fixPointEq}.\lean{toCertifiedAnalyticRep}.\lean{realAnalyticValue}(x) = 0.
+  \]
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/RealCalculusBridge.lean}: \lean{PolyODEProof.fixFast}, \lean{PolyODEProof.fixFast_residual_le}, \lean{PolyODEProof.fixFast_converges_to_fixedPoint}, \lean{PolyODEProof.fixPointEq}, \lean{PolyODEProof.fixRootSeq}, \lean{PolyODEProof.fixPoint_iff_fixPointEq_zero}
+\end{itemize}
+\end{thmcard}
+
+\newpage
+% ============================================================================
+\section{Part V: The Optimizing Compiler for Mathematical Analysis (\texorpdfstring{\lean{CertifiedOptimization.lean}}{CertifiedOptimization.lean})}
+% ============================================================================
+
+\begin{thmcard}{Theorem Group 19: Terminating Bottom-Up Symbolic Normalizer (\lean{UExpr.normalize})}
+\begin{eli5box}
+Suppose you tell a robot: ``Take two steps forward, then two steps backward, then put on your coat, then take off your coat, repeated 100 times!'' A naive robot actually walks back and forth 100 times before realizing it's standing in the exact same spot. Our normalizer \lean{UExpr.normalize} is the smart robot: if you integrate a function and immediately differentiate it ($\frac{d}{dx}\int_0^x f$), or take the reciprocal of a reciprocal ($1/(1/f)$), or compose $f$ with $x$, it \textbf{cancels them out before building the differential equation}---and proves that the simplified answer gives the exact same Taylor series!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+When you chain many analytic operations on top of one another, the compiled ODE system grows new state variables at every step, inflating both the system dimension and the radius parameter $R$ (shrinking the certified disk $2^{-(R+1)}$). \lean{UExpr.normalize} eliminates redundant algebraic and calculus pairs while strictly respecting definedness ($f(0) \neq 0$ for $\lean{inv}$) and the zero-normalized composition semantics $\lean{comp}(f,g)(x) = f(g(x)-g(0))$.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Soundness \& Definedness Preservation (\lean{UExpr.normalize_spec}, \lean{UExpr.normalize_analyticValue_eq}):} Whenever $e.\mathrm{Defined}$ holds:
+  \begin{enumerate}
+    \item $e.\lean{normalize}.\mathrm{Defined}$ holds,
+    \item $\forall n \in \N,\; (e.\lean{normalize}.\mathrm{eval}\;n).\mathrm{val} = (e.\mathrm{eval}\;n).\mathrm{val}$, and
+    \item $e.\lean{normalize}$ and $e$ have the \textbf{exact same infinite power-series sum} $\lean{analyticValue}(x)$ on their common domain.
+  \end{enumerate}
+  \item \textbf{Monotonicity \& Idempotence (\lean{UExpr.normalize_astSize_le}, \lean{UExpr.normalize_idempotent}):} $e.\lean{normalize}.\lean{astSize} \le e.\lean{astSize}$ and $e.\lean{normalize}.\lean{normalize} = e.\lean{normalize}$ in a single bottom-up pass.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/CertifiedOptimization.lean}: \lean{UExpr.normalize}, \lean{UExpr.normalize_astSize_le}, \lean{UExpr.normalize_idempotent}, \lean{UExpr.normalize_spec}, \lean{UExpr.normalize_analyticValue_eq}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 20: Arbitrary-Depth Tower Collapse (\lean{iterDerivInteg\_normalize} \& \lean{autoInverse\_comp\_compress\_to\_varX})}
+\begin{eli5box}
+What if you stack \emph{a thousand} derivatives and integrals on top of each other: $\frac{d}{dx}\int_0^x \frac{d}{dt}\int_0^t \cdots f$? Or what if you solve an autonomous differential equation $Y' = F(Y)$ and plug it into its own inverse function $\lean{autoInverse}(F) \circ Y$? Without optimization, that creates a giant coupled differential equation. Our theorems prove that \textbf{the entire tower collapses all the way down to $f$ (or to the 1-line equation $y'=1, y(0)=0$)}!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Demonstrates that mathematical identities (FTC cancellation and inverse-function cancellation) translate directly into massive computational simplifications inside $\HAomega$.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Unbounded Tower Collapse (\lean{iterDerivInteg_normalize}, \lean{iterCompX_normalize}, \lean{iterInvPair_normalize}):} For every tower depth $d \in \N$:
+  \[
+    (\lean{iterDerivInteg}\;d\;e).\lean{normalize} = e.\lean{normalize}, \quad
+    (\lean{iterCompX}\;d\;e).\lean{normalize} = e.\lean{normalize}, \quad
+    (\lean{iterInvPair}\;d\;e).\lean{normalize} = e.\lean{normalize}.
+  \]
+  \item \textbf{Autonomous Inverse Tower Compression (\lean{UExpr.autoInverse_comp_compress_to_varX}):} For any defined autonomous ODE $Y' = F(Y)$ ($Y(0)=0, F(0)\neq 0$), the compiled composition $(\lean{autoInverse}(F) \circ Y)$ is semantically equivalent (\lean{SemEq}) to the 1-state identity ODE $\lean{PolyODEProof.varX}$ ($y'=1, y(0)=0$), and $\lean{selectBetter}$ compresses the multi-state composition ODE directly to $\lean{PolyODEProof.varX}$.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/CertifiedOptimization.lean}: \lean{UExpr.iterDerivInteg_normalize}, \lean{UExpr.iterCompX_normalize}, \lean{UExpr.iterInvPair_normalize}, \lean{PolyODEProof.varX}, \lean{UExpr.autoInverse_comp_compress_to_varX}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 21: Certified Representation Compression \& Cost-Guided Selection (\lean{compress\_of\_coeff\_eq} \& \lean{optimizeToPolyODEProof\_spec})}
+\begin{eli5box}
+Suppose two different ODE blueprints $P_1$ and $P_2$ produce the exact same sequence of Taylor coefficients ($c_{P_1}(n) = c_{P_2}(n)$ for all $n$), where $P_1$ is a huge, slow 20-gear machine that only works on a tiny circle $|x| \le 2^{-20}$, and $P_2$ is a tiny, fast 2-gear machine that works on a wide circle $|x| \le 2^{-2}$. This theorem proves you can \textbf{safely throw away the big machine $P_1$ and use the fast machine $P_2$ to compute $P_1$'s function to $2^{-k}$ accuracy}---and even use $P_2$ to extend $P_1$ onto the wider circle!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Cleanly separates \emph{syntactic normalization} (\lean{normalize}), \emph{semantic representation compression} (\lean{compress_of_coeff_eq}), and \emph{cost-guided candidate selection} (\lean{selectBetter} / \lean{optimizeToPolyODEProof}) without conflating local rewriting with uncomputable global minimization.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Representation Compression (\lean{PolyODEProof.compress_of_coeff_eq}):} If $P_1.\lean{SemEq}\;P_2$ ($\forall n,\; c_{P_1}(n) = c_{P_2}(n)$), then on the intersection of their disks, $\lean{GPACSys.approxFast}\;P_2.\mathrm{sys}\;P_2.v\;x\;k$ approximates $P_1.\lean{toCertifiedAnalyticRep}.\lean{analyticValue}(x)$ within $2^{-k}$. When $R_2 \le R_1$, $P_2$'s disk contains $P_1$'s disk and provides a certified analytic continuation to $|x| \le 2^{-(R_2+1)}$.
+  \item \textbf{Cost-Guided Optimizer (\lean{UExpr.optimizeToPolyODEProof_spec}):} Compares $P_{\mathrm{raw}} = e.\lean{toPolyODEProof}$ against $P_{\mathrm{norm}} = e.\lean{normalize}.\lean{toPolyODEProof}$ across all three complexity metrics ($\mathrm{dim}$, $M$, $R$), guaranteeing $P_{\mathrm{raw}}.\lean{SemEq}\;P_{\mathrm{opt}}$, $P_{\mathrm{opt}}.\lean{BetterRep}\;P_{\mathrm{raw}}$, and $P_{\mathrm{opt}}.\lean{RepCost} \le P_{\mathrm{raw}}.\lean{RepCost}$.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/CertifiedOptimization.lean}: \lean{PolyODEProof.SemEq}, \lean{PolyODEProof.compress_of_coeff_eq}, \lean{PolyODEProof.BetterRep}, \lean{PolyODEProof.selectBetter_spec}, \lean{UExpr.optimizeToPolyODEProof_spec}
+\end{itemize}
+\end{thmcard}
+
+\newpage
+% ============================================================================
+\section{Part VI: The \texorpdfstring{$\varepsilon_0$}{epsilon\_0} Descriptive Differential Hierarchy \& ``Waves Over Waves'' (\texorpdfstring{\lean{OrdinalODEHierarchy.lean}}{OrdinalODEHierarchy.lean})}
+% ============================================================================
+
+\begin{thmcard}{Theorem Group 22: Regime I (\texorpdfstring{$k < \omega$}{k < omega}) --- Finite Ordinals \& The Polynomial Degree Wall}
+\begin{eli5box}
+Imagine a chain of integrators where water flows only one way (gear 1 feeds gear 2, gear 2 feeds gear 3, with no feedback loops). After $k$ integrators, you only get a polynomial $c_0 + c_1 x + \cdots + c_k x^k$ whose coefficients become \textbf{zero forever after step $k$}. Even if you write a super-complicated formula of ordinal $\le k$ with lots of cancellations, it can \textbf{never} create $x^{k+1}$!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Establishes the first strict separation barrier of the ordinal hierarchy: finite ordinals $k < \omega$ correspond to polynomial ODEs without feedback loops (\lean{IsPoly}), and their intrinsic semantic complexity is bounded by polynomial degree.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Soundness (\lean{soundness_polyDegLe}, \lean{soundness_below_omega}):} Every expression of ordinal $k < \omega$ has $c_n = 0$ for all $n > k$ (\lean{SemPolyDegLe k}).
+  \item \textbf{Strictness \& Intrinsic Lower Bound (\lean{strictness_polyDegLe}, \lean{intrinsic_lower_bound_poly}):} $x^{k+1}$ has ordinal $k+1$ and cannot be semantically equal (\lean{SemJetEq}) to any expression of ordinal $\le k$.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/OrdinalODEHierarchy.lean}: \lean{soundness_polyDegLe}, \lean{strictness_polyDegLe}, \lean{intrinsic_lower_bound_poly}, \lean{soundness_below_omega}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 23: Regime II (\texorpdfstring{$\omega \preceq \alpha \prec \omega^2$}{omega <= alpha < omega\^2}) --- Linear ODE Systems \& The \texorpdfstring{$1/n!$}{1/n!} Factorial Barrier}
+\begin{eli5box}
+When you allow \textbf{linear feedback} (a spring pulling back proportionally to how far you stretch it: $y'' = -y$ for $\sin x$, or $y' = y$ for $e^x$), the Taylor coefficients never stop ($c_n \neq 0$), so you jump from finite numbers to the first infinite ordinal $\omega$! But because integrating divides by $1, 2, 3, \dots, n$, every linear ODE system of \emph{any} number of variables $N$ has coefficients that shrink super-fast like $\frac{1}{n!}$. That means linear waves \textbf{never blow up to infinity at any finite time $x$}!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Proves directly on $N$-dimensional ODE systems (\lean{LinearGPACSys}) that any system of coupled harmonic oscillators, damped waves, and linear states has infinite radius of convergence ($\rho = \infty$), using the \emph{exact same syntax-computed parameters} $(M, R) = \lean{sysParams}(\mathrm{sys})$.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Computed Linear Factorial Bound (\lean{solN_linear_factorial_bound_computed}):} For every linear ODE system $\lean{LinearGPACSys}\;\mathrm{sys}$, every component $v$, and every degree $n \in \N$:
+  \[
+    \bigl|(\lean{solN}\;\mathrm{sys}\;v\;n).\mathrm{val}\bigr| \cdot n! \le 2^M \cdot (2^R)^n \qquad \text{where } (M, R) = \lean{sysParams}(\mathrm{sys}).
+  \]
+  \item \textbf{Separation from Polynomials (\lean{strictness_at_omega}, \lean{no_isPoly_semJetEq_exp}):} $e^x$ (ordinal $\omega$) belongs to $\lean{SemEntireExpType}$ and cannot equal any expression of ordinal $< \omega$.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/OrdinalODEHierarchy.lean}: \lean{LinearGPACSys}, \lean{solN_linear_factorial_bound_computed}, \lean{linearGPACSys_semEntireExpType}, \lean{soundness_below_omegaSq}, \lean{strictness_at_omega}, \lean{no_isPoly_semJetEq_exp}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 24: Regime III (\texorpdfstring{$\alpha = \omega^2$}{alpha = omega\^2}) --- Nonlinear Blowup \& The Unbreakable \texorpdfstring{$\omega^2$}{omega\^2} Wall}
+\begin{eli5box}
+What happens when a gear multiplies \textbf{by itself} in a feedback loop: $y' = y^2$ with $y(0)=1$? That gives $y(x) = \frac{1}{1-x} = 1 + x + x^2 + x^3 + \cdots$, which \textbf{explodes to infinity at $x = 1$}! Because its coefficients stay at $c_n = 1$ forever instead of shrinking like $1/n!$, this theorem proves an amazing fact: \textbf{even if you couple a million linear harmonic oscillators together ($\lean{LinearGPACSys}$ of any dimension $N$), they can NEVER add up to $\frac{1}{1-x}$}! You \emph{must} cross the $\omega^2$ nonlinear wall!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Proves that nonlinear state-by-state multiplication in an ODE vector field is strictly more expressive than arbitrary-dimensional linear ODE feedback.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Direct ODE-System Separation (\lean{no_linearGPACSys_semJetEq_uGeom}):} For every $N$-dimensional linear ODE system $\lean{LinearGPACSys}\;\mathrm{sys}$ and every component $v < \mathrm{sys.length}$:
+  \[
+    \neg\,\lean{SemJetEq}\;(\lean{solN}\;\mathrm{sys}\;v)\;\lean{uGeom.eval}.
+  \]
+  \item \textbf{Ordinal Separation at $\omega^2$ (\lean{strictness_at_omegaSq}, \lean{no_isExpPoly_semJetEq_uGeom}):} $\lean{uGeom} = \frac{1}{1-x}$ has ordinal $\omega^2$ and cannot be represented by any expression of ordinal $\prec \omega^2$.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/OrdinalODEHierarchy.lean}: \lean{uGeom}, \lean{strictness_at_omegaSq}, \lean{no_isExpPoly_semJetEq_uGeom}, \lean{no_linearGPACSys_semJetEq_uGeom}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 25: Regime IV (\texorpdfstring{$\omega_2 \prec \omega_3 \prec \cdots \prec \varepsilon_0$}{omega\_2 < omega\_3 < ... < epsilon\_0}) --- ``Waves Over Waves'' \& The Descriptive Differential Hierarchy}
+\begin{eli5box}
+Imagine playing a pure note $\sin(x)$ on a synthesizer (level $\omega$). Now use that wave to modulate the speed of an exponential wave $W_1(x) = \exp(\sin x)$ (level $\omega^\omega$). Now use \emph{that} wave to modulate the next differential equation $W_2(x) = \exp(\exp(\sin x)-1)$ (level $\omega^{\omega^\omega}$), creating ``waves over waves'' (\lean{uWaveTower})! Does each new layer actually create a brand-new waveform, or could you fake layer $h+1$ using only $h$ layers? We prove that every single layer adds $\frac{1}{2}$ to the curvature at $0$ ($[x^2]W_h = \frac{h}{2}$), so \textbf{every single level of the infinite $\varepsilon_0$ tower creates a genuinely new waveform that no lower level can ever reach}!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Classical Hardy fields grade growth rates by ordinals below $\varepsilon_0$ but \textbf{forbid oscillating waves} like $\sin x$. Our cumulative Descriptive Differential Hierarchy $\mathcal{D}_\alpha$ (\lean{InDescDiff α}) unifies exponential growth towers (\lean{uTower}, generating the combinatorial Bell numbers) and FM wave-modulation cascades (\lean{uWaveTower}) inside a single ordinal-graded hierarchy of smooth polynomial ODE systems below $\varepsilon_0$.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Cumulative Hierarchy Monotonicity (\lean{InDescDiff_mono}) \& Surjectivity (\lean{odeOfOrd_ord}):} Whenever $\beta \prec \alpha \prec \varepsilon_0$, $\mathcal{D}_\beta \subseteq \mathcal{D}_\alpha \subseteq \lean{InGPAC}$, and every Cantor normal form ordinal $\alpha \prec \varepsilon_0$ is realized by an explicit ODE system $\lean{odeOfOrd}(\alpha)$.
+  \item \textbf{Exact Quadratic Modulation Law (\lean{uTower_eval_two}, \lean{uWaveTower_eval_two}):}
+  \[
+    \forall h \in \N,\qquad [x^2](\lean{uTower}\;(h+2)) = \frac{h+1}{2}, \qquad [x^2](\lean{uWaveTower}\;h) = \frac{h}{2}.
+  \]
+  \item \textbf{Strict Expansion at Every Tower Height (\lean{soundness_unitSeedTower}, \lean{strictness_unitSeedTower}, \lean{uWaveTower_hierarchy_strictness}, \lean{uWaveTower_semJetEq_injective}):} For every $h \in \N$, $\lean{uWaveTower}(h+1) \in \mathcal{D}_{\omega_{h+3}}$ satisfies $\lean{SemBellTowerLe}(h+1)$ and provably escapes $\lean{SemBellTowerLe}(h)$---so no unit-seed wave/exponential tower of height $\le h$ (even with arbitrary constant shifts) can ever equal $\lean{uWaveTower}(h+1)$.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/OrdinalODEHierarchy.lean}: \lean{InDescDiff}, \lean{InDescDiff_mono}, \lean{odeOfOrd_ord}, \lean{uTower}, \lean{uTower_eval_two}, \lean{soundness_unitSeedTower}, \lean{strictness_unitSeedTower}, \lean{intrinsic_lower_bound_tower}, \lean{uWaveTower}, \lean{uWaveTower_ord}, \lean{uWaveTower_compile_length}, \lean{uWaveTower_eval_two}, \lean{uWaveTower_hierarchy_strictness}, \lean{uWaveTower_semJetEq_injective}
+\end{itemize}
+\end{thmcard}
+
+\newpage
+% ============================================================================
+\section{Part VII: Validated Numerics, Krawczyk Boxes, and True Fourier Integral Reconstruction (\texorpdfstring{\lean{HAomega/ValidatedNumerics.lean}}{HAomega/ValidatedNumerics.lean})}
+% ============================================================================
+
+\begin{thmcard}{Theorem Group 26: Fixed-Denominator Dyadic Ball Arithmetic (\texorpdfstring{\lean{approxDyadic_spec}}{approxDyadic\_spec})}
+\begin{eli5box}
+If you add ordinary fractions like $\frac{1}{3} + \frac{1}{5} + \frac{1}{7} + \frac{1}{11}$, the bottom number (the denominator) multiplies out to $3 \times 5 \times 7 \times 11 = 1155$ and quickly explodes to millions of digits! Instead, \lean{roundDyadic} rounds every single power-series term $c_n x^n$ onto a binary ruler with a fixed power-of-two denominator $2^p$ ($\lfloor q \cdot 2^p \rfloor / 2^p$). Because every term now has the \emph{exact same denominator} $2^p$, we just add ordinary integers (\lean{evalDyadicNum}), and we prove that at degree $N = k + M + 2$ and binary precision $p = 2k + M + 3$, the combined rounding error plus infinite-series tail error is still at most $2^{-k}$!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Eliminates exact-rational denominator swell during polynomial evaluation while certifying both the dyadic center and radius in a rigorous ball enclosure \lean{DyadicBall}.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Single-Term Dyadic Rounding (\lean{roundDyadic_error_le}):}
+  \[
+    \forall q \in \Q,\; p \in \N,\qquad \left|(\lean{roundDyadic}\;q\;p : \R) - (q : \R)\right| \le \frac{1}{2^p}.
+  \]
+  \item \textbf{Pure Integer Accumulation \& Roundoff Bound (\lean{evalDyadic_eq_num_div_pow2}, \lean{evalDyadic_sub_realEvalPoly_le}):}
+  \[
+    S.\lean{evalDyadic}\;N\;p\;x = \frac{S.\lean{evalDyadicNum}\;N\;p\;x}{2^p}, \qquad
+    \left|(S.\lean{evalDyadic}\;N\;p\;x : \R) - S.\lean{realEvalPoly}\;N\;x\right| \le \frac{N}{2^p}.
+  \]
+  \item \textbf{Certified $2^{-k}$ Dyadic Ball Evaluation (\lean{approxDyadic_spec}):} At $N(k) = k + S.M + 2$ and $p(k) = 2k + S.M + 3$, for all $|x| \le 2^{-(S.R+1)}$:
+  \[
+    \left|(S.\lean{approxDyadic}\;k\;x : \R) - S.\lean{realAnalyticValue}(x)\right| \le \frac{1}{2^k}.
+  \]
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/ValidatedNumerics.lean}: \lean{roundDyadic}, \lean{roundDyadic_error_le}, \lean{DyadicBall}, \lean{evalDyadicNum}, \lean{evalDyadic_eq_num_div_pow2}, \lean{evalDyadic_sub_realEvalPoly_le}, \lean{approxDyadic}, \lean{approxDyadicBall}, \lean{approxDyadic_spec}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 27: The Certified 1D \& \texorpdfstring{$N$}{N}-Dimensional Krawczyk Operator (\texorpdfstring{\lean{krawczykFast_exists_unique_real_zero}, \lean{krawczykND_exists_unique_zero}}{krawczykFast\_exists\_unique\_real\_zero, krawczykND\_exists\_unique\_zero})}
+\begin{eli5box}
+Bisection (\lean{rootSeq}) needs a curve to cross from below zero to above zero ($f(a) < 0 < f(b)$)---which doesn't even make sense when you have $d$ equations and $d$ unknowns in $\R^d$! The \textbf{Krawczyk / Simplified-Newton Operator} $K(x) = x - C \cdot F(x)$ takes a ball (or $d$-dimensional box) around an initial guess $x_0$ and checks if $K$ shrinks distances by at least $\frac{1}{2}$ inside the box and moves the center $x_0$ by at most half the radius. When it does, the box is \textbf{trapped inside itself}, guaranteeing that a \textbf{unique} true zero $z_*$ exists inside the box and that iterating $K$ converges to $z_*$ at speed $2^{-n}$ in both 1D and $d$ dimensions!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Provides the cornerstone theorem of validated numerics: certifying \emph{both} existence and uniqueness of nonlinear roots inside a ball/box without requiring scalar sign changes.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Automatic 1D Contractivity from Quadratic Taylor Remainder (\lean{krawczykMap_contractive_of_deriv_approx}) \& Ball Self-Mapping (\lean{krawczykMap_maps_ball_to_ball}):} When $|1 - c f_{P'}(x_0)| \le 1/4$ and $|c|(L' + 2K)\rho \le 1/4$, $T_c(x) = x - c f_P(x)$ is $(1/2)$-contractive on $B(x_0, \rho)$, and $|c f_P(x_0)| \le \rho/2$ implies $T_c(B(x_0, \rho)) \subseteq B(x_0, \rho)$.
+  \item \textbf{Constructive 1D Krawczyk Convergence \& Uniqueness (\lean{krawczykFast_exists_unique_real_zero}):} Iterating $x_{n+1} = x_n - c \cdot \lean{approxFast}(x_n, 2n+2)$ converges at rate $O(2^{-n})$ to the unique real zero $z_* \in B(x_0, \rho)$ with $f_P(z_*) = 0$.
+  \item \textbf{$N$-Dimensional Krawczyk Box Invariance, Existence, \& Uniqueness (\lean{krawczykIterND_mem_closedBall}, \lean{krawczykND_exists_unique_zero}):} For $F, C : (\mathrm{Fin}\;d \to \R) \to (\mathrm{Fin}\;d \to \R)$ with $C$ injective, $(1/2)$-contractivity of $K_{F,C}$ on $\mathrm{closedBall}(x_0, \rho)$ and $\|C(F(x_0))\| \le \rho/2$ imply $\exists! z_* \in \mathrm{closedBall}(x_0, \rho)$ with $F(z_*) = 0$ and $\|x_n - z_*\| \le \rho / 2^n$.
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/ValidatedNumerics.lean}: \lean{PolyODEProof.krawczykMap}, \lean{krawczykMap_fixedPoint_iff_zero}, \lean{krawczykMap_maps_ball_to_ball}, \lean{krawczykMap_contractive_of_deriv_approx}, \lean{PolyODEProof.krawczykFast}, \lean{krawczykFast_exists_unique_real_zero}, \lean{krawczykOpND}, \lean{krawczykIterND}, \lean{krawczykIterND_mem_closedBall}, \lean{krawczykND_exists_unique_zero}
+\end{itemize}
+\end{thmcard}
+
+\vspace{6pt}
+
+\begin{thmcard}{Theorem Group 28: Classical Mathlib Fourier Integral Orthogonality \& True Fourier Reconstruction (\texorpdfstring{\lean{certified_fourier_reconstruction}}{certified\_fourier\_reconstruction})}
+\begin{eli5box}
+Earlier (\lean{certified_fourier_series_evaluation}), we proved that if we already know a wave's list of musical notes, adding the first $N(k) = k + M + 1$ notes gets within $2^{-k}$ of the infinite sum. Now we prove the full \textbf{musical tuning-fork theorem} using Mathlib's real integral $\int_0^{2\pi}$: multiplying a periodic analytic wave \lean{F.realWave} by $\cos(mx)$ or $\sin(mx)$ and integrating from $0$ to $2\pi$ cancels out every other frequency, extracts the exact amplitudes, and reconstructs the original wave $F.\lean{realWave}(x)$ from its classical Mathlib Fourier integrals within $2^{-k}$!
+\end{eli5box}
+
+\textbf{Why It Matters:}
+Completes the semantic bridge for periodic analytic functions by proving classical trigonometric orthogonality over $0..2\pi$ in Mathlib's \lean{intervalIntegral} and establishing exact Fourier integral reconstruction.
+
+\textbf{Key Mathematical Facts:}
+\begin{itemize}
+  \item \textbf{Classical Mathlib Orthogonality over $0..2\pi$ (\lean{integral_cos_mul_cos_two_pi}, \lean{integral_sin_mul_sin_two_pi}, \lean{integral_sin_mul_cos_two_pi}):}
+  \[
+    \frac{1}{\pi}\int_0^{2\pi} \cos((m+1)x)\cos((k+1)x)\,dx = \delta_{mk}, \quad
+    \frac{1}{\pi}\int_0^{2\pi} \sin((m+1)x)\sin((k+1)x)\,dx = \delta_{mk}, \quad
+    \int_0^{2\pi} \sin(mx)\cos(kx)\,dx = 0.
+  \]
+  \item \textbf{Exact Fourier Integral Coefficient Recovery (\lean{realFourierA0_realWave}, \lean{realFourierA_realWave}, \lean{realFourierB_realWave}) \& Reconstruction (\lean{certified_fourier_reconstruction}):}
+  \begin{align*}
+    F.\lean{realWave}(x) &= \sum_{m=0}^{\infty} \lean{realFourierIntegralShell}\;F.\lean{realWave}\;x\;m, \\
+    \Bigl|\sum_{m=0}^{k+F.M+1} \lean{realFourierIntegralShell}\;F.\lean{realWave}\;x\;m - F.\lean{realWave}(x)\Bigr| &\le \frac{1}{2^k}.
+  \end{align*}
+\end{itemize}
+
+\textbf{Lean 4 Identifiers:}
+\begin{itemize}
+  \item \lean{HAomega/ValidatedNumerics.lean}: \lean{integral_cos_mul_cos_two_pi}, \lean{integral_sin_mul_sin_two_pi}, \lean{integral_sin_mul_cos_two_pi}, \lean{realFourierA0}, \lean{realFourierA}, \lean{realFourierB}, \lean{StripFourierRep.realWave}, \lean{continuous_realWave}, \lean{realFourierA0_realWave}, \lean{realFourierA_realWave}, \lean{realFourierB_realWave}, \lean{certified_fourier_reconstruction}
+\end{itemize}
+\end{thmcard}
+
+\newpage
+% ============================================================================
+\section{Master Index of All 28 Theorem Groups}
+% ============================================================================
+
+\begin{center}
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}p{0.5cm}>{\raggedright\arraybackslash}p{3.9cm}>{\raggedright\arraybackslash}p{4.8cm}>{\raggedright\arraybackslash}p{5.5cm}@{}}
+\toprule
+\textbf{\#} & \textbf{Theorem Group} & \textbf{Plain-English Core Fact} & \textbf{Primary Lean 4 Module \& Theorem} \\
+\midrule
+1 & Modified Realizability & Proofs compile to verified \SystemT{} programs & \lean{Soundness.lean}: \lean{soundness} \\
+2 & Hydra \& $\varepsilon_0$ Well-Foundedness & Every Hydra dies; ordinals $\prec \varepsilon_0$ can't descend forever & \lean{OrdCnf.lean}: \lean{Eps0.oLtE_wf} \\
+3 & Smoothness Hierarchy & Power series + $(M,R)$ make $\frac{d}{dx}$ and $\int$ 1-step & \lean{RadiusJet.lean}: \lean{RadiusJet.deriv} \\
+4 & Polynomial ODE Locking & $Y'=P(Y)$ locks in $c_n$ at step $n+1$ & \lean{PolyODESystemN.lean}: \lean{genSolveND} \\
+5 & Syntax Majorants $(M,R)$ & \lean{sysParams} gives $|c_n| \le 2^M(2^R)^n$ \& $N(k)=k+M+3$ & \lean{SystemEval.lean}: \lean{solN_geom_bound_computed} \\
+6 & Closed Universe Compiler & $+,-,\times,\div,\frac{d}{dx},\int,\circ$ compile to \lean{GPACSys} & \lean{UniverseExpr.lean}: \lean{UExpr.compile_correct} \\
+7 & Inverse \& Implicit ODEs & $g(y)=x$ and $E(x,y)=0$ compile to polynomial ODEs & \lean{UniverseImpFun.lean}: \lean{InGPAC_impFun} \\
+8 & Analytic Stepping \& BVP & Multi-step re-centering \& BVP cannon shooting & \lean{SystemStep.lean}, \lean{ShootingBVP.lean} \\
+9 & Extraction $\equiv$ Fast DP & $O(n^2)$ \lean{solFast} equals $O(2^n)$ extracted proof term & \lean{ComputationalAdequacy.lean}: \lean{extraction_to_fast} \\
+10 & Infinite-Series Evaluation & \lean{approxFast} is within $2^{-k}$ of $\sum_{n=0}^\infty c_n x^n \in \R$ & \lean{ComputationalAdequacy.lean}: \lean{certified_evaluation} \\
+11 & Tail Bound Necessity & No finite prefix can certify accuracy without $(M,R)$ & \lean{ComputationalAdequacy.lean}: \lean{no_uniform_modulus_without_tail_info} \\
+12 & Rep-to-Rep Closure & Calculus transforms \lean{PolyODEProof} $\to$ \lean{PolyODEProof} & \lean{ComputationalAdequacy.lean}: \lean{newtonLeibniz_analyticValue_spec} \\
+13 & Secant \& Root Location & Derivative margin $m>0$ bounds distance to real zero & \lean{ComputationalAdequacy.lean}: \lean{analyticValue_root_location_of_deriv_margin} \\
+14 & Fourier Series \& Parseval & Orthogonality + $2^{-k}$ strip Fourier evaluation & \lean{ComputationalAdequacy.lean}: \lean{certified_fourier_series_evaluation} \\
+15 & Real Quadratic Remainder & $|f(y)-f(x)-f'(x)(y-x)| \le C(y-x)^2$ on $\R$ & \lean{RealCalculusBridge.lean}: \lean{realAnalyticValue_quad_rem_disk} \\
+16 & Classical \lean{HasDerivAt} \& FTC & Matches Mathlib \lean{HasDerivAt} and \lean{intervalIntegral} & \lean{RealCalculusBridge.lean}: \lean{defIntegralFast_intervalIntegral_spec} \\
+17 & Constructive Root Existence & \lean{rootSeq} converges to a genuine real zero $f(z_*)=0$ & \lean{RealCalculusBridge.lean}: \lean{rootSeq_converges_to_real_zero} \\
+18 & Fixed-Point Operators & Contractive \lean{fixFast} \& general \lean{fixRootSeq} ($f(z_*)=z_*$) & \lean{RealCalculusBridge.lean}: \lean{fixFast_converges_to_fixedPoint} \\
+19 & Symbolic Normalizer & Cancels $\frac{d}{dx}\int f$, $1/(1/f)$, $f \circ x$ in one pass & \lean{CertifiedOptimization.lean}: \lean{UExpr.normalize_spec} \\
+20 & Tower Collapse & Collapses depth-$d$ towers \& $f^{-1}\circ f \to \lean{varX}$ & \lean{CertifiedOptimization.lean}: \lean{autoInverse_comp_compress_to_varX} \\
+21 & Representation Compression & Replaces big ODE with smaller/wider equivalent ODE & \lean{CertifiedOptimization.lean}: \lean{compress_of_coeff_eq} \\
+22 & Regime I ($k < \omega$) & Nilpotent ODEs only make degree-$\le k$ polynomials & \lean{OrdinalODEHierarchy.lean}: \lean{intrinsic_lower_bound_poly} \\
+23 & Regime II ($\omega \preceq \alpha \prec \omega^2$) & Any $N$-D linear ODE decays like $1/n!$ ($\rho = \infty$) & \lean{OrdinalODEHierarchy.lean}: \lean{solN_linear_factorial_bound_computed} \\
+24 & Regime III ($\alpha = \omega^2$) & No linear ODE of any dim $N$ can equal $\frac{1}{1-x}$ & \lean{OrdinalODEHierarchy.lean}: \lean{no_linearGPACSys_semJetEq_uGeom} \\
+25 & Regime IV ($\alpha \prec \varepsilon_0$) & ``Waves over waves'' climb $\varepsilon_0$ with $[x^2]W_h = h/2$ & \lean{OrdinalODEHierarchy.lean}: \lean{uWaveTower_hierarchy_strictness} \\
+26 & Dyadic Ball Arithmetic & Fixed-$2^p$ rounding prevents denominator swell ($\le 2^{-k}$) & \lean{ValidatedNumerics.lean}: \lean{approxDyadic_spec} \\
+27 & 1D \& $N$-D Krawczyk Box & Existence, uniqueness, \& $2^{-n}$ convergence in a box & \lean{ValidatedNumerics.lean}: \lean{krawczykND_exists_unique_zero} \\
+28 & True Fourier Reconstruction & Classical $\int_0^{2\pi}$ coefficients reconstruct $F.\lean{realWave}$ & \lean{ValidatedNumerics.lean}: \lean{certified_fourier_reconstruction} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

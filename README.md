@@ -36,7 +36,7 @@ functional that **no derivation can extract to**.
 2. **[`HAOMEGA_DOSSIER.md`](HAOMEGA_DOSSIER.md)** — the evidence. Every claim
    tagged `[run]`, `[src]` or `[git]`, with exact axiom footprints, measured
    evaluation limits, and the claims this project walked back.
-3. **[`EXTRACTED_HAOMEGA.md`](EXTRACTED_HAOMEGA.md)** — the demos. All fifteen
+3. **[`EXTRACTED_HAOMEGA.md`](EXTRACTED_HAOMEGA.md)** — the demos. All thirty-seven
    realizers, each rendered three ways: raw object, collapsed program, Haskell.
    Regenerated at every build, so it cannot drift.
 4. **[`READERS_GUIDE.md`](READERS_GUIDE.md)** — the declaration-by-declaration
@@ -44,10 +44,13 @@ functional that **no derivation can extract to**.
 5. **[`docs/haomega/STATUS.md`](docs/haomega/STATUS.md)** — the ledger: what is
    proved, what is only *stated*, and what is blocked on what.
 
-## The fifteen extracted programs
+## Fifteen of the extracted programs
 
-Each is derived in the object theory, extracted, certified, and **run** at
-every build.
+The catalog in [`EXTRACTED_HAOMEGA.md`](EXTRACTED_HAOMEGA.md) holds
+thirty-seven programs. The table below shows the thirteen discrete ones and
+the first two from analysis; the rest are covered in the analysis strand
+below. Each is derived in the object theory, extracted, certified, and
+**run** at every build.
 
 | | statement | notes |
 |---|---|---|
@@ -69,6 +72,95 @@ every build.
 
 Zero `sorry`/`admit`. `lake build` **is** the test suite: every correctness
 claim is a theorem and every evaluation claim an embedded `#guard`.
+
+## The analysis strand
+
+The last two rows above are where the analysis strand begins. It has since
+grown into the larger part of `HAomega/`. The question it answers: once realizers
+take rationals and functions as inputs, how much of calculus still extracts to
+running programs, and what data does each step need?
+[`EXTRACTED_ANALYSIS.md`](EXTRACTED_ANALYSIS.md) shows the analysis programs,
+and [`docs/haomega/STATUS.md`](docs/haomega/STATUS.md) §3–§8 is the ledger.
+
+**Numeric base.** `rat` and `dyad` are hand-rolled base types. Mathlib's
+`Rat` arithmetic depends on `Classical.choice` (measured, not assumed), and
+using it would put choice inside every running extract.
+
+**Moduli as programs.**
+- **Uniform continuity:** the extracted realizer *is* the modulus (`n + j`).
+- **Jet moduli:** the Cauchy, continuity and differentiability moduli have
+  proof-computed versions (`JetCauchyComputed.lean`, `JetModuliComputed.lean`).
+  The extracted modulus is a `rec` assembled by `Deriv.ind`.
+- **Square roots:** these are the discrete IVT, i.e. Sperner 1D applied to
+  squaring.
+
+**One derivation, every polynomial ODE.** `genSolveND`
+(`PolyODESystemN.lean`) proves, by `Deriv.ind`, that every well-formed
+polynomial–integral system `Y_v = A_v + ∫F_v(Y)` has a solution below every
+degree `k`. Its specification names no algorithm. Its extract is provably the
+Picard iteration (`extractClosed_genSolveND_fst`), and uniqueness
+(`genSolveN_unique_val`) makes those coefficients *the* Taylor coefficients.
+`exp`, `y' = y²`, Riccati/`tan`, Duffing, sine/cosine and Fourier modes are
+instances. The extract is `[propext, Quot.sound]`.
+
+**The universe.** `InGPAC` is the class of components of such systems with
+constant data. It is proved closed under the following (`UniverseGPAC.lean`,
+`UniverseInv.lean`, `UniverseComp.lean`, `UniverseInvFun.lean`,
+`UniverseImpFun.lean`):
+- `+`, `−`, `×`, `∫` and `d/dx`;
+- reciprocals (when `f(0) ≠ 0`);
+- composition;
+- **local inverse functions** (`InGPAC_invFun`);
+- **implicit functions** (`InGPAC_impFun`).
+
+The expression language `UExpr` compiles into it (`UExpr.compile_correct`).
+Every member gets a syntax-computed geometric coefficient bound
+(`solN_geom_bound`, `sysParams`) and a certified evaluator: past a
+proof-computed truncation degree, partial sums are within `2⁻ᵏ` on an explicit
+disk (`UExpr.approx_spec`, `GPACSys.approxFast_spec`).
+
+**Operators built on the evaluator.** Each is certified, and each is run by
+`#guard` against floating point:
+
+| operator | theorem | example |
+|---|---|---|
+| root finding by extracted bisection | `UExpr.root_spec` | `ln(41/40)`, `arcsin(1/5)` to `10⁻¹⁰` |
+| definite integral / Newton–Leibniz | `defIntegral_spec` | `∫₀^{1/2} cos = sin(1/2)` |
+| critical points (approximate Rolle) | `critical_spec` | minimum of `eˣ − 1 − (21/20)x` |
+| Newton, Kantorovich-type | `UExpr.newton_spec` | `ln(41/40)` to `10⁻²⁸` in four steps |
+| shooting for two-point BVPs | `shootBVP_certified` | harmonic and Duffing BVPs to `10⁻¹⁰` |
+| re-centering / analytic continuation | `recenter_overlap`, `stepIter_cauchy` | `tan` stepped twice agrees to `10⁻²⁵` |
+
+**Newton–Leibniz, and where it stops.** Both directions of the effective
+fundamental theorem of calculus are proved for every representation in their
+class (`eftc2_thm`, `eftc1` in `QAnalysis.lean`). The boundary sections record
+what each operation *needs as data*:
+- **Inversion:** a modulus of strict monotonicity, i.e. a rational lower bound
+  on `f′`.
+- **Limits:** a modulus of uniform convergence.
+- **Composition:** a range condition.
+
+The negative halves (Myhill, Specker) are cited, not formalized: they
+quantify over procedures, and this model has no computability predicate.
+
+**Most recent layers.** These are not yet entered in the STATUS ledger:
+- **Bridge to Mathlib's real analysis** (`RealCalculusBridge.lean`): series
+  values on `ℝ`, `HasDerivAt`, `intervalIntegral`.
+- **Extraction–evaluation adequacy** (`ComputationalAdequacy.lean`): the
+  proof-extracted coefficients equal the fast evaluator's
+  (`extraction_to_fast`).
+- **Certified simplification** (`CertifiedOptimization.lean`): a `UExpr`
+  normalizer that preserves coefficients.
+- **Validated numerics** (`ValidatedNumerics.lean`): dyadic ball arithmetic
+  (`approxDyadic_spec`) and 1D/ND Krawczyk operators.
+
+**Scope.** The solver and the extracts live in the object logic and are
+choice-free. The closure theorems, evaluator certificates and operator
+specifications are *metatheory* about `Q.val` and carry `Classical.choice`.
+Several of them are marked in STATUS as written by an outside agent and
+audited. The object language still has no rule base for computing with `Q`
+(STATUS §6). The certified disks are conservative, and nonlinear or
+compositional evaluation is slow. STATUS records the measured costs.
 
 ## Axiom footprints (audited, reprinted at every build)
 
@@ -106,7 +198,7 @@ Toolchain pinned in `lean-toolchain`, Mathlib in `lakefile.lean`. Standalone.
 ## Repository map
 
 ```
-HAomega/          the development (~8,000 lines)
+HAomega/          the development (~61,000 lines)
 Realizability/    the first-order system, kept as the reference implementation
                   Part I of the paper walks it; Part II measures against it
 paper/            the paper and its figures
